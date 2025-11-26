@@ -21,6 +21,8 @@ parser.mli
 # Executables
 test_lexer
 test_ast
+test_parser
+test_interpreter
 *.exe
 
 # Build artifacts

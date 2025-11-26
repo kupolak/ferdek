@@ -33,7 +33,8 @@ ferdek/
 │   └── ast.mli          # AST interface
 ├── tests/
 │   ├── test_lexer.ml    # Lexer test program
-│   └── test_ast.ml      # AST test program
+│   ├── test_ast.ml      # AST test program
+│   └── test_parser.ml   # Parser test program
 ├── docs/
 │   ├── ferdek.ebnf      # Grammar specification in EBNF
 │   ├── INSTRUKCJA.md    # Detailed usage guide
@@ -116,6 +117,7 @@ MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 
 - [docs/INSTRUKCJA.md](docs/INSTRUKCJA.md) - Complete usage guide
 - [docs/README_LEXER.md](docs/README_LEXER.md) - Lexer implementation details
+- [docs/README_PARSER.md](docs/README_PARSER.md) - Parser implementation and usage
 - [docs/README_AST.md](docs/README_AST.md) - AST (Abstract Syntax Tree) documentation
 - [docs/NEW_FEATURES.md](docs/NEW_FEATURES.md) - Advanced features (arrays, classes, exceptions, etc.)
 - [docs/ferdek.ebnf](docs/ferdek.ebnf) - Language grammar specification
@@ -124,7 +126,7 @@ MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 
 ✅ Lexer - Complete
 ✅ AST - Complete
-⏳ Parser - In progress
+✅ Parser - Complete
 ⏳ Interpreter - Planned
 ⏳ Compiler - Planned
 
