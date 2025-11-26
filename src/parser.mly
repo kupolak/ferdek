@@ -1,0 +1,36 @@
+%token PROGRAM_START PROGRAM_END
+%token VAR_DECL VAR_INIT
+%token PRINT READ
+%token ASSIGN_START ASSIGN_OP ASSIGN_END
+%token IF ELSE END_IF
+%token WHILE END_WHILE
+%token FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END
+%token FUNC_CALL FUNC_CALL_ASSIGN RETURN
+%token PLUS MINUS MULTIPLY DIVIDE MODULO
+%token EQUAL NOT_EQUAL GREATER LESS
+%token AND OR
+%token TRUE FALSE
+%token LPAREN RPAREN COMMA
+%token IMPORT
+%token ARRAY_DECL
+%token ARRAY_INDEX
+%token TRY
+%token CATCH
+%token THROW
+%token NULL
+%token BREAK
+%token CONTINUE
+%token CLASS
+%token NEW
+%token LBRACKET RBRACKET
+%token <string> IDENTIFIER
+%token <int> INTEGER
+%token <string> STRING
+%token EOF
+
+%start <unit> program
+%%
+
+program:
+  | PROGRAM_START EOF { () }
+  ;

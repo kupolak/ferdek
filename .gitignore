@@ -1,0 +1,34 @@
+# OCaml generated files
+*.cmi
+*.cmo
+*.cmx
+*.cma
+*.cmxa
+*.o
+*.a
+*.so
+*.annot
+*.cmt
+*.cmti
+*.cmt*
+
+# Generated lexer and parser
+lexer.ml
+parser.ml
+parser.mli
+*.conflicts
+
+# Executables
+test_lexer
+*.exe
+
+# Build artifacts
+_build/
+*.native
+*.byte
+
+# Editor files
+*.swp
+*.swo
+*~
+.DS_Store
