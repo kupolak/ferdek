@@ -55,13 +55,55 @@ let compile_and_link input_file output_exe =
       end
   | Error msg -> Error msg
 
+(* Compile, run and cleanup - like an interpreter *)
+let compile_run_cleanup input_file =
+  match parse_file input_file with
+  | Ok ast ->
+      let c_code = Compiler.compile_program ast in
+
+      (* Create temporary files *)
+      let temp_c = Filename.temp_file "ferdek_" ".c" in
+      let temp_exe = Filename.temp_file "ferdek_" "" in
+
+      (* Write C code to temp file *)
+      let oc = open_out temp_c in
+      output_string oc c_code;
+      close_out oc;
+
+      (* Compile to executable *)
+      let compile_cmd = Printf.sprintf "gcc -o %s %s -std=c99 2>/dev/null" temp_exe temp_c in
+      let compile_exit = Sys.command compile_cmd in
+
+      if compile_exit = 0 then begin
+        (* Run the executable *)
+        let run_exit = Sys.command temp_exe in
+
+        (* Cleanup temp files *)
+        (try Sys.remove temp_c with _ -> ());
+        (try Sys.remove temp_exe with _ -> ());
+
+        if run_exit = 0 then Ok ()
+        else Error (Printf.sprintf "Program exited with code %d" run_exit)
+      end else begin
+        (* Cleanup on compile error *)
+        (try Sys.remove temp_c with _ -> ());
+        (try Sys.remove temp_exe with _ -> ());
+        Error "Compilation failed"
+      end
+  | Error msg ->
+      Printf.eprintf "%s\n" msg;
+      Error msg
+
 (* Usage message *)
 let usage () =
   Printf.eprintf "Usage: %s [options] <input.ferdek>\n" Sys.argv.(0);
   Printf.eprintf "Options:\n";
   Printf.eprintf "  -c            Compile to C only (default: <input>.c)\n";
-  Printf.eprintf "  -o <output>   Output file name\n";
+  Printf.eprintf "  -o <output>   Output file name (for compile mode)\n";
+  Printf.eprintf "  -r, --run     Compile and run immediately (no files left behind)\n";
   Printf.eprintf "  -h, --help    Show this help\n";
+  Printf.eprintf "\n";
+  Printf.eprintf "Default mode: compile to executable with same name as input\n";
   exit 1
 
 (* Main entry point *)
@@ -71,34 +113,40 @@ let () =
   if argc < 2 then
     usage ();
 
-  let rec parse_args i compile_only output_file input_file =
+  let rec parse_args i compile_only run_mode output_file input_file =
     if i >= argc then
-      (compile_only, output_file, input_file)
+      (compile_only, run_mode, output_file, input_file)
     else
       match Sys.argv.(i) with
-      | "-c" -> parse_args (i + 1) true output_file input_file
+      | "-c" -> parse_args (i + 1) true false output_file input_file
+      | "-r" | "--run" -> parse_args (i + 1) false true output_file input_file
       | "-o" ->
           if i + 1 >= argc then usage ();
-          parse_args (i + 2) compile_only (Some Sys.argv.(i + 1)) input_file
+          parse_args (i + 2) compile_only run_mode (Some Sys.argv.(i + 1)) input_file
       | "-h" | "--help" -> usage ()
       | arg when input_file = None ->
-          parse_args (i + 1) compile_only output_file (Some arg)
+          parse_args (i + 1) compile_only run_mode output_file (Some arg)
       | _ -> usage ()
   in
 
-  let compile_only, output_file, input_file = parse_args 1 false None None in
+  let compile_only, run_mode, output_file, input_file = parse_args 1 false false None None in
 
   match input_file with
   | None -> usage ()
   | Some input ->
       let result =
-        if compile_only then
+        if run_mode then
+          (* Run mode: compile, execute, cleanup *)
+          compile_run_cleanup input
+        else if compile_only then
+          (* Compile to C only *)
           let output = match output_file with
             | Some f -> f
             | None -> (Filename.remove_extension input) ^ ".c"
           in
           compile_file input output
         else
+          (* Compile to executable *)
           let output = match output_file with
             | Some f -> f
             | None -> Filename.remove_extension input

@@ -88,16 +88,34 @@ make test
 
 ### Run Ferdek Programs
 
-Run a Ferdek program file:
+**Interpreter** - Run a Ferdek program file:
 ```bash
 ./ferdek examples/test_interpreter.ferdek
 ./ferdek examples/functions.ferdek
 ./ferdek examples/arrays.ferdek
 ```
 
-Interactive REPL:
+**Interpreter** - Interactive REPL:
 ```bash
 ./ferdek
+```
+
+**Compiler** - Compile and run immediately (no files left behind):
+```bash
+./ferdecc -r examples/fizzbuzz.ferdek
+./ferdecc -r pomysl.ferdek
+```
+
+**Compiler** - Compile to executable:
+```bash
+./ferdecc examples/fizzbuzz.ferdek
+./examples/fizzbuzz
+```
+
+**Compiler** - Compile to C only:
+```bash
+./ferdecc -c examples/fizzbuzz.ferdek
+# Creates examples/fizzbuzz.c
 ```
 
 ## Example Program
