@@ -5,7 +5,7 @@ OCAMLLEX = ocamllex
 MENHIR = menhir
 BUILD_DIR = .build
 
-all: $(BUILD_DIR)/ferdek $(BUILD_DIR)/ferdecc $(BUILD_DIR)/test_lexer $(BUILD_DIR)/test_ast $(BUILD_DIR)/test_parser
+all: $(BUILD_DIR)/ferdek $(BUILD_DIR)/ferdecc $(BUILD_DIR)/main $(BUILD_DIR)/test_lexer $(BUILD_DIR)/test_ast $(BUILD_DIR)/test_parser
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
@@ -76,6 +76,13 @@ $(BUILD_DIR)/ferdecc.cmo: src/ferdecc.ml $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/parse
 
 $(BUILD_DIR)/ferdecc: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/compiler.cmo $(BUILD_DIR)/ferdecc.cmo | $(BUILD_DIR)
 	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/ferdecc $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/compiler.cmo $(BUILD_DIR)/ferdecc.cmo
+
+# Kompilacja głównej komendy CLI
+$(BUILD_DIR)/main.cmo: src/main.ml $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/parser.cmi $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmi $(BUILD_DIR)/compiler.cmi | $(BUILD_DIR)
+	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/main.cmo -c src/main.ml
+
+$(BUILD_DIR)/main: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/compiler.cmo $(BUILD_DIR)/main.cmo | $(BUILD_DIR)
+	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/main $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/compiler.cmo $(BUILD_DIR)/main.cmo
 
 # Czyszczenie plików pośrednich
 clean:

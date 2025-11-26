@@ -44,11 +44,17 @@ opam init
 opam install menhir
 ```
 
-### Build
+### Build & Install
 
 ```bash
+# Build the project
 make
+
+# Install the 'ferdek' command (globally or locally in ~/.local/bin)
+./install.sh
 ```
+
+More information: [docs/INSTALACJA.md](docs/INSTALACJA.md)
 
 ### Run Tests
 
@@ -58,34 +64,51 @@ make test
 
 ### Run Ferdek Programs
 
-**Interpreter** - Run a Ferdek program file:
+**Main command** - Display help:
 ```bash
-./ferdek examples/test_interpreter.ferdek
-./ferdek examples/functions.ferdek
-./ferdek examples/arrays.ferdek
+ferdek
+ferdek --help
 ```
 
-**Interpreter** - Interactive REPL:
+**Interpreter** - Run a Ferdek file:
 ```bash
-./ferdek
+ferdek examples/hello.ferdek
+ferdek examples/variables.ferdek
+ferdek -i examples/conditional.ferdek
 ```
 
-**Compiler** - Compile and run immediately (no files left behind):
+**Interpreter** - Interactive mode (REPL):
 ```bash
-./ferdecc -r examples/fizzbuzz.ferdek
-./ferdecc -r pomysl.ferdek
+ferdek --repl
+```
+
+**Compiler** - Quick run (compile and execute):
+```bash
+ferdek --run examples/hello.ferdek
+ferdek -r examples/variables.ferdek
 ```
 
 **Compiler** - Compile to executable:
 ```bash
-./ferdecc examples/fizzbuzz.ferdek
-./examples/fizzbuzz
+ferdek -c examples/hello.ferdek -o my_program
+./my_program
 ```
 
 **Compiler** - Compile to C only:
 ```bash
-./ferdecc -c examples/fizzbuzz.ferdek
-# Creates examples/fizzbuzz.c
+ferdek -c examples/hello.ferdek
+# Creates examples/hello.c
+```
+
+### Legacy interfaces (in .build folder)
+
+If you prefer using the old separate commands:
+```bash
+# Interpreter only (REPL or file)
+.build/ferdek examples/hello.ferdek
+
+# Compiler only
+.build/ferdecc -r examples/hello.ferdek
 ```
 
 ## Example Program
