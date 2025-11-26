@@ -5,18 +5,36 @@ RYM CYM CYM KANAPA - Moduł operacji na stringach KLAMOTY
 RYM CYM CYM Stringi, operacje na tekście
 RYM CYM CYM ============================================
 
-RYM CYM CYM TODO: Większość funkcji stringowych wymaga rozszerzenia interpretera
-RYM CYM CYM o wbudowane funkcje konkatenacji, substring, split itp.
-RYM CYM CYM Na razie są to placeholdery pokazujące API
-
-RYM CYM CYM ILE MIEJSCA NA KANAPIE - Zwraca długość stringu
-RYM CYM CYM Wymaga wbudowanej funkcji string_length
-NO DOBRZE ALE MASZ MI COKOLWIEK DO POWIEDZENIA ILE MIEJSCA NA KANAPIE
-PRZYJMUJEMY DELEGACJĘ tekst
-NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
-  RYM CYM CYM TODO: Wymaga rozszerzenia interpretera
-  I JA INFORMUJĘ ŻE WYCHODZĘ 0
-NO I GIT
-NO TO SIĘ NAZYWA CZEŚĆ
+RYM CYM CYM Wszystkie funkcje stringowe są wbudowane w interpreter
+RYM CYM CYM jako multi-word keywords i dostępne globalnie (bez potrzeby importu KANAPA)
+RYM CYM CYM
+RYM CYM CYM Nazwy funkcji zawierają spacje i polskie znaki - są rozpoznawane
+RYM CYM CYM przez lexer jako pełne frazy (podobnie jak "ALE WIE PAN JA ZASADNICZO")
+RYM CYM CYM
+RYM CYM CYM Dostępne funkcje:
+RYM CYM CYM
+RYM CYM CYM USIĄDŹ NA KANAPIE(str1, str2, ...) - Konkatenacja stringów
+RYM CYM CYM   Przykład: USIĄDŹ NA KANAPIE("Cześć ", "Ferdek") -> "Cześć Ferdek"
+RYM CYM CYM
+RYM CYM CYM ILE MIEJSCA NA KANAPIE(str) - Zwraca długość stringa
+RYM CYM CYM   Przykład: ILE MIEJSCA NA KANAPIE("Ferdek") -> 6
+RYM CYM CYM
+RYM CYM CYM POTNIJ KANAPĘ(str, start, end) - Wycina podciąg (substring)
+RYM CYM CYM   Przykład: POTNIJ KANAPĘ("Ferdek", 0, 4) -> "Ferd"
+RYM CYM CYM
+RYM CYM CYM PRZESUŃ NA KANAPIE(str, separator) - Dzieli string (split)
+RYM CYM CYM   Przykład: PRZESUŃ NA KANAPIE("Ferdek ma piwo", " ") -> ["Ferdek", "ma", "piwo"]
+RYM CYM CYM
+RYM CYM CYM POSKŁADAJ KANAPĘ(array, separator) - Łączy listę stringów (join)
+RYM CYM CYM   Przykład: POSKŁADAJ KANAPĘ(["Ferdek", "jest", "spoko"], " ") -> "Ferdek jest spoko"
+RYM CYM CYM
+RYM CYM CYM WYTRZEP KANAPĘ(str) - Usuwa białe znaki z początku i końca (trim)
+RYM CYM CYM   Przykład: WYTRZEP KANAPĘ("  spacje  ") -> "spacje"
+RYM CYM CYM
+RYM CYM CYM ZAMIEŃ NA KANAPIE(str, old, new) - Zamienia tekst (replace)
+RYM CYM CYM   Przykład: ZAMIEŃ NA KANAPIE("Ferdek pije wodę", "wodę", "piwo") -> "Ferdek pije piwo"
+RYM CYM CYM
+RYM CYM CYM ROZCIĄGNIJ KANAPĘ(str, length) - Padduje string do określonej długości
+RYM CYM CYM   Przykład: ROZCIĄGNIJ KANAPĘ("test", 10) -> "test      "
 
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE

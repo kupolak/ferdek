@@ -98,6 +98,15 @@ let to_int = function
   | VNull -> 0
   | _ -> raise (RuntimeError "Cannot convert to integer")
 
+(* Convert value to string for concatenation *)
+let to_string = function
+  | VInt n -> string_of_int n
+  | VString s -> s
+  | VBool true -> "true"
+  | VBool false -> "false"
+  | VNull -> "null"
+  | v -> string_of_value v
+
 (* ============ EXPRESSION EVALUATION ============ *)
 
 (* Evaluate arithmetic operator *)
@@ -173,29 +182,149 @@ let rec eval_expr env = function
 
 (* Evaluate function call *)
 and eval_function_call env name args =
-  let func = get_var env name in
-  match func with
-  | VFunction (fdecl, closure_env) ->
-      (* Create new environment for function execution *)
-      let func_env = create_env (Some closure_env) in
-
-      (* Evaluate arguments *)
+  (* Check for built-in string functions - only Ferdek-style names from KLAMOTY/KANAPA *)
+  match name with
+  (* USIĄDŹ NA KANAPIE - Konkatenacja stringów *)
+  | "USIĄDŹ NA KANAPIE" ->
       let arg_values = List.map (eval_expr env) args in
+      let strings = List.map to_string arg_values in
+      VString (String.concat "" strings)
 
-      (* Bind parameters *)
-      if List.length fdecl.params <> List.length arg_values then
-        raise (RuntimeError (Printf.sprintf "Function %s expects %d arguments, got %d"
-                              name (List.length fdecl.params) (List.length arg_values)));
+  (* ROZCIĄGNIJ KANAPĘ - Padduje string do określonej długości *)
+  | "ROZCIĄGNIJ KANAPĘ" ->
+      (match args with
+       | [str_arg; len_arg] ->
+           let s = to_string (eval_expr env str_arg) in
+           let target_len = to_int (eval_expr env len_arg) in
+           let current_len = String.length s in
+           if current_len >= target_len then
+             VString s
+           else
+             let padding = String.make (target_len - current_len) ' ' in
+             VString (s ^ padding)
+       | _ -> raise (RuntimeError "ROZCIĄGNIJ KANAPĘ expects 2 arguments"))
 
-      List.iter2 (fun param value -> define_var func_env param value)
-        fdecl.params arg_values;
+  (* POTNIJ KANAPĘ - Substring (początek, koniec) *)
+  | "POTNIJ KANAPĘ" ->
+      (match args with
+       | [str_arg; start_arg; end_arg] ->
+           let s = to_string (eval_expr env str_arg) in
+           let start = to_int (eval_expr env start_arg) in
+           let end_pos = to_int (eval_expr env end_arg) in
+           if start < 0 || start >= String.length s then
+             raise (RuntimeError "POTNIJ KANAPĘ: start index out of bounds")
+           else if end_pos < start || end_pos > String.length s then
+             raise (RuntimeError "POTNIJ KANAPĘ: end index out of bounds")
+           else
+             VString (String.sub s start (end_pos - start))
+       | _ -> raise (RuntimeError "POTNIJ KANAPĘ expects 3 arguments"))
 
-      (* Execute function body *)
-      (try
-        List.iter (eval_stmt func_env) fdecl.body;
-        VNull (* No explicit return *)
-      with ReturnValue v -> v)
-  | _ -> raise (RuntimeError (Printf.sprintf "%s is not a function" name))
+  (* PRZESUŃ NA KANAPIE - Split string *)
+  | "PRZESUŃ NA KANAPIE" ->
+      (match args with
+       | [str_arg; sep_arg] ->
+           let s = to_string (eval_expr env str_arg) in
+           let sep = to_string (eval_expr env sep_arg) in
+           (* Simple split implementation *)
+           let rec split str sep acc =
+             try
+               let idx = String.index str (String.get sep 0) in
+               if String.length sep <= String.length str - idx &&
+                  String.sub str idx (String.length sep) = sep then
+                 let part = String.sub str 0 idx in
+                 let rest = String.sub str (idx + String.length sep)
+                                         (String.length str - idx - String.length sep) in
+                 split rest sep (VString part :: acc)
+               else
+                 let part = String.sub str 0 (idx + 1) in
+                 let rest = String.sub str (idx + 1) (String.length str - idx - 1) in
+                 split rest sep acc
+             with Not_found -> VArray (Array.of_list (List.rev (VString str :: acc)))
+           in
+           if sep = "" then VArray [|VString s|]
+           else split s sep []
+       | _ -> raise (RuntimeError "PRZESUŃ NA KANAPIE expects 2 arguments"))
+
+  (* POSKŁADAJ KANAPĘ - Join - łączy listę stringów *)
+  | "POSKŁADAJ KANAPĘ" ->
+      (match args with
+       | [arr_arg; sep_arg] ->
+           let arr_val = eval_expr env arr_arg in
+           let sep = to_string (eval_expr env sep_arg) in
+           (match arr_val with
+            | VArray arr ->
+                let strings = Array.to_list (Array.map to_string arr) in
+                VString (String.concat sep strings)
+            | _ -> raise (RuntimeError "POSKŁADAJ KANAPĘ expects an array as first argument"))
+       | _ -> raise (RuntimeError "POSKŁADAJ KANAPĘ expects 2 arguments"))
+
+  (* WYTRZEP KANAPĘ - Usuwa białe znaki z początku i końca (trim) *)
+  | "WYTRZEP KANAPĘ" ->
+      (match args with
+       | [arg] ->
+           let s = to_string (eval_expr env arg) in
+           VString (String.trim s)
+       | _ -> raise (RuntimeError "WYTRZEP KANAPĘ expects 1 argument"))
+
+  (* ZAMIEŃ NA KANAPIE - Replace *)
+  | "ZAMIEŃ NA KANAPIE" ->
+      (match args with
+       | [str_arg; old_arg; new_arg] ->
+           let s = to_string (eval_expr env str_arg) in
+           let old_str = to_string (eval_expr env old_arg) in
+           let new_str = to_string (eval_expr env new_arg) in
+           (* Simple replace implementation *)
+           let rec replace_all str =
+             try
+               let idx = String.index str (String.get old_str 0) in
+               let before = String.sub str 0 idx in
+               let after = String.sub str (idx + String.length old_str)
+                                       (String.length str - idx - String.length old_str) in
+               if String.length old_str <= String.length str - idx &&
+                  String.sub str idx (String.length old_str) = old_str then
+                 before ^ new_str ^ replace_all after
+               else
+                 before ^ String.make 1 (String.get str idx) ^ replace_all after
+             with Not_found -> str
+           in
+           VString (replace_all s)
+       | _ -> raise (RuntimeError "ZAMIEŃ NA KANAPIE expects 3 arguments"))
+
+  (* ILE MIEJSCA NA KANAPIE - Zwraca długość stringu *)
+  | "ILE MIEJSCA NA KANAPIE" ->
+      (match args with
+       | [arg] ->
+           let v = eval_expr env arg in
+           let s = to_string v in
+           VInt (String.length s)
+       | _ -> raise (RuntimeError "ILE MIEJSCA NA KANAPIE expects 1 argument"))
+  | _ ->
+      (* Try to find user-defined function *)
+      try
+        let func = get_var env name in
+        match func with
+        | VFunction (fdecl, closure_env) ->
+            (* Create new environment for function execution *)
+            let func_env = create_env (Some closure_env) in
+
+            (* Evaluate arguments *)
+            let arg_values = List.map (eval_expr env) args in
+
+            (* Bind parameters *)
+            if List.length fdecl.params <> List.length arg_values then
+              raise (RuntimeError (Printf.sprintf "Function %s expects %d arguments, got %d"
+                                    name (List.length fdecl.params) (List.length arg_values)));
+
+            List.iter2 (fun param value -> define_var func_env param value)
+              fdecl.params arg_values;
+
+            (* Execute function body *)
+            (try
+              List.iter (eval_stmt func_env) fdecl.body;
+              VNull (* No explicit return *)
+            with ReturnValue v -> v)
+        | _ -> raise (RuntimeError (Printf.sprintf "%s is not a function" name))
+      with RuntimeError _ as e -> raise e
 
 (* Evaluate object creation *)
 and eval_new_object env class_name args =

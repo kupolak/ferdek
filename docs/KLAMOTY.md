@@ -298,15 +298,17 @@ NO TO ROZUMIEMY SIĘ
 
 **Uzasadnienie:** Kanapa jest miękka, elastyczna - jak stringi
 
+**Status:** ✅ **ZAIMPLEMENTOWANE** - Funkcje stringowe są wbudowane w interpreter jako multi-word keywords
+
+**Uwaga:** Nazwy funkcji zawierają spacje i polskie znaki - są rozpoznawane przez lexer jako pełne frazy (podobnie jak "ALE WIE PAN JA ZASADNICZO")
+
 ### Funkcje:
 
 #### `USIĄDŹ NA KANAPIE(tekst1, tekst2)`
 Konkatenacja stringów
 ```ferdek
-O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/KANAPA
-
 CYCU PRZYNIEŚ NO całość
-TO NIE SĄ TANIE RZECZY USIĄDŹ NA KANAPIE("Cześć ", "Ferdek!")
+TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA USIĄDŹ NA KANAPIE("Cześć ", "Ferdek!")
 ```
 
 #### `ROZCIĄGNIJ KANAPĘ(tekst, długość)`
@@ -354,6 +356,8 @@ Zwraca długość stringu
 ```ferdek
 PANIE SENSACJA REWELACJA ILE MIEJSCA NA KANAPIE("Ferdek")  RYM CYM CYM 6
 ```
+
+**Uwaga:** Wszystkie funkcje stringowe są wbudowane w interpreter jako multi-word keywords i dostępne globalnie bez potrzeby importowania modułu KANAPA. Nazwy funkcji są rozpoznawane przez lexer tak samo jak inne wielowyrazowe słowa kluczowe języka Ferdek (np. "ALE WIE PAN JA ZASADNICZO", "PANIE SENSACJA REWELACJA").
 
 ---
 
