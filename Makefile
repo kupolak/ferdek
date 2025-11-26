@@ -91,14 +91,15 @@ clean:
 	rm -f src/*.cmi src/*.cmo src/*.cmx src/*.o
 	rm -f tests/*.cmi tests/*.cmo tests/*.cmx tests/*.o
 	rm -f test_lexer test_ast test_parser ferdek ferdecc
-	rm -f examples/*.c examples/test_interpreter examples/functions examples/arrays examples/fizzbuzz examples/simple_compile
+	rm -f examples/*.c examples/fizzbuzz examples/simple_compile
+	rm -f tests/integration/stdlib/*.c tests/integration/features/*.c
 	rm -f pomysl pomysl.c
 
 # Czyszczenie wszystkiego (włącznie z testami)
 distclean: clean
 	rm -f *.conflicts
 
-# Test
+# Test jednostkowe (lexer, parser, AST)
 test: $(BUILD_DIR)/test_lexer $(BUILD_DIR)/test_ast $(BUILD_DIR)/test_parser
 	@echo "=== Test lexera ==="
 	$(BUILD_DIR)/test_lexer
@@ -109,9 +110,35 @@ test: $(BUILD_DIR)/test_lexer $(BUILD_DIR)/test_ast $(BUILD_DIR)/test_parser
 	@echo "=== Test parsera ==="
 	$(BUILD_DIR)/test_parser
 
-# Test z przykładowymi plikami
-test-examples: $(BUILD_DIR)/test_lexer
-	@echo "=== Test: Hello World ==="
-	@echo 'CO JEST KURDE\nPANIE SENSACJA REWELACJA "Cześć!"\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE' | $(BUILD_DIR)/test_lexer
+# Test integracyjne - stdlib
+test-stdlib: $(BUILD_DIR)/ferdek
+	@echo "=== Testy modułów KLAMOTY ==="
+	@echo "\n--- Test SKRZYNKA (math) ---"
+	$(BUILD_DIR)/ferdek tests/integration/stdlib/test_stdlib.ferdek
+	@echo "\n--- Test KANAPA (strings) ---"
+	$(BUILD_DIR)/ferdek tests/integration/stdlib/test_kanapa.ferdek
 
-.PHONY: all clean distclean test test-examples
+# Test integracyjne - funkcje języka
+test-features: $(BUILD_DIR)/ferdek
+	@echo "=== Testy funkcji języka ==="
+	@echo "\n--- Zmienne ---"
+	$(BUILD_DIR)/ferdek tests/integration/features/variables.ferdek
+	@echo "\n--- Tablice ---"
+	$(BUILD_DIR)/ferdek tests/integration/features/arrays.ferdek
+	@echo "\n--- Warunki ---"
+	$(BUILD_DIR)/ferdek tests/integration/features/conditional.ferdek
+	@echo "\n--- Funkcje ---"
+	$(BUILD_DIR)/ferdek tests/integration/features/functions.ferdek
+
+# Test przykładów
+test-examples: $(BUILD_DIR)/ferdek
+	@echo "=== Test przykładów ==="
+	@echo "\n--- Hello World ---"
+	$(BUILD_DIR)/ferdek examples/hello.ferdek
+	@echo "\n--- FizzBuzz ---"
+	$(BUILD_DIR)/ferdek examples/fizzbuzz.ferdek
+
+# Wszystkie testy
+test-all: test test-stdlib test-features test-examples
+
+.PHONY: all clean distclean test test-stdlib test-features test-examples test-all
