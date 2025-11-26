@@ -1,0 +1,28 @@
+(ocamllex lexer)
+
+(menhir
+ (modules parser))
+
+(library
+ (name ferdek_lib)
+ (wrapped false)
+ (flags (:standard -w -27-32))
+ (modules ast parser lexer interpreter compiler))
+
+(executable
+ (name ferdek)
+ (modules ferdek)
+ (flags (:standard -w -27-32))
+ (libraries ferdek_lib))
+
+(executable
+ (name ferdecc)
+ (modules ferdecc)
+ (flags (:standard -w -27-32))
+ (libraries ferdek_lib))
+
+(executable
+ (name main)
+ (modules main)
+ (flags (:standard -w -27-32))
+ (libraries ferdek_lib))

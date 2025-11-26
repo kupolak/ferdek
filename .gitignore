@@ -25,6 +25,7 @@ ferdecc
 
 # Build directory
 .build/
+_build/
 
 # Compiled C files and executables (but keep .ferdek source files)
 examples/*.c

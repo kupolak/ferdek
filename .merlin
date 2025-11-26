@@ -1,0 +1,8 @@
+S src
+S .build
+B src
+B .build
+
+FLG -w -a
+FLG -I src
+FLG -I .build
