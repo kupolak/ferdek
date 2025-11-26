@@ -25,7 +25,7 @@ rule token = parse
 
   (* Keywords - PROGRAM *)
   | "CO JEST KURDE"  { PROGRAM_START }
-  | "TRZEBA SPAĆ ŻEBY RANO DO ROBOTY WSTAĆ" { PROGRAM_END }
+  | "MOJA NOGA JUŻ TUTAJ NIE POSTANIE" { PROGRAM_END }
 
   (* Keywords - DECLARATIONS *)
   | "CYCU PRZYNIEŚ NO" { VAR_DECL }
@@ -41,7 +41,7 @@ rule token = parse
   (* Keywords - CONDITIONALS AND LOOPS *)
   | "NO JAK NIE JAK TAK" { IF }
   | "A DUPA TAM" { ELSE }
-  | "CHAMSTWO W PAŃSTWIE" { END_IF }
+  | "DO CHAŁUPY ALE JUŻ" { END_IF }
   | "CHLUŚNIEM BO UŚNIEM" { WHILE }
   | "A ROBIĆ NI MA KOMU" { END_WHILE }
 
@@ -79,16 +79,16 @@ rule token = parse
 
   (* Arithmetic operators *)
   | "BABKA DAWAJ RENTĘ" { PLUS }
-  | "GÓWNO MNIE TO OBCHODZI" { MINUS }
-  | "PASZOŁ WON" { MULTIPLY }
+  | "PASZOŁ WON" { MINUS }
+  | "ROZDUPCĘ BANK" { MULTIPLY }
   | "MUSZĘ DO SRACZA" { DIVIDE }
   | "PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ" { MODULO }
 
   (* Comparison operators *)
   | "TO PANU SIĘ CHCE WTEDY KIEDY MNIE" { EQUAL }
   | "PAN TU NIE MIESZKASZ" { NOT_EQUAL }
-  | "MOJA NOGA JUŻ TUTAJ NIE POSTANIE" { GREATER }
-  | "CO SIĘ TAK WIERCISZ JAK GÓWNO W PRZERĘBLU" { LESS }
+  | "GRUBA ŚWINIA" { GREATER }
+  | "ŁYSA PAŁA" { LESS }
 
   (* Logical operators *)
   | "PIWO I TELEWIZOR" { AND }
@@ -96,7 +96,7 @@ rule token = parse
 
   (* Boolean values *)
   | "A ŻEBYŚ PAN WIEDZIAŁ" { TRUE }
-  | "GUL MI SKOCZYŁ" { FALSE }
+  | "GÓWNO PRAWDA" { FALSE }
 
   (* Separators *)
   | '(' { LPAREN }

@@ -67,7 +67,7 @@ Or directly:
 
 ```ocaml
 (* Tokenizing a string *)
-let input = "CO JEST KURDE\nPANIE SENSACJA REWELACJA \"Hello\"\nTRZEBA SPAĆ ŻEBY RANO DO ROBOTY WSTAĆ" in
+let input = "CO JEST KURDE\nPANIE SENSACJA REWELACJA \"Hello\"\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE" in
 let lexbuf = Lexing.from_string input in
 let rec tokenize () =
   match Lexer.token lexbuf with

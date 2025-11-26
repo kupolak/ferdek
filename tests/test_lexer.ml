@@ -101,7 +101,7 @@ let () =
   (* Test 1: Hello World *)
   printf "Test 1: Hello World\n";
   printf "-------------------\n";
-  let input1 = "CO JEST KURDE\nPANIE SENSACJA REWELACJA \"Cześć, tu Ferdek!\"\nTRZEBA SPAĆ ŻEBY RANO DO ROBOTY WSTAĆ" in
+  let input1 = "CO JEST KURDE\nPANIE SENSACJA REWELACJA \"Cześć, tu Ferdek!\"\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE" in
   let tokens1 = tokenize_string input1 in
   print_tokens tokens1;
   printf "\n";
@@ -125,7 +125,7 @@ let () =
   (* Test 4: Conditional *)
   printf "Test 4: If-else statement\n";
   printf "-------------------------\n";
-  let input4 = "NO JAK NIE JAK TAK x MOJA NOGA JUŻ TUTAJ NIE POSTANIE 0\nA DUPA TAM\nCHAMSTWO W PAŃSTWIE" in
+  let input4 = "NO JAK NIE JAK TAK x MOJA NOGA JUŻ TUTAJ NIE POSTANIE 0\nA DUPA TAM\nDO CHAŁUPY ALE JUŻ" in
   let tokens4 = tokenize_string input4 in
   print_tokens tokens4;
   printf "\n";
@@ -141,7 +141,7 @@ let () =
   (* Test 6: Boolean values *)
   printf "Test 6: Boolean values\n";
   printf "----------------------\n";
-  let input6 = "A ŻEBYŚ PAN WIEDZIAŁ\nGUL MI SKOCZYŁ" in
+  let input6 = "A ŻEBYŚ PAN WIEDZIAŁ\nGÓWNO PRAWDA" in
   let tokens6 = tokenize_string input6 in
   print_tokens tokens6;
   printf "\n";

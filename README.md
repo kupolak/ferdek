@@ -9,7 +9,7 @@ Ferdek is an esoteric programming language that uses colorful Polish expressions
 ### Basic Features
 - `CO JEST KURDE` - Program start
 - `PANIE SENSACJA REWELACJA` - Print statement
-- `GÓWNO MNIE TO OBCHODZI` - Subtraction operator
+- `PASZOŁ WON` - Subtraction operator
 - `CHLUŚNIEM BO UŚNIEM` - While loop
 
 ### Advanced Features
@@ -105,7 +105,7 @@ NO I GITARA
 
 PANIE SENSACJA REWELACJA piwa
 
-TRZEBA SPAĆ ŻEBY RANO DO ROBOTY WSTAĆ
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ```
 
 ## Documentation

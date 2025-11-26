@@ -7,7 +7,7 @@ Quick reference guide for all Ferdek language keywords.
 | Keyword | English Translation | Purpose |
 |---------|-------------------|---------|
 | CO JEST KURDE | Halinka is sleeping | Program start |
-| TRZEBA SPAĆ ŻEBY RANO DO ROBOTY WSTAĆ | Need to sleep to wake up for work | Program end |
+| MOJA NOGA JUŻ TUTAJ NIE POSTANIE | Need to sleep to wake up for work | Program end |
 | RYM CYM CYM | Rhyme chyme chyme | Single-line comment |
 
 ## Variables & Types
@@ -17,7 +17,7 @@ Quick reference guide for all Ferdek language keywords.
 | CYCU PRZYNIEŚ NO | Tit, bring it here | Variable declaration |
 | TO NIE SĄ TANIE RZECZY | These are not cheap things | Variable initialization |
 | A ŻEBYŚ PAN WIEDZIAŁ | You should know | Boolean true |
-| GUL MI SKOCZYŁ | My tumor jumped | Boolean false |
+| GÓWNO PRAWDA | My tumor jumped | Boolean false |
 | W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM | There's no work in this country | Null value |
 
 ## Arrays
@@ -48,7 +48,7 @@ Quick reference guide for all Ferdek language keywords.
 |---------|-------------------|---------|
 | NO JAK NIE JAK TAK | Well, if not then yes | If statement |
 | A DUPA TAM | And screw that | Else statement |
-| CHAMSTWO W PAŃSTWIE | Rudeness in the state | End if |
+| DO CHAŁUPY ALE JUŻ | Rudeness in the state | End if |
 
 ## Loops
 
@@ -97,8 +97,8 @@ Quick reference guide for all Ferdek language keywords.
 | Keyword | English Translation | Purpose |
 |---------|-------------------|---------|
 | BABKA DAWAJ RENTĘ | How's your health | Addition (+) |
-| GÓWNO MNIE TO OBCHODZI | I don't give a shit | Subtraction (-) |
-| PASZOŁ WON | Get out | Multiplication (*) |
+| PASZOŁ WON | I don't give a shit | Subtraction (-) |
+| ROZDUPCĘ BANK | Get out | Multiplication (*) |
 | MUSZĘ DO SRACZA | I need to go to the shitter | Division (/) |
 | PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ | Please leave me immediately | Modulo (%) |
 
@@ -136,7 +136,7 @@ Quick reference guide for all Ferdek language keywords.
 ```ferdek
 CO JEST KURDE
 PANIE SENSACJA REWELACJA "Cześć!"
-TRZEBA SPAĆ ŻEBY RANO DO ROBOTY WSTAĆ
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ```
 
 ### Variable
@@ -157,7 +157,7 @@ NO JAK NIE JAK TAK x MOJA NOGA JUŻ TUTAJ NIE POSTANIE 0
     PANIE SENSACJA REWELACJA "Positive"
 A DUPA TAM
     PANIE SENSACJA REWELACJA "Zero or negative"
-CHAMSTWO W PAŃSTWIE
+DO CHAŁUPY ALE JUŻ
 ```
 
 ### While Loop

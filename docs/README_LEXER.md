@@ -37,7 +37,7 @@ The lexer recognizes the following token categories:
 
 ### Program structure
 - `PROGRAM_START` - "CO JEST KURDE"
-- `PROGRAM_END` - "TRZEBA SPAĆ ŻEBY RANO DO ROBOTY WSTAĆ"
+- `PROGRAM_END` - "MOJA NOGA JUŻ TUTAJ NIE POSTANIE"
 
 ### Variable declarations
 - `VAR_DECL` - "CYCU PRZYNIEŚ NO"
@@ -55,7 +55,7 @@ The lexer recognizes the following token categories:
 ### Conditionals
 - `IF` - "NO JAK NIE JAK TAK"
 - `ELSE` - "A DUPA TAM"
-- `END_IF` - "CHAMSTWO W PAŃSTWIE"
+- `END_IF` - "DO CHAŁUPY ALE JUŻ"
 
 ### Loops
 - `WHILE` - "CHLUŚNIEM BO UŚNIEM"
@@ -95,8 +95,8 @@ The lexer recognizes the following token categories:
 
 ### Arithmetic operators
 - `PLUS` - "BABKA DAWAJ RENTĘ" (+)
-- `MINUS` - "GÓWNO MNIE TO OBCHODZI" (-)
-- `MULTIPLY` - "PASZOŁ WON" (*)
+- `MINUS` - "PASZOŁ WON" (-)
+- `MULTIPLY` - "ROZDUPCĘ BANK" (*)
 - `DIVIDE` - "MUSZĘ DO SRACZA" (/)
 - `MODULO` - "PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ" (%)
 
@@ -112,7 +112,7 @@ The lexer recognizes the following token categories:
 
 ### Boolean values
 - `TRUE` - "A ŻEBYŚ PAN WIEDZIAŁ"
-- `FALSE` - "GUL MI SKOCZYŁ"
+- `FALSE` - "GÓWNO PRAWDA"
 
 ### Separators
 - `LPAREN` - (

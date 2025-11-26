@@ -47,6 +47,6 @@ test: test_lexer
 # Test z przykładowymi plikami
 test-examples: test_lexer
 	@echo "=== Test: Hello World ==="
-	@echo 'CO JEST KURDE\nPANIE SENSACJA REWELACJA "Cześć!"\nTRZEBA SPAĆ ŻEBY RANO DO ROBOTY WSTAĆ' | ./test_lexer
+	@echo 'CO JEST KURDE\nPANIE SENSACJA REWELACJA "Cześć!"\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE' | ./test_lexer
 
 .PHONY: all clean distclean test test-examples
