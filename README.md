@@ -20,36 +20,6 @@ Ferdek is an esoteric programming language that uses colorful Polish expressions
 - `A POCAŁUJCIE MNIE WSZYSCY W DUPĘ` - Break statement
 - `W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM` - Null value
 
-See [docs/ferdek.ebnf](docs/ferdek.ebnf) for the complete grammar specification and [docs/NEW_FEATURES.md](docs/NEW_FEATURES.md) for detailed documentation of advanced features.
-
-## Project Structure
-
-```
-ferdek/
-├── src/
-│   ├── lexer.mll        # Lexer implementation (OCamllex)
-│   ├── parser.mly       # Parser token definitions (Menhir)
-│   ├── ast.ml           # Abstract Syntax Tree definition
-│   └── ast.mli          # AST interface
-├── tests/
-│   ├── test_lexer.ml    # Lexer test program
-│   ├── test_ast.ml      # AST test program
-│   └── test_parser.ml   # Parser test program
-├── docs/
-│   ├── ferdek.ebnf      # Grammar specification in EBNF
-│   ├── INSTRUKCJA.md    # Detailed usage guide
-│   ├── README_LEXER.md  # Lexer documentation
-│   ├── README_AST.md    # AST documentation
-│   └── NEW_FEATURES.md  # Advanced features documentation
-├── examples/            # Example programs
-│   ├── hello.ferdek
-│   ├── variables.ferdek
-│   ├── conditional.ferdek
-│   └── advanced_features.ferdek
-├── Makefile             # Build automation
-└── README.md            # This file
-```
-
 ## Quick Start
 
 ### Prerequisites
@@ -137,16 +107,6 @@ PANIE SENSACJA REWELACJA piwa
 
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ```
-
-## Documentation
-
-- [docs/INSTRUKCJA.md](docs/INSTRUKCJA.md) - Complete usage guide
-- [docs/README_LEXER.md](docs/README_LEXER.md) - Lexer implementation details
-- [docs/README_PARSER.md](docs/README_PARSER.md) - Parser implementation and usage
-- [docs/README_AST.md](docs/README_AST.md) - AST (Abstract Syntax Tree) documentation
-- [docs/README_INTERPRETER.md](docs/README_INTERPRETER.md) - Interpreter implementation and usage
-- [docs/NEW_FEATURES.md](docs/NEW_FEATURES.md) - Advanced features (arrays, classes, exceptions, etc.)
-- [docs/ferdek.ebnf](docs/ferdek.ebnf) - Language grammar specification
 
 ## Current Status
 
