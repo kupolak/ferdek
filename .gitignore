@@ -1,38 +1,47 @@
-# OCaml generated files
+# OCaml compiled files
 *.cmi
 *.cmo
 *.cmx
 *.cma
 *.cmxa
+*.cmxs
 *.o
 *.a
 *.so
-*.annot
-*.cmt
-*.cmti
-*.cmt*
+*.obj
 
-# Generated lexer and parser
-lexer.ml
-parser.ml
-parser.mli
+# Generated files
+src/lexer.ml
+src/parser.ml
+src/parser.mli
 *.conflicts
 
 # Executables
-ferdek
 test_lexer
 test_ast
 test_parser
-test_interpreter
-*.exe
+ferdek
+ferdecc
 
-# Build artifacts
-_build/
-*.native
-*.byte
+# Compiled C files and executables (but keep .ferdek source files)
+examples/*.c
+examples/test_interpreter
+examples/functions
+examples/arrays
+examples/fizzbuzz
+examples/simple_compile
+pomysl
+pomysl.c
 
-# Editor files
+# Editor and OS files
+.DS_Store
 *.swp
 *.swo
 *~
-.DS_Store
+.vscode/
+.idea/
+*.iml
+
+# Temporary files
+/tmp/
+*.tmp

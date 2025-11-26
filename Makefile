@@ -72,8 +72,10 @@ clean:
 	rm -f *.cmi *.cmo *.cmx *.o *.c
 	rm -f src/*.cmi src/*.cmo src/*.cmx src/*.o
 	rm -f src/lexer.ml src/parser.ml src/parser.mli
+	rm -f tests/*.cmi tests/*.cmo tests/*.cmx tests/*.o
 	rm -f test_lexer test_ast test_parser ferdek ferdecc
-	rm -f examples/*.c examples/test_interpreter examples/functions examples/arrays examples/fizzbuzz
+	rm -f examples/*.c examples/test_interpreter examples/functions examples/arrays examples/fizzbuzz examples/simple_compile
+	rm -f pomysl pomysl.c
 
 # Czyszczenie wszystkiego (włącznie z testami)
 distclean: clean
