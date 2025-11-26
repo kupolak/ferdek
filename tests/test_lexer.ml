@@ -119,13 +119,13 @@ let () =
     "CYCU PRZYNIEŚ NO x RYM CYM CYM This is a comment\nTO NIE SĄ TANIE RZECZY 42";
   
   test_string "Boolean values"
-    "DUPA PRAWDA\nGÓWNO PRAWDA";
+    "A ŻEBYŚ PAN WIEDZIAŁ\nGÓWNO PRAWDA";
   
   test_string "Function declaration"
-    "ALE WIE PAN JA ZASADNICZO dodaj\nNA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO a PRZECINEK b\nMIKRO WIELKIE ZAKOŃCZENIE";
+    "ALE WIE PAN JA ZASADNICZO dodaj\nNA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO a, b\nDO WIDZENIA PANU";
   
   test_string "Import with path"
-    "O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/LODÓWKA";
+    "O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/SKRZYNKA";
   
   (* Test file if provided as argument *)
   if Array.length Sys.argv > 1 then
