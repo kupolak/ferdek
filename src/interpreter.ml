@@ -13,6 +13,11 @@ type value =
   | VArray of value array
   | VFunction of function_decl * environment
   | VObject of (string, value) Hashtbl.t
+  | VFileHandle of file_handle
+
+and file_handle =
+  | InputHandle of in_channel
+  | OutputHandle of out_channel
 
 and environment = {
   mutable vars: (string, value) Hashtbl.t;
@@ -78,6 +83,8 @@ let rec string_of_value = function
       Printf.sprintf "<function %s>" fdecl.name
   | VObject _ ->
       "<object>"
+  | VFileHandle _ ->
+      "<file handle>"
 
 (* Convert value to boolean *)
 let to_bool = function
@@ -297,6 +304,91 @@ and eval_function_call env name args =
            let s = to_string v in
            VInt (String.length s)
        | _ -> raise (RuntimeError "ILE MIEJSCA NA KANAPIE expects 1 argument"))
+
+  (* OTWÓRZ KIBEL(ścieżka) - otwiera plik do odczytu *)
+  | "OTWÓRZ KIBEL" ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           (try
+             let channel = open_in path in
+             VFileHandle (InputHandle channel)
+           with Sys_error msg ->
+             raise (RuntimeError (Printf.sprintf "OTWÓRZ KIBEL: %s" msg)))
+       | _ -> raise (RuntimeError "OTWÓRZ KIBEL expects 1 argument"))
+
+  (* ZAMKNIJ KIBEL(uchwyt) - zamyka plik *)
+  | "ZAMKNIJ KIBEL" ->
+      (match args with
+       | [handle_arg] ->
+           let handle_val = eval_expr env handle_arg in
+           (match handle_val with
+            | VFileHandle (InputHandle ch) ->
+                close_in ch;
+                VNull
+            | VFileHandle (OutputHandle ch) ->
+                close_out ch;
+                VNull
+            | _ -> raise (RuntimeError "ZAMKNIJ_KIBEL: argument must be a file handle"))
+       | _ -> raise (RuntimeError "ZAMKNIJ_KIBEL expects 1 argument"))
+
+  (* SPUŚĆ WODĘ(uchwyt, dane) - zapisuje do pliku *)
+  | "SPUŚĆ WODĘ" ->
+      (match args with
+       | [handle_arg; data_arg] ->
+           let handle_val = eval_expr env handle_arg in
+           let data = to_string (eval_expr env data_arg) in
+           (match handle_val with
+            | VFileHandle (OutputHandle ch) ->
+                output_string ch data;
+                flush ch;
+                VNull
+            | VFileHandle (InputHandle _) ->
+                raise (RuntimeError "SPUŚĆ_WODĘ: cannot write to input file handle")
+            | _ -> raise (RuntimeError "SPUŚĆ_WODĘ: first argument must be a file handle"))
+       | _ -> raise (RuntimeError "SPUŚĆ_WODĘ expects 2 arguments"))
+
+  (* WYPOMPUJ(uchwyt) - czyta cały plik *)
+  | "WYPOMPUJ" ->
+      (match args with
+       | [handle_arg] ->
+           let handle_val = eval_expr env handle_arg in
+           (match handle_val with
+            | VFileHandle (InputHandle ch) ->
+                let rec read_all acc =
+                  try
+                    let line = input_line ch in
+                    read_all (line :: acc)
+                  with End_of_file ->
+                    List.rev acc
+                in
+                let lines = read_all [] in
+                VArray (Array.of_list (List.map (fun s -> VString s) lines))
+            | VFileHandle (OutputHandle _) ->
+                raise (RuntimeError "WYPOMPUJ: cannot read from output file handle")
+            | _ -> raise (RuntimeError "WYPOMPUJ: argument must be a file handle"))
+       | _ -> raise (RuntimeError "WYPOMPUJ expects 1 argument"))
+
+  (* CZY KIBEL ZAJĘTY(ścieżka) - sprawdza czy plik istnieje *)
+  | "CZY KIBEL ZAJĘTY" ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           VBool (Sys.file_exists path)
+       | _ -> raise (RuntimeError "CZY_KIBEL_ZAJĘTY expects 1 argument"))
+
+  (* OTWÓRZ KIBEL DO ZAPISU(ścieżka) - otwiera plik do zapisu *)
+  | "OTWÓRZ KIBEL DO ZAPISU" ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           (try
+             let channel = open_out path in
+             VFileHandle (OutputHandle channel)
+           with Sys_error msg ->
+             raise (RuntimeError (Printf.sprintf "OTWÓRZ_KIBEL_DO_ZAPISU: %s" msg)))
+       | _ -> raise (RuntimeError "OTWÓRZ_KIBEL_DO_ZAPISU expects 1 argument"))
+
   | _ ->
       (* Try to find user-defined function *)
       try

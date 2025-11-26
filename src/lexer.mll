@@ -67,6 +67,14 @@ rule token = parse
   | "ZAMIEŃ NA KANAPIE" { IDENTIFIER "ZAMIEŃ NA KANAPIE" }
   | "ILE MIEJSCA NA KANAPIE" { IDENTIFIER "ILE MIEJSCA NA KANAPIE" }
 
+  (* Keywords - KIBEL (file operations from stdlib) *)
+  | "OTWÓRZ KIBEL" { IDENTIFIER "OTWÓRZ KIBEL" }
+  | "ZAMKNIJ KIBEL" { IDENTIFIER "ZAMKNIJ KIBEL" }
+  | "SPUŚĆ WODĘ" { IDENTIFIER "SPUŚĆ WODĘ" }
+  | "WYPOMPUJ" { IDENTIFIER "WYPOMPUJ" }
+  | "CZY KIBEL ZAJĘTY" { IDENTIFIER "CZY KIBEL ZAJĘTY" }
+  | "OTWÓRZ KIBEL DO ZAPISU" { IDENTIFIER "OTWÓRZ KIBEL DO ZAPISU" }
+
   (* Separators for modules *)
   | '/' { SLASH }
 

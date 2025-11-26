@@ -11,6 +11,11 @@ type value =
   | VArray of value array
   | VFunction of function_decl * environment
   | VObject of (string, value) Hashtbl.t
+  | VFileHandle of file_handle
+
+and file_handle =
+  | InputHandle of in_channel
+  | OutputHandle of out_channel
 
 and environment
 

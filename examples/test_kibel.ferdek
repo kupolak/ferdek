@@ -1,0 +1,29 @@
+CO JEST KURDE
+
+RYM CYM CYM Test operacji na plikach - KIBEL module
+
+RYM CYM CYM Sprawdzenie czy plik istnieje
+CYCU PRZYNIEŚ NO wynik_istnienia
+AFERA JEST wynik_istnienia W MORDĘ JEŻA CZY KIBEL ZAJĘTY("/tmp/test.txt")
+
+PANIE SENSACJA REWELACJA wynik_istnienia
+
+RYM CYM CYM Zapis do pliku
+CYCU PRZYNIEŚ NO uchwyt_zapisu
+AFERA JEST uchwyt_zapisu W MORDĘ JEŻA OTWÓRZ KIBEL DO ZAPISU("/tmp/test.txt")
+W MORDĘ JEŻA SPUŚĆ WODĘ(uchwyt_zapisu, "Cześć KIBEL!")
+W MORDĘ JEŻA SPUŚĆ WODĘ(uchwyt_zapisu, "\n")
+W MORDĘ JEŻA SPUŚĆ WODĘ(uchwyt_zapisu, "To jest drugi wiersz\n")
+W MORDĘ JEŻA ZAMKNIJ KIBEL(uchwyt_zapisu)
+
+RYM CYM CYM Odczyt z pliku
+CYCU PRZYNIEŚ NO uchwyt_odczytu
+AFERA JEST uchwyt_odczytu W MORDĘ JEŻA OTWÓRZ KIBEL("/tmp/test.txt")
+CYCU PRZYNIEŚ NO zawartość
+AFERA JEST zawartość W MORDĘ JEŻA WYPOMPUJ(uchwyt_odczytu)
+W MORDĘ JEŻA ZAMKNIJ KIBEL(uchwyt_odczytu)
+
+RYM CYM CYM Wypisz zawartość
+PANIE SENSACJA REWELACJA zawartość
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
