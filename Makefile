@@ -1,48 +1,64 @@
-# Makefile dla lexera języka Ferdek
+# Makefile dla języka Ferdek
 
 OCAMLC = ocamlc
 OCAMLLEX = ocamllex
 MENHIR = menhir
 
-all: test_lexer
+all: test_lexer test_ast
 
 # Generowanie lexera z .mll
-lexer.ml: lexer.mll parser.cmi
-	$(OCAMLLEX) lexer.mll
+src/lexer.ml: src/lexer.mll src/parser.cmi
+	$(OCAMLLEX) src/lexer.mll
 
 # Generowanie parsera z .mly
-parser.ml parser.mli: parser.mly
-	$(MENHIR) parser.mly
+src/parser.ml src/parser.mli: src/parser.mly
+	$(MENHIR) src/parser.mly
+
+# Kompilacja modułu AST
+src/ast.cmi: src/ast.mli
+	$(OCAMLC) -I src -c src/ast.mli
+
+src/ast.cmo: src/ast.ml src/ast.cmi
+	$(OCAMLC) -I src -c src/ast.ml
 
 # Kompilacja interfejsu parsera
-parser.cmi: parser.mli
-	$(OCAMLC) -c parser.mli
+src/parser.cmi: src/parser.mli
+	$(OCAMLC) -I src -c src/parser.mli
 
 # Kompilacja parsera
-parser.cmo: parser.ml parser.cmi
-	$(OCAMLC) -c parser.ml
+src/parser.cmo: src/parser.ml src/parser.cmi
+	$(OCAMLC) -I src -c src/parser.ml
 
 # Kompilacja lexera
-lexer.cmo: lexer.ml parser.cmi
-	$(OCAMLC) -c lexer.ml
+src/lexer.cmo: src/lexer.ml src/parser.cmi
+	$(OCAMLC) -I src -c src/lexer.ml
 
-# Kompilacja programu testowego
-test_lexer: parser.cmo lexer.cmo test_lexer.ml
-	$(OCAMLC) -o test_lexer parser.cmo lexer.cmo test_lexer.ml
+# Kompilacja programu testowego lexera
+test_lexer: src/parser.cmo src/lexer.cmo tests/test_lexer.ml
+	$(OCAMLC) -I src -o test_lexer src/parser.cmo src/lexer.cmo tests/test_lexer.ml
+
+# Kompilacja programu testowego AST
+test_ast: src/ast.cmo tests/test_ast.ml
+	$(OCAMLC) -I src -o test_ast src/ast.cmo tests/test_ast.ml
 
 # Czyszczenie plików pośrednich
 clean:
 	rm -f *.cmi *.cmo *.cmx *.o
-	rm -f lexer.ml parser.ml parser.mli
-	rm -f test_lexer
+	rm -f src/*.cmi src/*.cmo src/*.cmx src/*.o
+	rm -f src/lexer.ml src/parser.ml src/parser.mli
+	rm -f test_lexer test_ast
 
 # Czyszczenie wszystkiego (włącznie z testami)
 distclean: clean
 	rm -f *.conflicts
 
 # Test
-test: test_lexer
+test: test_lexer test_ast
+	@echo "=== Test lexera ==="
 	./test_lexer
+	@echo ""
+	@echo "=== Test AST ==="
+	./test_ast
 
 # Test z przykładowymi plikami
 test-examples: test_lexer
