@@ -1,5 +1,22 @@
 (* Main Ferdek interpreter program *)
 
+(* Find stdlib directory *)
+let find_stdlib_dir () =
+  let candidates = [
+    "./stdlib";
+    "../stdlib";
+    "../../stdlib";
+  ] in
+  let rec find_first = function
+    | [] -> None
+    | dir :: rest ->
+        if Sys.file_exists dir && Sys.is_directory dir then
+          Some dir
+        else
+          find_first rest
+  in
+  find_first candidates
+
 (* Parse a file *)
 let parse_file filename =
   let ic = open_in filename in
@@ -85,8 +102,35 @@ let repl () =
   in
   loop ()
 
+(* Module loader for stdlib *)
+let load_stdlib_module module_name =
+  if String.length module_name > 8 && String.sub module_name 0 8 = "KLAMOTY/" then
+    let stdlib_module = String.sub module_name 8 (String.length module_name - 8) in
+    match find_stdlib_dir () with
+    | Some stdlib_dir ->
+        let module_path = Filename.concat (Filename.concat stdlib_dir "KLAMOTY") (stdlib_module ^ ".ferdek") in
+        if Sys.file_exists module_path then begin
+          Printf.printf "Loading stdlib module: %s\n" module_name;
+          match parse_file module_path with
+          | Ok ast -> Some ast
+          | Error msg ->
+              Printf.eprintf "Error parsing module %s: %s\n" module_name msg;
+              None
+        end else begin
+          Printf.eprintf "Module not found: %s (searched: %s)\n" module_name module_path;
+          None
+        end
+    | None ->
+        Printf.eprintf "Cannot find stdlib directory for module: %s\n" module_name;
+        None
+  else
+    None
+
 (* Main entry point *)
 let () =
+  (* Set up module loader *)
+  Interpreter.set_module_loader load_stdlib_module;
+
   let argc = Array.length Sys.argv in
   if argc < 2 then begin
     repl ()

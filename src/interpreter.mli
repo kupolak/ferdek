@@ -17,5 +17,8 @@ and environment
 (* Convert value to string *)
 val string_of_value : value -> string
 
+(* Set module loader function *)
+val set_module_loader : (string -> program option) -> unit
+
 (* Execute a program *)
 val eval_program : program -> (unit, string) result

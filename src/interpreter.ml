@@ -282,13 +282,30 @@ and eval_stmt env = function
 
   | Continue -> raise ContinueLoop
 
+(* ============ MODULE LOADING ============ *)
+
+(* Module loader function type - will be set by the main program *)
+let module_loader : (string -> program option) ref = ref (fun _ -> None)
+
+(* Set the module loader function *)
+let set_module_loader loader =
+  module_loader := loader
+
+(* Import a module *)
+let rec import_module env module_name =
+  match !module_loader module_name with
+  | Some module_ast ->
+      (* Execute module in current environment *)
+      List.iter (eval_top_level_decl env) module_ast.declarations
+  | None ->
+      Printf.eprintf "Failed to load module: %s\n" module_name
+
 (* ============ TOP-LEVEL DECLARATIONS ============ *)
 
 (* Execute top-level declaration *)
-let eval_top_level_decl env = function
+and eval_top_level_decl env = function
   | Import module_name ->
-      (* TODO: Implement module import *)
-      Printf.eprintf "Warning: Import not yet implemented: %s\n" module_name
+      import_module env module_name
 
   | Statement stmt ->
       eval_stmt env stmt

@@ -1,0 +1,17 @@
+CO JEST KURDE
+
+RYM CYM CYM ============================================
+RYM CYM CYM KIBEL - Moduł operacji na plikach KLAMOTY
+RYM CYM CYM Pliki, strumienie, operacje I/O na plikach
+RYM CYM CYM ============================================
+
+RYM CYM CYM TODO: Wszystkie funkcje KIBLA wymagają rozszerzeń interpretera
+RYM CYM CYM o obsługę plików (file handles, read, write)
+RYM CYM CYM
+RYM CYM CYM OTWÓRZ KIBEL(ścieżka) - otwiera plik do odczytu
+RYM CYM CYM ZAMKNIJ KIBEL(uchwyt) - zamyka plik
+RYM CYM CYM SPUŚĆ WODĘ(uchwyt, dane) - zapisuje do pliku
+RYM CYM CYM WYPOMPUJ(uchwyt) - czyta cały plik
+RYM CYM CYM CZY KIBEL ZAJĘTY(ścieżka) - sprawdza czy plik istnieje
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

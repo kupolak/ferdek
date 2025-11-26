@@ -1,0 +1,19 @@
+CO JEST KURDE
+
+RYM CYM CYM ============================================
+RYM CYM CYM SZAFKA - Moduł słowników KLAMOTY
+RYM CYM CYM Słowniki, mapy, hashmaps, key-value stores
+RYM CYM CYM ============================================
+
+RYM CYM CYM TODO: Wszystkie funkcje SZAFKI wymagają rozszerzeń interpretera
+RYM CYM CYM o obsługę słowników/hashmap (dict/map type)
+RYM CYM CYM
+RYM CYM CYM OTWÓRZ SZAFKĘ() - tworzy pusty słownik
+RYM CYM CYM WŁÓŻ DO SZAFKI(słownik, klucz, wartość) - dodaje parę
+RYM CYM CYM WYJMIJ Z SZAFKI(słownik, klucz) - pobiera wartość
+RYM CYM CYM WYRZUĆ ZE SZAFKI(słownik, klucz) - usuwa parę
+RYM CYM CYM CZY W SZAFCE(słownik, klucz) - sprawdza istnienie klucza
+RYM CYM CYM WSZYSTKIE SZUFLADKI(słownik) - zwraca listę kluczy
+RYM CYM CYM ILE W SZAFCE(słownik) - zwraca liczbę elementów
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

@@ -1,0 +1,16 @@
+CO JEST KURDE
+
+RYM CYM CYM ============================================
+RYM CYM CYM LODÓWKA - Moduł zmiennych i stałych KLAMOTY
+RYM CYM CYM Zmienne, stałe, podstawowe typy danych
+RYM CYM CYM ============================================
+
+RYM CYM CYM TODO: Funkcje z LODÓWKI wymagają rozszerzeń interpretera
+RYM CYM CYM o mechanizmy immutability i introspekcji scope
+RYM CYM CYM
+RYM CYM CYM ZAMROŹ(wartość) - tworzy stałą (immutable)
+RYM CYM CYM ROZMROŹ(wartość) - konwertuje stałą na zmienną
+RYM CYM CYM CO W LODÓWCE() - zwraca listę wszystkich zmiennych
+RYM CYM CYM WYRZUĆ Z LODÓWKI(nazwa) - usuwa zmienną
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
