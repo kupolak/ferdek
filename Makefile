@@ -68,7 +68,7 @@ $(BUILD_DIR)/ferdek.cmo: src/ferdek.ml $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/parser.
 	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/ferdek.cmo -c src/ferdek.ml
 
 $(BUILD_DIR)/ferdek: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/ferdek.cmo | $(BUILD_DIR)
-	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/ferdek $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/ferdek.cmo
+	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/ferdek unix.cma $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/ferdek.cmo
 
 # Kompilacja kompilatora Ferdek->C
 $(BUILD_DIR)/ferdecc.cmo: src/ferdecc.ml $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/parser.cmi $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/compiler.cmi | $(BUILD_DIR)
@@ -82,11 +82,12 @@ $(BUILD_DIR)/main.cmo: src/main.ml $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/parser.cmi 
 	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/main.cmo -c src/main.ml
 
 $(BUILD_DIR)/main: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/compiler.cmo $(BUILD_DIR)/main.cmo | $(BUILD_DIR)
-	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/main $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/compiler.cmo $(BUILD_DIR)/main.cmo
+	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/main unix.cma $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/compiler.cmo $(BUILD_DIR)/main.cmo
 
 # Czyszczenie plików pośrednich
 clean:
 	rm -rf $(BUILD_DIR)
+	rm -rf _build
 	rm -f *.cmi *.cmo *.cmx *.o *.c
 	rm -f src/*.cmi src/*.cmo src/*.cmx src/*.o
 	rm -f tests/*.cmi tests/*.cmo tests/*.cmx tests/*.o
@@ -117,6 +118,8 @@ test-stdlib: $(BUILD_DIR)/ferdek
 	$(BUILD_DIR)/ferdek tests/integration/stdlib/test_stdlib.ferdek
 	@echo "\n--- Test KANAPA (strings) ---"
 	$(BUILD_DIR)/ferdek tests/integration/stdlib/test_kanapa.ferdek
+	@echo "\n--- Test KLATKA (networking) ---"
+	$(BUILD_DIR)/ferdek tests/integration/stdlib/test_klatka.ferdek
 
 # Test integracyjne - funkcje języka
 test-features: $(BUILD_DIR)/ferdek

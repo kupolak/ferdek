@@ -191,8 +191,8 @@ let rec eval_expr env = function
 and eval_function_call env name args =
   (* Check for built-in string functions - only Ferdek-style names from KLAMOTY/KANAPA *)
   match name with
-  (* USIĄDŹ NA KANAPIE - Konkatenacja stringów *)
-  | "USIĄDŹ NA KANAPIE" ->
+  (* USIĄDŹ NA KANAPIE / USIADZ NA KANAPIE - Konkatenacja stringów *)
+  | "USIĄDŹ NA KANAPIE" | "USIADZ NA KANAPIE" ->
       let arg_values = List.map (eval_expr env) args in
       let strings = List.map to_string arg_values in
       VString (String.concat "" strings)
@@ -388,6 +388,27 @@ and eval_function_call env name args =
            with Sys_error msg ->
              raise (RuntimeError (Printf.sprintf "OTWÓRZ_KIBEL_DO_ZAPISU: %s" msg)))
        | _ -> raise (RuntimeError "OTWÓRZ_KIBEL_DO_ZAPISU expects 1 argument"))
+
+  (* SYSTEM(komenda) - wykonuje komendę systemową i zwraca output *)
+  | "SYSTEM" ->
+      (match args with
+       | [cmd_arg] ->
+           let cmd = to_string (eval_expr env cmd_arg) in
+           (try
+             let ic = Unix.open_process_in cmd in
+             let buf = Buffer.create 256 in
+             (try
+               while true do
+                 Buffer.add_channel buf ic 1
+               done;
+               VString ""
+             with End_of_file ->
+               let _ = Unix.close_process_in ic in
+               let output = Buffer.contents buf in
+               VString output)
+           with Unix.Unix_error (err, _, _) ->
+             raise (RuntimeError (Printf.sprintf "SYSTEM error: %s" (Unix.error_message err))))
+       | _ -> raise (RuntimeError "SYSTEM expects 1 argument"))
 
   | _ ->
       (* Try to find user-defined function *)

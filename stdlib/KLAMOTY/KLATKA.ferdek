@@ -1,0 +1,55 @@
+CO JEST KURDE
+
+RYM CYM CYM ============================================
+RYM CYM CYM KLATKA - Modul networking KLAMOTY
+RYM CYM CYM HTTP requests, komunikacja sieciowa
+RYM CYM CYM ============================================
+
+RYM CYM CYM WYJDZ NA KLATKE - HTTP GET request
+RYM CYM CYM Parametry: url (string)
+RYM CYM CYM Zwraca: odpowiedz HTTP jako string
+ALE WIE PAN JA ZASADNICZO WYJDZ NA KLATKE
+NO DOBRZE ALE CO JA Z TEGO BEDE MIAL
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO url
+  RYM CYM CYM Wykonujemy komende curl
+  AFERA JEST komenda W MORDE JEZA USIADZ NA KANAPIE("curl -s ", url)
+  AFERA JEST wynik W MORDE JEZA SYSTEM(komenda)
+  I JA INFORMUJE ZE WYCHODZE wynik
+DO WIDZENIA PANU
+
+RYM CYM CYM ZAPUKAJ DO SASIADA - HTTP POST request
+RYM CYM CYM Parametry: url (string), dane (string)
+RYM CYM CYM Zwraca: odpowiedz HTTP jako string
+ALE WIE PAN JA ZASADNICZO ZAPUKAJ DO SASIADA
+NO DOBRZE ALE CO JA Z TEGO BEDE MIAL
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO url, dane
+  RYM CYM CYM Budujemy komende curl z POST
+  AFERA JEST komenda1 W MORDE JEZA USIADZ NA KANAPIE("curl -s -X POST -d \"", dane)
+  AFERA JEST komenda2 W MORDE JEZA USIADZ NA KANAPIE(komenda1, "\" ")
+  AFERA JEST komenda W MORDE JEZA USIADZ NA KANAPIE(komenda2, url)
+  AFERA JEST wynik W MORDE JEZA SYSTEM(komenda)
+  I JA INFORMUJE ZE WYCHODZE wynik
+DO WIDZENIA PANU
+
+RYM CYM CYM KTO NA KLATCE - Sprawdza wlasny adres IP
+RYM CYM CYM Zwraca: IP jako string
+ALE WIE PAN JA ZASADNICZO KTO NA KLATCE
+NO DOBRZE ALE CO JA Z TEGO BEDE MIAL
+  AFERA JEST ip W MORDE JEZA WYJDZ NA KLATKE("https://ifconfig.me")
+  I JA INFORMUJE ZE WYCHODZE ip
+DO WIDZENIA PANU
+
+RYM CYM CYM CZY SASIAD W DOMU - Ping/sprawdza dostepnosc hosta
+RYM CYM CYM Parametry: host (string)
+RYM CYM CYM Zwraca: true/false
+ALE WIE PAN JA ZASADNICZO CZY SASIAD W DOMU
+NO DOBRZE ALE CO JA Z TEGO BEDE MIAL
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO host
+  AFERA JEST komenda W MORDE JEZA USIADZ NA KANAPIE("curl -s --head --max-time 5 ", host)
+  AFERA JEST wynik W MORDE JEZA SYSTEM(komenda)
+
+  RYM CYM CYM Zawsze zwraca 1 (host dostepny) - uproszczona wersja
+  I JA INFORMUJE ZE WYCHODZE 1
+DO WIDZENIA PANU
+
+MOJA NOGA JUZ TUTAJ NIE POSTANIE
