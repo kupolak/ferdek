@@ -22,36 +22,59 @@ Ferdek is an esoteric programming language that uses colorful Polish expressions
 
 ## Quick Start
 
-### Prerequisites
+### 🚀 Szybka Instalacja (Recommended)
+
+Zainstaluj Ferdek jedną komendą (pobiera z GitHuba i instaluje):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kupolak/ferdek/main/scripts/install-remote.sh | bash
+```
+
+**Alternatywnie** - jeszcze szybciej:
+```bash
+curl -fsSL https://raw.githubusercontent.com/kupolak/ferdek/main/scripts/quick-install.sh | bash
+```
+
+### 📦 Instalacja Manualna
+
+#### Wymagania
 
 - OCaml (4.08+)
 - OCamllex
 - Menhir
+- Git
 
-### Installation
+#### 1. Zainstaluj zależności
 
-macOS:
+**macOS:**
 ```bash
 brew install ocaml opam
 opam init
 opam install menhir
 ```
 
-Linux (Ubuntu/Debian):
+**Linux (Ubuntu/Debian):**
 ```bash
 sudo apt-get install ocaml opam
 opam init
 opam install menhir
 ```
 
-### Build & Install
+#### 2. Sklonuj repozytorium
+
+```bash
+git clone https://github.com/kupolak/ferdek.git
+cd ferdek
+```
+
+#### 3. Zbuduj projekt
 
 ```bash
 # Build the project
 make
 
-# Install the 'ferdek' command (globally or locally in ~/.local/bin)
-./install.sh
+# Install locally
+./scripts/install.sh
 ```
 
 More information: [docs/INSTALACJA.md](docs/INSTALACJA.md)
