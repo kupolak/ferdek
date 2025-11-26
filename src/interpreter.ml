@@ -203,13 +203,8 @@ and eval_function_call env name args =
        | [str_arg; len_arg] ->
            let s = to_string (eval_expr env str_arg) in
            let target_len = to_int (eval_expr env len_arg) in
-           let current_len = String.length s in
-           if current_len >= target_len then
-             VString s
-           else
-             let padding = String.make (target_len - current_len) ' ' in
-             VString (s ^ padding)
-       | _ -> raise (RuntimeError "ROZCIĄGNIJ KANAPĘ expects 2 arguments"))
+           VString (Builtins_string.kanapa_rozciagnij s target_len)
+       | _ -> raise (RuntimeError (Errors.wrong_arg_count "ROZCIĄGNIJ KANAPĘ" 2 (List.length args))))
 
   (* POTNIJ KANAPĘ - Substring (początek, koniec) *)
   | "POTNIJ KANAPĘ" ->
@@ -218,13 +213,11 @@ and eval_function_call env name args =
            let s = to_string (eval_expr env str_arg) in
            let start = to_int (eval_expr env start_arg) in
            let end_pos = to_int (eval_expr env end_arg) in
-           if start < 0 || start >= String.length s then
-             raise (RuntimeError "POTNIJ KANAPĘ: start index out of bounds")
-           else if end_pos < start || end_pos > String.length s then
-             raise (RuntimeError "POTNIJ KANAPĘ: end index out of bounds")
-           else
-             VString (String.sub s start (end_pos - start))
-       | _ -> raise (RuntimeError "POTNIJ KANAPĘ expects 3 arguments"))
+           (try
+             VString (Builtins_string.kanapa_potnij s start end_pos)
+           with Failure msg ->
+             raise (RuntimeError msg))
+       | _ -> raise (RuntimeError (Errors.wrong_arg_count "POTNIJ KANAPĘ" 3 (List.length args))))
 
   (* PRZESUŃ NA KANAPIE - Split string *)
   | "PRZESUŃ NA KANAPIE" ->
@@ -232,23 +225,8 @@ and eval_function_call env name args =
        | [str_arg; sep_arg] ->
            let s = to_string (eval_expr env str_arg) in
            let sep = to_string (eval_expr env sep_arg) in
-           (* Simple split implementation *)
-           let rec split str sep acc =
-             try
-               let idx = String.index str (String.get sep 0) in
-               if String.length sep <= String.length str - idx &&
-                  String.sub str idx (String.length sep) = sep then
-                 let part = String.sub str 0 idx in
-                 let rest = String.sub str (idx + String.length sep)
-                                         (String.length str - idx - String.length sep) in
-                 split rest sep (VString part :: acc)
-               else
-                 let rest = String.sub str (idx + 1) (String.length str - idx - 1) in
-                 split rest sep acc
-             with Not_found -> VArray (Array.of_list (List.rev (VString str :: acc)))
-           in
-           if sep = "" then VArray [|VString s|]
-           else split s sep []
+           let parts = Builtins_string.kanapa_przesun s sep in
+           VArray (Array.of_list (List.map (fun p -> VString p) parts))
        | _ -> raise (RuntimeError "PRZESUŃ NA KANAPIE expects 2 arguments"))
 
   (* POSKŁADAJ KANAPĘ - Join - łączy listę stringów *)
@@ -279,21 +257,7 @@ and eval_function_call env name args =
            let s = to_string (eval_expr env str_arg) in
            let old_str = to_string (eval_expr env old_arg) in
            let new_str = to_string (eval_expr env new_arg) in
-           (* Simple replace implementation *)
-           let rec replace_all str =
-             try
-               let idx = String.index str (String.get old_str 0) in
-               let before = String.sub str 0 idx in
-               let after = String.sub str (idx + String.length old_str)
-                                       (String.length str - idx - String.length old_str) in
-               if String.length old_str <= String.length str - idx &&
-                  String.sub str idx (String.length old_str) = old_str then
-                 before ^ new_str ^ replace_all after
-               else
-                 before ^ String.make 1 (String.get str idx) ^ replace_all after
-             with Not_found -> str
-           in
-           VString (replace_all s)
+           VString (Builtins_string.kanapa_zamien s old_str new_str)
        | _ -> raise (RuntimeError "ZAMIEŃ NA KANAPIE expects 3 arguments"))
 
   (* ILE MIEJSCA NA KANAPIE - Zwraca długość stringu *)

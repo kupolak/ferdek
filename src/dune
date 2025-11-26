@@ -8,7 +8,7 @@
  (name ferdek_lib)
  (wrapped false)
  (flags (:standard -w -27-32))
- (modules ast parser lexer interpreter compiler)
+ (modules ast parser lexer interpreter compiler ferdek_stdlib builtins_string errors)
  (libraries unix))
 
 (executable
