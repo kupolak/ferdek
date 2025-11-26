@@ -86,11 +86,18 @@ make
 make test
 ```
 
-### Test with Example Files
+### Run Ferdek Programs
 
+Run a Ferdek program file:
 ```bash
-./test_lexer examples/hello.ferdek
-./test_lexer examples/variables.ferdek
+./ferdek examples/test_interpreter.ferdek
+./ferdek examples/functions.ferdek
+./ferdek examples/arrays.ferdek
+```
+
+Interactive REPL:
+```bash
+./ferdek
 ```
 
 ## Example Program
@@ -119,6 +126,7 @@ MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 - [docs/README_LEXER.md](docs/README_LEXER.md) - Lexer implementation details
 - [docs/README_PARSER.md](docs/README_PARSER.md) - Parser implementation and usage
 - [docs/README_AST.md](docs/README_AST.md) - AST (Abstract Syntax Tree) documentation
+- [docs/README_INTERPRETER.md](docs/README_INTERPRETER.md) - Interpreter implementation and usage
 - [docs/NEW_FEATURES.md](docs/NEW_FEATURES.md) - Advanced features (arrays, classes, exceptions, etc.)
 - [docs/ferdek.ebnf](docs/ferdek.ebnf) - Language grammar specification
 
@@ -127,7 +135,7 @@ MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ✅ Lexer - Complete
 ✅ AST - Complete
 ✅ Parser - Complete
-⏳ Interpreter - Planned
+✅ Interpreter - Complete
 ⏳ Compiler - Planned
 
 ## Contributing

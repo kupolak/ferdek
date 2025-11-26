@@ -19,6 +19,7 @@ parser.mli
 *.conflicts
 
 # Executables
+ferdek
 test_lexer
 test_ast
 test_parser
