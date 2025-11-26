@@ -136,7 +136,7 @@ MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ✅ AST - Complete
 ✅ Parser - Complete
 ✅ Interpreter - Complete
-⏳ Compiler - Planned
+✅ Compiler - Complete (Ferdek → C)
 
 ## Contributing
 

@@ -4,7 +4,7 @@ OCAMLC = ocamlc
 OCAMLLEX = ocamllex
 MENHIR = menhir
 
-all: ferdek test_lexer test_ast test_parser
+all: ferdek ferdecc test_lexer test_ast test_parser
 
 # Generowanie lexera z .mll
 src/lexer.ml: src/lexer.mll src/parser.cmi
@@ -27,6 +27,13 @@ src/interpreter.cmi: src/interpreter.mli src/ast.cmi
 
 src/interpreter.cmo: src/interpreter.ml src/interpreter.cmi src/ast.cmi
 	$(OCAMLC) -I src -c src/interpreter.ml
+
+# Kompilacja kompilatora
+src/compiler.cmi: src/compiler.mli src/ast.cmi
+	$(OCAMLC) -I src -c src/compiler.mli
+
+src/compiler.cmo: src/compiler.ml src/compiler.cmi src/ast.cmi
+	$(OCAMLC) -I src -c src/compiler.ml
 
 # Kompilacja interfejsu parsera
 src/parser.cmi: src/parser.mli
@@ -56,12 +63,17 @@ test_parser: src/ast.cmo src/parser.cmo src/lexer.cmo tests/test_parser.ml
 ferdek: src/ast.cmo src/parser.cmo src/lexer.cmo src/interpreter.cmo src/ferdek.ml
 	$(OCAMLC) -I src -o ferdek src/ast.cmo src/parser.cmo src/lexer.cmo src/interpreter.cmo src/ferdek.ml
 
+# Kompilacja kompilatora Ferdek->C
+ferdecc: src/ast.cmo src/parser.cmo src/lexer.cmo src/compiler.cmo src/ferdecc.ml
+	$(OCAMLC) -I src -o ferdecc src/ast.cmo src/parser.cmo src/lexer.cmo src/compiler.cmo src/ferdecc.ml
+
 # Czyszczenie plików pośrednich
 clean:
-	rm -f *.cmi *.cmo *.cmx *.o
+	rm -f *.cmi *.cmo *.cmx *.o *.c
 	rm -f src/*.cmi src/*.cmo src/*.cmx src/*.o
 	rm -f src/lexer.ml src/parser.ml src/parser.mli
-	rm -f test_lexer test_ast test_parser ferdek
+	rm -f test_lexer test_ast test_parser ferdek ferdecc
+	rm -f examples/*.c examples/test_interpreter examples/functions examples/arrays examples/fizzbuzz
 
 # Czyszczenie wszystkiego (włącznie z testami)
 distclean: clean
