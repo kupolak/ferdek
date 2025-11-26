@@ -22,29 +22,29 @@ Ferdek is an esoteric programming language that uses colorful Polish expressions
 
 ## Quick Start
 
-### 🚀 Szybka Instalacja (Recommended)
+### 🚀 Quick Installation (Recommended)
 
-Zainstaluj Ferdek jedną komendą (pobiera z GitHuba i instaluje):
+Install Ferdek with a single command (downloads and installs from GitHub):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kupolak/ferdek/main/scripts/install-remote.sh | bash
 ```
 
-**Alternatywnie** - jeszcze szybciej:
+**Alternatively** - even faster:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kupolak/ferdek/main/scripts/quick-install.sh | bash
 ```
 
-### 📦 Instalacja Manualna
+### 📦 Manual Installation
 
-#### Wymagania
+#### Requirements
 
 - OCaml (4.08+)
 - OCamllex
 - Menhir
 - Git
 
-#### 1. Zainstaluj zależności
+#### 1. Install dependencies
 
 **macOS:**
 ```bash
@@ -60,14 +60,14 @@ opam init
 opam install menhir
 ```
 
-#### 2. Sklonuj repozytorium
+#### 2. Clone the repository
 
 ```bash
 git clone https://github.com/kupolak/ferdek.git
 cd ferdek
 ```
 
-#### 3. Zbuduj projekt
+#### 3. Build the project
 
 ```bash
 # Build the project
@@ -76,8 +76,6 @@ make
 # Install locally
 ./scripts/install.sh
 ```
-
-More information: [docs/INSTALACJA.md](docs/INSTALACJA.md)
 
 ### Run Tests
 
@@ -154,7 +152,41 @@ PANIE SENSACJA REWELACJA piwa
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ```
 
-## Current Status
+## Standard Library (KLAMOTY)
+
+**KLAMOTY** is Ferdek's standard library - a set of modules named after furniture/household items where different functions live:
+
+- **LODÓWKA** - Variables, constants, freezing/unfreezing values
+- **TELEWIZOR** - I/O operations (print, input)
+- **KIBEL** - File operations (open, read, write, close)
+- **WERSALKA** - Lists and arrays (append, pop, length, sort)
+- **SKRZYNKA** - Math functions (abs, round, power, random, modulo)
+- **KLATKA** - Networking (HTTP GET/POST, ping, IP info)
+- **KANAPA** - String operations (concat, substring, split, join, trim, replace, length)
+- **SZAFKA** - Dictionaries/maps (key-value storage)
+
+### Example Usage
+
+```ferdek
+CO JEST KURDE
+
+O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/KANAPA
+O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/SKRZYNKA
+
+RYM CYM CYM String concatenation
+CYCU PRZYNIEŚ NO tekst
+TO NIE SĄ TANIE RZECZY USIĄDŹ NA KANAPIE("Ferdek", " pije piwo")
+
+RYM CYM CYM Random number
+CYCU PRZYNIEŚ NO liczba
+TO NIE SĄ TANIE RZECZY LOSUJ ZE SKRZYNKI(1, 10)
+
+PANIE SENSACJA REWELACJA tekst
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
+```
+
+## Example Program
 
 ✅ Lexer - Complete
 ✅ AST - Complete
