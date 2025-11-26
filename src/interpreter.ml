@@ -236,7 +236,6 @@ and eval_function_call env name args =
                                          (String.length str - idx - String.length sep) in
                  split rest sep (VString part :: acc)
                else
-                 let part = String.sub str 0 (idx + 1) in
                  let rest = String.sub str (idx + 1) (String.length str - idx - 1) in
                  split rest sep acc
              with Not_found -> VArray (Array.of_list (List.rev (VString str :: acc)))
