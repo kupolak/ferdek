@@ -32,6 +32,7 @@ open Ast
 %token <int> INTEGER
 %token <string> STRING
 %token EOF
+
 /* Type declarations */
 %type <Ast.expr> expression logical_expr comparison_expr arith_expr term factor
 %type <Ast.stmt> statement var_decl array_decl print_stmt read_stmt assign_stmt
