@@ -15,13 +15,14 @@ let parse_file filename =
   with
   | Lexer.LexError msg ->
       close_in ic;
-      Error (Printf.sprintf "Lexer error in %s: %s" filename msg)
+      Error (Printf.sprintf "Tatooo… coś tu źle napisane jest w tym lekszeeerze: %s" msg)
   | Parser.Error ->
       close_in ic;
       let pos = lexbuf.Lexing.lex_curr_p in
-      Error (Printf.sprintf "Parse error in %s at line %d, column %d"
-              filename pos.Lexing.pos_lnum
-              (pos.Lexing.pos_cnum - pos.Lexing.pos_bol))
+      Error (Printf.sprintf
+        "Tato… program się obraził i nie chce parsować. Linia %d, kolumna %d…"
+        pos.Lexing.pos_lnum
+        (pos.Lexing.pos_cnum - pos.Lexing.pos_bol))
 
 (* Compile a file *)
 let compile_file input_file output_file =
@@ -31,7 +32,8 @@ let compile_file input_file output_file =
       let oc = open_out output_file in
       output_string oc c_code;
       close_out oc;
-      Printf.printf "Compiled %s -> %s\n" input_file output_file;
+      Printf.printf "Tatooo, zrobiłem z %s taki plik %s, no działa chyba.\n"
+        input_file output_file;
       Ok ()
   | Error msg ->
       Printf.eprintf "%s\n" msg;
@@ -42,16 +44,15 @@ let compile_and_link input_file output_exe =
   let c_file = (Filename.remove_extension input_file) ^ ".c" in
   match compile_file input_file c_file with
   | Ok () ->
-      (* Compile C file with gcc *)
       let cmd = Printf.sprintf "gcc -o %s %s -std=c99" output_exe c_file in
-      Printf.printf "Compiling C code: %s\n" cmd;
+      Printf.printf "No tatooo, teraz gcc-uję, tak jak Boczek mówił: %s\n" cmd;
       let exit_code = Sys.command cmd in
       if exit_code = 0 then begin
-        Printf.printf "Successfully created executable: %s\n" output_exe;
+        Printf.printf "Taaatooo, gotowe! Masz ten programik: %s\n" output_exe;
         Ok ()
       end else begin
-        Printf.eprintf "C compilation failed with exit code %d\n" exit_code;
-        Error "C compilation failed"
+        Printf.eprintf "Tato… no nie wyszło. Gcc się wkurzył, kod: %d\n" exit_code;
+        Error "Nie udało się, tato."
       end
   | Error msg -> Error msg
 
@@ -60,35 +61,30 @@ let compile_run_cleanup input_file =
   match parse_file input_file with
   | Ok ast ->
       let c_code = Compiler.compile_program ast in
-
-      (* Create temporary files *)
       let temp_c = Filename.temp_file "ferdek_" ".c" in
       let temp_exe = Filename.temp_file "ferdek_" "" in
 
-      (* Write C code to temp file *)
       let oc = open_out temp_c in
       output_string oc c_code;
       close_out oc;
 
-      (* Compile to executable *)
-      let compile_cmd = Printf.sprintf "gcc -o %s %s -std=c99 2>/dev/null" temp_exe temp_c in
+      let compile_cmd = Printf.sprintf "gcc -o %s %s -std=c99 2>/dev/null"
+        temp_exe temp_c in
+
       let compile_exit = Sys.command compile_cmd in
 
       if compile_exit = 0 then begin
-        (* Run the executable *)
         let run_exit = Sys.command temp_exe in
 
-        (* Cleanup temp files *)
         (try Sys.remove temp_c with _ -> ());
         (try Sys.remove temp_exe with _ -> ());
 
         if run_exit = 0 then Ok ()
-        else Error (Printf.sprintf "Program exited with code %d" run_exit)
+        else Error (Printf.sprintf "Tatooo… programik wyszedł z kodem %d" run_exit)
       end else begin
-        (* Cleanup on compile error *)
         (try Sys.remove temp_c with _ -> ());
         (try Sys.remove temp_exe with _ -> ());
-        Error "Compilation failed"
+        Error "Tatooo, kompilacja nie wyszła…"
       end
   | Error msg ->
       Printf.eprintf "%s\n" msg;
@@ -96,14 +92,15 @@ let compile_run_cleanup input_file =
 
 (* Usage message *)
 let usage () =
-  Printf.eprintf "Usage: %s [options] <input.ferdek>\n" Sys.argv.(0);
-  Printf.eprintf "Options:\n";
-  Printf.eprintf "  -c            Compile to C only (default: <input>.c)\n";
-  Printf.eprintf "  -o <output>   Output file name (for compile mode)\n";
-  Printf.eprintf "  -r, --run     Compile and run immediately (no files left behind)\n";
-  Printf.eprintf "  -h, --help    Show this help\n";
+  Printf.eprintf "Tatooo, to się tak używa: %s [opcje] <plik.ferdek>\n" Sys.argv.(0);
+  Printf.eprintf "Opcje są proste, nawet Boczka byś nauczył:\n";
+  Printf.eprintf "  -c            Kompilacja do C, tato. No C jak Czesio, no!\n";
+  Printf.eprintf "  -o <wyjście>  Możesz nazwać plik jak chcesz, nawet \"paździoch.exe\".\n";
+  Printf.eprintf "  -r, --run     Kompiluje i od razu uruchamia. \"Nie kombinuj, Walduś!\"\n";
+  Printf.eprintf "  -h, --help    Pomoc. \"Walduś, przeczytaj ojcu…\"\n";
   Printf.eprintf "\n";
-  Printf.eprintf "Default mode: compile to executable with same name as input\n";
+  Printf.eprintf "Domyślnie robi plik wykonywalny o tej samej nazwie. Normalka.\n";
+  Printf.eprintf "\"A jak jest napisane, to trzeba czytać, Walduś!\" — F. Kiepski\n";
   exit 1
 
 (* Main entry point *)
@@ -129,24 +126,23 @@ let () =
       | _ -> usage ()
   in
 
-  let compile_only, run_mode, output_file, input_file = parse_args 1 false false None None in
+  let compile_only, run_mode, output_file, input_file =
+    parse_args 1 false false None None
+  in
 
   match input_file with
   | None -> usage ()
   | Some input ->
       let result =
         if run_mode then
-          (* Run mode: compile, execute, cleanup *)
           compile_run_cleanup input
         else if compile_only then
-          (* Compile to C only *)
           let output = match output_file with
             | Some f -> f
             | None -> (Filename.remove_extension input) ^ ".c"
           in
           compile_file input output
         else
-          (* Compile to executable *)
           let output = match output_file with
             | Some f -> f
             | None -> Filename.remove_extension input

@@ -23,6 +23,9 @@ test_parser
 ferdek
 ferdecc
 
+# Build directory
+.build/
+
 # Compiled C files and executables (but keep .ferdek source files)
 examples/*.c
 examples/test_interpreter

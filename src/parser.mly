@@ -16,7 +16,7 @@ open Ast
 %token AND OR
 %token TRUE FALSE
 %token LPAREN RPAREN COMMA
-%token IMPORT
+%token IMPORT SLASH
 %token ARRAY_DECL
 %token ARRAY_INDEX
 %token TRY
@@ -73,7 +73,12 @@ top_level_decl:
 /* ============ IMPORTS ============ */
 
 import_stmt:
-  | IMPORT id=IDENTIFIER { id }
+  | IMPORT path=import_path { path }
+  ;
+
+import_path:
+  | id=IDENTIFIER { id }
+  | base=IDENTIFIER SLASH rest=import_path { base ^ "/" ^ rest }
   ;
 
 /* ============ STATEMENTS ============ */

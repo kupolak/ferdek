@@ -41,10 +41,9 @@ let string_of_token = function
   | FALSE -> "FALSE"
   | LPAREN -> "LPAREN"
   | RPAREN -> "RPAREN"
-  | LBRACKET -> "LBRACKET"
-  | RBRACKET -> "RBRACKET"
   | COMMA -> "COMMA"
   | IMPORT -> "IMPORT"
+  | SLASH -> "SLASH"
   | ARRAY_DECL -> "ARRAY_DECL"
   | ARRAY_INDEX -> "ARRAY_INDEX"
   | TRY -> "TRY"
@@ -55,110 +54,79 @@ let string_of_token = function
   | CONTINUE -> "CONTINUE"
   | CLASS -> "CLASS"
   | NEW -> "NEW"
+  | LBRACKET -> "LBRACKET"
+  | RBRACKET -> "RBRACKET"
   | IDENTIFIER s -> sprintf "IDENTIFIER(%s)" s
   | INTEGER n -> sprintf "INTEGER(%d)" n
   | STRING s -> sprintf "STRING(\"%s\")" s
   | EOF -> "EOF"
 
-let tokenize_string input =
+(* Test lexing from string *)
+let test_string name input =
+  printf "Test: %s\n" name;
+  printf "-------------------\n";
   let lexbuf = Lexing.from_string input in
-  let rec loop acc =
+  let rec tokenize acc =
     match Lexer.token lexbuf with
     | EOF -> List.rev (EOF :: acc)
-    | tok -> loop (tok :: acc)
+    | tok -> tokenize (tok :: acc)
   in
-  loop []
+  let tokens = tokenize [] in
+  List.iter (fun tok -> printf "%s\n" (string_of_token tok)) tokens;
+  printf "\n"
 
-let tokenize_file filename =
-  let ic = open_in filename in
-  let lexbuf = Lexing.from_channel ic in
-  lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with pos_fname = filename };
-  let rec loop acc =
-    try
+(* Test lexing from file *)
+let test_file filename =
+  printf "Test from file: %s\n" filename;
+  printf "========================\n";
+  try
+    let ic = open_in filename in
+    let lexbuf = Lexing.from_channel ic in
+    let rec tokenize () =
       match Lexer.token lexbuf with
       | EOF ->
           close_in ic;
-          List.rev (EOF :: acc)
-      | tok -> loop (tok :: acc)
-    with
-    | Lexer.LexError msg ->
-        close_in ic;
-        let pos = lexbuf.lex_curr_p in
-        eprintf "Lexical error in %s:%d:%d: %s\n"
-          pos.pos_fname pos.pos_lnum (pos.pos_cnum - pos.pos_bol) msg;
-        exit 1
-  in
-  loop []
+          printf "EOF\n"
+      | tok ->
+          printf "%s\n" (string_of_token tok);
+          tokenize ()
+    in
+    tokenize ();
+    printf "\n"
+  with
+  | Lexer.LexError msg ->
+      Printf.eprintf "Lexical error: %s\n" msg
+  | Sys_error msg ->
+      Printf.eprintf "System error: %s\n" msg
 
-let print_tokens tokens =
-  List.iter (fun tok ->
-    printf "%s\n" (string_of_token tok)
-  ) tokens
-
+(* Main tests *)
 let () =
   printf "=== Ferdek Language Lexer Test ===\n\n";
-
-  (* Test 1: Hello World *)
-  printf "Test 1: Hello World\n";
-  printf "-------------------\n";
-  let input1 = "CO JEST KURDE\nPANIE SENSACJA REWELACJA \"Cześć, tu Ferdek!\"\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE" in
-  let tokens1 = tokenize_string input1 in
-  print_tokens tokens1;
-  printf "\n";
-
-  (* Test 2: Variables *)
-  printf "Test 2: Variable declaration\n";
-  printf "----------------------------\n";
-  let input2 = "CYCU PRZYNIEŚ NO piwa\nTO NIE SĄ TANIE RZECZY 6" in
-  let tokens2 = tokenize_string input2 in
-  print_tokens tokens2;
-  printf "\n";
-
-  (* Test 3: Arithmetic operators *)
-  printf "Test 3: Arithmetic operators\n";
-  printf "----------------------------\n";
-  let input3 = "O KURDE MAM POMYSŁA x\nA PROSZĘ BARDZO y\nBABKA DAWAJ RENTĘ 5\nNO I GITARA" in
-  let tokens3 = tokenize_string input3 in
-  print_tokens tokens3;
-  printf "\n";
-
-  (* Test 4: Conditional *)
-  printf "Test 4: If-else statement\n";
-  printf "-------------------------\n";
-  let input4 = "NO JAK NIE JAK TAK x MOJA NOGA JUŻ TUTAJ NIE POSTANIE 0\nA DUPA TAM\nDO CHAŁUPY ALE JUŻ" in
-  let tokens4 = tokenize_string input4 in
-  print_tokens tokens4;
-  printf "\n";
-
-  (* Test 5: Comments *)
-  printf "Test 5: Comments\n";
-  printf "----------------\n";
-  let input5 = "RYM CYM CYM to jest komentarz\nCYCU PRZYNIEŚ NO x\nTO NIE SĄ TANIE RZECZY 42" in
-  let tokens5 = tokenize_string input5 in
-  print_tokens tokens5;
-  printf "\n";
-
-  (* Test 6: Boolean values *)
-  printf "Test 6: Boolean values\n";
-  printf "----------------------\n";
-  let input6 = "A ŻEBYŚ PAN WIEDZIAŁ\nGÓWNO PRAWDA" in
-  let tokens6 = tokenize_string input6 in
-  print_tokens tokens6;
-  printf "\n";
-
-  (* Test 7: Function *)
-  printf "Test 7: Function declaration\n";
-  printf "----------------------------\n";
-  let input7 = "ALE WIE PAN JA ZASADNICZO dodaj\nNA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO a, b\nDO WIDZENIA PANU" in
-  let tokens7 = tokenize_string input7 in
-  print_tokens tokens7;
-  printf "\n";
-
-  (* Test from file if argument provided *)
-  if Array.length Sys.argv > 1 then begin
-    let filename = Sys.argv.(1) in
-    printf "Test from file: %s\n" filename;
-    printf "========================\n";
-    let tokens = tokenize_file filename in
-    print_tokens tokens
-  end
+  
+  test_string "Hello World" 
+    "CO JEST KURDE\nPANIE SENSACJA REWELACJA \"Cześć, tu Ferdek!\"\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE";
+  
+  test_string "Variable declaration"
+    "CYCU PRZYNIEŚ NO piwa\nTO NIE SĄ TANIE RZECZY 6";
+  
+  test_string "Arithmetic operators"
+    "O KURDE MAM POMYSŁA x\nA PROSZĘ BARDZO y BABKA DAWAJ RENTĘ 5\nNO I GITARA";
+  
+  test_string "If-else statement"
+    "NO JAK NIE JAK TAK x MOJA NOGA JUŻ TUTAJ NIE POSTANIE 0\nA DUPA TAM\nDO CHAŁUPY ALE JUŻ";
+  
+  test_string "Comments"
+    "CYCU PRZYNIEŚ NO x RYM CYM CYM This is a comment\nTO NIE SĄ TANIE RZECZY 42";
+  
+  test_string "Boolean values"
+    "DUPA PRAWDA\nGÓWNO PRAWDA";
+  
+  test_string "Function declaration"
+    "ALE WIE PAN JA ZASADNICZO dodaj\nNA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO a PRZECINEK b\nMIKRO WIELKIE ZAKOŃCZENIE";
+  
+  test_string "Import with path"
+    "O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/LODÓWKA";
+  
+  (* Test file if provided as argument *)
+  if Array.length Sys.argv > 1 then
+    test_file Sys.argv.(1)

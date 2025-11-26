@@ -57,6 +57,9 @@ rule token = parse
   (* Keywords - MODULES AND IMPORTS *)
   | "O KOGO MOJE PIĘKNE OCZY WIDZĄ" { IMPORT }
 
+  (* Separators for modules *)
+  | '/' { SLASH }
+
   (* Keywords - ARRAYS *)
   | "PANIE TO JEST PRYWATNA PUBLICZNA TABLICA" { ARRAY_DECL }
   | "WYPIERDZIELAJ PAN NA POZYCJĘ" { ARRAY_INDEX }
