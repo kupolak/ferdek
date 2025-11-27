@@ -48,6 +48,7 @@ type stmt =
   | Print of expr
   | Read of string
   | Assign of string * expr
+  | ArrayAssign of string * expr * expr
   | If of expr * stmt list * stmt list option
   | While of expr * stmt list
   | FunctionCallStmt of string * expr list

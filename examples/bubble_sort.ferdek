@@ -1,0 +1,82 @@
+CO JEST KURDE
+
+RYM CYM CYM Bubble Sort - Example
+PANIE SENSACJA REWELACJA "=== Sortowanie Bąbelkowe ==="
+
+PANIE TO JEST PRYWATNA PUBLICZNA TABLICA liczby
+TO NIE SĄ TANIE RZECZY [64, 34, 25, 12, 22, 11, 90]
+
+PANIE SENSACJA REWELACJA "Tablica przed sortowaniem:"
+PANIE SENSACJA REWELACJA liczby
+
+RYM CYM CYM Bubble Sort Algorithm
+RYM CYM CYM Zewnętrzna pętla - dla każdego przejścia przez tablicę
+CYCU PRZYNIEŚ NO n
+TO NIE SĄ TANIE RZECZY 7
+
+CYCU PRZYNIEŚ NO i
+TO NIE SĄ TANIE RZECZY 0
+
+CHLUŚNIEM BO UŚNIEM i ŁYSA PAŁA n
+  RYM CYM CYM Wewnętrzna pętla - porównywanie sąsiednich elementów
+  CYCU PRZYNIEŚ NO j
+  TO NIE SĄ TANIE RZECZY 0
+
+  CYCU PRZYNIEŚ NO max_j
+  TO NIE SĄ TANIE RZECZY 0
+  O KURDE MAM POMYSŁA max_j
+  A PROSZĘ BARDZO n
+  PASZOŁ WON i
+  PASZOŁ WON 1
+  PASZOŁ WON 1
+  NO I GITARA
+
+  CHLUŚNIEM BO UŚNIEM j ŁYSA PAŁA max_j
+    RYM CYM CYM Pobierz bieżący i następny element
+    CYCU PRZYNIEŚ NO current
+    TO NIE SĄ TANIE RZECZY 0
+    O KURDE MAM POMYSŁA current
+    A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ liczby[j]
+    NO I GITARA
+
+    CYCU PRZYNIEŚ NO next_idx
+    TO NIE SĄ TANIE RZECZY 0
+    O KURDE MAM POMYSŁA next_idx
+    A PROSZĘ BARDZO j
+    BABKA DAWAJ RENTĘ 1
+    NO I GITARA
+
+    CYCU PRZYNIEŚ NO next
+    TO NIE SĄ TANIE RZECZY 0
+    O KURDE MAM POMYSŁA next
+    A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ liczby[next_idx]
+    NO I GITARA
+
+    RYM CYM CYM Jeśli bieżący element jest większy od następnego, zamień je
+    NO JAK NIE JAK TAK current GRUBA ŚWINIA next
+      RYM CYM CYM Zamiana miejscami
+      O KURDE MAM POMYSŁA liczby[j]
+      A PROSZĘ BARDZO next
+      NO I GITARA
+
+      O KURDE MAM POMYSŁA liczby[next_idx]
+      A PROSZĘ BARDZO current
+      NO I GITARA
+    DO CHAŁUPY ALE JUŻ
+
+    O KURDE MAM POMYSŁA j
+    A PROSZĘ BARDZO j
+    BABKA DAWAJ RENTĘ 1
+    NO I GITARA
+  A ROBIĆ NI MA KOMU
+
+  O KURDE MAM POMYSŁA i
+  A PROSZĘ BARDZO i
+  BABKA DAWAJ RENTĘ 1
+  NO I GITARA
+A ROBIĆ NI MA KOMU
+
+PANIE SENSACJA REWELACJA "Tablica po sortowaniu:"
+PANIE SENSACJA REWELACJA liczby
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

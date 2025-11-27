@@ -111,6 +111,8 @@ read_stmt:
   ;
 
 assign_stmt:
+  | ASSIGN_START id=IDENTIFIER LBRACKET idx=expression RBRACKET ASSIGN_OP e=expression ASSIGN_END
+    { ArrayAssign (id, idx, e) }
   | ASSIGN_START id=IDENTIFIER ASSIGN_OP e=expression ASSIGN_END
     { Assign (id, e) }
   ;

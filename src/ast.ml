@@ -48,6 +48,7 @@ type stmt =
   | Print of expr                                        (* Print statement (PANIE SENSACJA REWELACJA) *)
   | Read of string                                       (* Read input (CO TAM U PANA SŁYCHAĆ) *)
   | Assign of string * expr                              (* Assignment (O KURDE MAM POMYSŁA ... A PROSZĘ BARDZO ... NO I GITARA) *)
+  | ArrayAssign of string * expr * expr                  (* Array element assignment (O KURDE MAM POMYSŁA arr[idx] ... A PROSZĘ BARDZO ... NO I GITARA) *)
   | If of expr * stmt list * stmt list option            (* If statement (NO JAK NIE JAK TAK ... A DUPA TAM ... DO CHAŁUPY ALE JUŻ) *)
   | While of expr * stmt list                            (* While loop (CHLUŚNIEM BO UŚNIEM ... A ROBIĆ NI MA KOMU) *)
   | FunctionCallStmt of string * expr list               (* Function call statement (W MORDĘ JEŻA) *)
@@ -161,6 +162,8 @@ let rec string_of_stmt indent = function
       indent ^ "read " ^ name
   | Assign (name, expr) ->
       indent ^ name ^ " = " ^ string_of_expr expr
+  | ArrayAssign (name, idx, expr) ->
+      indent ^ name ^ "[" ^ string_of_expr idx ^ "] = " ^ string_of_expr expr
   | If (cond, then_stmts, else_stmts_opt) ->
       let then_str = String.concat "\n" (List.map (string_of_stmt (indent ^ "  ")) then_stmts) in
       let else_str = match else_stmts_opt with

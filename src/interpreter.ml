@@ -644,6 +644,23 @@ and eval_stmt env = function
       let value = eval_expr env expr in
       set_var env name value
 
+  | ArrayAssign (name, idx_expr, value_expr) ->
+      let arr = get_var env name in
+      let idx = eval_expr env idx_expr in
+      let value = eval_expr env value_expr in
+      (match arr, idx with
+       | VArray arr_vals, VInt i ->
+           if i < 0 || i >= Array.length arr_vals then
+             raise (Failure (Printf.sprintf "Indeks poza zakresem: %d" i))
+           else (
+             arr_vals.(i) <- value
+           )
+       | VArray _, _ ->
+           raise (Failure "Indeks tablicy musi być liczbą całkowitą")
+       | _ ->
+           raise (Failure (Printf.sprintf "%s nie jest tablicą" name))
+      )
+
   | If (cond, then_stmts, else_stmts_opt) ->
       let cond_value = eval_expr env cond in
       if to_bool cond_value then

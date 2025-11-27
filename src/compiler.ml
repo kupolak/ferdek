@@ -144,6 +144,11 @@ let rec compile_stmt ctx indent stmt =
       let value = compile_expr ctx expr in
       Printf.sprintf "%s%s = %s;" ind name value
 
+  | ArrayAssign (name, idx_expr, value_expr) ->
+      let idx = compile_expr ctx idx_expr in
+      let value = compile_expr ctx value_expr in
+      Printf.sprintf "%sarray_set(%s, %s, %s);" ind name idx value
+
   | If (cond, then_stmts, else_stmts_opt) ->
       let cond_code = compile_expr ctx cond in
       let then_code = String.concat "\n" (List.map (compile_stmt ctx (indent + 1)) then_stmts) in
