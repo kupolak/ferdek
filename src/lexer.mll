@@ -146,6 +146,8 @@ rule token = parse
   | "GRUBA SWINIA" { GREATER }
   | "ŁYSA PAŁA" { LESS }
   | "LYSA PALA" { LESS }
+  | "ŚWINIA" { LESS }
+  | "SWINIA" { LESS }
 
   (* Logical operators *)
   | "PIWO I TELEWIZOR" { AND }
@@ -173,7 +175,12 @@ rule token = parse
   | eof { EOF }
 
   (* Unknown character *)
-  | _ as c { raise (LexError (Printf.sprintf "Unexpected character: '%c'" c)) }
+  | _ {
+      let pos = Lexing.lexeme_start_p lexbuf in
+      let char_code = Char.code (Lexing.lexeme_char lexbuf 0) in
+      raise (LexError (Printf.sprintf "Unexpected character at line %d, col %d (code: 0x%02X)"
+        pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1) char_code))
+    }
 
 (* Single-line comment handling *)
 and line_comment = parse
