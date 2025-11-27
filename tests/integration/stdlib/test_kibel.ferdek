@@ -1,29 +1,37 @@
 CO JEST KURDE
 
-RYM CYM CYM Test operacji na plikach - KIBEL module
+PANIE SENSACJA REWELACJA "=== Test KIBEL ==="
 
-RYM CYM CYM Sprawdzenie czy plik istnieje
-CYCU PRZYNIEŚ NO wynik_istnienia
-AFERA JEST wynik_istnienia W MORDĘ JEŻA CZY KIBEL ZAJĘTY("/tmp/test.txt")
+RYM CYM CYM Tworzenie katalogu
+AFERA JEST sukces W MORDE JEZA ZRÓB KIBEL("test_ferdek_dir")
+PANIE SENSACJA REWELACJA "Utworzono katalog:"
+PANIE SENSACJA REWELACJA sukces
 
-PANIE SENSACJA REWELACJA wynik_istnienia
+RYM CYM CYM Sprawdzanie czy to katalog
+AFERA JEST jest_katalog W MORDE JEZA CZY TO KIBEL("test_ferdek_dir")
+PANIE SENSACJA REWELACJA "Czy to katalog:"
+PANIE SENSACJA REWELACJA jest_katalog
 
-RYM CYM CYM Zapis do pliku
-CYCU PRZYNIEŚ NO uchwyt_zapisu
-AFERA JEST uchwyt_zapisu W MORDĘ JEŻA OTWÓRZ KIBEL DO ZAPISU("/tmp/test.txt")
-W MORDĘ JEŻA SPUŚĆ WODĘ(uchwyt_zapisu, "Cześć KIBEL!")
-W MORDĘ JEŻA SPUŚĆ WODĘ(uchwyt_zapisu, "\n")
-W MORDĘ JEŻA SPUŚĆ WODĘ(uchwyt_zapisu, "To jest drugi wiersz\n")
-W MORDĘ JEŻA ZAMKNIJ KIBEL(uchwyt_zapisu)
+RYM CYM CYM Tworzenie pliku
+AFERA JEST plik W MORDE JEZA OTWÓRZ KIBEL DO ZAPISU("test_ferdek_dir/test.txt")
+W MORDE JEZA SPUŚĆ WODĘ(plik, "Ferdek by tu\n")
+W MORDE JEZA ZAMKNIJ KIBEL(plik)
+PANIE SENSACJA REWELACJA "Utworzono plik"
 
-RYM CYM CYM Odczyt z pliku
-CYCU PRZYNIEŚ NO uchwyt_odczytu
-AFERA JEST uchwyt_odczytu W MORDĘ JEŻA OTWÓRZ KIBEL("/tmp/test.txt")
-CYCU PRZYNIEŚ NO zawartość
-AFERA JEST zawartość W MORDĘ JEŻA WYPOMPUJ(uchwyt_odczytu)
-W MORDĘ JEŻA ZAMKNIJ KIBEL(uchwyt_odczytu)
+RYM CYM CYM Sprawdzanie czy plik istnieje
+AFERA JEST plik_istnieje W MORDE JEZA CZY KIBEL ZAJĘTY("test_ferdek_dir/test.txt")
+PANIE SENSACJA REWELACJA "Plik istnieje:"
+PANIE SENSACJA REWELACJA plik_istnieje
 
-RYM CYM CYM Wypisz zawartość
-PANIE SENSACJA REWELACJA zawartość
+RYM CYM CYM Listowanie plików
+AFERA JEST pliki W MORDE JEZA CO W KIBLU("test_ferdek_dir")
+PANIE SENSACJA REWELACJA "Pliki w katalogu:"
+PANIE SENSACJA REWELACJA pliki
+
+RYM CYM CYM Sprzątanie
+W MORDE JEZA WYKOP WSZYSTKIE KIBLE("test_ferdek_dir")
+PANIE SENSACJA REWELACJA "Usunięto katalog"
+
+PANIE SENSACJA REWELACJA "=== Test OK ==="
 
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE

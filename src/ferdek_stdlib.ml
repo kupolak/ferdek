@@ -26,6 +26,13 @@ let builtins = [
   { name = "WYPOMPUJ"; arity = Some 1; category = "KIBEL" };
   { name = "CZY KIBEL ZAJĘTY"; arity = Some 1; category = "KIBEL" };
   { name = "OTWÓRZ KIBEL DO ZAPISU"; arity = Some 1; category = "KIBEL" };
+  { name = "ZRÓB KIBEL"; arity = Some 1; category = "KIBEL" };
+  { name = "WYWAL KIBEL"; arity = Some 1; category = "KIBEL" };
+  { name = "CO W KIBLU"; arity = Some 1; category = "KIBEL" };
+  { name = "CZY TO KIBEL"; arity = Some 1; category = "KIBEL" };
+  { name = "PRZEKOPIUJ KIBEL"; arity = Some 2; category = "KIBEL" };
+  { name = "PRZENIEŚ KIBEL"; arity = Some 2; category = "KIBEL" };
+  { name = "WYKOP WSZYSTKIE KIBLE"; arity = Some 1; category = "KIBEL" };
 
   (* SKRZYNKA (Math operations) *)
   { name = "ILE W SKRZYNCE"; arity = Some 1; category = "SKRZYNKA" };
@@ -41,6 +48,21 @@ let builtins = [
   { name = "ZAPUKAJ DO SĄSIADA"; arity = Some 2; category = "KLATKA" };
   { name = "KTO NA KLATCE"; arity = None; category = "KLATKA" };
   { name = "CZY SĄSIAD W DOMU"; arity = Some 1; category = "KLATKA" };
+
+  (* SZAFKA (HashMap/Dictionary operations) *)
+  { name = "OTWÓRZ SZAFKĘ"; arity = Some 0; category = "SZAFKA" };
+  { name = "WŁÓŻ DO SZAFKI"; arity = Some 3; category = "SZAFKA" };
+  { name = "WYJMIJ Z SZAFKI"; arity = Some 2; category = "SZAFKA" };
+  { name = "WYRZUĆ ZE SZAFKI"; arity = Some 2; category = "SZAFKA" };
+  { name = "CZY W SZAFCE"; arity = Some 2; category = "SZAFKA" };
+  { name = "WSZYSTKIE SZUFLADKI"; arity = Some 1; category = "SZAFKA" };
+  { name = "ILE W SZAFCE"; arity = Some 1; category = "SZAFKA" };
+
+  (* WERSALKA (List/Array operations) *)
+  { name = "ILE NA WERSALCE"; arity = Some 1; category = "WERSALKA" };
+  { name = "POŁÓŻ NA WERSALCE"; arity = Some 2; category = "WERSALKA" };
+  { name = "ZDEJMIJ Z WERSALKI"; arity = Some 1; category = "WERSALKA" };
+  { name = "CZY LEŻY NA WERSALCE"; arity = Some 2; category = "WERSALKA" };
 ]
 
 (* Check if function is builtin *)

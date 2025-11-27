@@ -29,6 +29,18 @@ $(BUILD_DIR)/ast.cmo: src/ast.ml $(BUILD_DIR)/ast.cmi | $(BUILD_DIR)
 $(BUILD_DIR)/builtins_string.cmo: src/builtins_string.ml | $(BUILD_DIR)
 	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/builtins_string.cmo -c src/builtins_string.ml
 
+# Kompilacja modułu Builtins_hashmap
+$(BUILD_DIR)/builtins_hashmap.cmo: src/builtins_hashmap.ml | $(BUILD_DIR)
+	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/builtins_hashmap.cmo -c src/builtins_hashmap.ml
+
+# Kompilacja modułu Builtins_file
+$(BUILD_DIR)/builtins_file.cmo: src/builtins_file.ml | $(BUILD_DIR)
+	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/builtins_file.cmo -c src/builtins_file.ml
+
+# Kompilacja modułu Builtins_list
+$(BUILD_DIR)/builtins_list.cmo: src/builtins_list.ml | $(BUILD_DIR)
+	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/builtins_list.cmo -c src/builtins_list.ml
+
 # Kompilacja modułu Errors
 $(BUILD_DIR)/errors.cmo: src/errors.ml | $(BUILD_DIR)
 	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/errors.cmo -c src/errors.ml
@@ -37,7 +49,7 @@ $(BUILD_DIR)/errors.cmo: src/errors.ml | $(BUILD_DIR)
 $(BUILD_DIR)/interpreter.cmi: src/interpreter.mli $(BUILD_DIR)/ast.cmi | $(BUILD_DIR)
 	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/interpreter.cmi -c src/interpreter.mli
 
-$(BUILD_DIR)/interpreter.cmo: src/interpreter.ml $(BUILD_DIR)/interpreter.cmi $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/errors.cmo | $(BUILD_DIR)
+$(BUILD_DIR)/interpreter.cmo: src/interpreter.ml $(BUILD_DIR)/interpreter.cmi $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/builtins_hashmap.cmo $(BUILD_DIR)/builtins_file.cmo $(BUILD_DIR)/builtins_list.cmo $(BUILD_DIR)/errors.cmo | $(BUILD_DIR)
 	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/interpreter.cmo -c src/interpreter.ml
 
 # Kompilacja kompilatora
@@ -75,8 +87,8 @@ $(BUILD_DIR)/test_parser: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_D
 $(BUILD_DIR)/ferdek.cmo: src/ferdek.ml $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/parser.cmi $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmi | $(BUILD_DIR)
 	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/ferdek.cmo -c src/ferdek.ml
 
-$(BUILD_DIR)/ferdek: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/ferdek.cmo | $(BUILD_DIR)
-	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/ferdek unix.cma $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/ferdek.cmo
+$(BUILD_DIR)/ferdek: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/builtins_hashmap.cmo $(BUILD_DIR)/builtins_file.cmo $(BUILD_DIR)/builtins_list.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/ferdek.cmo | $(BUILD_DIR)
+	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/ferdek unix.cma $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/builtins_hashmap.cmo $(BUILD_DIR)/builtins_file.cmo $(BUILD_DIR)/builtins_list.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/ferdek.cmo
 
 # Kompilacja kompilatora Ferdek->C
 $(BUILD_DIR)/ferdecc.cmo: src/ferdecc.ml $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/parser.cmi $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/compiler.cmi | $(BUILD_DIR)
@@ -89,8 +101,8 @@ $(BUILD_DIR)/ferdecc: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/
 $(BUILD_DIR)/main.cmo: src/main.ml $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/parser.cmi $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmi $(BUILD_DIR)/compiler.cmi | $(BUILD_DIR)
 	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/main.cmo -c src/main.ml
 
-$(BUILD_DIR)/main: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/compiler.cmo $(BUILD_DIR)/main.cmo | $(BUILD_DIR)
-	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/main unix.cma $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/compiler.cmo $(BUILD_DIR)/main.cmo
+$(BUILD_DIR)/main: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/builtins_hashmap.cmo $(BUILD_DIR)/builtins_file.cmo $(BUILD_DIR)/builtins_list.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/compiler.cmo $(BUILD_DIR)/main.cmo | $(BUILD_DIR)
+	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/main unix.cma $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/builtins_hashmap.cmo $(BUILD_DIR)/builtins_file.cmo $(BUILD_DIR)/builtins_list.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/compiler.cmo $(BUILD_DIR)/main.cmo
 
 # Czyszczenie plików pośrednich
 clean:
@@ -128,6 +140,12 @@ test-stdlib: $(BUILD_DIR)/ferdek
 	$(BUILD_DIR)/ferdek tests/integration/stdlib/test_kanapa.ferdek
 	@echo "\n--- Test KLATKA (networking) ---"
 	$(BUILD_DIR)/ferdek tests/integration/stdlib/test_klatka.ferdek
+	@echo "\n--- Test SZAFKA (hashmap) ---"
+	$(BUILD_DIR)/ferdek tests/integration/stdlib/test_szafka.ferdek
+	@echo "\n--- Test WERSALKA (lists) ---"
+	$(BUILD_DIR)/ferdek tests/integration/stdlib/test_wersalka.ferdek
+	@echo "\n--- Test KIBEL (file ops) ---"
+	$(BUILD_DIR)/ferdek tests/integration/stdlib/test_kibel.ferdek
 
 # Test integracyjne - funkcje języka
 test-features: $(BUILD_DIR)/ferdek

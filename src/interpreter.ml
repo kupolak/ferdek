@@ -11,6 +11,7 @@ type value =
   | VBool of bool
   | VNull
   | VArray of value array
+  | VHashMap of (string, value) Hashtbl.t  (* SZAFKA - dictionaries/maps *)
   | VFunction of function_decl * environment
   | VObject of (string, value) Hashtbl.t
   | VFileHandle of file_handle
@@ -79,6 +80,9 @@ let rec string_of_value = function
   | VNull -> "null"
   | VArray arr ->
       "[" ^ String.concat ", " (Array.to_list (Array.map string_of_value arr)) ^ "]"
+  | VHashMap tbl ->
+      let pairs = Hashtbl.fold (fun k v acc -> (k ^ ": " ^ string_of_value v) :: acc) tbl [] in
+      "{" ^ String.concat ", " pairs ^ "}"
   | VFunction (fdecl, _) ->
       Printf.sprintf "<function %s>" fdecl.name
   | VObject _ ->
@@ -373,6 +377,212 @@ and eval_function_call env name args =
            with Unix.Unix_error (err, _, _) ->
              raise (RuntimeError (Printf.sprintf "SYSTEM error: %s" (Unix.error_message err))))
        | _ -> raise (RuntimeError "SYSTEM expects 1 argument"))
+
+  (* ========== SZAFKA (HashMap/Dictionary) operations ========== *)
+
+  (* OTWÓRZ SZAFKĘ() - creates empty dictionary *)
+  | "OTWÓRZ SZAFKĘ" ->
+      (match args with
+       | [] -> VHashMap (Hashtbl.create 16)
+       | _ -> raise (RuntimeError "OTWÓRZ SZAFKĘ expects 0 arguments"))
+
+  (* WŁÓŻ DO SZAFKI(dict, key, value) - adds key-value pair *)
+  | "WŁÓŻ DO SZAFKI" ->
+      (match args with
+       | [dict_arg; key_arg; value_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           let key = to_string (eval_expr env key_arg) in
+           let value = eval_expr env value_arg in
+           (match dict_val with
+            | VHashMap tbl ->
+                Hashtbl.replace tbl key value;
+                VNull
+            | _ -> raise (RuntimeError "WŁÓŻ DO SZAFKI: first argument must be a dictionary"))
+       | _ -> raise (RuntimeError "WŁÓŻ DO SZAFKI expects 3 arguments"))
+
+  (* WYJMIJ Z SZAFKI(dict, key) - gets value by key *)
+  | "WYJMIJ Z SZAFKI" ->
+      (match args with
+       | [dict_arg; key_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           let key = to_string (eval_expr env key_arg) in
+           (match dict_val with
+            | VHashMap tbl ->
+                (match Hashtbl.find_opt tbl key with
+                 | Some v -> v
+                 | None -> VNull)
+            | _ -> raise (RuntimeError "WYJMIJ Z SZAFKI: first argument must be a dictionary"))
+       | _ -> raise (RuntimeError "WYJMIJ Z SZAFKI expects 2 arguments"))
+
+  (* WYRZUĆ ZE SZAFKI(dict, key) - removes key-value pair *)
+  | "WYRZUĆ ZE SZAFKI" ->
+      (match args with
+       | [dict_arg; key_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           let key = to_string (eval_expr env key_arg) in
+           (match dict_val with
+            | VHashMap tbl ->
+                Hashtbl.remove tbl key;
+                VNull
+            | _ -> raise (RuntimeError "WYRZUĆ ZE SZAFKI: first argument must be a dictionary"))
+       | _ -> raise (RuntimeError "WYRZUĆ ZE SZAFKI expects 2 arguments"))
+
+  (* CZY W SZAFCE(dict, key) - checks if key exists *)
+  | "CZY W SZAFCE" ->
+      (match args with
+       | [dict_arg; key_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           let key = to_string (eval_expr env key_arg) in
+           (match dict_val with
+            | VHashMap tbl ->
+                VBool (Builtins_hashmap.szafka_czy_w_szafce tbl key)
+            | _ -> raise (RuntimeError "CZY W SZAFCE: first argument must be a dictionary"))
+       | _ -> raise (RuntimeError "CZY W SZAFCE expects 2 arguments"))
+
+  (* WSZYSTKIE SZUFLADKI(dict) - returns list of all keys *)
+  | "WSZYSTKIE SZUFLADKI" ->
+      (match args with
+       | [dict_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           (match dict_val with
+            | VHashMap tbl ->
+                let keys = Builtins_hashmap.szafka_wszystkie_szufladki tbl in
+                VArray (Array.of_list (List.map (fun k -> VString k) keys))
+            | _ -> raise (RuntimeError "WSZYSTKIE SZUFLADKI: argument must be a dictionary"))
+       | _ -> raise (RuntimeError "WSZYSTKIE SZUFLADKI expects 1 argument"))
+
+  (* ILE W SZAFCE(dict) - returns number of elements *)
+  | "ILE W SZAFCE" ->
+      (match args with
+       | [dict_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           (match dict_val with
+            | VHashMap tbl ->
+                VInt (Builtins_hashmap.szafka_ile_w_szafce tbl)
+            | _ -> raise (RuntimeError "ILE W SZAFCE: argument must be a dictionary"))
+       | _ -> raise (RuntimeError "ILE W SZAFCE expects 1 argument"))
+
+  (* ========== KIBEL (File operations) ========== *)
+
+  (* ZRÓB KIBEL(path) - creates directory *)
+  | "ZRÓB KIBEL" ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           VBool (Builtins_file.kibel_zrob path)
+       | _ -> raise (RuntimeError "ZRÓB KIBEL expects 1 argument"))
+
+  (* WYWAL KIBEL(path) - removes directory *)
+  | "WYWAL KIBEL" ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           VBool (Builtins_file.kibel_wywal path)
+       | _ -> raise (RuntimeError "WYWAL KIBEL expects 1 argument"))
+
+  (* CO W KIBLU(path) - lists files in directory *)
+  | "CO W KIBLU" ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           let files = Builtins_file.kibel_co_w_kiblu path in
+           VArray (Array.of_list (List.map (fun f -> VString f) files))
+       | _ -> raise (RuntimeError "CO W KIBLU expects 1 argument"))
+
+  (* CZY TO KIBEL(path) - checks if path is directory *)
+  | "CZY TO KIBEL" ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           VBool (Builtins_file.kibel_czy_to_kibel path)
+       | _ -> raise (RuntimeError "CZY TO KIBEL expects 1 argument"))
+
+  (* PRZEKOPIUJ KIBEL(src, dest) - copies file *)
+  | "PRZEKOPIUJ KIBEL" ->
+      (match args with
+       | [src_arg; dest_arg] ->
+           let src = to_string (eval_expr env src_arg) in
+           let dest = to_string (eval_expr env dest_arg) in
+           VBool (Builtins_file.kibel_przekopiuj src dest)
+       | _ -> raise (RuntimeError "PRZEKOPIUJ KIBEL expects 2 arguments"))
+
+  (* PRZENIEŚ KIBEL(src, dest) - moves/renames file *)
+  | "PRZENIEŚ KIBEL" ->
+      (match args with
+       | [src_arg; dest_arg] ->
+           let src = to_string (eval_expr env src_arg) in
+           let dest = to_string (eval_expr env dest_arg) in
+           VBool (Builtins_file.kibel_przenies src dest)
+       | _ -> raise (RuntimeError "PRZENIEŚ KIBEL expects 2 arguments"))
+
+  (* WYKOP WSZYSTKIE KIBLE(path) - recursive delete *)
+  | "WYKOP WSZYSTKIE KIBLE" ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           Builtins_file.kibel_wykop_wszystkie path;
+           VNull
+       | _ -> raise (RuntimeError "WYKOP WSZYSTKIE KIBLE expects 1 argument"))
+
+  (* ========== WERSALKA (List/Array operations) ========== *)
+
+  (* ILE NA WERSALCE(array) - returns array length *)
+  | "ILE NA WERSALCE" ->
+      (match args with
+       | [arr_arg] ->
+           let arr_val = eval_expr env arr_arg in
+           (match arr_val with
+            | VArray arr -> VInt (Builtins_list.wersalka_ile_na arr)
+            | _ -> raise (RuntimeError "ILE NA WERSALCE: argument must be an array"))
+       | _ -> raise (RuntimeError "ILE NA WERSALCE expects 1 argument"))
+
+  (* POŁÓŻ NA WERSALCE(array, element) - appends element to array *)
+  | "POŁÓŻ NA WERSALCE" ->
+      (match args with
+       | [arr_arg; elem_arg] ->
+           let arr_val = eval_expr env arr_arg in
+           let elem = eval_expr env elem_arg in
+           (match arr_val with
+            | VArray arr ->
+                let new_arr = Builtins_list.wersalka_poloz_na arr elem in
+                VArray new_arr
+            | _ -> raise (RuntimeError "POŁÓŻ NA WERSALCE: first argument must be an array"))
+       | _ -> raise (RuntimeError "POŁÓŻ NA WERSALCE expects 2 arguments"))
+
+  (* ZDEJMIJ Z WERSALKI(array) - pops last element *)
+  | "ZDEJMIJ Z WERSALKI" ->
+      (match args with
+       | [arr_arg] ->
+           let arr_val = eval_expr env arr_arg in
+           (match arr_val with
+            | VArray arr ->
+                (try
+                  let (new_arr, popped) = Builtins_list.wersalka_zdejmij_z arr in
+                  (* Return the popped element *)
+                  popped
+                with Failure msg ->
+                  raise (RuntimeError msg))
+            | _ -> raise (RuntimeError "ZDEJMIJ Z WERSALKI: argument must be an array"))
+       | _ -> raise (RuntimeError "ZDEJMIJ Z WERSALKI expects 1 argument"))
+
+  (* CZY LEŻY NA WERSALCE(array, element) - checks if element is in array *)
+  | "CZY LEŻY NA WERSALCE" ->
+      (match args with
+       | [arr_arg; elem_arg] ->
+           let arr_val = eval_expr env arr_arg in
+           let elem = eval_expr env elem_arg in
+           (match arr_val with
+            | VArray arr ->
+                let equal_func a b =
+                  match (a, b) with
+                  | (VInt x, VInt y) -> x = y
+                  | (VString x, VString y) -> x = y
+                  | (VBool x, VBool y) -> x = y
+                  | _ -> false
+                in
+                VBool (Builtins_list.wersalka_czy_lezy_na arr elem equal_func)
+            | _ -> raise (RuntimeError "CZY LEŻY NA WERSALCE: first argument must be an array"))
+       | _ -> raise (RuntimeError "CZY LEŻY NA WERSALCE expects 2 arguments"))
 
   | _ ->
       (* Try to find user-defined function *)
