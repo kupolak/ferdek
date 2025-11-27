@@ -1,6 +1,27 @@
-# Ferdek Programming Language
+<img src="ferdek.png" width="300" alt="Ferdek programming language">
 
 A humorous programming language based on the Polish sitcom, implemented with OCaml.
+
+## 📋 Table of Contents
+
+- [Language Features](#language-features)
+- [VS Code Extension](#-vs-code-extension)
+- [Quick Start](#-quick-start)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Examples](#examples)
+- [Contributing](#contributing)
+- [License](#license)
+
+## 🎨 VS Code Extension
+
+**[Ferdek Language Support](https://github.com/kupolak/ferdek-vscode)** - Get full IDE support with syntax highlighting, code completion, snippets, and more!
+
+Install the extension:
+- Search for "Ferdek Language Support" in VS Code Extensions
+- Or manually: `kupolak.vscode-ferdek`
+
+The extension is open source and available at: **[kupolak/ferdek-vscode](https://github.com/kupolak/ferdek-vscode)**
 
 ## Language Features
 
@@ -185,14 +206,6 @@ PANIE SENSACJA REWELACJA tekst
 
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ```
-
-## Example Program
-
-✅ Lexer - Complete
-✅ AST - Complete
-✅ Parser - Complete
-✅ Interpreter - Complete
-✅ Compiler - Complete (Ferdek → C)
 
 ## Contributing
 
