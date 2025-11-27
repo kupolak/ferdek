@@ -15,13 +15,7 @@ A humorous programming language based on the Polish sitcom, implemented with OCa
 
 ## 🎨 VS Code Extension
 
-**[Ferdek Language Support](https://github.com/kupolak/ferdek-vscode)** - Get full IDE support with syntax highlighting, code completion, snippets, and more!
-
-Install the extension:
-- Search for "Ferdek Language Support" in VS Code Extensions
-- Or manually: `kupolak.vscode-ferdek`
-
-The extension is open source and available at: **[kupolak/ferdek-vscode](https://github.com/kupolak/ferdek-vscode)**
+**[Ferdek Language Support](https://github.com/kupolak/ferdek-vscode)** - Get full IDE support with syntax highlighting, code completion, snippets, and more! Search for "[Ferdek Language Support](https://marketplace.visualstudio.com/items?itemName=JakubPolak.vscode-ferdek)" in VS Code Extensions or visit **[kupolak/ferdek-vscode](https://github.com/kupolak/ferdek-vscode)**.
 
 ## Language Features
 
@@ -173,44 +167,10 @@ PANIE SENSACJA REWELACJA piwa
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ```
 
-## Standard Library (KLAMOTY)
-
-**KLAMOTY** is Ferdek's standard library - a set of modules named after furniture/household items where different functions live:
-
-- **LODÓWKA** - Variables, constants, freezing/unfreezing values
-- **TELEWIZOR** - I/O operations (print, input)
-- **KIBEL** - File operations (open, read, write, close)
-- **WERSALKA** - Lists and arrays (append, pop, length, sort)
-- **SKRZYNKA** - Math functions (abs, round, power, random, modulo)
-- **KLATKA** - Networking (HTTP GET/POST, ping, IP info)
-- **KANAPA** - String operations (concat, substring, split, join, trim, replace, length)
-- **SZAFKA** - Dictionaries/maps (key-value storage)
-
-### Example Usage
-
-```ferdek
-CO JEST KURDE
-
-O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/KANAPA
-O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/SKRZYNKA
-
-RYM CYM CYM String concatenation
-CYCU PRZYNIEŚ NO tekst
-TO NIE SĄ TANIE RZECZY USIĄDŹ NA KANAPIE("Ferdek", " pije piwo")
-
-RYM CYM CYM Random number
-CYCU PRZYNIEŚ NO liczba
-TO NIE SĄ TANIE RZECZY LOSUJ ZE SKRZYNKI(1, 10)
-
-PANIE SENSACJA REWELACJA tekst
-
-MOJA NOGA JUŻ TUTAJ NIE POSTANIE
-```
-
 ## Contributing
 
 This is an educational/humorous project. Feel free to experiment and extend it!
 
 ## License
 
-Open source - use freely for educational purposes.
+MIT License - Copyright (c) Jakub Polak
