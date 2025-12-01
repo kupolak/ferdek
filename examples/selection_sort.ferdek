@@ -1,0 +1,99 @@
+CO JEST KURDE
+
+RYM CYM CYM Selection Sort - Example
+PANIE SENSACJA REWELACJA "=== Sortowanie przez Wybór ==="
+
+PANIE TO JEST PRYWATNA PUBLICZNA TABLICA liczby
+TO NIE SĄ TANIE RZECZY [64, 25, 12, 22, 11, 90, 34]
+
+PANIE SENSACJA REWELACJA "Tablica przed sortowaniem:"
+PANIE SENSACJA REWELACJA liczby
+
+RYM CYM CYM Selection Sort Algorithm
+RYM CYM CYM Znajdź najmniejszy element i zamień z pierwszym, potem drugi najmniejszy itd.
+
+CYCU PRZYNIEŚ NO n
+TO NIE SĄ TANIE RZECZY 7
+
+CYCU PRZYNIEŚ NO i
+TO NIE SĄ TANIE RZECZY 0
+
+RYM CYM CYM Zewnętrzna pętla - dla każdej pozycji od 0 do n-1
+CHLUŚNIEM BO UŚNIEM i ŁYSA PAŁA n PASZOŁ WON 1
+  RYM CYM CYM Zakładamy, że i-ty element jest najmniejszy
+  CYCU PRZYNIEŚ NO min_idx
+  TO NIE SĄ TANIE RZECZY 0
+  O KURDE MAM POMYSŁA min_idx
+  A PROSZĘ BARDZO i
+  NO I GITARA
+
+  RYM CYM CYM Szukamy najmniejszego elementu w pozostałej części tablicy
+  CYCU PRZYNIEŚ NO j
+  TO NIE SĄ TANIE RZECZY 0
+  O KURDE MAM POMYSŁA j
+  A PROSZĘ BARDZO i BABKA DAWAJ RENTĘ 1
+  NO I GITARA
+
+  CHLUŚNIEM BO UŚNIEM j ŁYSA PAŁA n
+    RYM CYM CYM Pobierz element na pozycji j
+    CYCU PRZYNIEŚ NO current
+    TO NIE SĄ TANIE RZECZY 0
+    O KURDE MAM POMYSŁA current
+    A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ liczby[j]
+    NO I GITARA
+
+    RYM CYM CYM Pobierz element na pozycji min_idx
+    CYCU PRZYNIEŚ NO min_val
+    TO NIE SĄ TANIE RZECZY 0
+    O KURDE MAM POMYSŁA min_val
+    A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ liczby[min_idx]
+    NO I GITARA
+
+    RYM CYM CYM Jeśli znaleźliśmy mniejszy element, zapamiętaj jego indeks
+    NO JAK NIE JAK TAK current ŁYSA PAŁA min_val
+      O KURDE MAM POMYSŁA min_idx
+      A PROSZĘ BARDZO j
+      NO I GITARA
+    DO CHAŁUPY ALE JUŻ
+
+    O KURDE MAM POMYSŁA j
+    A PROSZĘ BARDZO j BABKA DAWAJ RENTĘ 1
+    NO I GITARA
+  A ROBIĆ NI MA KOMU
+
+  RYM CYM CYM Zamień najmniejszy element z elementem na pozycji i
+  RYM CYM CYM Ale tylko jeśli min_idx != i
+  NO JAK NIE JAK TAK min_idx PAN TU NIE MIESZKASZ i
+    RYM CYM CYM Pobierz wartość na pozycji i
+    CYCU PRZYNIEŚ NO temp
+    TO NIE SĄ TANIE RZECZY 0
+    O KURDE MAM POMYSŁA temp
+    A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ liczby[i]
+    NO I GITARA
+
+    RYM CYM CYM Pobierz wartość na pozycji min_idx
+    CYCU PRZYNIEŚ NO min_value
+    TO NIE SĄ TANIE RZECZY 0
+    O KURDE MAM POMYSŁA min_value
+    A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ liczby[min_idx]
+    NO I GITARA
+
+    RYM CYM CYM Zamień miejscami
+    O KURDE MAM POMYSŁA liczby[i]
+    A PROSZĘ BARDZO min_value
+    NO I GITARA
+
+    O KURDE MAM POMYSŁA liczby[min_idx]
+    A PROSZĘ BARDZO temp
+    NO I GITARA
+  DO CHAŁUPY ALE JUŻ
+
+  O KURDE MAM POMYSŁA i
+  A PROSZĘ BARDZO i BABKA DAWAJ RENTĘ 1
+  NO I GITARA
+A ROBIĆ NI MA KOMU
+
+PANIE SENSACJA REWELACJA "Tablica po sortowaniu:"
+PANIE SENSACJA REWELACJA liczby
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
