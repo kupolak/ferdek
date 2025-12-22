@@ -24,7 +24,7 @@ Some examples:
 ### Quick install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/kupolak/ferdek/main/scripts/install-remote.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kupolak/ferdek/main/scripts/install-full.sh | bash
 ```
 
 ### Build from source

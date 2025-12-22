@@ -19,40 +19,54 @@ echo -e "${YELLOW}Ferdek: 'W tym kraju trzeba mieć znajomości... albo GitHuba.
 echo ""
 
 # ---------------------------------------------------------
-# ETAP 0: Sprawdzenie narzędzi
+# ETAP 0: Instalacja zależności (dla Alpine Linux)
 # ---------------------------------------------------------
 
-echo "Sprawdzam czy są narzędzia... (jak Boczek narzędzia sprawdza)"
+echo "Instaluję narzędzia... (jak w warsztacie Boczka)"
 
-# Sprawdź git
-if ! command -v git &> /dev/null; then
-    echo -e "${RED}A NIECH TO DUNDER ŚWIŚNIE! Nie ma gita!${NC}"
-    echo -e "${YELLOW}Paździoch:${NC} 'Panie Kiepski, ja go widziałem na bazarze!'"
-    echo -e "${GREEN}Ferdek:${NC} 'Nie ten git, cycu! Zainstaluj Pan: brew install git'"
-    exit 1
-fi
-
-# Sprawdź make
-if ! command -v make &> /dev/null; then
-    echo -e "${RED}Nie ma make! Co to za gospodarstwo?!${NC}"
-    echo -e "${GREEN}Ferdek:${NC} 'Zainstaluj Pan Xcode Command Line Tools!'"
-    echo "  xcode-select --install"
-    exit 1
-fi
-
-# Sprawdź ocamlc
-if ! command -v ocamlc &> /dev/null; then
-    echo -e "${RED}Nie ma OCamla! Bez tego to ja nie zacznę!${NC}"
-    echo -e "${CYAN}Walduś:${NC} 'Tato, a co to jest OCaml?'"
-    echo -e "${GREEN}Ferdek:${NC} 'Nie zadawaj głupich pytań! Zainstaluj opam!'"
+# Sprawdź czy to Alpine Linux
+if command -v apk &> /dev/null; then
+    echo -e "${CYAN}Alpine Linux wykryty! Instaluję pakiety...${NC}"
+    echo -e "${YELLOW}Ferdek:${NC} 'W tym kraju trzeba mieć wszystko na miejscu!'"
+    
+    apk add --no-cache \
+        git \
+        make \
+        gcc \
+        g++ \
+        musl-dev \
+        ocaml \
+        ocaml-compiler-libs \
+        ocaml-runtime \
+        opam \
+        m4 \
+        patch \
+        unzip \
+        bubblewrap \
+        rsync
+    
+    echo -e "${GREEN}✓ Pakiety zainstalowane!${NC}"
     echo ""
-    echo "Instrukcje:"
-    echo "  1. Zainstaluj opam: brew install opam"
-    echo "  2. Zainicjuj opam: opam init"
-    echo "  3. Zainstaluj OCaml: opam switch create 4.14.0"
-    echo "  4. Zainstaluj menhir: opam install menhir"
-    exit 1
+    
+    # Inicjalizacja opam dla Alpine
+    echo -e "${CYAN}Inicjalizuję opam...${NC}"
+    echo -e "${YELLOW}Walduś:${NC} 'Tato, co to jest opam?'"
+    echo -e "${GREEN}Ferdek:${NC} 'To jak sklepik z narzędziami, synu!'"
+    
+    export OPAMROOT=/root/.opam
+    opam init --disable-sandboxing -y -a
+    eval $(opam env)
+    
+    echo -e "${CYAN}Instaluję menhir...${NC}"
+    opam install menhir -y
+    eval $(opam env)
+    
+    echo -e "${GREEN}✓ Opam i menhir zainstalowane!${NC}"
+    echo ""
 fi
+
+echo -e "${GREEN}✓ Wszystkie narzędzia są. Można zaczynać robotę.${NC}"
+echo ""
 
 echo -e "${GREEN}✓ Wszystkie narzędzia są. Można zaczynać robotę.${NC}"
 echo ""
