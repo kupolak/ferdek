@@ -1,150 +1,81 @@
 <img src="ferdek.png" width="300" alt="Ferdek programming language">
 
-A humorous programming language based on the Polish sitcom, implemented with OCaml.
+A humorous programming language based on the Polish sitcom "Świat według Kiepskich", implemented in OCaml.
 
-## 📋 Table of Contents
+## VS Code Extension
 
-- [Language Features](#language-features)
-- [VS Code Extension](#-vs-code-extension)
-- [Quick Start](#-quick-start)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Examples](#examples)
-- [Contributing](#contributing)
-- [License](#license)
+There's a [VS Code extension](https://github.com/kupolak/ferdek-vscode) with syntax highlighting, auto-completion, and snippets. Get it from the [marketplace](https://marketplace.visualstudio.com/items?itemName=JakubPolak.vscode-ferdek).
 
-## 🎨 VS Code Extension
+## What's This?
 
-**[Ferdek Language Support](https://github.com/kupolak/ferdek-vscode)** - Get full IDE support with syntax highlighting, code completion, snippets, and more! Search for "[Ferdek Language Support](https://marketplace.visualstudio.com/items?itemName=JakubPolak.vscode-ferdek)" in VS Code Extensions or visit **[kupolak/ferdek-vscode](https://github.com/kupolak/ferdek-vscode)**.
+Ferdek uses quotes from the TV show as keywords. Instead of boring `while` you write `CHLUŚNIEM BO UŚNIEM`, and instead of `print` you get `PANIE SENSACJA REWELACJA`.
 
-## Language Features
+Some examples:
+- `CO JEST KURDE` - start program
+- `PANIE SENSACJA REWELACJA` - print
+- `PASZOŁ WON` - subtraction
+- `CHLUŚNIEM BO UŚNIEM` - while loop
+- `HELENA MAM ZAWAŁ` - catch exception
+- `A POCAŁUJCIE MNIE WSZYSCY W DUPĘ` - break
+- `W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM` - null
 
-Ferdek is an esoteric programming language that uses colorful Polish expressions as keywords. For example:
+## Installation
 
-### Basic Features
-- `CO JEST KURDE` - Program start
-- `PANIE SENSACJA REWELACJA` - Print statement
-- `PASZOŁ WON` - Subtraction operator
-- `CHLUŚNIEM BO UŚNIEM` - While loop
-
-### Advanced Features
-- `O KOGO MOJE PIĘKNE OCZY WIDZĄ` - Import module
-- `PANIE TO JEST PRYWATNA PUBLICZNA TABLICA` - Array declaration
-- `HELENA MAM ZAWAŁ` - Catch exception
-- `ALE JAJA` - Class declaration
-- `A POCAŁUJCIE MNIE WSZYSCY W DUPĘ` - Break statement
-- `W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM` - Null value
-
-## Quick Start
-
-### 🚀 Quick Installation (Recommended)
-
-Install Ferdek with a single command (downloads and installs from GitHub):
+### Quick install
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/kupolak/ferdek/main/scripts/install-remote.sh | bash
 ```
 
-**Alternatively** - even faster:
-```bash
-curl -fsSL https://raw.githubusercontent.com/kupolak/ferdek/main/scripts/quick-install.sh | bash
-```
+### Build from source
 
-### 📦 Manual Installation
+You'll need:
 
-#### Requirements
-
-- OCaml (4.08+)
-- OCamllex
+- OCaml (4.08+) and opam
 - Menhir
-- Git
 
-#### 1. Install dependencies
+Then:
 
-**macOS:**
 ```bash
+# macOS
 brew install ocaml opam
-opam init
-opam install menhir
-```
+opam init && opam install menhir
 
-**Linux (Ubuntu/Debian):**
-```bash
+# Linux
 sudo apt-get install ocaml opam
-opam init
-opam install menhir
-```
+opam init && opam install menhir
 
-#### 2. Clone the repository
-
-```bash
+# Build
 git clone https://github.com/kupolak/ferdek.git
 cd ferdek
-```
-
-#### 3. Build the project
-
-```bash
-# Build the project
 make
-
-# Install locally
 ./scripts/install.sh
 ```
 
-### Run Tests
+Run tests with `make test`.
 
-```bash
-make test
-```
+## Usage
 
-### Run Ferdek Programs
+Run a file:
 
-**Main command** - Display help:
-```bash
-ferdek
-ferdek --help
-```
-
-**Interpreter** - Run a Ferdek file:
 ```bash
 ferdek examples/hello.ferdek
-ferdek examples/variables.ferdek
-ferdek -i examples/conditional.ferdek
 ```
 
-**Interpreter** - Interactive mode (REPL):
+REPL:
 ```bash
 ferdek --repl
 ```
 
-**Compiler** - Quick run (compile and execute):
-```bash
-ferdek --run examples/hello.ferdek
-ferdek -r examples/variables.ferdek
-```
-
-**Compiler** - Compile to executable:
+Compile to executable:
 ```bash
 ferdek -c examples/hello.ferdek -o my_program
 ./my_program
 ```
 
-**Compiler** - Compile to C only:
+Compile and run:
 ```bash
-ferdek -c examples/hello.ferdek
-# Creates examples/hello.c
-```
-
-### Legacy interfaces (in .build folder)
-
-If you prefer using the old separate commands:
-```bash
-# Interpreter only (REPL or file)
-.build/ferdek examples/hello.ferdek
-
-# Compiler only
-.build/ferdecc -r examples/hello.ferdek
+ferdek -r examples/hello.ferdek
 ```
 
 ## Example Program
@@ -169,8 +100,12 @@ MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 
 ## Contributing
 
-This is an educational/humorous project. Feel free to experiment and extend it!
+It's a joke project but PRs are welcome if you want to add more features or fix bugs.
 
 ## License
 
-MIT License - Copyright (c) Jakub Polak
+MIT
+
+---
+
+All quotes and character names from "Świat według Kiepskich" are property of their respective copyright holders. This project is for educational and entertainment purposes only.
