@@ -7,24 +7,39 @@
 (library
  (name ferdek_lib)
  (wrapped false)
- (flags (:standard -w -27-32))
- (modules ast parser lexer interpreter compiler ferdek_stdlib builtins_string builtins_hashmap builtins_file builtins_list errors)
+ (flags
+  (:standard -w -27-32))
+ (modules
+  ast
+  parser
+  lexer
+  interpreter
+  compiler
+  ferdek_stdlib
+  builtins_string
+  builtins_hashmap
+  builtins_file
+  builtins_list
+  errors)
  (libraries unix))
 
 (executable
  (name ferdek)
  (modules ferdek)
- (flags (:standard -w -27-32))
+ (flags
+  (:standard -w -27-32))
  (libraries ferdek_lib))
 
 (executable
  (name ferdecc)
  (modules ferdecc)
- (flags (:standard -w -27-32))
+ (flags
+  (:standard -w -27-32))
  (libraries ferdek_lib))
 
 (executable
  (name main)
  (modules main)
- (flags (:standard -w -27-32))
+ (flags
+  (:standard -w -27-32))
  (libraries ferdek_lib))

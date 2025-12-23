@@ -1,17 +1,20 @@
 (executable
  (name test_ast)
  (modules test_ast)
- (flags (:standard -w -27-32-33))
+ (flags
+  (:standard -w -27-32-33))
  (libraries ferdek_lib))
 
 (executable
  (name test_lexer)
  (modules test_lexer)
- (flags (:standard -w -27-32-33))
+ (flags
+  (:standard -w -27-32-33))
  (libraries ferdek_lib))
 
 (executable
  (name test_parser)
  (modules test_parser)
- (flags (:standard -w -27-32-33))
+ (flags
+  (:standard -w -27-32-33))
  (libraries ferdek_lib))
