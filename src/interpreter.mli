@@ -11,6 +11,7 @@ type value =
   | VArray of value array
   | VHashMap of (string, value) Hashtbl.t
   | VFunction of function_decl * environment
+  | VClass of class_decl * environment
   | VObject of (string, value) Hashtbl.t
   | VFileHandle of file_handle
 

@@ -13,6 +13,7 @@ type value =
   | VArray of value array
   | VHashMap of (string, value) Hashtbl.t  (* SZAFKA - dictionaries/maps *)
   | VFunction of function_decl * environment
+  | VClass of class_decl * environment       (* Class definition *)
   | VObject of (string, value) Hashtbl.t
   | VFileHandle of file_handle
 
@@ -85,6 +86,8 @@ let rec string_of_value = function
       "{" ^ String.concat ", " pairs ^ "}"
   | VFunction (fdecl, _) ->
       Printf.sprintf "<function %s>" fdecl.name
+  | VClass (cdecl, _) ->
+      Printf.sprintf "<class %s>" cdecl.name
   | VObject _ ->
       "<object>"
   | VFileHandle _ ->
@@ -176,15 +179,25 @@ let rec eval_expr env = function
       let v2 = eval_expr env e2 in
       eval_logical_op op v1 v2
   | ArrayAccess (name, index_expr) ->
-      let arr = get_var env name in
-      let index = to_int (eval_expr env index_expr) in
-      (match arr with
+      let value = get_var env name in
+      (match value with
        | VArray arr ->
+           let index = to_int (eval_expr env index_expr) in
            if index < 0 || index >= Array.length arr then
              raise (RuntimeError "Array index out of bounds")
            else
              arr.(index)
-       | _ -> raise (RuntimeError "Not an array"))
+       | VObject obj ->
+           (* Support object field access: obj["field_name"] *)
+           let field_name = match eval_expr env index_expr with
+             | VString s -> s
+             | VInt i -> string_of_int i
+             | v -> raise (RuntimeError (Printf.sprintf "Object field name must be a string, got %s" (string_of_value v)))
+           in
+           (match Hashtbl.find_opt obj field_name with
+            | Some v -> v
+            | None -> raise (RuntimeError (Printf.sprintf "Object has no field: %s" field_name)))
+       | _ -> raise (RuntimeError "Not an array or object"))
   | FunctionCall (name, args) ->
       eval_function_call env name args
   | NewObject (class_name, args) ->
@@ -614,9 +627,38 @@ and eval_function_call env name args =
 
 (* Evaluate object creation *)
 and eval_new_object env class_name args =
-  (* For now, create empty object - full class support would need class environment *)
-  let obj = Hashtbl.create 16 in
-  VObject obj
+  (* Look up class definition *)
+  try
+    let class_val = get_var env class_name in
+    match class_val with
+    | VClass (cdecl, class_env) ->
+        (* Create new object with fields *)
+        let obj = Hashtbl.create 16 in
+        
+        (* Initialize fields from class definition *)
+        List.iter (fun (field_name, init_expr) ->
+          let field_value = eval_expr class_env init_expr in
+          Hashtbl.replace obj field_name field_value
+        ) cdecl.fields;
+        
+        (* Add methods to object as special bound functions *)
+        (* Methods will have access to object fields through a special environment *)
+        List.iter (fun (method_decl : function_decl) ->
+          (* Create a method wrapper that has access to the object *)
+          (* We store a closure that captures the object *)
+          let method_env = create_env (Some class_env) in
+          (* Add object fields to method environment *)
+          Hashtbl.iter (fun field_name field_value ->
+            define_var method_env field_name field_value
+          ) obj;
+          Hashtbl.replace obj method_decl.name (VFunction (method_decl, method_env))
+        ) cdecl.methods;
+        
+        VObject obj
+    | _ ->
+        raise (RuntimeError (Printf.sprintf "%s is not a class" class_name))
+  with RuntimeError _ ->
+    raise (RuntimeError (Printf.sprintf "Undefined class: %s" class_name))
 
 (* ============ STATEMENT EXECUTION ============ *)
 
@@ -645,20 +687,29 @@ and eval_stmt env = function
       set_var env name value
 
   | ArrayAssign (name, idx_expr, value_expr) ->
-      let arr = get_var env name in
-      let idx = eval_expr env idx_expr in
+      let container = get_var env name in
       let value = eval_expr env value_expr in
-      (match arr, idx with
-       | VArray arr_vals, VInt i ->
-           if i < 0 || i >= Array.length arr_vals then
-             raise (Failure (Printf.sprintf "Indeks poza zakresem: %d" i))
-           else (
-             arr_vals.(i) <- value
-           )
-       | VArray _, _ ->
-           raise (Failure "Indeks tablicy musi być liczbą całkowitą")
+      (match container with
+       | VArray arr_vals ->
+           let idx = eval_expr env idx_expr in
+           (match idx with
+            | VInt i ->
+                if i < 0 || i >= Array.length arr_vals then
+                  raise (Failure (Printf.sprintf "Indeks poza zakresem: %d" i))
+                else
+                  arr_vals.(i) <- value
+            | _ ->
+                raise (Failure "Indeks tablicy musi być liczbą całkowitą"))
+       | VObject obj ->
+           (* Support object field assignment: obj["field_name"] = value *)
+           let field_name = match eval_expr env idx_expr with
+             | VString s -> s
+             | VInt i -> string_of_int i
+     xx        | v -> raise (RuntimeError (Printf.sprintf "Object field name must be a string, got %s" (string_of_value v)))
+           in
+           Hashtbl.replace obj field_name value
        | _ ->
-           raise (Failure (Printf.sprintf "%s nie jest tablicą" name))
+           raise (Failure (Printf.sprintf "%s nie jest tablicą ani obiektem" name))
       )
 
   | If (cond, then_stmts, else_stmts_opt) ->
@@ -746,8 +797,8 @@ and eval_top_level_decl env = function
       define_var env fdecl.name (VFunction (fdecl, env))
 
   | ClassDecl cdecl ->
-      (* TODO: Implement class declarations *)
-      Printf.eprintf "Warning: Classes not yet fully implemented: %s\n" cdecl.name
+      (* Store class definition in environment *)
+      define_var env cdecl.name (VClass (cdecl, env))
 
 (* ============ PROGRAM EXECUTION ============ *)
 
