@@ -75,6 +75,7 @@ type function_decl = {
 (* Class declaration *)
 type class_decl = {
   name: string;                                          (* Class name *)
+  parent_class: string option;                           (* Parent class for inheritance (RENTA BABKI) *)
   fields: (string * expr) list;                          (* Class fields (variables) *)
   methods: function_decl list;                           (* Class methods *)
 }
@@ -203,11 +204,15 @@ let string_of_function_decl indent fdecl =
 
 (* Convert class declaration to string *)
 let string_of_class_decl indent cdecl =
+  let parent_str = match cdecl.parent_class with
+    | Some parent -> " extends " ^ parent
+    | None -> ""
+  in
   let fields_str = List.map (fun (name, expr) ->
     indent ^ "  " ^ name ^ " = " ^ string_of_expr expr
   ) cdecl.fields in
   let methods_str = List.map (string_of_function_decl (indent ^ "  ")) cdecl.methods in
-  indent ^ "class " ^ cdecl.name ^ "\n" ^
+  indent ^ "class " ^ cdecl.name ^ parent_str ^ "\n" ^
   String.concat "\n" fields_str ^ "\n" ^
   String.concat "\n" methods_str
 

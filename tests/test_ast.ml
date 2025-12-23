@@ -120,6 +120,7 @@ let test_exception_handling () =
 let test_class_decl () =
   let cdecl = {
     name = "Ferdek";
+    parent_class = None;
     fields = [("wiek", IntLiteral 50)];
     methods = [{
       name = "powitanie";

@@ -1,0 +1,82 @@
+CO JEST KURDE
+
+PANIE SENSACJA REWELACJA "=== Test dziedziczenia klas (RENTA BABKI) ==="
+
+RYM CYM CYM Klasa bazowa - Osoba
+ALE JAJA Osoba
+    CYCU PRZYNIEŚ NO imie
+    TO NIE SĄ TANIE RZECZY "Nieznany"
+
+    CYCU PRZYNIEŚ NO wiek
+    TO NIE SĄ TANIE RZECZY 0
+
+    ALE WIE PAN JA ZASADNICZO przedstawSie
+        PANIE SENSACJA REWELACJA "Jestem: "
+        PANIE SENSACJA REWELACJA imie
+    DO WIDZENIA PANU
+DO WIDZENIA PANU
+
+RYM CYM CYM Klasa pochodna - Kiepski dziedziczy po Osoba
+ALE JAJA Kiepski RENTA BABKI Osoba
+    CYCU PRZYNIEŚ NO piwo
+    TO NIE SĄ TANIE RZECZY 6
+
+    ALE WIE PAN JA ZASADNICZO napijSie
+        PANIE SENSACJA REWELACJA "Piję piwko! Zostało: "
+        PANIE SENSACJA REWELACJA piwo
+    DO WIDZENIA PANU
+DO WIDZENIA PANU
+
+RYM CYM CYM Tworzymy obiekt klasy Osoba
+PANIE SENSACJA REWELACJA "--- Tworzenie Osoby ---"
+CYCU PRZYNIEŚ NO ktos
+TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Osoba
+
+RYM CYM CYM Odczyt pola z Osoby
+CYCU PRZYNIEŚ NO imie_ktos
+TO NIE SĄ TANIE RZECZY 0
+O KURDE MAM POMYSŁA imie_ktos
+A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ ktos["imie"]
+NO I GITARA
+PANIE SENSACJA REWELACJA "Imię Osoby: "
+PANIE SENSACJA REWELACJA imie_ktos
+
+RYM CYM CYM Tworzymy obiekt klasy Kiepski (dziedziczy po Osoba)
+PANIE SENSACJA REWELACJA "--- Tworzenie Kiepskiego ---"
+CYCU PRZYNIEŚ NO ferdek
+TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Kiepski
+
+RYM CYM CYM Odczyt odziedziczonego pola (imie z Osoby)
+CYCU PRZYNIEŚ NO imie_ferdka
+TO NIE SĄ TANIE RZECZY 0
+O KURDE MAM POMYSŁA imie_ferdka
+A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ ferdek["imie"]
+NO I GITARA
+PANIE SENSACJA REWELACJA "Imię Kiepskiego (odziedziczone): "
+PANIE SENSACJA REWELACJA imie_ferdka
+
+RYM CYM CYM Odczyt własnego pola (piwo)
+CYCU PRZYNIEŚ NO piwo_ferdka
+TO NIE SĄ TANIE RZECZY 0
+O KURDE MAM POMYSŁA piwo_ferdka
+A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ ferdek["piwo"]
+NO I GITARA
+PANIE SENSACJA REWELACJA "Piwo Kiepskiego (własne pole): "
+PANIE SENSACJA REWELACJA piwo_ferdka
+
+RYM CYM CYM Ustawienie imienia
+O KURDE MAM POMYSŁA ferdek["imie"]
+A PROSZĘ BARDZO "Ferdynand Kiepski"
+NO I GITARA
+
+CYCU PRZYNIEŚ NO nowe_imie
+TO NIE SĄ TANIE RZECZY 0
+O KURDE MAM POMYSŁA nowe_imie
+A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ ferdek["imie"]
+NO I GITARA
+PANIE SENSACJA REWELACJA "Po ustawieniu imienia: "
+PANIE SENSACJA REWELACJA nowe_imie
+
+PANIE SENSACJA REWELACJA "=== Test OK ==="
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

@@ -53,6 +53,7 @@ let string_of_token = function
   | BREAK -> "BREAK"
   | CONTINUE -> "CONTINUE"
   | CLASS -> "CLASS"
+  | EXTENDS -> "EXTENDS"
   | NEW -> "NEW"
   | LBRACKET -> "LBRACKET"
   | RBRACKET -> "RBRACKET"

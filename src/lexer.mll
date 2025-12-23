@@ -157,6 +157,7 @@ rule token = parse
 
   (* Keywords - OOP *)
   | "ALE JAJA" { CLASS }
+  | "RENTA BABKI" { EXTENDS }
   | "DZIAD ZDZIADZIAŁY JEDEN" { NEW }
 
   (* Keywords - NULL *)

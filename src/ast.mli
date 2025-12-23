@@ -75,6 +75,7 @@ type function_decl = {
 (* Class declaration *)
 type class_decl = {
   name: string;
+  parent_class: string option;
   fields: (string * expr) list;
   methods: function_decl list;
 }

@@ -635,19 +635,38 @@ and eval_new_object env class_name args =
         (* Create new object with fields *)
         let obj = Hashtbl.create 16 in
         
-        (* Initialize fields from class definition *)
+        (* First, inherit fields and methods from parent class if exists *)
+        (match cdecl.parent_class with
+         | Some parent_name ->
+             (try
+               let parent_val = get_var env parent_name in
+               match parent_val with
+               | VClass (parent_cdecl, parent_env) ->
+                   (* Copy parent fields *)
+                   List.iter (fun (field_name, init_expr) ->
+                     let field_value = eval_expr parent_env init_expr in
+                     Hashtbl.replace obj field_name field_value
+                   ) parent_cdecl.fields;
+                   (* Copy parent methods *)
+                   List.iter (fun (method_decl : function_decl) ->
+                     let method_env = create_env (Some parent_env) in
+                     Hashtbl.iter (fun fn fv -> define_var method_env fn fv) obj;
+                     Hashtbl.replace obj method_decl.name (VFunction (method_decl, method_env))
+                   ) parent_cdecl.methods
+               | _ -> raise (RuntimeError (Printf.sprintf "Parent %s is not a class" parent_name))
+             with RuntimeError _ ->
+               raise (RuntimeError (Printf.sprintf "Undefined parent class: %s" parent_name)))
+         | None -> ());
+        
+        (* Initialize fields from class definition (may override parent fields) *)
         List.iter (fun (field_name, init_expr) ->
           let field_value = eval_expr class_env init_expr in
           Hashtbl.replace obj field_name field_value
         ) cdecl.fields;
         
-        (* Add methods to object as special bound functions *)
-        (* Methods will have access to object fields through a special environment *)
+        (* Add methods to object (may override parent methods) *)
         List.iter (fun (method_decl : function_decl) ->
-          (* Create a method wrapper that has access to the object *)
-          (* We store a closure that captures the object *)
           let method_env = create_env (Some class_env) in
-          (* Add object fields to method environment *)
           Hashtbl.iter (fun field_name field_value ->
             define_var method_env field_name field_value
           ) obj;
@@ -705,7 +724,7 @@ and eval_stmt env = function
            let field_name = match eval_expr env idx_expr with
              | VString s -> s
              | VInt i -> string_of_int i
-     xx        | v -> raise (RuntimeError (Printf.sprintf "Object field name must be a string, got %s" (string_of_value v)))
+             | v -> raise (RuntimeError (Printf.sprintf "Object field name must be a string, got %s" (string_of_value v)))
            in
            Hashtbl.replace obj field_name value
        | _ ->

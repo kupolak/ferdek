@@ -26,6 +26,7 @@ open Ast
 %token BREAK
 %token CONTINUE
 %token CLASS
+%token EXTENDS
 %token NEW
 %token LBRACKET RBRACKET
 %token <string> IDENTIFIER
@@ -173,6 +174,18 @@ function_decl:
 /* ============ CLASSES ============ */
 
 class_decl:
+  | CLASS name=IDENTIFIER EXTENDS parent=IDENTIFIER members=list(class_member) FUNC_END
+    {
+      let fields = List.filter_map (function
+        | `Field (n, e) -> Some (n, e)
+        | `Method _ -> None
+      ) members in
+      let methods = List.filter_map (function
+        | `Field _ -> None
+        | `Method m -> Some m
+      ) members in
+      { name; parent_class = Some parent; fields; methods }
+    }
   | CLASS name=IDENTIFIER members=list(class_member) FUNC_END
     {
       let fields = List.filter_map (function
@@ -183,7 +196,7 @@ class_decl:
         | `Field _ -> None
         | `Method m -> Some m
       ) members in
-      { name; fields; methods }
+      { name; parent_class = None; fields; methods }
     }
   ;
 
