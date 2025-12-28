@@ -42,6 +42,7 @@ type expr =
   | Dereference of expr
   | AddressOf of string
   | PointerArithmetic of expr * arith_op * expr
+  | FunctionRef of string
   | Parenthesized of expr
 
 (* ============ STATEMENTS ============ *)

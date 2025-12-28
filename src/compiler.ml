@@ -140,6 +140,10 @@ let rec compile_expr ctx expr =
       in
       Printf.sprintf "(%s %s %s)" c_e1 c_op c_e2
 
+  | FunctionRef func_name ->
+      (* Function pointer - just return the function name (in C, function names are pointers) *)
+      func_name
+
   | Parenthesized e ->
       Printf.sprintf "(%s)" (compile_expr ctx e)
 

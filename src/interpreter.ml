@@ -212,8 +212,20 @@ let rec eval_expr env = function
       eval_new_struct env struct_name
   | Reference e ->
       (* Create a reference to the evaluated expression *)
-      let value = eval_expr env e in
-      VPointer (ref value)
+      (* Special case: if e is an Identifier referring to a function, return the function itself *)
+      (match e with
+       | Identifier name ->
+           (try
+             let value = get_var env name in
+             (match value with
+              | VFunction _ -> value  (* Function pointer - return function itself *)
+              | _ -> VPointer (ref value))  (* Regular value - create pointer *)
+           with RuntimeError _ ->
+             raise (RuntimeError (Printf.sprintf "Undefined variable: %s" name)))
+       | _ ->
+           (* For other expressions, evaluate and create pointer *)
+           let value = eval_expr env e in
+           VPointer (ref value))
   | Dereference e ->
       (* Dereference a pointer *)
       (match eval_expr env e with
@@ -241,6 +253,15 @@ let rec eval_expr env = function
             | Minus -> VInt (base - n)
             | _ -> raise (RuntimeError "Unsupported pointer arithmetic operation"))
        | _ -> raise (RuntimeError "Invalid pointer arithmetic"))
+  | FunctionRef func_name ->
+      (* Create a function pointer - get the function and return it as a value *)
+      (try
+        let func_val = get_var env func_name in
+        match func_val with
+        | VFunction _ -> func_val  (* Return the function itself as a value *)
+        | _ -> raise (RuntimeError (Printf.sprintf "%s is not a function" func_name))
+      with RuntimeError _ ->
+        raise (RuntimeError (Printf.sprintf "Undefined function: %s" func_name)))
   | Parenthesized e -> eval_expr env e
 
 (* Evaluate function call *)

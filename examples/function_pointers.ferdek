@@ -1,0 +1,140 @@
+CO JEST KURDE
+
+PANIE SENSACJA REWELACJA "=== Test Wskaźników do Funkcji (Function Pointers) ==="
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 1: Podstawowe wskaźniki do funkcji
+PANIE SENSACJA REWELACJA "Test 1: Podstawowe wskaźniki do funkcji"
+
+RYM CYM CYM Definiujemy prostą funkcję
+ALE WIE PAN JA ZASADNICZO powitaj
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO imie
+    PANIE SENSACJA REWELACJA "Witaj, "
+    PANIE SENSACJA REWELACJA imie
+    PANIE SENSACJA REWELACJA "!"
+DO WIDZENIA PANU
+
+RYM CYM CYM Tworzymy wskaźnik do funkcji
+CYCU PRZYNIEŚ NO callback
+TO NIE SĄ TANIE RZECZY PALCEM POKAZUJĘ powitaj
+
+RYM CYM CYM Wywołujemy funkcję przez wskaźnik
+W MORDĘ JEŻA callback("Ferdek")
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 2: Funkcje z wartością zwrotną
+PANIE SENSACJA REWELACJA "Test 2: Funkcje z wartością zwrotną"
+
+ALE WIE PAN JA ZASADNICZO dodaj
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO a, b
+    CYCU PRZYNIEŚ NO wynik
+    TO NIE SĄ TANIE RZECZY a BABKA DAWAJ RENTĘ b
+    I JA INFORMUJĘ ŻE WYCHODZĘ wynik
+DO WIDZENIA PANU
+
+ALE WIE PAN JA ZASADNICZO pomnoz
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO a, b
+    CYCU PRZYNIEŚ NO wynik
+    TO NIE SĄ TANIE RZECZY a ROZDUPCĘ BANK b
+    I JA INFORMUJĘ ŻE WYCHODZĘ wynik
+DO WIDZENIA PANU
+
+RYM CYM CYM Wskaźniki do różnych funkcji
+CYCU PRZYNIEŚ NO operacja1
+TO NIE SĄ TANIE RZECZY PALCEM POKAZUJĘ dodaj
+
+CYCU PRZYNIEŚ NO operacja2
+TO NIE SĄ TANIE RZECZY PALCEM POKAZUJĘ pomnoz
+
+RYM CYM CYM Wywołanie dodaj przez wskaźnik
+AFERA JEST suma
+W MORDĘ JEŻA operacja1(10, 5)
+PANIE SENSACJA REWELACJA "10 + 5 = "
+PANIE SENSACJA REWELACJA suma
+
+RYM CYM CYM Wywołanie pomnoz przez wskaźnik
+AFERA JEST iloczyn
+W MORDĘ JEŻA operacja2(10, 5)
+PANIE SENSACJA REWELACJA "10 * 5 = "
+PANIE SENSACJA REWELACJA iloczyn
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 3: Przekazywanie funkcji jako argument (callbacks)
+PANIE SENSACJA REWELACJA "Test 3: Przekazywanie funkcji jako argument"
+
+RYM CYM CYM Funkcja wykonująca operację
+ALE WIE PAN JA ZASADNICZO wykonaj_operacje
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO funkcja, x, y
+    RYM CYM CYM Wywołujemy przekazaną funkcję
+    AFERA JEST rezultat
+    W MORDĘ JEŻA funkcja(x, y)
+
+    I JA INFORMUJĘ ŻE WYCHODZĘ rezultat
+DO WIDZENIA PANU
+
+RYM CYM CYM Użycie z różnymi callbackami
+AFERA JEST wynik1
+W MORDĘ JEŻA wykonaj_operacje(PALCEM POKAZUJĘ dodaj, 7, 3)
+PANIE SENSACJA REWELACJA "wykonaj_operacje(dodaj, 7, 3) = "
+PANIE SENSACJA REWELACJA wynik1
+
+AFERA JEST wynik2
+W MORDĘ JEŻA wykonaj_operacje(PALCEM POKAZUJĘ pomnoz, 7, 3)
+PANIE SENSACJA REWELACJA "wykonaj_operacje(pomnoz, 7, 3) = "
+PANIE SENSACJA REWELACJA wynik2
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 4: Wskaźniki funkcji w strukturach (jak w DOOM)
+PANIE SENSACJA REWELACJA "Test 4: Wskaźniki funkcji w strukturach (jak w DOOM)"
+
+RYM CYM CYM Akcja dla "thinker" (jak w DOOM)
+ALE WIE PAN JA ZASADNICZO akcja_dziad
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO obiekt
+    PANIE SENSACJA REWELACJA "Dziad myśli..."
+DO WIDZENIA PANU
+
+ALE WIE PAN JA ZASADNICZO akcja_ferdek
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO obiekt
+    PANIE SENSACJA REWELACJA "Ferdek w akcji!"
+DO WIDZENIA PANU
+
+RYM CYM CYM Struktura z wskaźnikiem do funkcji (jak thinker_t w DOOM)
+MEBEL Thinker
+    CYCU PRZYNIEŚ NO akcja
+    TO NIE SĄ TANIE RZECZY W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM
+
+    CYCU PRZYNIEŚ NO zycie
+    TO NIE SĄ TANIE RZECZY 100
+KONIEC MEBLA
+
+RYM CYM CYM Tworzenie thinkerów
+CYCU PRZYNIEŚ NO thinker1
+TO NIE SĄ TANIE RZECZY ZMONTUJ MEBEL Thinker
+
+CYCU PRZYNIEŚ NO thinker2
+TO NIE SĄ TANIE RZECZY ZMONTUJ MEBEL Thinker
+
+RYM CYM CYM Przypisanie akcji do thinkerów (niestety nie możemy modyfikować pól struktur bezpośrednio)
+RYM CYM CYM W pełnej implementacji potrzebowalibyśmy array_assign dla obiektów
+PANIE SENSACJA REWELACJA "Thinkery utworzone (akcje wymagają modyfikacji pól)"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 5: Wskaźniki w zmiennych
+PANIE SENSACJA REWELACJA "Test 5: Wskaźniki funkcji w zmiennych"
+
+RYM CYM CYM Przechowywanie wskaźników do funkcji
+CYCU PRZYNIEŚ NO callback_dodaj
+TO NIE SĄ TANIE RZECZY PALCEM POKAZUJĘ dodaj
+
+CYCU PRZYNIEŚ NO callback_pomnoz
+TO NIE SĄ TANIE RZECZY PALCEM POKAZUJĘ pomnoz
+
+PANIE SENSACJA REWELACJA "Wskaźniki do funkcji zapisane w zmiennych"
+PANIE SENSACJA REWELACJA ""
+
+PANIE SENSACJA REWELACJA "=== Test zakończony! ==="
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

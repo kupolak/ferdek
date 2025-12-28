@@ -42,6 +42,7 @@ type expr =
   | Dereference of expr                                  (* Dereference pointer (CO TAM JEST) *)
   | AddressOf of string                                  (* Get address of variable (GDZIE STOI) *)
   | PointerArithmetic of expr * arith_op * expr          (* Pointer arithmetic (KROK DALEJ/KROK WSTECZ) *)
+  | FunctionRef of string                                (* Function pointer reference (PALCEM POKAZUJĘ funkcja) *)
   | Parenthesized of expr                                (* Parenthesized expression *)
 
 (* ============ STATEMENTS ============ *)
@@ -170,6 +171,8 @@ let rec string_of_expr = function
       "&" ^ var
   | PointerArithmetic (e1, op, e2) ->
       "(" ^ string_of_expr e1 ^ " " ^ string_of_arith_op op ^ " " ^ string_of_expr e2 ^ ")"
+  | FunctionRef func_name ->
+      "&" ^ func_name
   | Parenthesized e ->
       "(" ^ string_of_expr e ^ ")"
 
