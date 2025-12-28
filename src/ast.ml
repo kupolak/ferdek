@@ -44,7 +44,7 @@ type expr =
   | LogicalOp of expr * logical_op * expr                (* Logical operation *)
   | BitwiseOp of expr * bitwise_op * expr                (* Bitwise operation *)
   | BitwiseNot of expr                                   (* Bitwise NOT (NA OPAK) *)
-  | ArrayAccess of string * expr                         (* Array element access (WYPIERDZIELAJ PAN NA POZYCJĘ) *)
+  | ArrayAccess of expr * expr                           (* Array element access (WYPIERDZIELAJ PAN NA POZYCJĘ) - supports nesting *)
   | FunctionCall of string * expr list                   (* Function call (W MORDĘ JEŻA) *)
   | NewObject of string * expr list                      (* New object instantiation (DZIAD ZDZIADZIAŁY JEDEN) *)
   | NewStruct of string                                  (* New struct instantiation (ZMONTUJ MEBEL) *)
@@ -67,7 +67,7 @@ type stmt =
   | Print of expr                                        (* Print statement (PANIE SENSACJA REWELACJA) *)
   | Read of string                                       (* Read input (CO TAM U PANA SŁYCHAĆ) *)
   | Assign of string * expr                              (* Assignment (O KURDE MAM POMYSŁA ... A PROSZĘ BARDZO ... NO I GITARA) *)
-  | ArrayAssign of string * expr * expr                  (* Array element assignment (O KURDE MAM POMYSŁA arr[idx] ... A PROSZĘ BARDZO ... NO I GITARA) *)
+  | ArrayAssign of expr * expr                           (* Array element assignment - supports nested: arr[i][j] = val *)
   | If of expr * stmt list * stmt list option            (* If statement (NO JAK NIE JAK TAK ... A DUPA TAM ... DO CHAŁUPY ALE JUŻ) *)
   | While of expr * stmt list                            (* While loop (CHLUŚNIEM BO UŚNIEM ... A ROBIĆ NI MA KOMU) *)
   | FunctionCallStmt of string * expr list               (* Function call statement (W MORDĘ JEŻA) *)
@@ -194,8 +194,8 @@ let rec string_of_expr = function
       "(" ^ string_of_expr e1 ^ " " ^ string_of_bitwise_op op ^ " " ^ string_of_expr e2 ^ ")"
   | BitwiseNot e ->
       "~(" ^ string_of_expr e ^ ")"
-  | ArrayAccess (name, idx) ->
-      name ^ "[" ^ string_of_expr idx ^ "]"
+  | ArrayAccess (arr_expr, idx) ->
+      string_of_expr arr_expr ^ "[" ^ string_of_expr idx ^ "]"
   | FunctionCall (name, args) ->
       name ^ "(" ^ String.concat ", " (List.map string_of_expr args) ^ ")"
   | NewObject (class_name, args) ->
@@ -233,8 +233,8 @@ let rec string_of_stmt indent = function
       indent ^ "read " ^ name
   | Assign (name, expr) ->
       indent ^ name ^ " = " ^ string_of_expr expr
-  | ArrayAssign (name, idx, expr) ->
-      indent ^ name ^ "[" ^ string_of_expr idx ^ "] = " ^ string_of_expr expr
+  | ArrayAssign (arr_expr, value_expr) ->
+      indent ^ string_of_expr arr_expr ^ " = " ^ string_of_expr value_expr
   | If (cond, then_stmts, else_stmts_opt) ->
       let then_str = String.concat "\n" (List.map (string_of_stmt (indent ^ "  ")) then_stmts) in
       let else_str = match else_stmts_opt with

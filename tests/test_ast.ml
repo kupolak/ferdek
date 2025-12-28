@@ -70,7 +70,7 @@ let test_array_decl () =
 
 (* Test 8: Dostęp do tablicy *)
 let test_array_access () =
-  let expr = ArrayAccess ("liczby", IntLiteral 0) in
+  let expr = ArrayAccess (Identifier "liczby", IntLiteral 0) in
   print_endline "Test 8: Dostęp do tablicy";
   print_endline ("  " ^ string_of_expr expr);
   print_newline ()

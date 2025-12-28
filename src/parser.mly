@@ -133,10 +133,17 @@ read_stmt:
   ;
 
 assign_stmt:
-  | ASSIGN_START id=IDENTIFIER LBRACKET idx=expression RBRACKET ASSIGN_OP e=expression ASSIGN_END
-    { ArrayAssign (id, idx, e) }
+  | ASSIGN_START arr=array_access_expr ASSIGN_OP e=expression ASSIGN_END
+    { ArrayAssign (arr, e) }
   | ASSIGN_START id=IDENTIFIER ASSIGN_OP e=expression ASSIGN_END
     { Assign (id, e) }
+  ;
+
+array_access_expr:
+  | id=IDENTIFIER LBRACKET idx=expression RBRACKET
+    { ArrayAccess (Identifier id, idx) }
+  | arr=array_access_expr LBRACKET idx=expression RBRACKET
+    { ArrayAccess (arr, idx) }
   ;
 
 if_stmt:
@@ -331,8 +338,8 @@ factor:
   | FALSE { BoolLiteral false }
   | NULL { NullLiteral }
   | id=IDENTIFIER { Identifier id }
-  | ARRAY_INDEX id=IDENTIFIER LBRACKET idx=expression RBRACKET
-    { ArrayAccess (id, idx) }
+  | ARRAY_INDEX arr=array_access_expr
+    { arr }
   | FUNC_CALL id=IDENTIFIER LPAREN args=separated_list(COMMA, expression) RPAREN
     { FunctionCall (id, args) }
   | FUNC_CALL id=IDENTIFIER

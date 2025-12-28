@@ -293,8 +293,8 @@ let rec eval_expr env = function
       let v = eval_expr env e in
       let n = to_int v in
       VInt (n lsr 16)
-  | ArrayAccess (name, index_expr) ->
-      let value = get_var env name in
+  | ArrayAccess (arr_expr, index_expr) ->
+      let value = eval_expr env arr_expr in
       (match value with
        | VArray arr ->
            let index = to_int (eval_expr env index_expr) in
@@ -1240,6 +1240,41 @@ and eval_function_call env name args =
            VString type_name
        | _ -> raise (RuntimeError "CO TO ZA TYP expects 1 argument"))
 
+  (* ============ MULTIDIMENSIONAL ARRAYS ============ *)
+
+  (* TABLICA 2D(rows, cols) - Create 2D array *)
+  | "TABLICA 2D" ->
+      (match args with
+       | [rows_arg; cols_arg] ->
+           let rows = to_int (eval_expr env rows_arg) in
+           let cols = to_int (eval_expr env cols_arg) in
+           if rows <= 0 || cols <= 0 then
+             raise (RuntimeError "TABLICA 2D: dimensions must be positive")
+           else
+             (* Create array of arrays *)
+             let inner_arrays = Array.init rows (fun _ -> VArray (Array.make cols (VInt 0))) in
+             VArray inner_arrays
+       | _ -> raise (RuntimeError "TABLICA 2D expects 2 arguments (rows, cols)"))
+
+  (* TABLICA 3D(x, y, z) - Create 3D array *)
+  | "TABLICA 3D" ->
+      (match args with
+       | [x_arg; y_arg; z_arg] ->
+           let x = to_int (eval_expr env x_arg) in
+           let y = to_int (eval_expr env y_arg) in
+           let z = to_int (eval_expr env z_arg) in
+           if x <= 0 || y <= 0 || z <= 0 then
+             raise (RuntimeError "TABLICA 3D: dimensions must be positive")
+           else
+             (* Create array of arrays of arrays *)
+             let inner_arrays = Array.init x (fun _ ->
+               VArray (Array.init y (fun _ ->
+                 VArray (Array.make z (VInt 0))
+               ))
+             ) in
+             VArray inner_arrays
+       | _ -> raise (RuntimeError "TABLICA 3D expects 3 arguments (x, y, z)"))
+
   | _ ->
       (* Try to find user-defined function *)
       try
@@ -1394,31 +1429,32 @@ and eval_stmt env = function
       let value = eval_expr env expr in
       set_var env name value
 
-  | ArrayAssign (name, idx_expr, value_expr) ->
-      let container = get_var env name in
+  | ArrayAssign (arr_expr, value_expr) ->
+      (* Handle nested array assignment like arr[i][j] = value *)
       let value = eval_expr env value_expr in
-      (match container with
-       | VArray arr_vals ->
-           let idx = eval_expr env idx_expr in
-           (match idx with
-            | VInt i ->
-                if i < 0 || i >= Array.length arr_vals then
-                  raise (Failure (Printf.sprintf "Indeks poza zakresem: %d" i))
-                else
-                  arr_vals.(i) <- value
-            | _ ->
-                raise (Failure "Indeks tablicy musi być liczbą całkowitą"))
-       | VObject obj ->
-           (* Support object field assignment: obj["field_name"] = value *)
-           let field_name = match eval_expr env idx_expr with
-             | VString s -> s
-             | VInt i -> string_of_int i
-             | v -> raise (RuntimeError (Printf.sprintf "Object field name must be a string, got %s" (string_of_value v)))
-           in
-           Hashtbl.replace obj field_name value
-       | _ ->
-           raise (Failure (Printf.sprintf "%s nie jest tablicą ani obiektem" name))
-      )
+      let assign_to_array expr val_to_assign =
+        match expr with
+        | ArrayAccess (inner_expr, idx_expr) ->
+            let container = eval_expr env inner_expr in
+            let idx = eval_expr env idx_expr in
+            (match container, idx with
+             | VArray arr_vals, VInt i ->
+                 if i < 0 || i >= Array.length arr_vals then
+                   raise (Failure (Printf.sprintf "Indeks poza zakresem: %d" i))
+                 else
+                   arr_vals.(i) <- val_to_assign
+             | VObject obj, VString s ->
+                 Hashtbl.replace obj s val_to_assign
+             | VObject obj, VInt i ->
+                 Hashtbl.replace obj (string_of_int i) val_to_assign
+             | _, VInt _ ->
+                 raise (Failure "Nie jest tablicą ani obiektem")
+             | _, _ ->
+                 raise (Failure "Indeks tablicy musi być liczbą całkowitą"))
+        | _ ->
+            raise (Failure "Invalid array assignment expression")
+      in
+      assign_to_array arr_expr value
 
   | If (cond, then_stmts, else_stmts_opt) ->
       let cond_value = eval_expr env cond in

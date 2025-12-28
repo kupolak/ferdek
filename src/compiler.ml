@@ -129,9 +129,10 @@ let rec compile_expr ctx expr =
       let v = compile_expr ctx e in
       Printf.sprintf "make_int(to_int(%s) >> 16)" v
 
-  | ArrayAccess (name, index_expr) ->
+  | ArrayAccess (arr_expr, index_expr) ->
+      let arr = compile_expr ctx arr_expr in
       let idx = compile_expr ctx index_expr in
-      Printf.sprintf "array_get(%s, to_int(%s))" name idx
+      Printf.sprintf "array_get(%s, to_int(%s))" arr idx
 
   | FunctionCall (name, args) ->
       let c_args = List.map (compile_expr ctx) args in
@@ -207,10 +208,15 @@ let rec compile_stmt ctx indent stmt =
       let value = compile_expr ctx expr in
       Printf.sprintf "%s%s = %s;" ind name value
 
-  | ArrayAssign (name, idx_expr, value_expr) ->
-      let idx = compile_expr ctx idx_expr in
+  | ArrayAssign (arr_expr, value_expr) ->
+      (* For nested array assignment, we need to handle it as: array_set(arr_get(...), idx, val) *)
       let value = compile_expr ctx value_expr in
-      Printf.sprintf "%sarray_set(%s, %s, %s);" ind name idx value
+      (match arr_expr with
+       | ArrayAccess (inner_arr_expr, idx_expr) ->
+           let arr = compile_expr ctx inner_arr_expr in
+           let idx = compile_expr ctx idx_expr in
+           Printf.sprintf "%sarray_set(%s, %s, %s);" ind arr idx value
+       | _ -> failwith "ArrayAssign expects ArrayAccess expression")
 
   | If (cond, then_stmts, else_stmts_opt) ->
       let cond_code = compile_expr ctx cond in

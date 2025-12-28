@@ -44,7 +44,7 @@ type expr =
   | LogicalOp of expr * logical_op * expr
   | BitwiseOp of expr * bitwise_op * expr
   | BitwiseNot of expr
-  | ArrayAccess of string * expr
+  | ArrayAccess of expr * expr  (* Changed to support nested access: arr[i][j] *)
   | FunctionCall of string * expr list
   | NewObject of string * expr list
   | NewStruct of string
@@ -67,7 +67,7 @@ type stmt =
   | Print of expr
   | Read of string
   | Assign of string * expr
-  | ArrayAssign of string * expr * expr
+  | ArrayAssign of expr * expr  (* Changed to support nested access: arr[i][j] = val *)
   | If of expr * stmt list * stmt list option
   | While of expr * stmt list
   | FunctionCallStmt of string * expr list
