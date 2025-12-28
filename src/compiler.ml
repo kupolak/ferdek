@@ -145,6 +145,10 @@ let rec compile_expr ctx expr =
       (* Struct instantiation *)
       Printf.sprintf "/* new struct %s */ make_null()" struct_name
 
+  | NewUnion union_name ->
+      (* Union instantiation *)
+      Printf.sprintf "/* new union %s */ make_null()" union_name
+
   | Reference e ->
       (* Pointer reference *)
       Printf.sprintf "/* & */ &(%s)" (compile_expr ctx e)
@@ -292,6 +296,9 @@ let compile_top_level ctx decl =
 
   | StructDecl sdecl ->
       Printf.sprintf "/* struct %s - not implemented */" sdecl.name
+
+  | UnionDecl udecl ->
+      Printf.sprintf "/* union %s - not implemented */" udecl.name
 
 (* ============ RUNTIME LIBRARY ============ *)
 

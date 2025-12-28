@@ -1,0 +1,166 @@
+CO JEST KURDE
+
+PANIE SENSACJA REWELACJA "=== Test Unii ==="
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 1: Podstawowa unia
+PANIE SENSACJA REWELACJA "Test 1: Podstawowa definicja unii"
+
+RYM CYM CYM Definiujemy unię z różnymi typami akcji
+WCHODZIMY DO UNII ActionFunction
+    RYM CYM CYM Akcja typu 1 - z jednym parametrem
+    CYCU PRZYNIEŚ NO acp1
+    TO NIE SĄ TANIE RZECZY 1
+
+    RYM CYM CYM Akcja typu 2 - bez parametrów
+    CYCU PRZYNIEŚ NO acv
+    TO NIE SĄ TANIE RZECZY 0
+
+    RYM CYM CYM Akcja typu 3 - z wieloma parametrami
+    CYCU PRZYNIEŚ NO acp2
+    TO NIE SĄ TANIE RZECZY 2
+KONIEC UNII EUROPEJSKIEJ
+
+PANIE SENSACJA REWELACJA "Unia ActionFunction zdefiniowana!"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 2: Tworzenie instancji unii
+PANIE SENSACJA REWELACJA "Test 2: Tworzenie instancji unii"
+
+RYM CYM CYM Tworzymy instancję unii (inicjalizuje tylko pierwsze pole)
+CYCU PRZYNIEŚ NO action
+TO NIE SĄ TANIE RZECZY WEJDŹ DO UNII ActionFunction
+
+PANIE SENSACJA REWELACJA "Utworzono instancję unii ActionFunction"
+PANIE SENSACJA REWELACJA "W unii tylko pierwsze pole (acp1) jest zainicjalizowane wartością 1"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 3: Unia z różnymi typami danych
+PANIE SENSACJA REWELACJA "Test 3: Unia z różnymi typami danych"
+
+WCHODZIMY DO UNII MixedData
+    RYM CYM CYM Pole typu całkowitego
+    CYCU PRZYNIEŚ NO liczba
+    TO NIE SĄ TANIE RZECZY 42
+
+    RYM CYM CYM Pole typu tekstowego (dzieli tę samą pamięć!)
+    CYCU PRZYNIEŚ NO tekst
+    TO NIE SĄ TANIE RZECZY "Ferdek"
+
+    RYM CYM CYM Pole typu logicznego
+    CYCU PRZYNIEŚ NO prawda
+    TO NIE SĄ TANIE RZECZY A ŻEBYŚ PAN WIEDZIAŁ
+KONIEC UNII EUROPEJSKIEJ
+
+CYCU PRZYNIEŚ NO dane
+TO NIE SĄ TANIE RZECZY WEJDŹ DO UNII MixedData
+
+PANIE SENSACJA REWELACJA "Utworzono unię MixedData"
+PANIE SENSACJA REWELACJA "Wszystkie pola dzielą tę samą przestrzeń pamięci!"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 4: Praktyczny przykład - system flag (jak MF_* w DOOM)
+PANIE SENSACJA REWELACJA "Test 4: System flag obiektu (DOOM-style)"
+
+RYM CYM CYM Unia dla różnych typów flag obiektów
+WCHODZIMY DO UNII ObjectFlags
+    RYM CYM CYM Flagi mobów
+    CYCU PRZYNIEŚ NO mob_flags
+    TO NIE SĄ TANIE RZECZY 0
+
+    RYM CYM CYM Flagi przedmiotów
+    CYCU PRZYNIEŚ NO item_flags
+    TO NIE SĄ TANIE RZECZY 0
+
+    RYM CYM CYM Flagi ścian
+    CYCU PRZYNIEŚ NO wall_flags
+    TO NIE SĄ TANIE RZECZY 0
+KONIEC UNII EUROPEJSKIEJ
+
+CYCU PRZYNIEŚ NO flags
+TO NIE SĄ TANIE RZECZY WEJDŹ DO UNII ObjectFlags
+
+PANIE SENSACJA REWELACJA "System flag utworzony!"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 5: Unia do zarządzania pamięcią (jak w silnikach gier)
+PANIE SENSACJA REWELACJA "Test 5: Unia do zarządzania różnymi typami zasobów"
+
+WCHODZIMY DO UNII Resource
+    RYM CYM CYM Wskaźnik do tekstury
+    CYCU PRZYNIEŚ NO texture_ptr
+    TO NIE SĄ TANIE RZECZY 0
+
+    RYM CYM CYM Wskaźnik do dźwięku
+    CYCU PRZYNIEŚ NO sound_ptr
+    TO NIE SĄ TANIE RZECZY 0
+
+    RYM CYM CYM Wskaźnik do muzyki
+    CYCU PRZYNIEŚ NO music_ptr
+    TO NIE SĄ TANIE RZECZY 0
+
+    RYM CYM CYM ID zasobu
+    CYCU PRZYNIEŚ NO resource_id
+    TO NIE SĄ TANIE RZECZY 100
+KONIEC UNII EUROPEJSKIEJ
+
+CYCU PRZYNIEŚ NO zasob
+TO NIE SĄ TANIE RZECZY WEJDŹ DO UNII Resource
+
+PANIE SENSACJA REWELACJA "Zasób utworzony!"
+PANIE SENSACJA REWELACJA "Może przechowywać różne typy wskaźników w tej samej pamięci"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 6: Unia dla fixed-point arithmetic (jak w DOOM)
+PANIE SENSACJA REWELACJA "Test 6: Unia dla liczb fixed-point i całkowitych"
+
+WCHODZIMY DO UNII NumberUnion
+    RYM CYM CYM Wartość fixed-point (16.16)
+    CYCU PRZYNIEŚ NO fixed_val
+    TO NIE SĄ TANIE RZECZY 0
+
+    RYM CYM CYM Wartość całkowita
+    CYCU PRZYNIEŚ NO int_val
+    TO NIE SĄ TANIE RZECZY 0
+KONIEC UNII EUROPEJSKIEJ
+
+CYCU PRZYNIEŚ NO liczba_union
+TO NIE SĄ TANIE RZECZY WEJDŹ DO UNII NumberUnion
+
+PANIE SENSACJA REWELACJA "NumberUnion utworzona!"
+PANIE SENSACJA REWELACJA "Pozwala na efektywne przełączanie między fixed i int"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 7: Wykorzystanie unii z operacjami bitowymi
+PANIE SENSACJA REWELACJA "Test 7: Unia + operacje bitowe"
+
+WCHODZIMY DO UNII ColorUnion
+    RYM CYM CYM Pełna wartość koloru RGBA (32 bity)
+    CYCU PRZYNIEŚ NO rgba
+    TO NIE SĄ TANIE RZECZY 0
+
+    RYM CYM CYM Osobne składowe (teoretycznie, w praktyce dzielą pamięć)
+    CYCU PRZYNIEŚ NO r
+    TO NIE SĄ TANIE RZECZY 255
+KONIEC UNII EUROPEJSKIEJ
+
+CYCU PRZYNIEŚ NO kolor
+TO NIE SĄ TANIE RZECZY WEJDŹ DO UNII ColorUnion
+
+RYM CYM CYM Przykładowa wartość RGBA (czerwony = 0xFF0000)
+CYCU PRZYNIEŚ NO czerwony
+TO NIE SĄ TANIE RZECZY 16711680
+
+PANIE SENSACJA REWELACJA "Kolor RGBA: "
+PANIE SENSACJA REWELACJA czerwony
+PANIE SENSACJA REWELACJA " (0xFF0000 = czerwony w RGB)"
+PANIE SENSACJA REWELACJA ""
+
+PANIE SENSACJA REWELACJA "=== Wszystkie testy unii zakończone! ==="
+PANIE SENSACJA REWELACJA ""
+PANIE SENSACJA REWELACJA "Unie w Ferdeku działają jak w C i DOOM:"
+PANIE SENSACJA REWELACJA "- Wszystkie pola dzielą tę samą przestrzeń pamięci"
+PANIE SENSACJA REWELACJA "- Tylko pierwsze pole jest inicjalizowane"
+PANIE SENSACJA REWELACJA "- Idealne do oszczędzania pamięci i wielotypowych danych"
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

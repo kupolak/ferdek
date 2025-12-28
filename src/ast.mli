@@ -48,6 +48,7 @@ type expr =
   | FunctionCall of string * expr list
   | NewObject of string * expr list
   | NewStruct of string
+  | NewUnion of string
   | Reference of expr
   | Dereference of expr
   | AddressOf of string
@@ -104,6 +105,12 @@ type struct_decl = {
   fields: (string * expr) list;
 }
 
+(* Union declaration *)
+type union_decl = {
+  name: string;
+  fields: (string * expr) list;  (* Union fields share the same memory *)
+}
+
 (* Module import *)
 type import_stmt = string
 
@@ -116,6 +123,7 @@ type top_level_decl =
   | FunctionDecl of function_decl
   | ClassDecl of class_decl
   | StructDecl of struct_decl
+  | UnionDecl of union_decl
 
 (* Program - main AST structure *)
 type program = {
@@ -152,6 +160,9 @@ val string_of_class_decl : string -> class_decl -> string
 
 (* Convert struct declaration to string *)
 val string_of_struct_decl : string -> struct_decl -> string
+
+(* Convert union declaration to string *)
+val string_of_union_decl : string -> union_decl -> string
 
 (* Convert top-level declaration to string *)
 val string_of_top_level_decl : top_level_decl -> string

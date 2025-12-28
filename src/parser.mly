@@ -33,6 +33,9 @@ open Ast
 %token STRUCT
 %token END_STRUCT
 %token NEW_STRUCT
+%token UNION
+%token END_UNION
+%token NEW_UNION
 %token POINTER_REF
 %token POINTER_DEREF
 %token POINTER_ADDR
@@ -52,6 +55,7 @@ open Ast
 %type <Ast.function_decl> function_decl
 %type <Ast.class_decl> class_decl
 %type <Ast.struct_decl> struct_decl
+%type <Ast.union_decl> union_decl
 %type <Ast.import_stmt> import_stmt
 %type <Ast.top_level_decl> top_level_decl
 
@@ -73,6 +77,7 @@ top_level_decl:
   | f=function_decl { FunctionDecl f }
   | c=class_decl { ClassDecl c }
   | st=struct_decl { StructDecl st }
+  | u=union_decl { UnionDecl u }
   ;
 
 /* ============ IMPORTS ============ */
@@ -231,6 +236,18 @@ struct_field:
     { (id, e) }
   ;
 
+/* ============ UNIONS ============ */
+
+union_decl:
+  | UNION name=IDENTIFIER fields=list(union_field) END_UNION
+    { { name; fields } }
+  ;
+
+union_field:
+  | VAR_DECL id=IDENTIFIER VAR_INIT e=expression
+    { (id, e) }
+  ;
+
 /* ============ EXPRESSIONS ============ */
 
 expression:
@@ -308,6 +325,8 @@ factor:
     { NewObject (class_name, []) }
   | NEW_STRUCT struct_name=IDENTIFIER
     { NewStruct struct_name }
+  | NEW_UNION union_name=IDENTIFIER
+    { NewUnion union_name }
   | POINTER_REF e=factor
     { Reference e }
   | POINTER_DEREF e=factor

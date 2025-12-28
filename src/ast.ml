@@ -48,6 +48,7 @@ type expr =
   | FunctionCall of string * expr list                   (* Function call (W MORDĘ JEŻA) *)
   | NewObject of string * expr list                      (* New object instantiation (DZIAD ZDZIADZIAŁY JEDEN) *)
   | NewStruct of string                                  (* New struct instantiation (ZMONTUJ MEBEL) *)
+  | NewUnion of string                                   (* New union instantiation (WCHODZIMY DO UNII) *)
   | Reference of expr                                    (* Create reference/pointer (PALCEM POKAZUJĘ) *)
   | Dereference of expr                                  (* Dereference pointer (CO TAM JEST) *)
   | AddressOf of string                                  (* Get address of variable (GDZIE STOI) *)
@@ -104,6 +105,12 @@ type struct_decl = {
   fields: (string * expr) list;                          (* Struct fields (no methods, no inheritance) *)
 }
 
+(* Union declaration *)
+type union_decl = {
+  name: string;                                          (* Union name *)
+  fields: (string * expr) list;                          (* Union fields (all share same memory) *)
+}
+
 (* Module import *)
 type import_stmt = string                                (* Module import (O KOGO MOJE PIĘKNE OCZY WIDZĄ) *)
 
@@ -116,6 +123,7 @@ type top_level_decl =
   | FunctionDecl of function_decl
   | ClassDecl of class_decl
   | StructDecl of struct_decl
+  | UnionDecl of union_decl
 
 (* Program - main AST structure *)
 type program = {
@@ -187,6 +195,8 @@ let rec string_of_expr = function
       "new " ^ class_name ^ "(" ^ String.concat ", " (List.map string_of_expr args) ^ ")"
   | NewStruct struct_name ->
       "new struct " ^ struct_name
+  | NewUnion union_name ->
+      "new union " ^ union_name
   | Reference e ->
       "&(" ^ string_of_expr e ^ ")"
   | Dereference e ->
@@ -270,15 +280,23 @@ let string_of_class_decl indent cdecl =
   String.concat "\n" methods_str
 
 (* Convert struct declaration to string *)
-let string_of_struct_decl indent sdecl =
+let string_of_struct_decl indent (sdecl : struct_decl) : string =
   let fields_str = List.map (fun (name, expr) ->
     indent ^ "  " ^ name ^ " = " ^ string_of_expr expr
   ) sdecl.fields in
   indent ^ "struct " ^ sdecl.name ^ "\n" ^
   String.concat "\n" fields_str
 
+(* Convert union declaration to string *)
+let string_of_union_decl indent (u : union_decl) =
+  let fields_str = List.map (fun (name, expr) ->
+    indent ^ "  " ^ name ^ " = " ^ string_of_expr expr
+  ) u.fields in
+  indent ^ "union " ^ u.name ^ "\n" ^
+  String.concat "\n" fields_str
+
 (* Convert top-level declaration to string *)
-let string_of_top_level_decl = function
+let string_of_top_level_decl (decl : top_level_decl) : string = match decl with
   | Import module_name ->
       "import " ^ module_name
   | Statement stmt ->
@@ -287,8 +305,10 @@ let string_of_top_level_decl = function
       string_of_function_decl "" fdecl
   | ClassDecl cdecl ->
       string_of_class_decl "" cdecl
-  | StructDecl sdecl ->
-      string_of_struct_decl "" sdecl
+  | StructDecl s ->
+      string_of_struct_decl "" s
+  | UnionDecl u ->
+      string_of_union_decl "" u
 
 (* Convert entire program to string *)
 let string_of_program prog =

@@ -15,6 +15,7 @@ type value =
   | VFunction of function_decl * environment
   | VClass of class_decl * environment       (* Class definition *)
   | VStruct of struct_decl * environment     (* Struct definition *)
+  | VUnion of union_decl * environment       (* Union definition *)
   | VObject of (string, value) Hashtbl.t
   | VPointer of value ref                    (* Pointer/reference (PALCEM POKAZUJĘ) *)
   | VFileHandle of file_handle
@@ -92,6 +93,8 @@ let rec string_of_value = function
       Printf.sprintf "<class %s>" cdecl.name
   | VStruct (sdecl, _) ->
       Printf.sprintf "<struct %s>" sdecl.name
+  | VUnion (udecl, _) ->
+      Printf.sprintf "<union %s>" udecl.name
   | VObject _ ->
       "<object>"
   | VPointer r ->
@@ -240,6 +243,8 @@ let rec eval_expr env = function
       eval_new_object env class_name args
   | NewStruct struct_name ->
       eval_new_struct env struct_name
+  | NewUnion union_name ->
+      eval_new_union env union_name
   | Reference e ->
       (* Create a reference to the evaluated expression *)
       (* Special case: if e is an Identifier referring to a function, return the function itself *)
@@ -791,6 +796,30 @@ and eval_new_struct env struct_name =
   with RuntimeError _ ->
     raise (RuntimeError (Printf.sprintf "Undefined struct: %s" struct_name))
 
+(* Evaluate new union instantiation *)
+and eval_new_union env union_name =
+  (* Look up union definition *)
+  try
+    let union_val = get_var env union_name in
+    match union_val with
+    | VUnion (udecl, union_env) ->
+        (* Create new object with fields from union definition *)
+        (* In a union, all fields share the same memory, so we initialize with first field only *)
+        let obj = Hashtbl.create 16 in
+
+        (* Initialize only the first field (union behavior) *)
+        (match udecl.fields with
+         | (field_name, init_expr) :: _ ->
+             let field_value = eval_expr union_env init_expr in
+             Hashtbl.replace obj field_name field_value
+         | [] -> ());
+
+        VObject obj
+    | _ ->
+        raise (RuntimeError (Printf.sprintf "%s is not a union" union_name))
+  with RuntimeError _ ->
+    raise (RuntimeError (Printf.sprintf "Undefined union: %s" union_name))
+
 (* ============ STATEMENT EXECUTION ============ *)
 
 (* Execute statement *)
@@ -934,6 +963,10 @@ and eval_top_level_decl env = function
   | StructDecl sdecl ->
       (* Store struct definition in environment *)
       define_var env sdecl.name (VStruct (sdecl, env))
+
+  | UnionDecl udecl ->
+      (* Store union definition in environment *)
+      define_var env udecl.name (VUnion (udecl, env))
 
 (* ============ PROGRAM EXECUTION ============ *)
 

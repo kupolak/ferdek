@@ -188,6 +188,12 @@ rule token = parse
   | "KONIEC MEBLA" { END_STRUCT }
   | "ZMONTUJ MEBEL" { NEW_STRUCT }
 
+  (* Keywords - UNIONS *)
+  | "WCHODZIMY DO UNII" { UNION }
+  | "KONIEC UNII EUROPEJSKIEJ" { END_UNION }
+  | "WEJDŹ DO UNII" { NEW_UNION }
+  | "WEJDZ DO UNII" { NEW_UNION }
+
   (* Keywords - POINTERS *)
   | "PALCEM POKAZUJĘ" { POINTER_REF }
   | "PALCEM POKAZUJE" { POINTER_REF }
