@@ -185,6 +185,9 @@ reinstall:
 	@echo "=== Odinstalowuję Ferdka ==="
 	@./scripts/uninstall.sh
 	@echo ""
+	@echo "=== Kompiluję Ferdka ==="
+	@make
+	@echo ""
 	@echo "=== Instaluję Ferdka ==="
 	@./scripts/install.sh
 	@echo ""
