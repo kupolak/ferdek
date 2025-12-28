@@ -113,6 +113,10 @@ let rec compile_expr ctx expr =
       (* Simple object creation - allocate struct *)
       Printf.sprintf "/* new %s */ make_null()" class_name
 
+  | NewStruct struct_name ->
+      (* Struct instantiation *)
+      Printf.sprintf "/* new struct %s */ make_null()" struct_name
+
   | Parenthesized e ->
       Printf.sprintf "(%s)" (compile_expr ctx e)
 
@@ -230,6 +234,9 @@ let compile_top_level ctx decl =
 
   | ClassDecl cdecl ->
       Printf.sprintf "/* class %s - not implemented */" cdecl.name
+
+  | StructDecl sdecl ->
+      Printf.sprintf "/* struct %s - not implemented */" sdecl.name
 
 (* ============ RUNTIME LIBRARY ============ *)
 

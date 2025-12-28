@@ -37,6 +37,7 @@ type expr =
   | ArrayAccess of string * expr
   | FunctionCall of string * expr list
   | NewObject of string * expr list
+  | NewStruct of string
   | Parenthesized of expr
 
 (* ============ STATEMENTS ============ *)
@@ -80,6 +81,12 @@ type class_decl = {
   methods: function_decl list;
 }
 
+(* Struct declaration *)
+type struct_decl = {
+  name: string;
+  fields: (string * expr) list;
+}
+
 (* Module import *)
 type import_stmt = string
 
@@ -91,6 +98,7 @@ type top_level_decl =
   | Statement of stmt
   | FunctionDecl of function_decl
   | ClassDecl of class_decl
+  | StructDecl of struct_decl
 
 (* Program - main AST structure *)
 type program = {
@@ -123,6 +131,9 @@ val string_of_function_decl : string -> function_decl -> string
 
 (* Convert class declaration to string *)
 val string_of_class_decl : string -> class_decl -> string
+
+(* Convert struct declaration to string *)
+val string_of_struct_decl : string -> struct_decl -> string
 
 (* Convert top-level declaration to string *)
 val string_of_top_level_decl : top_level_decl -> string

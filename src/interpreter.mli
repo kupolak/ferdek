@@ -12,6 +12,7 @@ type value =
   | VHashMap of (string, value) Hashtbl.t
   | VFunction of function_decl * environment
   | VClass of class_decl * environment
+  | VStruct of struct_decl * environment
   | VObject of (string, value) Hashtbl.t
   | VFileHandle of file_handle
 

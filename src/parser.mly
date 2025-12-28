@@ -28,6 +28,9 @@ open Ast
 %token CLASS
 %token EXTENDS
 %token NEW
+%token STRUCT
+%token END_STRUCT
+%token NEW_STRUCT
 %token LBRACKET RBRACKET
 %token <string> IDENTIFIER
 %token <int> INTEGER
@@ -41,6 +44,7 @@ open Ast
 %type <Ast.stmt> return_stmt try_stmt throw_stmt
 %type <Ast.function_decl> function_decl
 %type <Ast.class_decl> class_decl
+%type <Ast.struct_decl> struct_decl
 %type <Ast.import_stmt> import_stmt
 %type <Ast.top_level_decl> top_level_decl
 
@@ -61,6 +65,7 @@ top_level_decl:
   | s=statement { Statement s }
   | f=function_decl { FunctionDecl f }
   | c=class_decl { ClassDecl c }
+  | st=struct_decl { StructDecl st }
   ;
 
 /* ============ IMPORTS ============ */
@@ -207,6 +212,18 @@ class_member:
     { `Method f }
   ;
 
+/* ============ STRUCTS ============ */
+
+struct_decl:
+  | STRUCT name=IDENTIFIER fields=list(struct_field) END_STRUCT
+    { { name; fields } }
+  ;
+
+struct_field:
+  | VAR_DECL id=IDENTIFIER VAR_INIT e=expression
+    { (id, e) }
+  ;
+
 /* ============ EXPRESSIONS ============ */
 
 expression:
@@ -268,6 +285,8 @@ factor:
     { NewObject (class_name, args) }
   | NEW class_name=IDENTIFIER
     { NewObject (class_name, []) }
+  | NEW_STRUCT struct_name=IDENTIFIER
+    { NewStruct struct_name }
   | LPAREN e=expression RPAREN
     { Parenthesized e }
   ;

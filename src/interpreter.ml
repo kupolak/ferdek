@@ -14,6 +14,7 @@ type value =
   | VHashMap of (string, value) Hashtbl.t  (* SZAFKA - dictionaries/maps *)
   | VFunction of function_decl * environment
   | VClass of class_decl * environment       (* Class definition *)
+  | VStruct of struct_decl * environment     (* Struct definition *)
   | VObject of (string, value) Hashtbl.t
   | VFileHandle of file_handle
 
@@ -88,6 +89,8 @@ let rec string_of_value = function
       Printf.sprintf "<function %s>" fdecl.name
   | VClass (cdecl, _) ->
       Printf.sprintf "<class %s>" cdecl.name
+  | VStruct (sdecl, _) ->
+      Printf.sprintf "<struct %s>" sdecl.name
   | VObject _ ->
       "<object>"
   | VFileHandle _ ->
@@ -202,6 +205,8 @@ let rec eval_expr env = function
       eval_function_call env name args
   | NewObject (class_name, args) ->
       eval_new_object env class_name args
+  | NewStruct struct_name ->
+      eval_new_struct env struct_name
   | Parenthesized e -> eval_expr env e
 
 (* Evaluate function call *)
@@ -634,7 +639,7 @@ and eval_new_object env class_name args =
     | VClass (cdecl, class_env) ->
         (* Create new object with fields *)
         let obj = Hashtbl.create 16 in
-        
+
         (* First, inherit fields and methods from parent class if exists *)
         (match cdecl.parent_class with
          | Some parent_name ->
@@ -657,13 +662,13 @@ and eval_new_object env class_name args =
              with RuntimeError _ ->
                raise (RuntimeError (Printf.sprintf "Undefined parent class: %s" parent_name)))
          | None -> ());
-        
+
         (* Initialize fields from class definition (may override parent fields) *)
         List.iter (fun (field_name, init_expr) ->
           let field_value = eval_expr class_env init_expr in
           Hashtbl.replace obj field_name field_value
         ) cdecl.fields;
-        
+
         (* Add methods to object (may override parent methods) *)
         List.iter (fun (method_decl : function_decl) ->
           let method_env = create_env (Some class_env) in
@@ -672,12 +677,34 @@ and eval_new_object env class_name args =
           ) obj;
           Hashtbl.replace obj method_decl.name (VFunction (method_decl, method_env))
         ) cdecl.methods;
-        
+
         VObject obj
     | _ ->
         raise (RuntimeError (Printf.sprintf "%s is not a class" class_name))
   with RuntimeError _ ->
     raise (RuntimeError (Printf.sprintf "Undefined class: %s" class_name))
+
+(* Evaluate struct instantiation *)
+and eval_new_struct env struct_name =
+  (* Look up struct definition *)
+  try
+    let struct_val = get_var env struct_name in
+    match struct_val with
+    | VStruct (sdecl, struct_env) ->
+        (* Create new object with fields from struct definition *)
+        let obj = Hashtbl.create 16 in
+
+        (* Initialize fields from struct definition *)
+        List.iter (fun (field_name, init_expr) ->
+          let field_value = eval_expr struct_env init_expr in
+          Hashtbl.replace obj field_name field_value
+        ) sdecl.fields;
+
+        VObject obj
+    | _ ->
+        raise (RuntimeError (Printf.sprintf "%s is not a struct" struct_name))
+  with RuntimeError _ ->
+    raise (RuntimeError (Printf.sprintf "Undefined struct: %s" struct_name))
 
 (* ============ STATEMENT EXECUTION ============ *)
 
@@ -818,6 +845,10 @@ and eval_top_level_decl env = function
   | ClassDecl cdecl ->
       (* Store class definition in environment *)
       define_var env cdecl.name (VClass (cdecl, env))
+
+  | StructDecl sdecl ->
+      (* Store struct definition in environment *)
+      define_var env sdecl.name (VStruct (sdecl, env))
 
 (* ============ PROGRAM EXECUTION ============ *)
 

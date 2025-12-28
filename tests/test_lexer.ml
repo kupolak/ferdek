@@ -55,6 +55,9 @@ let string_of_token = function
   | CLASS -> "CLASS"
   | EXTENDS -> "EXTENDS"
   | NEW -> "NEW"
+  | STRUCT -> "STRUCT"
+  | END_STRUCT -> "END_STRUCT"
+  | NEW_STRUCT -> "NEW_STRUCT"
   | LBRACKET -> "LBRACKET"
   | RBRACKET -> "RBRACKET"
   | IDENTIFIER s -> sprintf "IDENTIFIER(%s)" s

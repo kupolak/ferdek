@@ -37,6 +37,7 @@ type expr =
   | ArrayAccess of string * expr                         (* Array element access (WYPIERDZIELAJ PAN NA POZYCJĘ) *)
   | FunctionCall of string * expr list                   (* Function call (W MORDĘ JEŻA) *)
   | NewObject of string * expr list                      (* New object instantiation (DZIAD ZDZIADZIAŁY JEDEN) *)
+  | NewStruct of string                                  (* New struct instantiation (ZMONTUJ MEBEL) *)
   | Parenthesized of expr                                (* Parenthesized expression *)
 
 (* ============ STATEMENTS ============ *)
@@ -80,6 +81,12 @@ type class_decl = {
   methods: function_decl list;                           (* Class methods *)
 }
 
+(* Struct declaration *)
+type struct_decl = {
+  name: string;                                          (* Struct name *)
+  fields: (string * expr) list;                          (* Struct fields (no methods, no inheritance) *)
+}
+
 (* Module import *)
 type import_stmt = string                                (* Module import (O KOGO MOJE PIĘKNE OCZY WIDZĄ) *)
 
@@ -91,6 +98,7 @@ type top_level_decl =
   | Statement of stmt
   | FunctionDecl of function_decl
   | ClassDecl of class_decl
+  | StructDecl of struct_decl
 
 (* Program - main AST structure *)
 type program = {
@@ -148,6 +156,8 @@ let rec string_of_expr = function
       name ^ "(" ^ String.concat ", " (List.map string_of_expr args) ^ ")"
   | NewObject (class_name, args) ->
       "new " ^ class_name ^ "(" ^ String.concat ", " (List.map string_of_expr args) ^ ")"
+  | NewStruct struct_name ->
+      "new struct " ^ struct_name
   | Parenthesized e ->
       "(" ^ string_of_expr e ^ ")"
 
@@ -216,6 +226,14 @@ let string_of_class_decl indent cdecl =
   String.concat "\n" fields_str ^ "\n" ^
   String.concat "\n" methods_str
 
+(* Convert struct declaration to string *)
+let string_of_struct_decl indent sdecl =
+  let fields_str = List.map (fun (name, expr) ->
+    indent ^ "  " ^ name ^ " = " ^ string_of_expr expr
+  ) sdecl.fields in
+  indent ^ "struct " ^ sdecl.name ^ "\n" ^
+  String.concat "\n" fields_str
+
 (* Convert top-level declaration to string *)
 let string_of_top_level_decl = function
   | Import module_name ->
@@ -226,6 +244,8 @@ let string_of_top_level_decl = function
       string_of_function_decl "" fdecl
   | ClassDecl cdecl ->
       string_of_class_decl "" cdecl
+  | StructDecl sdecl ->
+      string_of_struct_decl "" sdecl
 
 (* Convert entire program to string *)
 let string_of_program prog =
