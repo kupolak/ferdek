@@ -178,4 +178,16 @@ test-examples: $(BUILD_DIR)/ferdek
 # Wszystkie testy
 test-all: test test-stdlib test-features test-examples
 
-.PHONY: all clean distclean test test-stdlib test-features test-examples test-all
+# Reinstalacja (uninstall + install)
+r: reinstall
+
+reinstall:
+	@echo "=== Odinstalowuję Ferdka ==="
+	@./scripts/uninstall.sh
+	@echo ""
+	@echo "=== Instaluję Ferdka ==="
+	@./scripts/install.sh
+	@echo ""
+	@echo "=== Reinstalacja zakończona! ==="
+
+.PHONY: all clean distclean test test-stdlib test-features test-examples test-all r reinstall
