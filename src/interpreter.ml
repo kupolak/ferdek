@@ -16,6 +16,7 @@ type value =
   | VClass of class_decl * environment       (* Class definition *)
   | VStruct of struct_decl * environment     (* Struct definition *)
   | VObject of (string, value) Hashtbl.t
+  | VPointer of value ref                    (* Pointer/reference (PALCEM POKAZUJĘ) *)
   | VFileHandle of file_handle
 
 and file_handle =
@@ -93,6 +94,8 @@ let rec string_of_value = function
       Printf.sprintf "<struct %s>" sdecl.name
   | VObject _ ->
       "<object>"
+  | VPointer r ->
+      Printf.sprintf "<pointer to %s>" (string_of_value !r)
   | VFileHandle _ ->
       "<file handle>"
 
@@ -207,6 +210,37 @@ let rec eval_expr env = function
       eval_new_object env class_name args
   | NewStruct struct_name ->
       eval_new_struct env struct_name
+  | Reference e ->
+      (* Create a reference to the evaluated expression *)
+      let value = eval_expr env e in
+      VPointer (ref value)
+  | Dereference e ->
+      (* Dereference a pointer *)
+      (match eval_expr env e with
+       | VPointer r -> !r
+       | _ -> raise (RuntimeError "Cannot dereference non-pointer value"))
+  | AddressOf var_name ->
+      (* Get address/reference to a variable *)
+      (try
+        let value = get_var env var_name in
+        VPointer (ref value)
+      with RuntimeError _ ->
+        raise (RuntimeError (Printf.sprintf "Undefined variable: %s" var_name)))
+  | PointerArithmetic (e1, op, e2) ->
+      (* Pointer arithmetic - mainly for array/buffer access *)
+      let ptr = eval_expr env e1 in
+      let offset = eval_expr env e2 in
+      (match ptr, offset with
+       | VPointer r, VInt n ->
+           (* For now, just return the pointer - proper array arithmetic would need array context *)
+           VPointer r
+       | VInt base, VInt n ->
+           (* Integer arithmetic fallback *)
+           (match op with
+            | Plus -> VInt (base + n)
+            | Minus -> VInt (base - n)
+            | _ -> raise (RuntimeError "Unsupported pointer arithmetic operation"))
+       | _ -> raise (RuntimeError "Invalid pointer arithmetic"))
   | Parenthesized e -> eval_expr env e
 
 (* Evaluate function call *)

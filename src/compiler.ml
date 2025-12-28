@@ -117,6 +117,29 @@ let rec compile_expr ctx expr =
       (* Struct instantiation *)
       Printf.sprintf "/* new struct %s */ make_null()" struct_name
 
+  | Reference e ->
+      (* Pointer reference *)
+      Printf.sprintf "/* & */ &(%s)" (compile_expr ctx e)
+
+  | Dereference e ->
+      (* Pointer dereference *)
+      Printf.sprintf "/* * */ *(%s)" (compile_expr ctx e)
+
+  | AddressOf var ->
+      (* Address of variable *)
+      Printf.sprintf "&%s" var
+
+  | PointerArithmetic (e1, op, e2) ->
+      (* Pointer arithmetic *)
+      let c_e1 = compile_expr ctx e1 in
+      let c_e2 = compile_expr ctx e2 in
+      let c_op = match op with
+        | Plus -> "+"
+        | Minus -> "-"
+        | _ -> failwith "Unsupported pointer arithmetic operator"
+      in
+      Printf.sprintf "(%s %s %s)" c_e1 c_op c_e2
+
   | Parenthesized e ->
       Printf.sprintf "(%s)" (compile_expr ctx e)
 

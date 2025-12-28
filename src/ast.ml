@@ -38,6 +38,10 @@ type expr =
   | FunctionCall of string * expr list                   (* Function call (W MORDĘ JEŻA) *)
   | NewObject of string * expr list                      (* New object instantiation (DZIAD ZDZIADZIAŁY JEDEN) *)
   | NewStruct of string                                  (* New struct instantiation (ZMONTUJ MEBEL) *)
+  | Reference of expr                                    (* Create reference/pointer (PALCEM POKAZUJĘ) *)
+  | Dereference of expr                                  (* Dereference pointer (CO TAM JEST) *)
+  | AddressOf of string                                  (* Get address of variable (GDZIE STOI) *)
+  | PointerArithmetic of expr * arith_op * expr          (* Pointer arithmetic (KROK DALEJ/KROK WSTECZ) *)
   | Parenthesized of expr                                (* Parenthesized expression *)
 
 (* ============ STATEMENTS ============ *)
@@ -158,6 +162,14 @@ let rec string_of_expr = function
       "new " ^ class_name ^ "(" ^ String.concat ", " (List.map string_of_expr args) ^ ")"
   | NewStruct struct_name ->
       "new struct " ^ struct_name
+  | Reference e ->
+      "&(" ^ string_of_expr e ^ ")"
+  | Dereference e ->
+      "*(" ^ string_of_expr e ^ ")"
+  | AddressOf var ->
+      "&" ^ var
+  | PointerArithmetic (e1, op, e2) ->
+      "(" ^ string_of_expr e1 ^ " " ^ string_of_arith_op op ^ " " ^ string_of_expr e2 ^ ")"
   | Parenthesized e ->
       "(" ^ string_of_expr e ^ ")"
 

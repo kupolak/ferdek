@@ -38,6 +38,10 @@ type expr =
   | FunctionCall of string * expr list
   | NewObject of string * expr list
   | NewStruct of string
+  | Reference of expr
+  | Dereference of expr
+  | AddressOf of string
+  | PointerArithmetic of expr * arith_op * expr
   | Parenthesized of expr
 
 (* ============ STATEMENTS ============ *)

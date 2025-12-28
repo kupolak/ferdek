@@ -31,6 +31,11 @@ open Ast
 %token STRUCT
 %token END_STRUCT
 %token NEW_STRUCT
+%token POINTER_REF
+%token POINTER_DEREF
+%token POINTER_ADDR
+%token POINTER_STEP_FORWARD
+%token POINTER_STEP_BACK
 %token LBRACKET RBRACKET
 %token <string> IDENTIFIER
 %token <int> INTEGER
@@ -287,6 +292,16 @@ factor:
     { NewObject (class_name, []) }
   | NEW_STRUCT struct_name=IDENTIFIER
     { NewStruct struct_name }
+  | POINTER_REF e=factor
+    { Reference e }
+  | POINTER_DEREF e=factor
+    { Dereference e }
+  | POINTER_ADDR id=IDENTIFIER
+    { AddressOf id }
+  | e1=factor POINTER_STEP_FORWARD e2=factor
+    { PointerArithmetic (e1, Plus, e2) }
+  | e1=factor POINTER_STEP_BACK e2=factor
+    { PointerArithmetic (e1, Minus, e2) }
   | LPAREN e=expression RPAREN
     { Parenthesized e }
   ;

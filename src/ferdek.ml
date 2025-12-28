@@ -1,11 +1,39 @@
 (* Main Ferdek interpreter program *)
 
+(* Reference to the source file being executed - used to find stdlib *)
+let source_file_dir = ref ""
+
 (* Find stdlib directory *)
 let find_stdlib_dir () =
-  let candidates = [
+  (* Get directory where ferdek executable is located *)
+  let exe_dir = Filename.dirname Sys.executable_name in
+  let source_dir = !source_file_dir in
+  (* Check environment variable first *)
+  let ferdek_home = Sys.getenv_opt "FERDEK_HOME" in
+  let ferdek_stdlib = Sys.getenv_opt "FERDEK_STDLIB" in
+  let home_dir = Sys.getenv_opt "HOME" |> Option.value ~default:"/tmp" in
+  let env_paths = match ferdek_stdlib, ferdek_home with
+    | Some stdlib, _ -> [stdlib]
+    | None, Some home -> [Filename.concat home "stdlib"]
+    | None, None -> []
+  in
+  let candidates = env_paths @ [
+    (* Standard search paths *)
     "./stdlib";
     "../stdlib";
     "../../stdlib";
+    (* Relative to source file location *)
+    Filename.concat source_dir "stdlib";
+    Filename.concat source_dir "../stdlib";
+    Filename.concat (Filename.dirname source_dir) "stdlib";
+    (* Relative to executable location *)
+    Filename.concat exe_dir "stdlib";
+    Filename.concat exe_dir "../stdlib";
+    Filename.concat (Filename.dirname exe_dir) "stdlib";
+    (* Common installation paths *)
+    "/usr/local/share/ferdek/stdlib";
+    "/usr/share/ferdek/stdlib";
+    Filename.concat home_dir ".ferdek/stdlib";
   ] in
   let rec find_first = function
     | [] -> None
@@ -54,6 +82,8 @@ let parse_string str =
 
 (* Run a file *)
 let run_file filename =
+  (* Set source file directory for stdlib lookup *)
+  source_file_dir := Filename.dirname (if Filename.is_relative filename then Filename.concat (Sys.getcwd ()) filename else filename);
   match parse_file filename with
   | Ok ast ->
       (match Interpreter.eval_program ast with
@@ -104,27 +134,46 @@ let repl () =
 
 (* Module loader for stdlib *)
 let load_stdlib_module module_name =
-  if String.length module_name > 8 && String.sub module_name 0 8 = "KLAMOTY/" then
-    let stdlib_module = String.sub module_name 8 (String.length module_name - 8) in
-    match find_stdlib_dir () with
-    | Some stdlib_dir ->
-        let module_path = Filename.concat (Filename.concat stdlib_dir "KLAMOTY") (stdlib_module ^ ".ferdek") in
-        if Sys.file_exists module_path then begin
-          Printf.printf "Loading stdlib module: %s\n" module_name;
-          match parse_file module_path with
-          | Ok ast -> Some ast
-          | Error msg ->
-              Printf.eprintf "Error parsing module %s: %s\n" module_name msg;
-              None
-        end else begin
-          Printf.eprintf "Module not found: %s (searched: %s)\n" module_name module_path;
+  (* Try to find module in stdlib *)
+  let try_load_from_path module_path =
+    if Sys.file_exists module_path then begin
+      Printf.printf "Loading module: %s\n" module_name;
+      match parse_file module_path with
+      | Ok ast -> Some ast
+      | Error msg ->
+          Printf.eprintf "Error parsing module %s: %s\n" module_name msg;
           None
-        end
-    | None ->
-        Printf.eprintf "Cannot find stdlib directory for module: %s\n" module_name;
-        None
-  else
-    None
+    end else
+      None
+  in
+  match find_stdlib_dir () with
+  | Some stdlib_dir ->
+      (* First, check if it's a direct module name like "BABKA" - look in KLAMOTY/<name>/<name>.ferdek *)
+      let direct_path = Filename.concat (Filename.concat (Filename.concat stdlib_dir "KLAMOTY") module_name) (module_name ^ ".ferdek") in
+      (match try_load_from_path direct_path with
+      | Some ast -> Some ast
+      | None ->
+          (* Then check KLAMOTY/<name>.ferdek for simple modules *)
+          let simple_path = Filename.concat (Filename.concat stdlib_dir "KLAMOTY") (module_name ^ ".ferdek") in
+          (match try_load_from_path simple_path with
+          | Some ast -> Some ast
+          | None ->
+              (* Finally, check if it starts with KLAMOTY/ prefix *)
+              if String.length module_name > 8 && String.sub module_name 0 8 = "KLAMOTY/" then
+                let stdlib_module = String.sub module_name 8 (String.length module_name - 8) in
+                let prefixed_path = Filename.concat (Filename.concat stdlib_dir "KLAMOTY") (stdlib_module ^ ".ferdek") in
+                (match try_load_from_path prefixed_path with
+                | Some ast -> Some ast
+                | None ->
+                    Printf.eprintf "Module not found: %s\n" module_name;
+                    None)
+              else begin
+                Printf.eprintf "Module not found: %s\n" module_name;
+                None
+              end))
+  | None ->
+      Printf.eprintf "Cannot find stdlib directory for module: %s\n" module_name;
+      None
 
 (* Main entry point *)
 let () =
