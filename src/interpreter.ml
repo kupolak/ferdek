@@ -165,6 +165,18 @@ let eval_logical_op op v1 v2 =
     | Or -> b1 || b2
   )
 
+(* Evaluate bitwise operator *)
+let eval_bitwise_op op v1 v2 =
+  let n1 = to_int v1 in
+  let n2 = to_int v2 in
+  VInt (match op with
+    | BitAnd -> n1 land n2
+    | BitOr -> n1 lor n2
+    | BitXor -> n1 lxor n2
+    | BitShiftLeft -> n1 lsl n2
+    | BitShiftRight -> n1 lsr n2
+  )
+
 (* Evaluate expression *)
 let rec eval_expr env = function
   | IntLiteral n -> VInt n
@@ -184,6 +196,24 @@ let rec eval_expr env = function
       let v1 = eval_expr env e1 in
       let v2 = eval_expr env e2 in
       eval_logical_op op v1 v2
+  | BitwiseOp (e1, op, e2) ->
+      let v1 = eval_expr env e1 in
+      let v2 = eval_expr env e2 in
+      eval_bitwise_op op v1 v2
+  | BitwiseNot e ->
+      let v = eval_expr env e in
+      let n = to_int v in
+      VInt (lnot n)
+  | ToFixed e ->
+      (* Convert integer to fixed-point 16.16 format *)
+      let v = eval_expr env e in
+      let n = to_int v in
+      VInt (n lsl 16)
+  | FromFixed e ->
+      (* Convert from fixed-point 16.16 format to integer *)
+      let v = eval_expr env e in
+      let n = to_int v in
+      VInt (n lsr 16)
   | ArrayAccess (name, index_expr) ->
       let value = get_var env name in
       (match value with

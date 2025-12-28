@@ -22,6 +22,14 @@ type logical_op =
   | And  (* PIWO I TELEWIZOR *)
   | Or   (* ALBO JUTRO U ADWOKATA *)
 
+(* Bitwise operators *)
+type bitwise_op =
+  | BitAnd      (* WSZYSTKO MUSI BYĆ *)
+  | BitOr       (* COKOLWIEK MOŻE BYĆ *)
+  | BitXor      (* TYLKO JEDNO Z TEGO *)
+  | BitShiftLeft   (* RUSZ SIĘ W LEWO *)
+  | BitShiftRight  (* RUSZ SIĘ W PRAWO *)
+
 (* ============ EXPRESSIONS ============ *)
 
 (* Expression - basic computational unit *)
@@ -34,6 +42,8 @@ type expr =
   | BinaryOp of expr * arith_op * expr                   (* Binary arithmetic operation *)
   | ComparisonOp of expr * comparison_op * expr          (* Comparison operation *)
   | LogicalOp of expr * logical_op * expr                (* Logical operation *)
+  | BitwiseOp of expr * bitwise_op * expr                (* Bitwise operation *)
+  | BitwiseNot of expr                                   (* Bitwise NOT (NA OPAK) *)
   | ArrayAccess of string * expr                         (* Array element access (WYPIERDZIELAJ PAN NA POZYCJĘ) *)
   | FunctionCall of string * expr list                   (* Function call (W MORDĘ JEŻA) *)
   | NewObject of string * expr list                      (* New object instantiation (DZIAD ZDZIADZIAŁY JEDEN) *)
@@ -43,6 +53,8 @@ type expr =
   | AddressOf of string                                  (* Get address of variable (GDZIE STOI) *)
   | PointerArithmetic of expr * arith_op * expr          (* Pointer arithmetic (KROK DALEJ/KROK WSTECZ) *)
   | FunctionRef of string                                (* Function pointer reference (PALCEM POKAZUJĘ funkcja) *)
+  | ToFixed of expr                                      (* Convert to fixed-point 16.16 (ZAMIEŃ NA FIXED) *)
+  | FromFixed of expr                                    (* Convert from fixed-point 16.16 (WYJMIJ Z FIXED) *)
   | Parenthesized of expr                                (* Parenthesized expression *)
 
 (* ============ STATEMENTS ============ *)
@@ -139,6 +151,14 @@ let string_of_logical_op = function
   | And -> "&&"
   | Or -> "||"
 
+(* Convert bitwise operator to string *)
+let string_of_bitwise_op = function
+  | BitAnd -> "&"
+  | BitOr -> "|"
+  | BitXor -> "^"
+  | BitShiftLeft -> "<<"
+  | BitShiftRight -> ">>"
+
 (* ============ PRETTY PRINTING (for debugging) ============ *)
 
 (* Convert expression to string (simplified) *)
@@ -155,6 +175,10 @@ let rec string_of_expr = function
       "(" ^ string_of_expr e1 ^ " " ^ string_of_comparison_op op ^ " " ^ string_of_expr e2 ^ ")"
   | LogicalOp (e1, op, e2) ->
       "(" ^ string_of_expr e1 ^ " " ^ string_of_logical_op op ^ " " ^ string_of_expr e2 ^ ")"
+  | BitwiseOp (e1, op, e2) ->
+      "(" ^ string_of_expr e1 ^ " " ^ string_of_bitwise_op op ^ " " ^ string_of_expr e2 ^ ")"
+  | BitwiseNot e ->
+      "~(" ^ string_of_expr e ^ ")"
   | ArrayAccess (name, idx) ->
       name ^ "[" ^ string_of_expr idx ^ "]"
   | FunctionCall (name, args) ->
@@ -173,6 +197,10 @@ let rec string_of_expr = function
       "(" ^ string_of_expr e1 ^ " " ^ string_of_arith_op op ^ " " ^ string_of_expr e2 ^ ")"
   | FunctionRef func_name ->
       "&" ^ func_name
+  | ToFixed e ->
+      "to_fixed(" ^ string_of_expr e ^ ")"
+  | FromFixed e ->
+      "from_fixed(" ^ string_of_expr e ^ ")"
   | Parenthesized e ->
       "(" ^ string_of_expr e ^ ")"
 

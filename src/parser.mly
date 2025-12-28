@@ -14,6 +14,8 @@ open Ast
 %token PLUS MINUS MULTIPLY DIVIDE MODULO
 %token EQUAL NOT_EQUAL GREATER LESS
 %token AND OR
+%token BIT_AND BIT_OR BIT_XOR BIT_SHIFT_LEFT BIT_SHIFT_RIGHT BIT_NOT
+%token TO_FIXED FROM_FIXED
 %token TRUE FALSE
 %token LPAREN RPAREN COMMA
 %token IMPORT SLASH
@@ -43,7 +45,7 @@ open Ast
 %token EOF
 
 /* Type declarations */
-%type <Ast.expr> expression logical_expr comparison_expr arith_expr term factor
+%type <Ast.expr> expression logical_expr bitwise_expr comparison_expr arith_expr term factor
 %type <Ast.stmt> statement var_decl array_decl print_stmt read_stmt assign_stmt
 %type <Ast.stmt> if_stmt while_stmt func_call_stmt func_call_with_assign
 %type <Ast.stmt> return_stmt try_stmt throw_stmt
@@ -236,10 +238,24 @@ expression:
   ;
 
 logical_expr:
-  | e1=logical_expr AND e2=comparison_expr
+  | e1=logical_expr AND e2=bitwise_expr
     { LogicalOp (e1, And, e2) }
-  | e1=logical_expr OR e2=comparison_expr
+  | e1=logical_expr OR e2=bitwise_expr
     { LogicalOp (e1, Or, e2) }
+  | e=bitwise_expr { e }
+  ;
+
+bitwise_expr:
+  | e1=bitwise_expr BIT_AND e2=comparison_expr
+    { BitwiseOp (e1, BitAnd, e2) }
+  | e1=bitwise_expr BIT_OR e2=comparison_expr
+    { BitwiseOp (e1, BitOr, e2) }
+  | e1=bitwise_expr BIT_XOR e2=comparison_expr
+    { BitwiseOp (e1, BitXor, e2) }
+  | e1=bitwise_expr BIT_SHIFT_LEFT e2=comparison_expr
+    { BitwiseOp (e1, BitShiftLeft, e2) }
+  | e1=bitwise_expr BIT_SHIFT_RIGHT e2=comparison_expr
+    { BitwiseOp (e1, BitShiftRight, e2) }
   | e=comparison_expr { e }
   ;
 
@@ -302,6 +318,12 @@ factor:
     { PointerArithmetic (e1, Plus, e2) }
   | e1=factor POINTER_STEP_BACK e2=factor
     { PointerArithmetic (e1, Minus, e2) }
+  | BIT_NOT e=factor
+    { BitwiseNot e }
+  | TO_FIXED e=factor
+    { ToFixed e }
+  | FROM_FIXED e=factor
+    { FromFixed e }
   | LPAREN e=expression RPAREN
     { Parenthesized e }
   ;

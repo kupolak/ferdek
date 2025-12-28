@@ -64,6 +64,14 @@ let compile_logical_op = function
   | And -> "&&"
   | Or -> "||"
 
+(* Compile bitwise operator *)
+let compile_bitwise_op = function
+  | BitAnd -> "&"
+  | BitOr -> "|"
+  | BitXor -> "^"
+  | BitShiftLeft -> "<<"
+  | BitShiftRight -> ">>"
+
 (* Compile expression to C *)
 let rec compile_expr ctx expr =
   match expr with
@@ -100,6 +108,26 @@ let rec compile_expr ctx expr =
       let v2 = compile_expr ctx e2 in
       let c_op = compile_logical_op op in
       Printf.sprintf "make_bool(to_bool(%s) %s to_bool(%s))" v1 c_op v2
+
+  | BitwiseOp (e1, op, e2) ->
+      let v1 = compile_expr ctx e1 in
+      let v2 = compile_expr ctx e2 in
+      let c_op = compile_bitwise_op op in
+      Printf.sprintf "make_int(to_int(%s) %s to_int(%s))" v1 c_op v2
+
+  | BitwiseNot e ->
+      let v = compile_expr ctx e in
+      Printf.sprintf "make_int(~to_int(%s))" v
+
+  | ToFixed e ->
+      (* Convert to fixed-point 16.16 *)
+      let v = compile_expr ctx e in
+      Printf.sprintf "make_int(to_int(%s) << 16)" v
+
+  | FromFixed e ->
+      (* Convert from fixed-point 16.16 *)
+      let v = compile_expr ctx e in
+      Printf.sprintf "make_int(to_int(%s) >> 16)" v
 
   | ArrayAccess (name, index_expr) ->
       let idx = compile_expr ctx index_expr in

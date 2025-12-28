@@ -22,6 +22,14 @@ type logical_op =
   | And  (* PIWO I TELEWIZOR *)
   | Or   (* ALBO JUTRO U ADWOKATA *)
 
+(* Bitwise operators *)
+type bitwise_op =
+  | BitAnd      (* WSZYSTKO MUSI BYĆ *)
+  | BitOr       (* COKOLWIEK MOŻE BYĆ *)
+  | BitXor      (* TYLKO JEDNO Z TEGO *)
+  | BitShiftLeft   (* RUSZ SIĘ W LEWO *)
+  | BitShiftRight  (* RUSZ SIĘ W PRAWO *)
+
 (* ============ EXPRESSIONS ============ *)
 
 (* Expression - basic computational unit *)
@@ -34,6 +42,8 @@ type expr =
   | BinaryOp of expr * arith_op * expr
   | ComparisonOp of expr * comparison_op * expr
   | LogicalOp of expr * logical_op * expr
+  | BitwiseOp of expr * bitwise_op * expr
+  | BitwiseNot of expr
   | ArrayAccess of string * expr
   | FunctionCall of string * expr list
   | NewObject of string * expr list
@@ -43,6 +53,8 @@ type expr =
   | AddressOf of string
   | PointerArithmetic of expr * arith_op * expr
   | FunctionRef of string
+  | ToFixed of expr
+  | FromFixed of expr
   | Parenthesized of expr
 
 (* ============ STATEMENTS ============ *)
@@ -122,6 +134,7 @@ val add_declaration : program -> top_level_decl -> program
 val string_of_arith_op : arith_op -> string
 val string_of_comparison_op : comparison_op -> string
 val string_of_logical_op : logical_op -> string
+val string_of_bitwise_op : bitwise_op -> string
 
 (* ============ PRETTY PRINTING ============ *)
 

@@ -221,6 +221,23 @@ rule token = parse
   | "PIWO I TELEWIZOR" { AND }
   | "ALBO JUTRO U ADWOKATA" { OR }
 
+  (* Bitwise operators *)
+  | "RUSZ SIĘ W LEWO" { BIT_SHIFT_LEFT }
+  | "RUSZ SIE W LEWO" { BIT_SHIFT_LEFT }
+  | "RUSZ SIĘ W PRAWO" { BIT_SHIFT_RIGHT }
+  | "RUSZ SIE W PRAWO" { BIT_SHIFT_RIGHT }
+  | "WSZYSTKO MUSI BYĆ" { BIT_AND }
+  | "WSZYSTKO MUSI BYC" { BIT_AND }
+  | "COKOLWIEK MOŻE BYĆ" { BIT_OR }
+  | "COKOLWIEK MOZE BYC" { BIT_OR }
+  | "TYLKO JEDNO Z TEGO" { BIT_XOR }
+  | "NA OPAK" { BIT_NOT }
+
+  (* Fixed-point arithmetic *)
+  | "ZAMIEŃ NA FIXED" { TO_FIXED }
+  | "ZAMIEN NA FIXED" { TO_FIXED }
+  | "WYJMIJ Z FIXED" { FROM_FIXED }
+
   (* Boolean values *)
   | "A ŻEBYŚ PAN WIEDZIAŁ" { TRUE }
   | "GÓWNO PRAWDA" { FALSE }
