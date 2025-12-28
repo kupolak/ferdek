@@ -1240,6 +1240,157 @@ and eval_function_call env name args =
            VString type_name
        | _ -> raise (RuntimeError "CO TO ZA TYP expects 1 argument"))
 
+  (* ============ LOW-LEVEL I/O ============ *)
+
+  (* OTWORZ(filename, mode) - open() - Open file *)
+  | "OTWORZ" ->
+      (match args with
+       | [filename_arg; mode_arg] ->
+           let filename = match eval_expr env filename_arg with
+             | VString s -> s
+             | _ -> raise (RuntimeError "OTWORZ: filename must be string")
+           in
+           let mode = match eval_expr env mode_arg with
+             | VString s -> s
+             | _ -> raise (RuntimeError "OTWORZ: mode must be string")
+           in
+           (try
+              let handle = match mode with
+                | "r" | "rb" -> InputHandle (open_in_bin filename)
+                | "w" | "wb" -> OutputHandle (open_out_bin filename)
+                | "a" | "ab" -> OutputHandle (open_out_gen [Open_append; Open_binary; Open_creat] 0o666 filename)
+                | _ -> raise (RuntimeError (Printf.sprintf "Invalid file mode: %s (use 'r', 'w', 'a')" mode))
+              in
+              VFileHandle handle
+            with Sys_error msg ->
+              raise (RuntimeError (Printf.sprintf "Cannot open file '%s': %s" filename msg)))
+       | _ -> raise (RuntimeError "OTWORZ expects 2 arguments (filename, mode)"))
+
+  (* ZAMKNIJ(file_handle) - close() - Close file *)
+  | "ZAMKNIJ" ->
+      (match args with
+       | [handle_arg] ->
+           let handle = eval_expr env handle_arg in
+           (match handle with
+            | VFileHandle (InputHandle ch) -> close_in ch; VNull
+            | VFileHandle (OutputHandle ch) -> close_out ch; VNull
+            | _ -> raise (RuntimeError "ZAMKNIJ: argument must be file handle"))
+       | _ -> raise (RuntimeError "ZAMKNIJ expects 1 argument (file_handle)"))
+
+  (* CZYTAJ(file_handle, [num_bytes]) - read() - Read bytes *)
+  | "CZYTAJ" ->
+      (match args with
+       | [handle_arg; size_arg] ->
+           let handle = eval_expr env handle_arg in
+           let size = to_int (eval_expr env size_arg) in
+           (match handle with
+            | VFileHandle (InputHandle ch) ->
+                (try
+                   let buffer = Bytes.create size in
+                   let bytes_read = input ch buffer 0 size in
+                   (* Return array of bytes *)
+                   let byte_array = Array.init bytes_read (fun i -> VByte (Char.code (Bytes.get buffer i))) in
+                   VArray byte_array
+                 with End_of_file ->
+                   VArray [||])  (* Return empty array on EOF *)
+            | _ -> raise (RuntimeError "CZYTAJ GAZETĘ: first argument must be input file handle"))
+       | [handle_arg] ->
+           (* CZYTAJ BAJT - single argument means read single byte *)
+           let handle = eval_expr env handle_arg in
+           (match handle with
+            | VFileHandle (InputHandle ch) ->
+                (try
+                   let byte = input_byte ch in
+                   VByte byte
+                 with End_of_file ->
+                   VInt (-1))  (* Return -1 on EOF like C *)
+            | _ -> raise (RuntimeError "CZYTAJ: argument must be input file handle"))
+       | _ -> raise (RuntimeError "CZYTAJ expects 1 or 2 arguments"))
+
+  (* PISZ(file_handle, data) - write() - Write bytes *)
+  | "PISZ" ->
+      (match args with
+       | [handle_arg; data_arg] ->
+           let handle = eval_expr env handle_arg in
+           let data = eval_expr env data_arg in
+           (match handle with
+            | VFileHandle (OutputHandle ch) ->
+                (match data with
+                 | VArray bytes ->
+                     (* Write array of bytes *)
+                     Array.iter (fun b ->
+                       let byte_val = to_int b in
+                       output_byte ch byte_val
+                     ) bytes;
+                     VInt (Array.length bytes)
+                 | VString s ->
+                     (* Write string as bytes *)
+                     output_string ch s;
+                     VInt (String.length s)
+                 | VByte b | VInt b | VShort b ->
+                     (* PISZ BAJT - single byte/int means write single byte *)
+                     output_byte ch (b land 0xFF);
+                     VInt 1
+                 | _ -> raise (RuntimeError "PISZ: data must be array, string, or byte"))
+            | _ -> raise (RuntimeError "PISZ: first argument must be output file handle"))
+       | _ -> raise (RuntimeError "PISZ expects 2 arguments (file_handle, data)"))
+
+  (* SKOCZ(file_handle, offset, [mode]) - lseek() - Seek in file
+     mode: 0 = absolute (default), 1 = relative forward, -1 = relative backward *)
+  | "SKOCZ" ->
+      (match args with
+       | [handle_arg; offset_arg] ->
+           (* Default: absolute seek *)
+           let handle = eval_expr env handle_arg in
+           let pos = to_int (eval_expr env offset_arg) in
+           (match handle with
+            | VFileHandle (InputHandle ch) ->
+                seek_in ch pos;
+                VInt pos
+            | VFileHandle (OutputHandle ch) ->
+                seek_out ch pos;
+                VInt pos
+            | _ -> raise (RuntimeError "SKOCZ: first argument must be file handle"))
+       | [handle_arg; offset_arg; mode_arg] ->
+           (* With mode: 0 = absolute, 1 = forward, -1 = backward *)
+           let handle = eval_expr env handle_arg in
+           let offset = to_int (eval_expr env offset_arg) in
+           let mode = to_int (eval_expr env mode_arg) in
+           (match handle with
+            | VFileHandle (InputHandle ch) ->
+                let new_pos = match mode with
+                  | 0 -> offset  (* Absolute *)
+                  | 1 -> pos_in ch + offset  (* Relative forward *)
+                  | -1 -> max 0 (pos_in ch - offset)  (* Relative backward *)
+                  | _ -> raise (RuntimeError "SKOCZ: mode must be 0 (absolute), 1 (forward), or -1 (backward)")
+                in
+                seek_in ch new_pos;
+                VInt new_pos
+            | VFileHandle (OutputHandle ch) ->
+                let new_pos = match mode with
+                  | 0 -> offset  (* Absolute *)
+                  | 1 -> pos_out ch + offset  (* Relative forward *)
+                  | -1 -> max 0 (pos_out ch - offset)  (* Relative backward *)
+                  | _ -> raise (RuntimeError "SKOCZ: mode must be 0 (absolute), 1 (forward), or -1 (backward)")
+                in
+                seek_out ch new_pos;
+                VInt new_pos
+            | _ -> raise (RuntimeError "SKOCZ: first argument must be file handle"))
+       | _ -> raise (RuntimeError "SKOCZ expects 2 or 3 arguments (file_handle, offset, [mode])"))
+
+  (* POZYCJA(file_handle) - tell() - Get current file position *)
+  | "POZYCJA" ->
+      (match args with
+       | [handle_arg] ->
+           let handle = eval_expr env handle_arg in
+           (match handle with
+            | VFileHandle (InputHandle ch) ->
+                VInt (pos_in ch)
+            | VFileHandle (OutputHandle ch) ->
+                VInt (pos_out ch)
+            | _ -> raise (RuntimeError "POZYCJA: argument must be file handle"))
+       | _ -> raise (RuntimeError "POZYCJA expects 1 argument (file_handle)"))
+
   (* ============ MULTIDIMENSIONAL ARRAYS ============ *)
 
   (* TABLICA 2D(rows, cols) - Create 2D array *)

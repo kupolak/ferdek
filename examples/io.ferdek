@@ -1,0 +1,194 @@
+CO JEST KURDE
+
+PANIE SENSACJA REWELACJA "=== Test Niskopoziomowego I/O (DOOM-style) ==="
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 1: Tworzenie pliku binarnego (jak WAD)
+PANIE SENSACJA REWELACJA "Test 1: Tworzenie pliku binarnego"
+
+RYM CYM CYM Otwórz plik do zapisu
+AFERA JEST plik W MORDĘ JEŻA OTWORZ("/tmp/test.dat", "wb")
+
+RYM CYM CYM Zapisz nagłówek (DOOM: "IWAD" lub "PWAD")
+RYM CYM CYM Zapisujemy string "IWAD"
+W MORDĘ JEŻA PISZ(plik, "IWAD")
+
+PANIE SENSACJA REWELACJA "Zapisano nagłówek IWAD"
+
+RYM CYM CYM Zapisz liczb lumps (4 bajty, little-endian)
+RYM CYM CYM W DOOM: int32 numlumps = 3
+AFERA JEST lsb W MORDĘ JEŻA ZRÓB BAJCIK(3)
+W MORDĘ JEŻA PISZ(plik, lsb)
+AFERA JEST b0 W MORDĘ JEŻA ZRÓB BAJCIK(0)
+W MORDĘ JEŻA PISZ(plik, b0)
+W MORDĘ JEŻA PISZ(plik, b0)
+W MORDĘ JEŻA PISZ(plik, b0)
+
+PANIE SENSACJA REWELACJA "Zapisano liczbę lumps: 3"
+
+RYM CYM CYM Zapisz offset do directory (4 bajty)
+AFERA JEST offset W MORDĘ JEŻA ZRÓB BAJCIK(100)
+W MORDĘ JEŻA PISZ(plik, offset)
+W MORDĘ JEŻA PISZ(plik, b0)
+W MORDĘ JEŻA PISZ(plik, b0)
+W MORDĘ JEŻA PISZ(plik, b0)
+
+PANIE SENSACJA REWELACJA "Zapisano offset directory: 100"
+
+RYM CYM CYM Zapisz dane lumpa (przykładowa tekstura)
+AFERA JEST b255 W MORDĘ JEŻA ZRÓB BAJCIK(255)
+AFERA JEST b128 W MORDĘ JEŻA ZRÓB BAJCIK(128)
+AFERA JEST b64 W MORDĘ JEŻA ZRÓB BAJCIK(64)
+W MORDĘ JEŻA PISZ(plik, b255)
+W MORDĘ JEŻA PISZ(plik, b0)
+W MORDĘ JEŻA PISZ(plik, b128)
+W MORDĘ JEŻA PISZ(plik, b64)
+
+PANIE SENSACJA REWELACJA "Zapisano dane lumpa"
+
+RYM CYM CYM Zamknij plik
+W MORDĘ JEŻA ZAMKNIJ(plik)
+PANIE SENSACJA REWELACJA "Plik zamknięty"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 2: Odczyt pliku binarnego
+PANIE SENSACJA REWELACJA "Test 2: Odczyt pliku binarnego"
+
+RYM CYM CYM Otwórz plik do odczytu
+AFERA JEST plik_in W MORDĘ JEŻA OTWORZ("/tmp/test.dat", "rb")
+
+RYM CYM CYM Czytaj nagłówek (4 bajty)
+AFERA JEST header W MORDĘ JEŻA CZYTAJ(plik_in, 4)
+
+PANIE SENSACJA REWELACJA "Nagłówek (4 bajty):"
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ header[0]
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ header[1]
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ header[2]
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ header[3]
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Czytaj pojedyncze bajty
+PANIE SENSACJA REWELACJA "Następne 4 bajty (numlumps):"
+AFERA JEST b1 W MORDĘ JEŻA CZYTAJ(plik_in)
+AFERA JEST b2 W MORDĘ JEŻA CZYTAJ(plik_in)
+AFERA JEST b3 W MORDĘ JEŻA CZYTAJ(plik_in)
+AFERA JEST b4 W MORDĘ JEŻA CZYTAJ(plik_in)
+
+PANIE SENSACJA REWELACJA b1
+PANIE SENSACJA REWELACJA b2
+PANIE SENSACJA REWELACJA b3
+PANIE SENSACJA REWELACJA b4
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 3: Pozycjonowanie w pliku (lseek)
+PANIE SENSACJA REWELACJA "Test 3: Pozycjonowanie (lseek)"
+
+RYM CYM CYM Sprawdź aktualną pozycję
+AFERA JEST pos W MORDĘ JEŻA POZYCJA(plik_in)
+PANIE SENSACJA REWELACJA "Aktualna pozycja: "
+PANIE SENSACJA REWELACJA pos
+
+RYM CYM CYM Skocz do początku (absolute seek)
+W MORDĘ JEŻA SKOCZ(plik_in, 0)
+PANIE SENSACJA REWELACJA "Po SKOCZ(0): pozycja = "
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA POZYCJA(plik_in)
+
+RYM CYM CYM Skocz do pozycji 100 (gdzie jest directory)
+W MORDĘ JEŻA SKOCZ(plik_in, 100)
+PANIE SENSACJA REWELACJA "Po SKOCZ(100): pozycja = "
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA POZYCJA(plik_in)
+
+RYM CYM CYM Skocz wstecz: użyj absolute seek
+AFERA JEST curr_pos W MORDĘ JEŻA POZYCJA(plik_in)
+AFERA JEST new_pos_back W MORDĘ JEŻA ZRÓB DŁUGI(50)  RYM CYM CYM 100 - 50 = 50
+
+RYM CYM CYM Skocz do pozycji 50
+W MORDĘ JEŻA SKOCZ(plik_in, new_pos_back)
+PANIE SENSACJA REWELACJA "Po SKOCZ(50, backward): pozycja = "
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA POZYCJA(plik_in)
+
+RYM CYM CYM Skocz do przodu: użyj absolute seek
+AFERA JEST new_pos_fwd W MORDĘ JEŻA ZRÓB DŁUGI(70)  RYM CYM CYM 50 + 20 = 70
+
+W MORDĘ JEŻA SKOCZ(plik_in, new_pos_fwd)
+PANIE SENSACJA REWELACJA "Po SKOCZ(70, forward): pozycja = "
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA POZYCJA(plik_in)
+
+RYM CYM CYM Zamknij plik
+W MORDĘ JEŻA ZAMKNIJ(plik_in)
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 4: DOOM use case - odczyt palety kolorów
+PANIE SENSACJA REWELACJA "Test 4: DOOM palette (256 kolorów x RGB)"
+
+RYM CYM CYM Symuluj zapis palety (768 bajtów: 256 kolorów * 3 RGB)
+AFERA JEST palette_file W MORDĘ JEŻA OTWORZ("/tmp/palette.dat", "wb")
+
+RYM CYM CYM Przygotuj wartości kolorów
+AFERA JEST c255 W MORDĘ JEŻA ZRÓB BAJCIK(255)
+
+RYM CYM CYM Zapisz kilka kolorów (RGB)
+RYM CYM CYM Kolor 0: czarny (0,0,0)
+W MORDĘ JEŻA PISZ(palette_file, b0)
+W MORDĘ JEŻA PISZ(palette_file, b0)
+W MORDĘ JEŻA PISZ(palette_file, b0)
+
+RYM CYM CYM Kolor 1: czerwony (255,0,0)
+W MORDĘ JEŻA PISZ(palette_file, c255)
+W MORDĘ JEŻA PISZ(palette_file, b0)
+W MORDĘ JEŻA PISZ(palette_file, b0)
+
+RYM CYM CYM Kolor 2: zielony (0,255,0)
+W MORDĘ JEŻA PISZ(palette_file, b0)
+W MORDĘ JEŻA PISZ(palette_file, c255)
+W MORDĘ JEŻA PISZ(palette_file, b0)
+
+RYM CYM CYM Kolor 3: niebieski (0,0,255)
+W MORDĘ JEŻA PISZ(palette_file, b0)
+W MORDĘ JEŻA PISZ(palette_file, b0)
+W MORDĘ JEŻA PISZ(palette_file, c255)
+
+W MORDĘ JEŻA ZAMKNIJ(palette_file)
+PANIE SENSACJA REWELACJA "Zapisano paletę kolorów"
+
+RYM CYM CYM Odczytaj paletę
+AFERA JEST pal_in W MORDĘ JEŻA OTWORZ("/tmp/palette.dat", "rb")
+
+PANIE SENSACJA REWELACJA "Odczyt palety:"
+
+RYM CYM CYM Czytaj kolor 0 (czarny)
+AFERA JEST c0 W MORDĘ JEŻA CZYTAJ(pal_in, 3)
+PANIE SENSACJA REWELACJA "Kolor 0 (czarny): R="
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ c0[0]
+PANIE SENSACJA REWELACJA " G="
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ c0[1]
+PANIE SENSACJA REWELACJA " B="
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ c0[2]
+
+RYM CYM CYM Czytaj kolor 1 (czerwony)
+AFERA JEST c1 W MORDĘ JEŻA CZYTAJ(pal_in, 3)
+PANIE SENSACJA REWELACJA "Kolor 1 (czerwony): R="
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ c1[0]
+PANIE SENSACJA REWELACJA " G="
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ c1[1]
+PANIE SENSACJA REWELACJA " B="
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ c1[2]
+
+RYM CYM CYM Skocz do koloru 3 (pomiń kolor 2)
+W MORDĘ JEŻA SKOCZ(pal_in, 9)  RYM CYM CYM 3 kolory * 3 bajty = 9
+
+RYM CYM CYM Czytaj kolor 3 (niebieski)
+AFERA JEST c3 W MORDĘ JEŻA CZYTAJ(pal_in, 3)
+PANIE SENSACJA REWELACJA "Kolor 3 (niebieski): R="
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ c3[0]
+PANIE SENSACJA REWELACJA " G="
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ c3[1]
+PANIE SENSACJA REWELACJA " B="
+PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ c3[2]
+
+W MORDĘ JEŻA ZAMKNIJ(pal_in)
+PANIE SENSACJA REWELACJA ""
+
+PANIE SENSACJA REWELACJA "=== Niskopoziomowe I/O działa jak w DOOM! ==="
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
