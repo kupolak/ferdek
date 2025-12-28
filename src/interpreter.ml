@@ -6,7 +6,10 @@ open Ast
 
 (* Runtime value types *)
 type value =
-  | VInt of int
+  | VInt of int                                      (* Default 32-bit integer *)
+  | VByte of int                                     (* 8-bit unsigned (0-255) *)
+  | VShort of int                                    (* 16-bit integer *)
+  | VFixed of int                                    (* 32-bit fixed-point 16.16 *)
   | VString of string
   | VBool of bool
   | VNull
@@ -133,6 +136,9 @@ let define_var env name value =
 (* Convert value to string *)
 let rec string_of_value = function
   | VInt n -> string_of_int n
+  | VByte n -> string_of_int n
+  | VShort n -> string_of_int n
+  | VFixed n -> string_of_int n
   | VString s -> s
   | VBool true -> "true"
   | VBool false -> "false"
@@ -162,6 +168,12 @@ let to_bool = function
   | VBool b -> b
   | VInt 0 -> false
   | VInt _ -> true
+  | VByte 0 -> false
+  | VByte _ -> true
+  | VShort 0 -> false
+  | VShort _ -> true
+  | VFixed 0 -> false
+  | VFixed _ -> true
   | VString "" -> false
   | VString _ -> true
   | VNull -> false
@@ -170,6 +182,9 @@ let to_bool = function
 (* Convert value to integer *)
 let to_int = function
   | VInt n -> n
+  | VByte n -> n
+  | VShort n -> n
+  | VFixed n -> n  (* Return raw fixed-point value *)
   | VBool true -> 1
   | VBool false -> 0
   | VString s -> (try int_of_string s with _ -> 0)
@@ -179,6 +194,9 @@ let to_int = function
 (* Convert value to string for concatenation *)
 let to_string = function
   | VInt n -> string_of_int n
+  | VByte n -> string_of_int n
+  | VShort n -> string_of_int n
+  | VFixed n -> string_of_int n  (* Show raw fixed value *)
   | VString s -> s
   | VBool true -> "true"
   | VBool false -> "false"
@@ -1154,6 +1172,69 @@ and eval_function_call env name args =
                  | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ: arguments must be pointers"))
             | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ: arguments must be pointers"))
        | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ expects 3 arguments (src, dst, size)"))
+
+  (* ============ TYPE CASTING FUNCTIONS ============ *)
+
+  (* ZRÓB BAJCIK(expr) - Cast to byte (0-255) *)
+  | "ZRÓB BAJCIK" | "ZROB BAJCIK" ->
+      (match args with
+       | [arg] ->
+           let value = to_int (eval_expr env arg) in
+           VByte (value land 0xFF)  (* Mask to 0-255 *)
+       | _ -> raise (RuntimeError "ZRÓB BAJCIK expects 1 argument"))
+
+  (* ZRÓB KRÓTKI(expr) - Cast to short (16-bit) *)
+  | "ZRÓB KRÓTKI" | "ZROB KROTKI" ->
+      (match args with
+       | [arg] ->
+           let value = to_int (eval_expr env arg) in
+           (* Sign-extend from 16-bit *)
+           let masked = value land 0xFFFF in
+           let short_val = if masked > 0x7FFF then masked - 0x10000 else masked in
+           VShort short_val
+       | _ -> raise (RuntimeError "ZRÓB KRÓTKI expects 1 argument"))
+
+  (* ZRÓB DŁUGI(expr) - Cast to int (32-bit, default) *)
+  | "ZRÓB DŁUGI" | "ZROB DLUGI" ->
+      (match args with
+       | [arg] ->
+           let value = to_int (eval_expr env arg) in
+           VInt value
+       | _ -> raise (RuntimeError "ZRÓB DŁUGI expects 1 argument"))
+
+  (* ZRÓB UŁAMEK(expr) - Cast to fixed-point (same as ZAMIEŃ NA FIXED) *)
+  | "ZRÓB UŁAMEK" | "ZROB ULAMEK" ->
+      (match args with
+       | [arg] ->
+           let value = to_int (eval_expr env arg) in
+           VFixed (value lsl 16)  (* Convert to 16.16 fixed-point *)
+       | _ -> raise (RuntimeError "ZRÓB UŁAMEK expects 1 argument"))
+
+  (* CO TO ZA TYP(var) - Return type name *)
+  | "CO TO ZA TYP" ->
+      (match args with
+       | [arg] ->
+           let value = eval_expr env arg in
+           let type_name = match value with
+             | VByte _ -> "BAJCIK"
+             | VShort _ -> "KRÓTKI"
+             | VInt _ -> "DŁUGI"
+             | VFixed _ -> "UŁAMEK"
+             | VString _ -> "TEKST"
+             | VBool _ -> "PRAWDA/FAŁSZ"
+             | VNull -> "NIC"
+             | VArray _ -> "TABLICA"
+             | VHashMap _ -> "SZAFKA"
+             | VFunction _ -> "FUNKCJA"
+             | VClass _ -> "KLASA"
+             | VStruct _ -> "MEBEL"
+             | VUnion _ -> "UNIA"
+             | VObject _ -> "OBIEKT"
+             | VPointer _ -> "WSKAŹNIK"
+             | VFileHandle _ -> "KIBEL"
+           in
+           VString type_name
+       | _ -> raise (RuntimeError "CO TO ZA TYP expects 1 argument"))
 
   | _ ->
       (* Try to find user-defined function *)

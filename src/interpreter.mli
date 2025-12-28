@@ -4,7 +4,10 @@ open Ast
 
 (* Runtime value types *)
 type value =
-  | VInt of int
+  | VInt of int                                      (* Default 32-bit integer *)
+  | VByte of int                                     (* 8-bit unsigned (0-255) *)
+  | VShort of int                                    (* 16-bit integer *)
+  | VFixed of int                                    (* 32-bit fixed-point 16.16 *)
   | VString of string
   | VBool of bool
   | VNull
