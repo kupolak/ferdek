@@ -1,0 +1,291 @@
+CO JEST KURDE
+
+RYM CYM CYM ============================================
+RYM CYM CYM BABKA - Framework testowy dla jezyka Ferdek
+RYM CYM CYM ============================================
+
+RYM CYM CYM Liczniki testow
+CYCU PRZYNIEŚ NO babkaTestyOk
+TO NIE SĄ TANIE RZECZY 0
+
+CYCU PRZYNIEŚ NO babkaTestyFail
+TO NIE SĄ TANIE RZECZY 0
+
+CYCU PRZYNIEŚ NO babkaTestySkip
+TO NIE SĄ TANIE RZECZY 0
+
+RYM CYM CYM ============================================
+RYM CYM CYM ASERCJE (assert)
+RYM CYM CYM ============================================
+
+RYM CYM CYM TAK JEST I KROPKA - assert(warunek)
+ALE WIE PAN JA ZASADNICZO TAK JEST I KROPKA
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO warunek
+    NO JAK NIE JAK TAK warunek TO PANU SIĘ CHCE WTEDY KIEDY MNIE 0
+        PANIE SENSACJA REWELACJA "FAIL: Asercja nie powiodla sie!"
+        O KURDE MAM POMYSŁA babkaTestyFail
+        A PROSZĘ BARDZO babkaTestyFail
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 0
+    A DUPA TAM
+        O KURDE MAM POMYSŁA babkaTestyOk
+        A PROSZĘ BARDZO babkaTestyOk
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 1
+    DO CHAŁUPY ALE JUŻ
+DO WIDZENIA PANU
+
+RYM CYM CYM MA BYĆ RÓWNE - assert_equal(oczekiwane, rzeczywiste)
+ALE WIE PAN JA ZASADNICZO MA BYĆ RÓWNE
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO oczekiwane, rzeczywiste
+    NO JAK NIE JAK TAK oczekiwane TO PANU SIĘ CHCE WTEDY KIEDY MNIE rzeczywiste
+        O KURDE MAM POMYSŁA babkaTestyOk
+        A PROSZĘ BARDZO babkaTestyOk
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 1
+    A DUPA TAM
+        PANIE SENSACJA REWELACJA "FAIL MA BYĆ RÓWNE: Wartosci rozne!"
+        O KURDE MAM POMYSŁA babkaTestyFail
+        A PROSZĘ BARDZO babkaTestyFail
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 0
+    DO CHAŁUPY ALE JUŻ
+DO WIDZENIA PANU
+
+RYM CYM CYM ZERO - assert_nil(wartosc)
+ALE WIE PAN JA ZASADNICZO ZERO
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wartosc
+    NO JAK NIE JAK TAK wartosc TO PANU SIĘ CHCE WTEDY KIEDY MNIE W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM
+        O KURDE MAM POMYSŁA babkaTestyOk
+        A PROSZĘ BARDZO babkaTestyOk
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 1
+    A DUPA TAM
+        PANIE SENSACJA REWELACJA "FAIL ZERO: Wartosc nie jest null!"
+        O KURDE MAM POMYSŁA babkaTestyFail
+        A PROSZĘ BARDZO babkaTestyFail
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 0
+    DO CHAŁUPY ALE JUŻ
+DO WIDZENIA PANU
+
+RYM CYM CYM TEN SAM BAJZEL - assert_same(a, b)
+ALE WIE PAN JA ZASADNICZO TEN SAM BAJZEL
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO a, b
+    NO JAK NIE JAK TAK a TO PANU SIĘ CHCE WTEDY KIEDY MNIE b
+        O KURDE MAM POMYSŁA babkaTestyOk
+        A PROSZĘ BARDZO babkaTestyOk
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 1
+    A DUPA TAM
+        PANIE SENSACJA REWELACJA "FAIL TEN SAM BAJZEL: Wartosci nie sa identyczne!"
+        O KURDE MAM POMYSŁA babkaTestyFail
+        A PROSZĘ BARDZO babkaTestyFail
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 0
+    DO CHAŁUPY ALE JUŻ
+DO WIDZENIA PANU
+
+RYM CYM CYM ============================================
+RYM CYM CYM REFUTACJE (refute)
+RYM CYM CYM ============================================
+
+RYM CYM CYM GUZIK PRAWDA - refute(warunek)
+ALE WIE PAN JA ZASADNICZO GUZIK PRAWDA
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO warunek
+    NO JAK NIE JAK TAK warunek TO PANU SIĘ CHCE WTEDY KIEDY MNIE 0
+        O KURDE MAM POMYSŁA babkaTestyOk
+        A PROSZĘ BARDZO babkaTestyOk
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 1
+    A DUPA TAM
+        PANIE SENSACJA REWELACJA "FAIL GUZIK PRAWDA: Warunek powinien byc falszywy!"
+        O KURDE MAM POMYSŁA babkaTestyFail
+        A PROSZĘ BARDZO babkaTestyFail
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 0
+    DO CHAŁUPY ALE JUŻ
+DO WIDZENIA PANU
+
+RYM CYM CYM MOJE LEPSZE - refute_equal(a, b)
+ALE WIE PAN JA ZASADNICZO MOJE LEPSZE
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO nieoczekiwane, rzeczywiste
+    NO JAK NIE JAK TAK nieoczekiwane PAN TU NIE MIESZKASZ rzeczywiste
+        O KURDE MAM POMYSŁA babkaTestyOk
+        A PROSZĘ BARDZO babkaTestyOk
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 1
+    A DUPA TAM
+        PANIE SENSACJA REWELACJA "FAIL MOJE LEPSZE: Wartosci nie powinny byc rowne!"
+        O KURDE MAM POMYSŁA babkaTestyFail
+        A PROSZĘ BARDZO babkaTestyFail
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 0
+    DO CHAŁUPY ALE JUŻ
+DO WIDZENIA PANU
+
+RYM CYM CYM PIENIĄDZE SĄ - refute_nil(wartosc)
+ALE WIE PAN JA ZASADNICZO PIENIĄDZE SĄ
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wartosc
+    NO JAK NIE JAK TAK wartosc PAN TU NIE MIESZKASZ W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM
+        O KURDE MAM POMYSŁA babkaTestyOk
+        A PROSZĘ BARDZO babkaTestyOk
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 1
+    A DUPA TAM
+        PANIE SENSACJA REWELACJA "FAIL PIENIĄDZE SĄ: Wartosc nie powinna byc null!"
+        O KURDE MAM POMYSŁA babkaTestyFail
+        A PROSZĘ BARDZO babkaTestyFail
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 0
+    DO CHAŁUPY ALE JUŻ
+DO WIDZENIA PANU
+
+RYM CYM CYM DZIŚ GORSZY BAJZEL - refute_same(a, b)
+ALE WIE PAN JA ZASADNICZO DZIŚ GORSZY BAJZEL
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO a, b
+    NO JAK NIE JAK TAK a PAN TU NIE MIESZKASZ b
+        O KURDE MAM POMYSŁA babkaTestyOk
+        A PROSZĘ BARDZO babkaTestyOk
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 1
+    A DUPA TAM
+        PANIE SENSACJA REWELACJA "FAIL DZIŚ GORSZY BAJZEL: Wartosci nie powinny byc identyczne!"
+        O KURDE MAM POMYSŁA babkaTestyFail
+        A PROSZĘ BARDZO babkaTestyFail
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 0
+    DO CHAŁUPY ALE JUŻ
+DO WIDZENIA PANU
+
+RYM CYM CYM ============================================
+RYM CYM CYM FUNKCJE POMOCNICZE
+RYM CYM CYM ============================================
+
+RYM CYM CYM WSZYSCY OBLANI - flunk(wiadomosc)
+ALE WIE PAN JA ZASADNICZO WSZYSCY OBLANI
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wiadomosc
+    PANIE SENSACJA REWELACJA "FAIL WSZYSCY OBLANI: "
+    PANIE SENSACJA REWELACJA wiadomosc
+    O KURDE MAM POMYSŁA babkaTestyFail
+    A PROSZĘ BARDZO babkaTestyFail
+    BABKA DAWAJ RENTĘ 1
+    NO I GITARA
+    I JA INFORMUJĘ ŻE WYCHODZĘ 0
+DO WIDZENIA PANU
+
+RYM CYM CYM OLEWAM TO - skip(wiadomosc)
+ALE WIE PAN JA ZASADNICZO OLEWAM TO
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wiadomosc
+    PANIE SENSACJA REWELACJA "SKIP OLEWAM TO: "
+    PANIE SENSACJA REWELACJA wiadomosc
+    O KURDE MAM POMYSŁA babkaTestySkip
+    A PROSZĘ BARDZO babkaTestySkip
+    BABKA DAWAJ RENTĘ 1
+    NO I GITARA
+    I JA INFORMUJĘ ŻE WYCHODZĘ 0
+DO WIDZENIA PANU
+
+RYM CYM CYM WYGRAŁAM - pass()
+ALE WIE PAN JA ZASADNICZO WYGRAŁAM
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+    PANIE SENSACJA REWELACJA "PASS WYGRAŁAM: Test zaliczony!"
+    O KURDE MAM POMYSŁA babkaTestyOk
+    A PROSZĘ BARDZO babkaTestyOk
+    BABKA DAWAJ RENTĘ 1
+    NO I GITARA
+    I JA INFORMUJĘ ŻE WYCHODZĘ 1
+DO WIDZENIA PANU
+
+RYM CYM CYM JA TU RZĄDZĘ - assert_operator
+ALE WIE PAN JA ZASADNICZO JA TU RZĄDZĘ
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wynikOperacji
+    NO JAK NIE JAK TAK wynikOperacji TO PANU SIĘ CHCE WTEDY KIEDY MNIE 0
+        PANIE SENSACJA REWELACJA "FAIL JA TU RZĄDZĘ: Operacja nie powiodla sie!"
+        O KURDE MAM POMYSŁA babkaTestyFail
+        A PROSZĘ BARDZO babkaTestyFail
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 0
+    A DUPA TAM
+        O KURDE MAM POMYSŁA babkaTestyOk
+        A PROSZĘ BARDZO babkaTestyOk
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 1
+    DO CHAŁUPY ALE JUŻ
+DO WIDZENIA PANU
+
+RYM CYM CYM NIKT LEPIEJ ODE MNIE - refute_operator
+ALE WIE PAN JA ZASADNICZO NIKT LEPIEJ ODE MNIE
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wynikOperacji
+    NO JAK NIE JAK TAK wynikOperacji TO PANU SIĘ CHCE WTEDY KIEDY MNIE 0
+        O KURDE MAM POMYSŁA babkaTestyOk
+        A PROSZĘ BARDZO babkaTestyOk
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 1
+    A DUPA TAM
+        PANIE SENSACJA REWELACJA "FAIL NIKT LEPIEJ ODE MNIE: Operacja powinna byc falszywa!"
+        O KURDE MAM POMYSŁA babkaTestyFail
+        A PROSZĘ BARDZO babkaTestyFail
+        BABKA DAWAJ RENTĘ 1
+        NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ 0
+    DO CHAŁUPY ALE JUŻ
+DO WIDZENIA PANU
+
+RYM CYM CYM ============================================
+RYM CYM CYM RAPORT KONCOWY
+RYM CYM CYM ============================================
+
+ALE WIE PAN JA ZASADNICZO BABKA PODSUMUJ
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+    PANIE SENSACJA REWELACJA ""
+    PANIE SENSACJA REWELACJA "========================================"
+    PANIE SENSACJA REWELACJA "        BABKA - RAPORT TESTOW"
+    PANIE SENSACJA REWELACJA "========================================"
+    PANIE SENSACJA REWELACJA "Testy zaliczone: "
+    PANIE SENSACJA REWELACJA babkaTestyOk
+    PANIE SENSACJA REWELACJA "Testy niezaliczone: "
+    PANIE SENSACJA REWELACJA babkaTestyFail
+    PANIE SENSACJA REWELACJA "Testy pominiete: "
+    PANIE SENSACJA REWELACJA babkaTestySkip
+    PANIE SENSACJA REWELACJA "========================================"
+    NO JAK NIE JAK TAK babkaTestyFail TO PANU SIĘ CHCE WTEDY KIEDY MNIE 0
+        PANIE SENSACJA REWELACJA "WYNIK: BABKA ZADOWOLONA!"
+    A DUPA TAM
+        PANIE SENSACJA REWELACJA "WYNIK: BABKA NIEZADOWOLONA!"
+    DO CHAŁUPY ALE JUŻ
+    PANIE SENSACJA REWELACJA "========================================"
+DO WIDZENIA PANU
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

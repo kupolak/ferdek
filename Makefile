@@ -4,11 +4,19 @@ OCAMLC = ocamlc
 OCAMLLEX = ocamllex
 MENHIR = menhir
 BUILD_DIR = .build
+FERDEK_ROOT = $(shell pwd)
 
 all: $(BUILD_DIR)/ferdek $(BUILD_DIR)/ferdecc $(BUILD_DIR)/main $(BUILD_DIR)/test_lexer $(BUILD_DIR)/test_ast $(BUILD_DIR)/test_parser
 
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
+
+# Generate config with compiled-in paths
+$(BUILD_DIR)/config.ml: | $(BUILD_DIR)
+	echo 'let stdlib_path = "$(FERDEK_ROOT)/stdlib"' > $(BUILD_DIR)/config.ml
+
+$(BUILD_DIR)/config.cmo: $(BUILD_DIR)/config.ml | $(BUILD_DIR)
+	$(OCAMLC) -I $(BUILD_DIR) -o $(BUILD_DIR)/config.cmo -c $(BUILD_DIR)/config.ml
 
 # Generowanie lexera z .mll
 $(BUILD_DIR)/lexer.ml: src/lexer.mll $(BUILD_DIR)/parser.cmi | $(BUILD_DIR)
@@ -84,11 +92,11 @@ $(BUILD_DIR)/test_parser: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_D
 	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/test_parser $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo tests/test_parser.ml
 
 # Kompilacja głównego interpretera
-$(BUILD_DIR)/ferdek.cmo: src/ferdek.ml $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/parser.cmi $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmi | $(BUILD_DIR)
+$(BUILD_DIR)/ferdek.cmo: src/ferdek.ml $(BUILD_DIR)/config.cmo $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/parser.cmi $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/interpreter.cmi | $(BUILD_DIR)
 	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/ferdek.cmo -c src/ferdek.ml
 
-$(BUILD_DIR)/ferdek: $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/builtins_hashmap.cmo $(BUILD_DIR)/builtins_file.cmo $(BUILD_DIR)/builtins_list.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/ferdek.cmo | $(BUILD_DIR)
-	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/ferdek unix.cma $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/builtins_hashmap.cmo $(BUILD_DIR)/builtins_file.cmo $(BUILD_DIR)/builtins_list.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/ferdek.cmo
+$(BUILD_DIR)/ferdek: $(BUILD_DIR)/config.cmo $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/builtins_hashmap.cmo $(BUILD_DIR)/builtins_file.cmo $(BUILD_DIR)/builtins_list.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/ferdek.cmo | $(BUILD_DIR)
+	$(OCAMLC) -I src -I $(BUILD_DIR) -o $(BUILD_DIR)/ferdek unix.cma $(BUILD_DIR)/config.cmo $(BUILD_DIR)/ast.cmo $(BUILD_DIR)/parser.cmo $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/errors.cmo $(BUILD_DIR)/builtins_string.cmo $(BUILD_DIR)/builtins_hashmap.cmo $(BUILD_DIR)/builtins_file.cmo $(BUILD_DIR)/builtins_list.cmo $(BUILD_DIR)/interpreter.cmo $(BUILD_DIR)/ferdek.cmo
 
 # Kompilacja kompilatora Ferdek->C
 $(BUILD_DIR)/ferdecc.cmo: src/ferdecc.ml $(BUILD_DIR)/ast.cmi $(BUILD_DIR)/parser.cmi $(BUILD_DIR)/lexer.cmo $(BUILD_DIR)/compiler.cmi | $(BUILD_DIR)
