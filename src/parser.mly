@@ -36,6 +36,8 @@ open Ast
 %token UNION
 %token END_UNION
 %token NEW_UNION
+%token ENUM
+%token END_ENUM
 %token POINTER_REF
 %token POINTER_DEREF
 %token POINTER_ADDR
@@ -56,6 +58,7 @@ open Ast
 %type <Ast.class_decl> class_decl
 %type <Ast.struct_decl> struct_decl
 %type <Ast.union_decl> union_decl
+%type <Ast.enum_decl> enum_decl
 %type <Ast.import_stmt> import_stmt
 %type <Ast.top_level_decl> top_level_decl
 
@@ -78,6 +81,7 @@ top_level_decl:
   | c=class_decl { ClassDecl c }
   | st=struct_decl { StructDecl st }
   | u=union_decl { UnionDecl u }
+  | e=enum_decl { EnumDecl e }
   ;
 
 /* ============ IMPORTS ============ */
@@ -246,6 +250,20 @@ union_decl:
 union_field:
   | VAR_DECL id=IDENTIFIER VAR_INIT e=expression
     { (id, e) }
+  ;
+
+/* ============ ENUMS ============ */
+
+enum_decl:
+  | ENUM name=IDENTIFIER values=list(enum_value) END_ENUM
+    { { name; values } }
+  ;
+
+enum_value:
+  | id=IDENTIFIER
+    { (id, None) }
+  | id=IDENTIFIER VAR_INIT n=INTEGER
+    { (id, Some n) }
   ;
 
 /* ============ EXPRESSIONS ============ */

@@ -66,6 +66,8 @@ let string_of_token = function
   | UNION -> "UNION"
   | NEW_UNION -> "NEW_UNION"
   | END_UNION -> "END_UNION"
+  | ENUM -> "ENUM"
+  | END_ENUM -> "END_ENUM"
   | BIT_AND -> "BIT_AND"
   | BIT_OR -> "BIT_OR"
   | BIT_XOR -> "BIT_XOR"

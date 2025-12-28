@@ -232,6 +232,10 @@ rule token = parse
   | "WEJDŹ DO UNII" { NEW_UNION }
   | "WEJDZ DO UNII" { NEW_UNION }
 
+  (* Keywords - ENUMS *)
+  | "PANIE LISTA" { ENUM }
+  | "KONIEC LISTY" { END_ENUM }
+
   (* Keywords - POINTERS *)
   | "PALCEM POKAZUJĘ" { POINTER_REF }
   | "PALCEM POKAZUJE" { POINTER_REF }

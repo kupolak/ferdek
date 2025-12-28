@@ -300,6 +300,17 @@ let compile_top_level ctx decl =
   | UnionDecl udecl ->
       Printf.sprintf "/* union %s - not implemented */" udecl.name
 
+  | EnumDecl edecl ->
+      (* Generate C enum *)
+      let enum_values = List.mapi (fun i (name, value_opt) ->
+        match value_opt with
+        | Some v -> Printf.sprintf "  %s = %d" name v
+        | None -> Printf.sprintf "  %s" name
+      ) edecl.values in
+      Printf.sprintf "typedef enum {\n%s\n} %s;"
+        (String.concat ",\n" enum_values)
+        edecl.name
+
 (* ============ RUNTIME LIBRARY ============ *)
 
 (* Generate runtime library code *)

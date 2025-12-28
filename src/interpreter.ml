@@ -19,6 +19,7 @@ type value =
   | VClass of class_decl * environment       (* Class definition *)
   | VStruct of struct_decl * environment     (* Struct definition *)
   | VUnion of union_decl * environment       (* Union definition *)
+  | VEnum of enum_decl * environment         (* Enum definition *)
   | VObject of (string, value) Hashtbl.t
   | VPointer of value ref                    (* Pointer/reference (PALCEM POKAZUJĘ) *)
   | VFileHandle of file_handle
@@ -156,6 +157,8 @@ let rec string_of_value = function
       Printf.sprintf "<struct %s>" sdecl.name
   | VUnion (udecl, _) ->
       Printf.sprintf "<union %s>" udecl.name
+  | VEnum (edecl, _) ->
+      Printf.sprintf "<enum %s>" edecl.name
   | VObject _ ->
       "<object>"
   | VPointer r ->
@@ -1229,6 +1232,7 @@ and eval_function_call env name args =
              | VClass _ -> "KLASA"
              | VStruct _ -> "MEBEL"
              | VUnion _ -> "UNIA"
+             | VEnum _ -> "LISTA"
              | VObject _ -> "OBIEKT"
              | VPointer _ -> "WSKAŹNIK"
              | VFileHandle _ -> "KIBEL"
@@ -1511,6 +1515,23 @@ and eval_top_level_decl env = function
   | UnionDecl udecl ->
       (* Store union definition in environment *)
       define_var env udecl.name (VUnion (udecl, env))
+
+  | EnumDecl edecl ->
+      (* Store enum definition in environment *)
+      define_var env edecl.name (VEnum (edecl, env));
+      (* Also define all enum values as constants *)
+      let rec define_enum_values values next_value =
+        match values with
+        | [] -> ()
+        | (name, value_opt) :: rest ->
+            let actual_value = match value_opt with
+              | Some v -> v
+              | None -> next_value
+            in
+            define_var env name (VInt actual_value);
+            define_enum_values rest (actual_value + 1)
+      in
+      define_enum_values edecl.values 0
 
 (* ============ PROGRAM EXECUTION ============ *)
 

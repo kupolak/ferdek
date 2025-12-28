@@ -111,6 +111,12 @@ type union_decl = {
   fields: (string * expr) list;                          (* Union fields (all share same memory) *)
 }
 
+(* Enum declaration *)
+type enum_decl = {
+  name: string;                                          (* Enum name *)
+  values: (string * int option) list;                    (* Enum values with optional explicit numbers *)
+}
+
 (* Module import *)
 type import_stmt = string                                (* Module import (O KOGO MOJE PIĘKNE OCZY WIDZĄ) *)
 
@@ -124,6 +130,7 @@ type top_level_decl =
   | ClassDecl of class_decl
   | StructDecl of struct_decl
   | UnionDecl of union_decl
+  | EnumDecl of enum_decl
 
 (* Program - main AST structure *)
 type program = {
@@ -295,6 +302,16 @@ let string_of_union_decl indent (u : union_decl) =
   indent ^ "union " ^ u.name ^ "\n" ^
   String.concat "\n" fields_str
 
+(* Convert enum declaration to string *)
+let string_of_enum_decl indent (e : enum_decl) =
+  let values_str = List.map (fun (name, value_opt) ->
+    match value_opt with
+    | Some v -> indent ^ "  " ^ name ^ " = " ^ string_of_int v
+    | None -> indent ^ "  " ^ name
+  ) e.values in
+  indent ^ "enum " ^ e.name ^ "\n" ^
+  String.concat "\n" values_str
+
 (* Convert top-level declaration to string *)
 let string_of_top_level_decl (decl : top_level_decl) : string = match decl with
   | Import module_name ->
@@ -309,6 +326,8 @@ let string_of_top_level_decl (decl : top_level_decl) : string = match decl with
       string_of_struct_decl "" s
   | UnionDecl u ->
       string_of_union_decl "" u
+  | EnumDecl e ->
+      string_of_enum_decl "" e
 
 (* Convert entire program to string *)
 let string_of_program prog =

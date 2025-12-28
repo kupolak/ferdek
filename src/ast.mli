@@ -111,6 +111,12 @@ type union_decl = {
   fields: (string * expr) list;  (* Union fields share the same memory *)
 }
 
+(* Enum declaration *)
+type enum_decl = {
+  name: string;
+  values: (string * int option) list;  (* Enum values with optional explicit numbers *)
+}
+
 (* Module import *)
 type import_stmt = string
 
@@ -124,6 +130,7 @@ type top_level_decl =
   | ClassDecl of class_decl
   | StructDecl of struct_decl
   | UnionDecl of union_decl
+  | EnumDecl of enum_decl
 
 (* Program - main AST structure *)
 type program = {
@@ -163,6 +170,9 @@ val string_of_struct_decl : string -> struct_decl -> string
 
 (* Convert union declaration to string *)
 val string_of_union_decl : string -> union_decl -> string
+
+(* Convert enum declaration to string *)
+val string_of_enum_decl : string -> enum_decl -> string
 
 (* Convert top-level declaration to string *)
 val string_of_top_level_decl : top_level_decl -> string

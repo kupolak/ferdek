@@ -17,6 +17,7 @@ type value =
   | VClass of class_decl * environment
   | VStruct of struct_decl * environment
   | VUnion of union_decl * environment
+  | VEnum of enum_decl * environment
   | VObject of (string, value) Hashtbl.t
   | VPointer of value ref
   | VFileHandle of file_handle
