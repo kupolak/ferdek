@@ -68,6 +68,29 @@ let next_block_id = ref 0
 let total_allocated = ref 0
 let total_freed = ref 0
 
+(* ============ FRAMEBUFFER & DIRECT MEMORY ACCESS ============ *)
+
+(* Framebuffer structure (like DOOM's screens[]) *)
+type framebuffer = {
+  mutable width: int;
+  mutable height: int;
+  mutable pixels: int array;  (* Pixel data - array of color values *)
+  mutable id: int;
+}
+
+(* Lookup table structure (like DOOM's ylookup[], columnofs[]) *)
+type lookup_table = {
+  mutable data: int array;
+  mutable size: int;
+  mutable id: int;
+}
+
+(* Global framebuffer and lookup table state *)
+let framebuffers : (int, framebuffer) Hashtbl.t = Hashtbl.create 16
+let lookup_tables : (int, lookup_table) Hashtbl.t = Hashtbl.create 16
+let next_fb_id = ref 0
+let next_table_id = ref 0
+
 (* ============ ENVIRONMENT MANAGEMENT ============ *)
 
 (* Create a new environment *)
@@ -889,6 +912,248 @@ and eval_function_call env name args =
       (match args with
        | [] -> VInt 100
        | _ -> raise (RuntimeError "TAG_SMIECIOWE is a constant, no arguments expected"))
+
+  (* ============ FRAMEBUFFER FUNCTIONS (TELEWIZOR) ============ *)
+
+  (* WŁĄCZ TELEWIZOR(width, height) - Create framebuffer *)
+  | "WŁĄCZ TELEWIZOR" | "WLACZ TELEWIZOR" ->
+      (match args with
+       | [width_arg; height_arg] ->
+           let width = to_int (eval_expr env width_arg) in
+           let height = to_int (eval_expr env height_arg) in
+           if width <= 0 || height <= 0 then
+             raise (RuntimeError "WŁĄCZ TELEWIZOR: width and height must be positive")
+           else begin
+             let id = !next_fb_id in
+             next_fb_id := !next_fb_id + 1;
+             let total_pixels = width * height in
+             let fb = {
+               width = width;
+               height = height;
+               pixels = Array.make total_pixels 0;  (* Initialize to black *)
+               id = id;
+             } in
+             Hashtbl.add framebuffers id fb;
+             (* Return pointer to framebuffer ID *)
+             VPointer (ref (VInt id))
+           end
+       | _ -> raise (RuntimeError "WŁĄCZ TELEWIZOR expects 2 arguments (width, height)"))
+
+  (* WYŁĄCZ TELEWIZOR(fb_ptr) - Destroy framebuffer *)
+  | "WYŁĄCZ TELEWIZOR" | "WYLACZ TELEWIZOR" ->
+      (match args with
+       | [fb_arg] ->
+           let fb_val = eval_expr env fb_arg in
+           (match fb_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt fb_id ->
+                     if Hashtbl.mem framebuffers fb_id then begin
+                       Hashtbl.remove framebuffers fb_id;
+                       VNull
+                     end else
+                       raise (RuntimeError "WYŁĄCZ TELEWIZOR: invalid framebuffer")
+                 | _ -> raise (RuntimeError "WYŁĄCZ TELEWIZOR: argument must be framebuffer pointer"))
+            | _ -> raise (RuntimeError "WYŁĄCZ TELEWIZOR: argument must be framebuffer pointer"))
+       | _ -> raise (RuntimeError "WYŁĄCZ TELEWIZOR expects 1 argument (framebuffer)"))
+
+  (* ZMIEŃ KANAŁ(fb_ptr, x, y, color) - Write pixel to framebuffer *)
+  | "ZMIEŃ KANAŁ" | "ZMIEN KANAL" ->
+      (match args with
+       | [fb_arg; x_arg; y_arg; color_arg] ->
+           let fb_val = eval_expr env fb_arg in
+           let x = to_int (eval_expr env x_arg) in
+           let y = to_int (eval_expr env y_arg) in
+           let color = to_int (eval_expr env color_arg) in
+           (match fb_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt fb_id ->
+                     if Hashtbl.mem framebuffers fb_id then begin
+                       let fb = Hashtbl.find framebuffers fb_id in
+                       if x < 0 || x >= fb.width || y < 0 || y >= fb.height then
+                         raise (RuntimeError "ZMIEŃ KANAŁ: pixel coordinates out of bounds")
+                       else begin
+                         let offset = y * fb.width + x in
+                         fb.pixels.(offset) <- color;
+                         VNull
+                       end
+                     end else
+                       raise (RuntimeError "ZMIEŃ KANAŁ: invalid framebuffer")
+                 | _ -> raise (RuntimeError "ZMIEŃ KANAŁ: first argument must be framebuffer pointer"))
+            | _ -> raise (RuntimeError "ZMIEŃ KANAŁ: first argument must be framebuffer pointer"))
+       | _ -> raise (RuntimeError "ZMIEŃ KANAŁ expects 4 arguments (framebuffer, x, y, color)"))
+
+  (* CO LECI W TELEWIZORZE(fb_ptr, x, y) - Read pixel from framebuffer *)
+  | "CO LECI W TELEWIZORZE" ->
+      (match args with
+       | [fb_arg; x_arg; y_arg] ->
+           let fb_val = eval_expr env fb_arg in
+           let x = to_int (eval_expr env x_arg) in
+           let y = to_int (eval_expr env y_arg) in
+           (match fb_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt fb_id ->
+                     if Hashtbl.mem framebuffers fb_id then begin
+                       let fb = Hashtbl.find framebuffers fb_id in
+                       if x < 0 || x >= fb.width || y < 0 || y >= fb.height then
+                         raise (RuntimeError "CO LECI W TELEWIZORZE: pixel coordinates out of bounds")
+                       else begin
+                         let offset = y * fb.width + x in
+                         VInt fb.pixels.(offset)
+                       end
+                     end else
+                       raise (RuntimeError "CO LECI W TELEWIZORZE: invalid framebuffer")
+                 | _ -> raise (RuntimeError "CO LECI W TELEWIZORZE: first argument must be framebuffer pointer"))
+            | _ -> raise (RuntimeError "CO LECI W TELEWIZORZE: first argument must be framebuffer pointer"))
+       | _ -> raise (RuntimeError "CO LECI W TELEWIZORZE expects 3 arguments (framebuffer, x, y)"))
+
+  (* ============ LOOKUP TABLE FUNCTIONS ============ *)
+
+  (* STWÓRZ TABELĘ(size) - Create lookup table *)
+  | "STWÓRZ TABELĘ" | "STWORZ TABELE" ->
+      (match args with
+       | [size_arg] ->
+           let size = to_int (eval_expr env size_arg) in
+           if size <= 0 then
+             raise (RuntimeError "STWÓRZ TABELĘ: size must be positive")
+           else begin
+             let id = !next_table_id in
+             next_table_id := !next_table_id + 1;
+             let table = {
+               data = Array.make size 0;
+               size = size;
+               id = id;
+             } in
+             Hashtbl.add lookup_tables id table;
+             VPointer (ref (VInt id))
+           end
+       | _ -> raise (RuntimeError "STWÓRZ TABELĘ expects 1 argument (size)"))
+
+  (* WPISZ DO TABELI(table_ptr, index, value) - Write to lookup table *)
+  | "WPISZ DO TABELI" ->
+      (match args with
+       | [table_arg; index_arg; value_arg] ->
+           let table_val = eval_expr env table_arg in
+           let index = to_int (eval_expr env index_arg) in
+           let value = to_int (eval_expr env value_arg) in
+           (match table_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt table_id ->
+                     if Hashtbl.mem lookup_tables table_id then begin
+                       let table = Hashtbl.find lookup_tables table_id in
+                       if index < 0 || index >= table.size then
+                         raise (RuntimeError "WPISZ DO TABELI: index out of bounds")
+                       else begin
+                         table.data.(index) <- value;
+                         VNull
+                       end
+                     end else
+                       raise (RuntimeError "WPISZ DO TABELI: invalid lookup table")
+                 | _ -> raise (RuntimeError "WPISZ DO TABELI: first argument must be table pointer"))
+            | _ -> raise (RuntimeError "WPISZ DO TABELI: first argument must be table pointer"))
+       | _ -> raise (RuntimeError "WPISZ DO TABELI expects 3 arguments (table, index, value)"))
+
+  (* SPRAWDŹ W TABELI(table_ptr, index) - Read from lookup table *)
+  | "SPRAWDŹ W TABELI" | "SPRAWDZ W TABELI" ->
+      (match args with
+       | [table_arg; index_arg] ->
+           let table_val = eval_expr env table_arg in
+           let index = to_int (eval_expr env index_arg) in
+           (match table_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt table_id ->
+                     if Hashtbl.mem lookup_tables table_id then begin
+                       let table = Hashtbl.find lookup_tables table_id in
+                       if index < 0 || index >= table.size then
+                         raise (RuntimeError "SPRAWDŹ W TABELI: index out of bounds")
+                       else
+                         VInt table.data.(index)
+                     end else
+                       raise (RuntimeError "SPRAWDŹ W TABELI: invalid lookup table")
+                 | _ -> raise (RuntimeError "SPRAWDŹ W TABELI: first argument must be table pointer"))
+            | _ -> raise (RuntimeError "SPRAWDŹ W TABELI: first argument must be table pointer"))
+       | _ -> raise (RuntimeError "SPRAWDŹ W TABELI expects 2 arguments (table, index)"))
+
+  (* ============ DIRECT MEMORY ACCESS ============ *)
+
+  (* PISZ BAJT(ptr, offset, value) - Write byte directly to memory block *)
+  | "PISZ BAJT" ->
+      (match args with
+       | [ptr_arg; offset_arg; value_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           let offset = to_int (eval_expr env offset_arg) in
+           let value = to_int (eval_expr env value_arg) in
+           (* Same as ZAPISZ DO BLOKU but emphasizes byte-level access *)
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       if offset < 0 || offset >= block.size then
+                         raise (RuntimeError "PISZ BAJT: offset out of bounds")
+                       else begin
+                         block.data.(offset) <- VInt value;
+                         VNull
+                       end
+                     end else
+                       raise (RuntimeError "PISZ BAJT: invalid memory block")
+                 | _ -> raise (RuntimeError "PISZ BAJT: first argument must be pointer"))
+            | _ -> raise (RuntimeError "PISZ BAJT: first argument must be pointer"))
+       | _ -> raise (RuntimeError "PISZ BAJT expects 3 arguments (ptr, offset, value)"))
+
+  (* CZYTAJ BAJT(ptr, offset) - Read byte directly from memory block *)
+  | "CZYTAJ BAJT" ->
+      (match args with
+       | [ptr_arg; offset_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           let offset = to_int (eval_expr env offset_arg) in
+           (* Same as CZYTAJ Z BLOKU but emphasizes byte-level access *)
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       if offset < 0 || offset >= block.size then
+                         raise (RuntimeError "CZYTAJ BAJT: offset out of bounds")
+                       else
+                         block.data.(offset)
+                     end else
+                       raise (RuntimeError "CZYTAJ BAJT: invalid memory block")
+                 | _ -> raise (RuntimeError "CZYTAJ BAJT: first argument must be pointer"))
+            | _ -> raise (RuntimeError "CZYTAJ BAJT: first argument must be pointer"))
+       | _ -> raise (RuntimeError "CZYTAJ BAJT expects 2 arguments (ptr, offset)"))
+
+  (* KOPIUJ PAMIĘĆ(src_ptr, dst_ptr, size) - Memory copy (like memcpy) *)
+  | "KOPIUJ PAMIĘĆ" | "KOPIUJ PAMIEC" ->
+      (match args with
+       | [src_arg; dst_arg; size_arg] ->
+           let src_val = eval_expr env src_arg in
+           let dst_val = eval_expr env dst_arg in
+           let size = to_int (eval_expr env size_arg) in
+           (match src_val, dst_val with
+            | VPointer src_ptr, VPointer dst_ptr ->
+                (match !src_ptr, !dst_ptr with
+                 | VInt src_id, VInt dst_id ->
+                     if Hashtbl.mem zone_blocks src_id && Hashtbl.mem zone_blocks dst_id then begin
+                       let src_block = Hashtbl.find zone_blocks src_id in
+                       let dst_block = Hashtbl.find zone_blocks dst_id in
+                       if size > src_block.size || size > dst_block.size then
+                         raise (RuntimeError "KOPIUJ PAMIĘĆ: size exceeds block size")
+                       else begin
+                         Array.blit src_block.data 0 dst_block.data 0 size;
+                         VNull
+                       end
+                     end else
+                       raise (RuntimeError "KOPIUJ PAMIĘĆ: invalid memory blocks")
+                 | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ: arguments must be pointers"))
+            | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ: arguments must be pointers"))
+       | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ expects 3 arguments (src, dst, size)"))
 
   | _ ->
       (* Try to find user-defined function *)

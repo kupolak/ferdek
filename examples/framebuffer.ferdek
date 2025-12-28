@@ -1,0 +1,152 @@
+CO JEST KURDE
+
+PANIE SENSACJA REWELACJA "=== Test Framebuffer i Direct Memory Access (DOOM-style) ==="
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 1: Podstawowy framebuffer
+PANIE SENSACJA REWELACJA "Test 1: Tworzenie framebuffera (ekran 320x200)"
+
+RYM CYM CYM Tworzymy framebuffer jak screens[0] w DOOM
+AFERA JEST screen W MORDĘ JEŻA WŁĄCZ TELEWIZOR(320, 200)
+
+PANIE SENSACJA REWELACJA "Utworzono framebuffer 320x200 pikseli"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 2: Rysowanie pikseli
+PANIE SENSACJA REWELACJA "Test 2: Pisanie pikseli do framebuffera"
+
+RYM CYM CYM Rysujemy kilka pikseli (kolory w DOOM to palette indexes 0-255)
+W MORDĘ JEŻA ZMIEŃ KANAŁ(screen, 10, 10, 255)
+W MORDĘ JEŻA ZMIEŃ KANAŁ(screen, 11, 10, 255)
+W MORDĘ JEŻA ZMIEŃ KANAŁ(screen, 12, 10, 255)
+W MORDĘ JEŻA ZMIEŃ KANAŁ(screen, 13, 10, 255)
+W MORDĘ JEŻA ZMIEŃ KANAŁ(screen, 14, 10, 255)
+
+PANIE SENSACJA REWELACJA "Narysowano 5 białych pikseli (kolor 255)"
+
+RYM CYM CYM Odczytujemy piksel
+AFERA JEST pixel W MORDĘ JEŻA CO LECI W TELEWIZORZE(screen, 10, 10)
+
+PANIE SENSACJA REWELACJA "Piksel na (10,10) = "
+PANIE SENSACJA REWELACJA pixel
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 3: Lookup Tables (ylookup[] w DOOM)
+PANIE SENSACJA REWELACJA "Test 3: Lookup table (jak ylookup[] w DOOM)"
+
+RYM CYM CYM W DOOM ylookup[y] przechowuje offset początku linii y
+RYM CYM CYM ylookup[y] = y * SCREENWIDTH
+AFERA JEST ylookup W MORDĘ JEŻA STWÓRZ TABELĘ(200)
+
+RYM CYM CYM Wypełniamy kilka wpisów w tabeli
+W MORDĘ JEŻA WPISZ DO TABELI(ylookup, 0, 0)
+W MORDĘ JEŻA WPISZ DO TABELI(ylookup, 1, 320)
+W MORDĘ JEŻA WPISZ DO TABELI(ylookup, 2, 640)
+W MORDĘ JEŻA WPISZ DO TABELI(ylookup, 50, 16000)
+W MORDĘ JEŻA WPISZ DO TABELI(ylookup, 100, 32000)
+
+PANIE SENSACJA REWELACJA "Wypełniono ylookup table"
+
+RYM CYM CYM Sprawdzamy offset dla linii 50
+AFERA JEST line_offset W MORDĘ JEŻA SPRAWDŹ W TABELI(ylookup, 50)
+
+PANIE SENSACJA REWELACJA "ylookup[50] = "
+PANIE SENSACJA REWELACJA line_offset
+PANIE SENSACJA REWELACJA " (oczekiwane: 16000 = 50*320)"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 4: Direct Memory Access (jak dest[frac>>FRACBITS])
+PANIE SENSACJA REWELACJA "Test 4: Bezpośredni dostęp do pamięci"
+
+RYM CYM CYM Alokujemy blok pamięci jak teksturę w DOOM
+AFERA JEST texture W MORDĘ JEŻA DAJ MI HAJS(64, 50)
+
+RYM CYM CYM Wypełniamy teksturę danymi (symulacja kolumny tekstury)
+RYM CYM CYM Gradient: 0, 4, 8, 12, 16 itd.
+W MORDĘ JEŻA PISZ BAJT(texture, 0, 0)
+W MORDĘ JEŻA PISZ BAJT(texture, 1, 4)
+W MORDĘ JEŻA PISZ BAJT(texture, 2, 8)
+W MORDĘ JEŻA PISZ BAJT(texture, 3, 12)
+W MORDĘ JEŻA PISZ BAJT(texture, 4, 16)
+W MORDĘ JEŻA PISZ BAJT(texture, 5, 20)
+W MORDĘ JEŻA PISZ BAJT(texture, 10, 40)
+W MORDĘ JEŻA PISZ BAJT(texture, 20, 80)
+W MORDĘ JEŻA PISZ BAJT(texture, 30, 120)
+
+PANIE SENSACJA REWELACJA "Wypełniono teksturę gradientem"
+
+RYM CYM CYM Odczytujemy kilka bajtów
+AFERA JEST byte0 W MORDĘ JEŻA CZYTAJ BAJT(texture, 0)
+AFERA JEST byte5 W MORDĘ JEŻA CZYTAJ BAJT(texture, 5)
+AFERA JEST byte10 W MORDĘ JEŻA CZYTAJ BAJT(texture, 10)
+AFERA JEST byte20 W MORDĘ JEŻA CZYTAJ BAJT(texture, 20)
+
+PANIE SENSACJA REWELACJA "Bajt[0] = "
+PANIE SENSACJA REWELACJA byte0
+PANIE SENSACJA REWELACJA ", Bajt[5] = "
+PANIE SENSACJA REWELACJA byte5
+PANIE SENSACJA REWELACJA ", Bajt[10] = "
+PANIE SENSACJA REWELACJA byte10
+PANIE SENSACJA REWELACJA ", Bajt[20] = "
+PANIE SENSACJA REWELACJA byte20
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 5: Kopiowanie pamięci (memcpy)
+PANIE SENSACJA REWELACJA "Test 5: KOPIUJ PAMIĘĆ (memcpy)"
+
+RYM CYM CYM Tworzymy drugi blok
+AFERA JEST texture2 W MORDĘ JEŻA DAJ MI HAJS(64, 50)
+
+RYM CYM CYM Kopiujemy 30 bajtów z texture do texture2
+W MORDĘ JEŻA KOPIUJ PAMIĘĆ(texture, texture2, 30)
+
+PANIE SENSACJA REWELACJA "Skopiowano 30 bajtów"
+
+RYM CYM CYM Sprawdzamy czy się skopiowało
+AFERA JEST copy_byte0 W MORDĘ JEŻA CZYTAJ BAJT(texture2, 0)
+AFERA JEST copy_byte5 W MORDĘ JEŻA CZYTAJ BAJT(texture2, 5)
+AFERA JEST copy_byte20 W MORDĘ JEŻA CZYTAJ BAJT(texture2, 20)
+
+PANIE SENSACJA REWELACJA "Skopiowane bajty: "
+PANIE SENSACJA REWELACJA copy_byte0
+PANIE SENSACJA REWELACJA ", "
+PANIE SENSACJA REWELACJA copy_byte5
+PANIE SENSACJA REWELACJA ", "
+PANIE SENSACJA REWELACJA copy_byte20
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 6: Symulacja DOOM R_DrawColumn (uproszczona)
+PANIE SENSACJA REWELACJA "Test 6: Symulacja DOOM R_DrawColumn"
+
+RYM CYM CYM W DOOM kolumna tekstury jest rysowana z fixed-point arithmetic
+RYM CYM CYM Narysujemy kilka pikseli z tekstury na ekranie
+
+RYM CYM CYM Rysujemy kolumnę na x=160, pobierając piksele z tekstury
+AFERA JEST pixel0 W MORDĘ JEŻA CZYTAJ BAJT(texture, 0)
+W MORDĘ JEŻA ZMIEŃ KANAŁ(screen, 160, 50, pixel0)
+
+AFERA JEST pixel5 W MORDĘ JEŻA CZYTAJ BAJT(texture, 5)
+W MORDĘ JEŻA ZMIEŃ KANAŁ(screen, 160, 55, pixel5)
+
+AFERA JEST pixel10 W MORDĘ JEŻA CZYTAJ BAJT(texture, 10)
+W MORDĘ JEŻA ZMIEŃ KANAŁ(screen, 160, 60, pixel10)
+
+AFERA JEST pixel20 W MORDĘ JEŻA CZYTAJ BAJT(texture, 20)
+W MORDĘ JEŻA ZMIEŃ KANAŁ(screen, 160, 70, pixel20)
+
+PANIE SENSACJA REWELACJA "Narysowano kolumnę tekstury (DOOM R_DrawColumn style)"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 7: Czyszczenie i finalizacja
+PANIE SENSACJA REWELACJA "Test 7: Czyszczenie zasobów"
+
+W MORDĘ JEŻA WYŁĄCZ TELEWIZOR(screen)
+W MORDĘ JEŻA ODDAJ WSZYSTKO(texture)
+W MORDĘ JEŻA ODDAJ WSZYSTKO(texture2)
+
+PANIE SENSACJA REWELACJA "Zwolniono framebuffer i tekstury"
+PANIE SENSACJA REWELACJA ""
+
+PANIE SENSACJA REWELACJA "=== Framebuffer działa jak w DOOM! ==="
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
