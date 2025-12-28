@@ -36,6 +36,38 @@ exception BreakLoop
 exception ContinueLoop
 exception ThrowException of value
 
+(* ============ ZONE ALLOCATOR (DOOM-style Memory Management) ============ *)
+
+(* Memory tags (like DOOM's PU_* tags) *)
+type memory_tag =
+  | TAG_TRWALE      (* PU_STATIC = 1 - never freed *)
+  | TAG_POZIOM      (* PU_LEVEL = 50 - level data *)
+  | TAG_SMIECIOWE   (* PU_CACHE = 100 - can be freed anytime *)
+
+let tag_to_int = function
+  | TAG_TRWALE -> 1
+  | TAG_POZIOM -> 50
+  | TAG_SMIECIOWE -> 100
+
+let int_to_tag n =
+  if n <= 1 then TAG_TRWALE
+  else if n <= 50 then TAG_POZIOM
+  else TAG_SMIECIOWE
+
+(* Memory block structure *)
+type memory_block = {
+  mutable size: int;
+  mutable tag: memory_tag;
+  mutable data: value array;
+  mutable id: int;
+}
+
+(* Global zone allocator state *)
+let zone_blocks : (int, memory_block) Hashtbl.t = Hashtbl.create 128
+let next_block_id = ref 0
+let total_allocated = ref 0
+let total_freed = ref 0
+
 (* ============ ENVIRONMENT MANAGEMENT ============ *)
 
 (* Create a new environment *)
@@ -691,6 +723,172 @@ and eval_function_call env name args =
                 VBool (Builtins_list.wersalka_czy_lezy_na arr elem equal_func)
             | _ -> raise (RuntimeError "CZY LEŻY NA WERSALCE: first argument must be an array"))
        | _ -> raise (RuntimeError "CZY LEŻY NA WERSALCE expects 2 arguments"))
+
+  (* ============ MEMORY MANAGEMENT (DOOM-style Zone Allocator) ============ *)
+
+  (* DAJ MI HAJS - Z_Malloc(size, tag) - Allocate memory block *)
+  | "DAJ MI HAJS" ->
+      (match args with
+       | [size_arg; tag_arg] ->
+           let size = to_int (eval_expr env size_arg) in
+           let tag_val = to_int (eval_expr env tag_arg) in
+           if size <= 0 then
+             raise (RuntimeError "DAJ MI HAJS: size must be positive")
+           else begin
+             let tag = int_to_tag tag_val in
+             let id = !next_block_id in
+             next_block_id := !next_block_id + 1;
+             let block = {
+               size = size;
+               tag = tag;
+               data = Array.make size VNull;
+               id = id;
+             } in
+             Hashtbl.add zone_blocks id block;
+             total_allocated := !total_allocated + size;
+             (* Return pointer to block ID *)
+             VPointer (ref (VInt id))
+           end
+       | _ -> raise (RuntimeError "DAJ MI HAJS expects 2 arguments (size, tag)"))
+
+  (* ODDAJ_WSZYSTKO - Z_Free(ptr) - Free memory block *)
+  | "ODDAJ WSZYSTKO" ->
+      (match args with
+       | [ptr_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       total_freed := !total_freed + block.size;
+                       Hashtbl.remove zone_blocks block_id;
+                       VNull
+                     end else
+                       raise (RuntimeError "ODDAJ WSZYSTKO: block does not exist")
+                 | _ -> raise (RuntimeError "ODDAJ WSZYSTKO: invalid pointer"))
+            | _ -> raise (RuntimeError "ODDAJ WSZYSTKO expects a pointer"))
+       | _ -> raise (RuntimeError "ODDAJ WSZYSTKO expects 1 argument (pointer)"))
+
+  (* KOMORNICZY_WINDYKACJA - Z_FreeTags(lowtag, hightag) - Free blocks by tag range *)
+  | "KOMORNICZY WINDYKACJA" ->
+      (match args with
+       | [lowtag_arg; hightag_arg] ->
+           let lowtag = to_int (eval_expr env lowtag_arg) in
+           let hightag = to_int (eval_expr env hightag_arg) in
+           let freed_count = ref 0 in
+           let to_remove = ref [] in
+           Hashtbl.iter (fun id block ->
+             let tag_val = tag_to_int block.tag in
+             if tag_val >= lowtag && tag_val <= hightag then begin
+               total_freed := !total_freed + block.size;
+               to_remove := id :: !to_remove;
+               freed_count := !freed_count + 1
+             end
+           ) zone_blocks;
+           List.iter (Hashtbl.remove zone_blocks) !to_remove;
+           VInt !freed_count
+       | _ -> raise (RuntimeError "KOMORNICZY WINDYKACJA expects 2 arguments (lowtag, hightag)"))
+
+  (* ZAPISZ_DO_BLOKU - Write to memory block *)
+  | "ZAPISZ DO BLOKU" ->
+      (match args with
+       | [ptr_arg; index_arg; value_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           let index = to_int (eval_expr env index_arg) in
+           let value = eval_expr env value_arg in
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       if index >= 0 && index < block.size then begin
+                         block.data.(index) <- value;
+                         VNull
+                       end else
+                         raise (RuntimeError (Printf.sprintf "ZAPISZ DO BLOKU: index %d out of bounds (size: %d)" index block.size))
+                     end else
+                       raise (RuntimeError "ZAPISZ DO BLOKU: block does not exist")
+                 | _ -> raise (RuntimeError "ZAPISZ DO BLOKU: invalid pointer"))
+            | _ -> raise (RuntimeError "ZAPISZ DO BLOKU expects a pointer as first argument"))
+       | _ -> raise (RuntimeError "ZAPISZ DO BLOKU expects 3 arguments (ptr, index, value)"))
+
+  (* CZYTAJ_Z_BLOKU - Read from memory block *)
+  | "CZYTAJ Z BLOKU" ->
+      (match args with
+       | [ptr_arg; index_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           let index = to_int (eval_expr env index_arg) in
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       if index >= 0 && index < block.size then
+                         block.data.(index)
+                       else
+                         raise (RuntimeError (Printf.sprintf "CZYTAJ Z BLOKU: index %d out of bounds (size: %d)" index block.size))
+                     end else
+                       raise (RuntimeError "CZYTAJ Z BLOKU: block does not exist")
+                 | _ -> raise (RuntimeError "CZYTAJ Z BLOKU: invalid pointer"))
+            | _ -> raise (RuntimeError "CZYTAJ Z BLOKU expects a pointer as first argument"))
+       | _ -> raise (RuntimeError "CZYTAJ Z BLOKU expects 2 arguments (ptr, index)"))
+
+  (* ROZMIAR_BLOKU - Get memory block size *)
+  | "ROZMIAR BLOKU" ->
+      (match args with
+       | [ptr_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       VInt block.size
+                     end else
+                       raise (RuntimeError "ROZMIAR BLOKU: block does not exist")
+                 | _ -> raise (RuntimeError "ROZMIAR BLOKU: invalid pointer"))
+            | _ -> raise (RuntimeError "ROZMIAR BLOKU expects a pointer"))
+       | _ -> raise (RuntimeError "ROZMIAR BLOKU expects 1 argument (pointer)"))
+
+  (* ILE_KASY_LECI - Get memory statistics *)
+  | "ILE KASY LECI" ->
+      (match args with
+       | [] ->
+           let allocated = !total_allocated in
+           let freed = !total_freed in
+           let current = allocated - freed in
+           let block_count = Hashtbl.length zone_blocks in
+           (* Return hash map with stats *)
+           let stats = Hashtbl.create 4 in
+           Hashtbl.add stats "allocated" (VInt allocated);
+           Hashtbl.add stats "freed" (VInt freed);
+           Hashtbl.add stats "current" (VInt current);
+           Hashtbl.add stats "blocks" (VInt block_count);
+           VHashMap stats
+       | _ -> raise (RuntimeError "ILE KASY LECI expects no arguments"))
+
+  (* TAG_TRWALE - Memory tag constant (PU_STATIC) *)
+  | "TAG_TRWALE" ->
+      (match args with
+       | [] -> VInt 1
+       | _ -> raise (RuntimeError "TAG_TRWALE is a constant, no arguments expected"))
+
+  (* TAG_POZIOM - Memory tag constant (PU_LEVEL) *)
+  | "TAG_POZIOM" ->
+      (match args with
+       | [] -> VInt 50
+       | _ -> raise (RuntimeError "TAG_POZIOM is a constant, no arguments expected"))
+
+  (* TAG_SMIECIOWE - Memory tag constant (PU_CACHE) *)
+  | "TAG_SMIECIOWE" ->
+      (match args with
+       | [] -> VInt 100
+       | _ -> raise (RuntimeError "TAG_SMIECIOWE is a constant, no arguments expected"))
 
   | _ ->
       (* Try to find user-defined function *)
