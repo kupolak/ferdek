@@ -1565,6 +1565,102 @@ and eval_function_call env name args =
            VArray [| VInt ev_type; VInt key; VInt x; VInt y |]
        | _ -> raise (RuntimeError "ZDARZENIE_CZEKAJ expects 0 arguments"))
 
+  (* ============ NETWORKING (UDP - DOOM multiplayer style) ============ *)
+
+  (* GNIAZDKO_OTWORZ(port) - Create UDP socket and bind to port *)
+  | "GNIAZDKO_OTWORZ" | "GNIAZDKO OTWORZ" ->
+      (match args with
+       | [port_arg] ->
+           let port = to_int (eval_expr env port_arg) in
+           (try
+              let sockfd = Unix.socket Unix.PF_INET Unix.SOCK_DGRAM 0 in
+              (* Set non-blocking *)
+              Unix.set_nonblock sockfd;
+              (* Allow address reuse *)
+              Unix.setsockopt sockfd Unix.SO_REUSEADDR true;
+              (* Bind to port *)
+              let addr = Unix.ADDR_INET (Unix.inet_addr_any, port) in
+              Unix.bind sockfd addr;
+              Printf.printf "UDP socket opened on port %d\n%!" port;
+              VInt (Obj.magic sockfd : int)  (* Convert Unix.file_descr to int *)
+            with Unix.Unix_error (err, fn, _) ->
+              raise (RuntimeError (Printf.sprintf "GNIAZDKO_OTWORZ: %s: %s" fn (Unix.error_message err))))
+       | _ -> raise (RuntimeError "GNIAZDKO_OTWORZ expects 1 argument (port)"))
+
+  (* GNIAZDKO_WYSLIJ(sockfd, host, port, data) - Send UDP packet *)
+  | "GNIAZDKO_WYSLIJ" | "GNIAZDKO WYSLIJ" ->
+      (match args with
+       | [sockfd_arg; host_arg; port_arg; data_arg] ->
+           let sockfd = (Obj.magic (to_int (eval_expr env sockfd_arg)) : Unix.file_descr) in
+           let host = to_string (eval_expr env host_arg) in
+           let port = to_int (eval_expr env port_arg) in
+           let data_val = eval_expr env data_arg in
+           (match data_val with
+            | VString s ->
+                (try
+                   let addr = Unix.ADDR_INET (Unix.inet_addr_of_string host, port) in
+                   let sent = Unix.sendto sockfd (Bytes.of_string s) 0 (String.length s) [] addr in
+                   VInt sent
+                 with Unix.Unix_error (err, fn, _) ->
+                   raise (RuntimeError (Printf.sprintf "GNIAZDKO_WYSLIJ: %s: %s" fn (Unix.error_message err))))
+            | VArray arr ->
+                (* Convert byte array to string *)
+                let bytes = Bytes.create (Array.length arr) in
+                Array.iteri (fun i v ->
+                  let byte_val = to_int v land 0xFF in
+                  Bytes.set bytes i (Char.chr byte_val)
+                ) arr;
+                (try
+                   let addr = Unix.ADDR_INET (Unix.inet_addr_of_string host, port) in
+                   let sent = Unix.sendto sockfd bytes 0 (Bytes.length bytes) [] addr in
+                   VInt sent
+                 with Unix.Unix_error (err, fn, _) ->
+                   raise (RuntimeError (Printf.sprintf "GNIAZDKO_WYSLIJ: %s: %s" fn (Unix.error_message err))))
+            | _ -> raise (RuntimeError "GNIAZDKO_WYSLIJ: data must be string or byte array"))
+       | _ -> raise (RuntimeError "GNIAZDKO_WYSLIJ expects 4 arguments (sockfd, host, port, data)"))
+
+  (* GNIAZDKO_ODBIERZ(sockfd, bufsize) - Receive UDP packet (non-blocking) *)
+  | "GNIAZDKO_ODBIERZ" | "GNIAZDKO ODBIERZ" ->
+      (match args with
+       | [sockfd_arg; bufsize_arg] ->
+           let sockfd = (Obj.magic (to_int (eval_expr env sockfd_arg)) : Unix.file_descr) in
+           let bufsize = to_int (eval_expr env bufsize_arg) in
+           let buffer = Bytes.create bufsize in
+           (try
+              let (received, from_addr) = Unix.recvfrom sockfd buffer 0 bufsize [] in
+              if received = 0 then
+                VInt 0  (* No data *)
+              else begin
+                (* Extract sender info *)
+                let (host, port) = match from_addr with
+                  | Unix.ADDR_INET (addr, p) -> (Unix.string_of_inet_addr addr, p)
+                  | _ -> ("unknown", 0)
+                in
+                (* Return tuple [data, host, port] *)
+                let data_str = Bytes.sub_string buffer 0 received in
+                VArray [| VString data_str; VString host; VInt port |]
+              end
+            with
+            | Unix.Unix_error (Unix.EAGAIN, _, _)
+            | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
+                VInt 0  (* No data available *)
+            | Unix.Unix_error (err, fn, _) ->
+                raise (RuntimeError (Printf.sprintf "GNIAZDKO_ODBIERZ: %s: %s" fn (Unix.error_message err))))
+       | _ -> raise (RuntimeError "GNIAZDKO_ODBIERZ expects 2 arguments (sockfd, bufsize)"))
+
+  (* GNIAZDKO_ZAMKNIJ(sockfd) - Close UDP socket *)
+  | "GNIAZDKO_ZAMKNIJ" | "GNIAZDKO ZAMKNIJ" ->
+      (match args with
+       | [sockfd_arg] ->
+           let sockfd = (Obj.magic (to_int (eval_expr env sockfd_arg)) : Unix.file_descr) in
+           (try
+              Unix.close sockfd;
+              Printf.printf "UDP socket closed\n%!";
+              VNull
+            with Unix.Unix_error (err, fn, _) ->
+              raise (RuntimeError (Printf.sprintf "GNIAZDKO_ZAMKNIJ: %s: %s" fn (Unix.error_message err))))
+       | _ -> raise (RuntimeError "GNIAZDKO_ZAMKNIJ expects 1 argument (sockfd)"))
+
   | _ ->
       (* Try to find user-defined function *)
       try
