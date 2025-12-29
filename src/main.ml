@@ -27,26 +27,26 @@ let print_version () =
 
 (* Parse a file *)
 let parse_file filename =
-  let ic = open_in filename in
-  let lexbuf = Lexing.from_channel ic in
-  lexbuf.Lexing.lex_curr_p <- {
-    lexbuf.Lexing.lex_curr_p with
-    Lexing.pos_fname = filename
-  };
   try
+    (* Step 1: Preprocess the file *)
+    let preprocessed_lines = Preprocessor.preprocess_file filename in
+    let preprocessed_content = String.concat "\n" preprocessed_lines in
+
+    (* Step 2: Parse the preprocessed content *)
+    let lexbuf = Lexing.from_string preprocessed_content in
+    lexbuf.Lexing.lex_curr_p <- {
+      lexbuf.Lexing.lex_curr_p with
+      Lexing.pos_fname = filename
+    };
     let ast = Parser.program Lexer.token lexbuf in
-    close_in ic;
     Ok ast
   with
   | Lexer.LexError msg ->
-      close_in ic;
       Error (Printf.sprintf "Błąd Leksera! Ktoś tu namieszał w słowach! W %s: %s (Paździoch ukradł słowa)." filename msg)
   | Parser.Error ->
-      close_in ic;
-      let pos = lexbuf.Lexing.lex_curr_p in
-      Error (Printf.sprintf "Błąd Parsowania! Walduś, coś tu jest pokręcone! W %s, linia %d, kolumna %d"
-              filename pos.Lexing.pos_lnum
-              (pos.Lexing.pos_cnum - pos.Lexing.pos_bol))
+      Error (Printf.sprintf "Błąd Parsowania! Walduś, coś tu jest pokręcone! W %s" filename)
+  | Failure msg ->
+      Error (Printf.sprintf "Błąd Preprocesora w %s: %s" filename msg)
 
 (* Interpretuje plik *)
 let interpret_file filename =

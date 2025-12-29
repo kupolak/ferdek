@@ -1,0 +1,48 @@
+CO JEST KURDE
+
+RYM CYM CYM Makra preprocesora
+
+#define FRACBITS 16
+#define FRACUNIT 65536
+#define MYDEF
+
+PANIE SENSACJA REWELACJA "=== Ferdek Preprocessor ==="
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test makr - fixed-point math z DOOM
+AFERA JEST fracbits W MORDE JEZA ZROB DLUGI(FRACBITS)
+AFERA JEST fracunit W MORDE JEZA ZROB DLUGI(FRACUNIT)
+
+PANIE SENSACJA REWELACJA "Fixed-point constants defined"
+PANIE SENSACJA REWELACJA "fracbits and fracunit loaded from macros"
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Conditional compilation
+#ifdef MYDEF
+PANIE SENSACJA REWELACJA "Conditional: Symbol is defined"
+#endif
+
+#ifndef NOTDEF
+PANIE SENSACJA REWELACJA "Conditional: Symbol is NOT defined"
+#endif
+
+#ifdef LINUX
+PANIE SENSACJA REWELACJA "Platform: Linux"
+#endif
+
+#ifdef UNIX
+PANIE SENSACJA REWELACJA "Platform: Unix"
+#endif
+
+#ifdef MACOS
+PANIE SENSACJA REWELACJA "Platform: macOS"
+#endif
+
+#ifdef WINDOWS
+PANIE SENSACJA REWELACJA "Platform: Windows"
+#endif
+
+PANIE SENSACJA REWELACJA ""
+PANIE SENSACJA REWELACJA "=== Preprocessor works! ==="
+
+MOJA NOGA JUZ TUTAJ NIE POSTANIE

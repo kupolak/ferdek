@@ -13,6 +13,7 @@
   ast
   parser
   lexer
+  preprocessor
   interpreter
   compiler
   ferdek_stdlib
@@ -21,7 +22,7 @@
   builtins_file
   builtins_list
   errors)
- (libraries unix)
+ (libraries unix str)
  (foreign_stubs
   (language c)
   (names graphics_stubs graphics_x11)
