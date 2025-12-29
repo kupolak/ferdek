@@ -2,6 +2,17 @@
 
 open Ast
 
+(* ============ EXTERNAL BINDINGS FOR GRAPHICS (X11) ============ *)
+
+external ferdek_window_open : int -> int -> string -> int = "caml_ferdek_window_open"
+external ferdek_window_close : unit -> unit = "caml_ferdek_window_close"
+external ferdek_palette_set : bytes -> unit = "caml_ferdek_palette_set"
+external ferdek_pixel_draw : int -> int -> int -> unit = "caml_ferdek_pixel_draw"
+external ferdek_screen_refresh : unit -> unit = "caml_ferdek_screen_refresh"
+external ferdek_screen_clear : int -> unit = "caml_ferdek_screen_clear"
+external ferdek_framebuffer_get : int -> int -> int = "caml_ferdek_framebuffer_get"
+external ferdek_event_poll : unit -> (int * int * int * int) = "caml_ferdek_event_poll"
+
 (* ============ RUNTIME VALUES ============ *)
 
 (* Runtime value types *)
@@ -1459,6 +1470,100 @@ and eval_function_call env name args =
            in
            let message = format_string format arg_values "" in
            raise (RuntimeError (Printf.sprintf "I_Error: %s" message)))
+
+  (* ============ GRAPHICS (X11 - DOOM style) ============ *)
+
+  (* OKNO_OTWORZ(width, height, title) - Initialize graphics window *)
+  | "OKNO_OTWORZ" | "OKNO OTWORZ" ->
+      (match args with
+       | [width_arg; height_arg; title_arg] ->
+           let width = to_int (eval_expr env width_arg) in
+           let height = to_int (eval_expr env height_arg) in
+           let title = to_string (eval_expr env title_arg) in
+           let result = ferdek_window_open width height title in
+           if result = 0 then
+             raise (RuntimeError "OKNO_OTWORZ: Failed to open window")
+           else
+             VInt result
+       | _ -> raise (RuntimeError "OKNO_OTWORZ expects 3 arguments (width, height, title)"))
+
+  (* OKNO_ZAMKNIJ() - Close graphics window *)
+  | "OKNO_ZAMKNIJ" | "OKNO ZAMKNIJ" ->
+      (match args with
+       | [] ->
+           ferdek_window_close ();
+           VNull
+       | _ -> raise (RuntimeError "OKNO_ZAMKNIJ expects 0 arguments"))
+
+  (* PALETA_USTAW(palette_array) - Set 256-color palette *)
+  | "PALETA_USTAW" | "PALETA USTAW" ->
+      (match args with
+       | [palette_arg] ->
+           let palette_val = eval_expr env palette_arg in
+           (match palette_val with
+            | VArray arr ->
+                (* Palette should be 768 bytes (256 colors * 3 RGB) *)
+                if Array.length arr <> 768 then
+                  raise (RuntimeError "PALETA_USTAW: palette must be 768 bytes (256 colors * RGB)")
+                else begin
+                  (* Convert array of VByte to bytes *)
+                  let palette_bytes = Bytes.create 768 in
+                  Array.iteri (fun i v ->
+                    let byte_val = to_int v land 0xFF in
+                    Bytes.set palette_bytes i (Char.chr byte_val)
+                  ) arr;
+                  ferdek_palette_set palette_bytes;
+                  VNull
+                end
+            | _ -> raise (RuntimeError "PALETA_USTAW: argument must be array"))
+       | _ -> raise (RuntimeError "PALETA_USTAW expects 1 argument (palette_array)"))
+
+  (* PIKSEL_MALUJ(x, y, color) - Draw pixel *)
+  | "PIKSEL_MALUJ" | "PIKSEL MALUJ" ->
+      (match args with
+       | [x_arg; y_arg; color_arg] ->
+           let x = to_int (eval_expr env x_arg) in
+           let y = to_int (eval_expr env y_arg) in
+           let color = to_int (eval_expr env color_arg) land 0xFF in
+           ferdek_pixel_draw x y color;
+           VNull
+       | _ -> raise (RuntimeError "PIKSEL_MALUJ expects 3 arguments (x, y, color)"))
+
+  (* EKRAN_ODŚWIEŻ() - Refresh screen (blit framebuffer) *)
+  | "EKRAN_ODŚWIEŹ" | "EKRAN_ODŚWIEŻ" | "EKRAN ODŚWIEŹ" | "EKRAN ODŚWIEŻ" | "EKRAN_ODSWIEZ" | "EKRAN ODSWIEZ" ->
+      (match args with
+       | [] ->
+           ferdek_screen_refresh ();
+           VNull
+       | _ -> raise (RuntimeError "EKRAN_ODŚWIEŻ expects 0 arguments"))
+
+  (* EKRAN_CZYŚĆ(color) - Clear screen to color *)
+  | "EKRAN_CZYŚĆ" | "EKRAN CZYŚĆ" | "EKRAN_CZYSĆ" | "EKRAN CZYSĆ" | "EKRAN_CZYSC" | "EKRAN CZYSC" ->
+      (match args with
+       | [color_arg] ->
+           let color = to_int (eval_expr env color_arg) land 0xFF in
+           ferdek_screen_clear color;
+           VNull
+       | _ -> raise (RuntimeError "EKRAN_CZYŚĆ expects 1 argument (color)"))
+
+  (* BUFOR_RAMKI_POBIERZ(x, y) - Get pixel from framebuffer *)
+  | "BUFOR_RAMKI_POBIERZ" | "BUFOR RAMKI POBIERZ" ->
+      (match args with
+       | [x_arg; y_arg] ->
+           let x = to_int (eval_expr env x_arg) in
+           let y = to_int (eval_expr env y_arg) in
+           let pixel = ferdek_framebuffer_get x y in
+           VInt pixel
+       | _ -> raise (RuntimeError "BUFOR_RAMKI_POBIERZ expects 2 arguments (x, y)"))
+
+  (* ZDARZENIE_CZEKAJ() - Poll for event (non-blocking) *)
+  | "ZDARZENIE_CZEKAJ" | "ZDARZENIE CZEKAJ" ->
+      (match args with
+       | [] ->
+           let (ev_type, key, x, y) = ferdek_event_poll () in
+           (* Return array [type, key, x, y] *)
+           VArray [| VInt ev_type; VInt key; VInt x; VInt y |]
+       | _ -> raise (RuntimeError "ZDARZENIE_CZEKAJ expects 0 arguments"))
 
   | _ ->
       (* Try to find user-defined function *)
