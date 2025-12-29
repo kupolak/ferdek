@@ -21,7 +21,12 @@
   builtins_file
   builtins_list
   errors)
- (libraries unix))
+ (libraries unix)
+ (foreign_stubs
+  (language c)
+  (names graphics_stubs graphics_x11)
+  (flags -I/opt/X11/include))
+ (c_library_flags (-L/opt/X11/lib -lX11)))
 
 (executable
  (name ferdek)
