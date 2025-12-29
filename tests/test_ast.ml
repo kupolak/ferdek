@@ -50,6 +50,7 @@ let test_function_decl () =
   let fdecl = {
     name = "dolej_browarka";
     params = ["ile"];
+    is_variadic = false;
     has_return = true;
     body = [
       VarDecl ("wynik", IntLiteral 0);
@@ -95,6 +96,7 @@ let test_complete_program () =
       FunctionDecl {
         name = "test";
         params = [];
+        is_variadic = false;
         has_return = false;
         body = [Print (StringLiteral "Hello")]
       };
@@ -125,6 +127,7 @@ let test_class_decl () =
     methods = [{
       name = "powitanie";
       params = [];
+      is_variadic = false;
       has_return = false;
       body = [Print (StringLiteral "Cześć!")]
     }]

@@ -9,7 +9,7 @@ open Ast
 %token ASSIGN_START ASSIGN_OP ASSIGN_END
 %token IF ELSE END_IF
 %token WHILE END_WHILE
-%token FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END
+%token FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END ELLIPSIS
 %token FUNC_CALL FUNC_CALL_ASSIGN RETURN
 %token PLUS MINUS MULTIPLY DIVIDE MODULO
 %token EQUAL NOT_EQUAL GREATER LESS
@@ -189,14 +189,31 @@ throw_stmt:
 /* ============ FUNCTIONS ============ */
 
 function_decl:
-  | FUNC_DECL name=IDENTIFIER FUNC_RETURNS FUNC_PARAMS params=separated_list(COMMA, IDENTIFIER) body=list(statement) FUNC_END
-    { { name; params; has_return = true; body } }
+  (* With return, no params *)
   | FUNC_DECL name=IDENTIFIER FUNC_RETURNS body=list(statement) FUNC_END
-    { { name; params = []; has_return = true; body } }
-  | FUNC_DECL name=IDENTIFIER FUNC_PARAMS params=separated_list(COMMA, IDENTIFIER) body=list(statement) FUNC_END
-    { { name; params; has_return = false; body } }
+    { { name; params = []; is_variadic = false; has_return = true; body } }
+  (* Variadic with return - use param_list_with_ellipsis helper *)
+  | FUNC_DECL name=IDENTIFIER FUNC_RETURNS FUNC_PARAMS p=param_list_with_ellipsis body=list(statement) FUNC_END
+    { { name; params = p; is_variadic = true; has_return = true; body } }
+  (* Non-variadic with return and params *)
+  | FUNC_DECL name=IDENTIFIER FUNC_RETURNS FUNC_PARAMS params=separated_list(COMMA, IDENTIFIER) body=list(statement) FUNC_END
+    { { name; params; is_variadic = false; has_return = true; body } }
+  (* Without return, no params *)
   | FUNC_DECL name=IDENTIFIER body=list(statement) FUNC_END
-    { { name; params = []; has_return = false; body } }
+    { { name; params = []; is_variadic = false; has_return = false; body } }
+  (* Variadic without return *)
+  | FUNC_DECL name=IDENTIFIER FUNC_PARAMS p=param_list_with_ellipsis body=list(statement) FUNC_END
+    { { name; params = p; is_variadic = true; has_return = false; body } }
+  (* Non-variadic without return, with params *)
+  | FUNC_DECL name=IDENTIFIER FUNC_PARAMS params=separated_list(COMMA, IDENTIFIER) body=list(statement) FUNC_END
+    { { name; params; is_variadic = false; has_return = false; body } }
+  ;
+
+(* Helper rule for variadic params: either "..." or "a, b, c, ..." *)
+param_list_with_ellipsis:
+  | ELLIPSIS { [] }
+  | p=IDENTIFIER COMMA ELLIPSIS { [p] }
+  | p=IDENTIFIER COMMA rest=param_list_with_ellipsis { p :: rest }
   ;
 
 /* ============ CLASSES ============ */

@@ -87,6 +87,7 @@ type param = string
 type function_decl = {
   name: string;
   params: param list;
+  is_variadic: bool;
   has_return: bool;
   body: stmt list;
 }

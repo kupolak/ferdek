@@ -1,0 +1,126 @@
+CO JEST KURDE
+
+PANIE SENSACJA REWELACJA "=== Test Funkcji Wariadycznych ==="
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 1: Prosta funkcja wariadyczna - sumowanie liczb
+PANIE SENSACJA REWELACJA "Test 1: Sumowanie zmiennej liczby argumentów"
+
+ALE WIE PAN JA ZASADNICZO policz_sume NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO pierwsza, ...
+    RYM CYM CYM pierwsza to obowiązkowy argument
+    RYM CYM CYM varargs to tablica z pozostałymi argumentami
+
+    AFERA JEST suma W MORDĘ JEŻA ZRÓB DŁUGI(pierwsza)
+
+    RYM CYM CYM Iteruj po wszystkich dodatkowych argumentach
+    AFERA JEST ile W MORDĘ JEŻA ILE NA WERSALCE(varargs)
+    AFERA JEST i W MORDĘ JEŻA ZRÓB DŁUGI(0)
+
+    CHLUŚNIEM BO UŚNIEM i ŁYSA PAŁA ile
+        O KURDE MAM POMYSŁA suma A PROSZĘ BARDZO suma BABKA DAWAJ RENTĘ WYPIERDZIELAJ PAN NA POZYCJĘ varargs[i] NO I GITARA
+        O KURDE MAM POMYSŁA i A PROSZĘ BARDZO i BABKA DAWAJ RENTĘ 1 NO I GITARA
+    A ROBIĆ NI MA KOMU
+
+    I JA INFORMUJĘ ŻE WYCHODZĘ suma
+DO WIDZENIA PANU
+
+RYM CYM CYM Test wywołań z różną liczbą argumentów
+PANIE SENSACJA REWELACJA "Suma(5) = "
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA policz_sume(5)
+
+PANIE SENSACJA REWELACJA "Suma(5, 10) = "
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA policz_sume(5, 10)
+
+PANIE SENSACJA REWELACJA "Suma(5, 10, 15) = "
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA policz_sume(5, 10, 15)
+
+PANIE SENSACJA REWELACJA "Suma(1, 2, 3, 4, 5) = "
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA policz_sume(1, 2, 3, 4, 5)
+
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 2: Funkcja formatująca - DOOM style printf
+PANIE SENSACJA REWELACJA "Test 2: Funkcja formatująca z wieloma argumentami"
+
+ALE WIE PAN JA ZASADNICZO wypisz_info
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO tag, ...
+    RYM CYM CYM tag to obowiązkowy argument (np. "PLAYER", "ENEMY")
+    RYM CYM CYM varargs to reszta do wypisania
+
+    PANIE SENSACJA REWELACJA "["
+    PANIE SENSACJA REWELACJA tag
+    PANIE SENSACJA REWELACJA "] "
+
+    RYM CYM CYM Wypisz wszystkie dodatkowe argumenty
+    AFERA JEST ile W MORDĘ JEŻA ILE NA WERSALCE(varargs)
+    AFERA JEST i W MORDĘ JEŻA ZRÓB DŁUGI(0)
+
+    CHLUŚNIEM BO UŚNIEM i ŁYSA PAŁA ile
+        PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ varargs[i]
+        PANIE SENSACJA REWELACJA " "
+        O KURDE MAM POMYSŁA i A PROSZĘ BARDZO i BABKA DAWAJ RENTĘ 1 NO I GITARA
+    A ROBIĆ NI MA KOMU
+
+    PANIE SENSACJA REWELACJA ""
+DO WIDZENIA PANU
+
+W MORDĘ JEŻA wypisz_info("PLAYER", "Health:", 100, "Armor:", 50)
+W MORDĘ JEŻA wypisz_info("WEAPON", "BFG", "Ammo:", 40)
+W MORDĘ JEŻA wypisz_info("ENEMY", "Cyberdemon", "HP:", 4000)
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 3: Minimum z N liczb
+PANIE SENSACJA REWELACJA "Test 3: Znajdź minimum z wielu liczb"
+
+ALE WIE PAN JA ZASADNICZO znajdz_min NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO pierwsza, ...
+    AFERA JEST min_val W MORDĘ JEŻA ZRÓB DŁUGI(pierwsza)
+
+    AFERA JEST ile W MORDĘ JEŻA ILE NA WERSALCE(varargs)
+    AFERA JEST i W MORDĘ JEŻA ZRÓB DŁUGI(0)
+
+    CHLUŚNIEM BO UŚNIEM i ŁYSA PAŁA ile
+        RYM CYM CYM Sprawdź czy element jest mniejszy od min_val
+        NO JAK NIE JAK TAK WYPIERDZIELAJ PAN NA POZYCJĘ varargs[i] ŁYSA PAŁA min_val
+            O KURDE MAM POMYSŁA min_val A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ varargs[i] NO I GITARA
+        DO CHAŁUPY ALE JUŻ
+
+        O KURDE MAM POMYSŁA i A PROSZĘ BARDZO i BABKA DAWAJ RENTĘ 1 NO I GITARA
+    A ROBIĆ NI MA KOMU
+
+    I JA INFORMUJĘ ŻE WYCHODZĘ min_val
+DO WIDZENIA PANU
+
+PANIE SENSACJA REWELACJA "Min(42) = "
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA znajdz_min(42)
+
+PANIE SENSACJA REWELACJA "Min(10, 5, 8) = "
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA znajdz_min(10, 5, 8)
+
+PANIE SENSACJA REWELACJA "Min(100, 50, 25, 75, 10, 60) = "
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA znajdz_min(100, 50, 25, 75, 10, 60)
+
+PANIE SENSACJA REWELACJA ""
+
+RYM CYM CYM Test 4: DOOM use case - zlicz lumpy w WAD
+PANIE SENSACJA REWELACJA "Test 4: Zlicz lumpy w WAD"
+
+ALE WIE PAN JA ZASADNICZO zlicz_lumpy NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wad_name, ...
+    PANIE SENSACJA REWELACJA "WAD: "
+    PANIE SENSACJA REWELACJA wad_name
+    PANIE SENSACJA REWELACJA " - Lumps: "
+    PANIE SENSACJA REWELACJA W MORDĘ JEŻA ILE NA WERSALCE(varargs)
+    PANIE SENSACJA REWELACJA ""
+
+    I JA INFORMUJĘ ŻE WYCHODZĘ W MORDĘ JEŻA ILE NA WERSALCE(varargs)
+DO WIDZENIA PANU
+
+W MORDĘ JEŻA zlicz_lumpy("DOOM.WAD", "E1M1", "E1M2", "E1M3", "E1M4", "E1M5", "E1M6", "E1M7", "E1M8", "E1M9")
+W MORDĘ JEŻA zlicz_lumpy("DOOM2.WAD", "MAP01", "MAP02", "MAP03")
+PANIE SENSACJA REWELACJA ""
+
+PANIE SENSACJA REWELACJA "=== Funkcje wariadyczne działają jak w DOOM! ==="
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

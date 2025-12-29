@@ -1426,6 +1426,40 @@ and eval_function_call env name args =
              VArray inner_arrays
        | _ -> raise (RuntimeError "TABLICA 3D expects 3 arguments (x, y, z)"))
 
+  (* POLAŁA SIĘ KREW(format, ...) - Variadic error function like I_Error *)
+  | "POLAŁA SIĘ KREW" | "POLALA SIE KREW" ->
+      (match args with
+       | [] -> raise (RuntimeError "POLAŁA SIĘ KREW: at least one argument required")
+       | format_arg :: rest_args ->
+           let format = to_string (eval_expr env format_arg) in
+           let arg_values = List.map (eval_expr env) rest_args in
+           (* Simple printf-like formatting: replace %d, %s, %i with arguments *)
+           let rec format_string fmt args_left acc =
+             if String.length fmt = 0 then
+               acc
+             else if String.length fmt >= 2 && String.get fmt 0 = '%' then
+               let spec = String.get fmt 1 in
+               match spec, args_left with
+               | 'd', v::rest | 'i', v::rest ->
+                   let num = to_int v in
+                   format_string (String.sub fmt 2 (String.length fmt - 2)) rest (acc ^ string_of_int num)
+               | 's', v::rest ->
+                   let str = to_string v in
+                   format_string (String.sub fmt 2 (String.length fmt - 2)) rest (acc ^ str)
+               | '%', _ ->
+                   format_string (String.sub fmt 2 (String.length fmt - 2)) args_left (acc ^ "%")
+               | _, [] ->
+                   (* No more args, keep format specifier *)
+                   format_string (String.sub fmt 1 (String.length fmt - 1)) [] (acc ^ String.make 1 (String.get fmt 0))
+               | _, _ ->
+                   (* Unknown specifier, keep it *)
+                   format_string (String.sub fmt 2 (String.length fmt - 2)) args_left (acc ^ "%" ^ String.make 1 spec)
+             else
+               format_string (String.sub fmt 1 (String.length fmt - 1)) args_left (acc ^ String.make 1 (String.get fmt 0))
+           in
+           let message = format_string format arg_values "" in
+           raise (RuntimeError (Printf.sprintf "I_Error: %s" message)))
+
   | _ ->
       (* Try to find user-defined function *)
       try
@@ -1439,12 +1473,38 @@ and eval_function_call env name args =
             let arg_values = List.map (eval_expr env) args in
 
             (* Bind parameters *)
-            if List.length fdecl.params <> List.length arg_values then
-              raise (RuntimeError (Printf.sprintf "Function %s expects %d arguments, got %d"
-                                    name (List.length fdecl.params) (List.length arg_values)));
+            let num_params = List.length fdecl.params in
+            let num_args = List.length arg_values in
 
-            List.iter2 (fun param value -> define_var func_env param value)
-              fdecl.params arg_values;
+            if fdecl.is_variadic then begin
+              (* Variadic function - must have at least as many args as fixed params *)
+              if num_args < num_params then
+                raise (RuntimeError (Printf.sprintf "Function %s expects at least %d arguments, got %d"
+                                      name num_params num_args));
+
+              (* Bind fixed parameters *)
+              let fixed_args, var_args =
+                let rec split n lst =
+                  if n = 0 then ([], lst)
+                  else match lst with
+                    | [] -> ([], [])
+                    | x::xs -> let (a, b) = split (n-1) xs in (x::a, b)
+                in split num_params arg_values
+              in
+              List.iter2 (fun param value -> define_var func_env param value)
+                fdecl.params fixed_args;
+
+              (* Store variadic args as varargs array *)
+              define_var func_env "varargs" (VArray (Array.of_list var_args));
+            end else begin
+              (* Non-variadic function - exact match required *)
+              if num_params <> num_args then
+                raise (RuntimeError (Printf.sprintf "Function %s expects %d arguments, got %d"
+                                      name num_params num_args));
+
+              List.iter2 (fun param value -> define_var func_env param value)
+                fdecl.params arg_values;
+            end;
 
             (* Execute function body *)
             (try

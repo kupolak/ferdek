@@ -300,6 +300,7 @@ rule token = parse
   | '[' { LBRACKET }
   | ']' { RBRACKET }
   | ',' { COMMA }
+  | "..." { ELLIPSIS }
 
   (* Literals *)
   | '"' { read_string (Buffer.create 16) lexbuf }

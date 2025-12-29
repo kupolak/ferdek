@@ -81,6 +81,7 @@ let string_of_token = function
   | IDENTIFIER s -> sprintf "IDENTIFIER(%s)" s
   | INTEGER n -> sprintf "INTEGER(%d)" n
   | STRING s -> sprintf "STRING(\"%s\")" s
+  | ELLIPSIS -> "ELLIPSIS"
   | EOF -> "EOF"
 
 (* Test lexing from string *)

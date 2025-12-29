@@ -87,6 +87,7 @@ type param = string
 type function_decl = {
   name: string;                                          (* Function name *)
   params: param list;                                    (* Parameter list *)
+  is_variadic: bool;                                     (* Whether function accepts variable arguments (...) *)
   has_return: bool;                                      (* Whether function returns a value (NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ) *)
   body: stmt list;                                       (* Function body *)
 }
