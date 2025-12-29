@@ -21,9 +21,9 @@ echo ""
 # ETAP 1: Sprawdzenie pliku (PAŹDZIOCH i WALDUŚ)
 # ---------------------------------------------------------
 
-if [ ! -f ".build/main" ]; then
+if [ ! -f "_build/default/src/main.exe" ]; then
     echo -e "${RED}A NIECH TO DUNDER ŚWIŚNIE! BŁĄD!${NC}"
-    echo "Nie ma pliku '.build/main'!"
+    echo "Nie ma pliku '_build/default/src/main.exe'!"
     echo -e "${YELLOW}Paździoch:${NC} 'Panie Kiepski, ja nic nie brałem! To pomówienia!'"
     echo -e "${GREEN}Ferdek:${NC} 'Menda jedna... na pewno ukradł i opchnął na bazarze!'"
     echo -e "${CYAN}Walduś:${NC} 'Tato, a po co w ogóle jest ten plik?'"
@@ -35,18 +35,16 @@ fi
 # ETAP 2: Wybór katalogu (WALKA KLAS: SUDO vs LOCAL)
 # ---------------------------------------------------------
 
-if [ -w "/usr/local/bin" ]; then
-    INSTALL_DIR="/usr/local/bin"
-    NEED_SUDO=false
-    echo "Instalujemy w /usr/local/bin. Luksusowo, jak u Krawczyka."
-elif [ "$EUID" -eq 0 ]; then
+if [ "$EUID" -eq 0 ]; then
+    # Jesteś rootem - instaluj systemowo
     INSTALL_DIR="/usr/local/bin"
     NEED_SUDO=false
     echo "Jesteś Pan rootem? No, to szacunek, Panie Prezesie."
 else
-    # Jeśli nie ma praw do /usr/local/bin
+    # Zwykły użytkownik - instaluj lokalnie
     INSTALL_DIR="$HOME/.local/bin"
     NEED_SUDO=false
+    echo "Instalacja w trybie użytkownika: $INSTALL_DIR"
     
     # ---------------------------------------------------------
     # ETAP 3: Tworzenie katalogu (BOCZEK)
@@ -86,10 +84,10 @@ echo "Kopiowanie plików... (Fizyczna robota, brzydzę się tym)"
 
 if [ "$NEED_SUDO" = true ]; then
     echo -e "${YELLOW}Wymagane sudo... Halinka, pożycz uprawnienia!${NC}"
-    sudo cp .build/main "$INSTALL_DIR/ferdek"
+    sudo cp _build/default/src/main.exe "$INSTALL_DIR/ferdek"
     sudo chmod +x "$INSTALL_DIR/ferdek"
 else
-    cp .build/main "$INSTALL_DIR/ferdek"
+    cp _build/default/src/main.exe "$INSTALL_DIR/ferdek"
     chmod +x "$INSTALL_DIR/ferdek"
 fi
 

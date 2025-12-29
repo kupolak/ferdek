@@ -52,10 +52,8 @@ done
 # Jeśli nic nie znaleziono
 if [ "$FOUND" = false ]; then
     echo ""
-    echo -e "${RED}Błąd! Nie znaleziono komendy 'ferdek'.${NC}"
-    echo -e "${YELLOW}Paździoch:${NC} 'Hahaha! Widzisz Pan, Panie Kiepski? Nic Pan na mnie nie masz!'"
-    echo -e "${GREEN}Ferdek:${NC} 'A zasadził Panu ktoś kiedyś kopa w dupę? Nie ma pliku, to nie ma!'"
-    exit 1
+    echo -e "${YELLOW}Nie znaleziono komendy 'ferdek' - już była usunięta lub nigdy nie zainstalowana.${NC}"
+    echo -e "${GREEN}Ferdek:${NC} 'No to w porządku, nie ma co usuwać!'"
 fi
 
 echo ""
