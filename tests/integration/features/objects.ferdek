@@ -1,0 +1,40 @@
+CO JEST KURDE
+
+RYM CYM CYM Metody muszą widzieć bieżące pola obiektu, a nie kopię z konstrukcji
+ALE JAJA Osoba
+    CYCU PRZYNIEŚ NO imie
+    TO NIE SĄ TANIE RZECZY "Brak"
+
+    ALE WIE PAN JA ZASADNICZO jakImie
+    NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+        I JA INFORMUJĘ ŻE WYCHODZĘ imie
+    DO WIDZENIA PANU
+
+    ALE WIE PAN JA ZASADNICZO przemianuj
+        O KURDE MAM POMYSŁA imie A PROSZĘ BARDZO "Waldek" NO I GITARA
+    DO WIDZENIA PANU
+DO WIDZENIA PANU
+
+CYCU PRZYNIEŚ NO osoba
+TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Osoba
+
+O KURDE MAM POMYSŁA osoba["imie"] A PROSZĘ BARDZO "Ferdek" NO I GITARA
+CYCU PRZYNIEŚ NO metoda
+TO NIE SĄ TANIE RZECZY WYPIERDZIELAJ PAN NA POZYCJĘ osoba["jakImie"]
+AFERA JEST wynik W MORDĘ JEŻA metoda()
+NO JAK NIE JAK TAK wynik PAN TU NIE MIESZKASZ "Ferdek"
+    O KARWASZ TWARZ "metoda nie widzi ustawionego pola"
+DO CHAŁUPY ALE JUŻ
+
+CYCU PRZYNIEŚ NO zmien
+TO NIE SĄ TANIE RZECZY WYPIERDZIELAJ PAN NA POZYCJĘ osoba["przemianuj"]
+W MORDĘ JEŻA zmien()
+CYCU PRZYNIEŚ NO poZmianie
+TO NIE SĄ TANIE RZECZY WYPIERDZIELAJ PAN NA POZYCJĘ osoba["imie"]
+NO JAK NIE JAK TAK poZmianie PAN TU NIE MIESZKASZ "Waldek"
+    O KARWASZ TWARZ "zmiana pola w metodzie nie widoczna na zewnątrz"
+DO CHAŁUPY ALE JUŻ
+
+PANIE SENSACJA REWELACJA "Obiekty OK"
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

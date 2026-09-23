@@ -237,13 +237,16 @@ let eval_arith_op op v1 v2 =
 
 (* Evaluate comparison operator *)
 let eval_comparison_op op v1 v2 =
-  let n1 = to_int v1 in
-  let n2 = to_int v2 in
+  (* Stringi porównujemy jako tekst - to_int zamieniłby "x" i "y" na 0 *)
+  let c = match v1, v2 with
+    | VString a, VString b -> compare a b
+    | _ -> compare (to_int v1) (to_int v2)
+  in
   VBool (match op with
-    | Equal -> n1 = n2
-    | NotEqual -> n1 <> n2
-    | Greater -> n1 > n2
-    | Less -> n1 < n2
+    | Equal -> c = 0
+    | NotEqual -> c <> 0
+    | Greater -> c > 0
+    | Less -> c < 0
   )
 
 (* Evaluate logical operator *)
@@ -1739,8 +1742,7 @@ and eval_new_object env class_name args =
                    ) parent_cdecl.fields;
                    (* Copy parent methods *)
                    List.iter (fun (method_decl : function_decl) ->
-                     let method_env = create_env (Some parent_env) in
-                     Hashtbl.iter (fun fn fv -> define_var method_env fn fv) obj;
+                     let method_env = { vars = obj; parent = Some parent_env } in
                      Hashtbl.replace obj method_decl.name (VFunction (method_decl, method_env))
                    ) parent_cdecl.methods
                | _ -> raise (RuntimeError (Printf.sprintf "Parent %s is not a class" parent_name))
@@ -1755,11 +1757,9 @@ and eval_new_object env class_name args =
         ) cdecl.fields;
 
         (* Add methods to object (may override parent methods) *)
+        (* Metody współdzielą tablicę pól z obiektem - widzą bieżące wartości pól *)
         List.iter (fun (method_decl : function_decl) ->
-          let method_env = create_env (Some class_env) in
-          Hashtbl.iter (fun field_name field_value ->
-            define_var method_env field_name field_value
-          ) obj;
+          let method_env = { vars = obj; parent = Some class_env } in
           Hashtbl.replace obj method_decl.name (VFunction (method_decl, method_env))
         ) cdecl.methods;
 
