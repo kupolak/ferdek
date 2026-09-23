@@ -57,6 +57,7 @@ let print_help () =
   Printf.printf "  -c, --compile <plik>    Rób karierę, kompiluj do C (dla ambitnych, jak Paździoch).\n";
   Printf.printf "  -o <wyjście>            Gdzie to schować, żeby Halina nie znalazła? (Plik wyjściowy)\n";
   Printf.printf "  -r, --run               Szybki szlag! Kompiluj i odpal (tryb testowy).\n";
+  Printf.printf "  --check <plik>          Sprawdź bez uruchamiania: nieznane zmienne, funkcje, liczba argumentów.\n";
   Printf.printf "  --repl                  Pogadaj sobie z Ferdkiem (tryb interaktywny).\n\n";
 
   Printf.printf "Przykłady (A niech to dunder świśnie!):\n";
@@ -162,6 +163,18 @@ let interpret_file filename =
   | Error msg ->
       Printf.eprintf "A fe! %s\n" msg;
       1
+
+(* --check: błędy przed uruchomieniem *)
+let check_file filename =
+  match parse_file filename with
+  | Error msg -> Printf.eprintf "A fe! %s\n" msg; 1
+  | Ok ast ->
+      match Checker.check ~load_module:load_stdlib_module ast with
+      | [] -> Printf.printf "Wszystko gra, można odpalać: %s\n" filename; 0
+      | issues ->
+          List.iter (Printf.eprintf "Paździoch znalazł: %s\n") issues;
+          Printf.eprintf "Problemów: %d\n" (List.length issues);
+          1
 
 (* Parsuje i generuje kod C; błędy parsowania i nieobsługiwane konstrukcje -> Error *)
 let generate_c input_file =
@@ -283,6 +296,9 @@ let () =
       | "-v" | "--version" ->
           print_version ();
           exit 0
+      | "--check" ->
+          if i + 1 >= argc then (print_help (); exit 1);
+          parse_args (i + 2) `Check output_file (Some Sys.argv.(i + 1))
       | "--repl" ->
           parse_args (i + 1) `REPL output_file input_file
       | "-i" | "--interpret" ->
@@ -325,6 +341,10 @@ let () =
              | None -> (Filename.remove_extension file) ^ ".c"
            in
            compile_file file output)
+  | `Check ->
+      (match input_file with
+       | None -> print_help (); 1
+       | Some file -> check_file file)
   | `QuickRun ->
       (match input_file with
        | None -> print_help (); 1

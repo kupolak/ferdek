@@ -1,103 +1,90 @@
-(* Standard Library Functions for Ferdek *)
+(* Rejestr wbudowanych funkcji interpretera: nazwy (z wariantami) i liczba argumentów
+   (None = zmienna). Używa go ferdek --check. Wygenerowany z eval_function_call;
+   make test-check pilnuje, żeby się nie rozjechał (sprawdza wszystkie programy testowe). *)
 
-(* Type for builtin functions *)
-type builtin_func = {
-  name: string;
-  arity: int option;  (* None = variadic *)
-  category: string;   (* KANAPA, KIBEL, SKRZYNKA, KLATKA *)
-}
-
-(* Registry of all builtin functions *)
-let builtins = [
-  (* KANAPA (String operations) *)
-  { name = "USIĄDŹ NA KANAPIE"; arity = None; category = "KANAPA" };
-  { name = "ROZCIĄGNIJ KANAPĘ"; arity = Some 2; category = "KANAPA" };
-  { name = "POTNIJ KANAPĘ"; arity = Some 3; category = "KANAPA" };
-  { name = "PRZESUŃ NA KANAPIE"; arity = Some 2; category = "KANAPA" };
-  { name = "POSKŁADAJ KANAPĘ"; arity = Some 2; category = "KANAPA" };
-  { name = "WYTRZEP KANAPĘ"; arity = Some 1; category = "KANAPA" };
-  { name = "ZAMIEŃ NA KANAPIE"; arity = Some 3; category = "KANAPA" };
-  { name = "ILE MIEJSCA NA KANAPIE"; arity = Some 1; category = "KANAPA" };
-
-  (* KIBEL (File operations) *)
-  { name = "OTWÓRZ KIBEL"; arity = Some 1; category = "KIBEL" };
-  { name = "ZAMKNIJ KIBEL"; arity = Some 1; category = "KIBEL" };
-  { name = "SPUŚĆ WODĘ"; arity = Some 2; category = "KIBEL" };
-  { name = "WYPOMPUJ"; arity = Some 1; category = "KIBEL" };
-  { name = "CZY KIBEL ZAJĘTY"; arity = Some 1; category = "KIBEL" };
-  { name = "OTWÓRZ KIBEL DO ZAPISU"; arity = Some 1; category = "KIBEL" };
-  { name = "ZRÓB KIBEL"; arity = Some 1; category = "KIBEL" };
-  { name = "WYWAL KIBEL"; arity = Some 1; category = "KIBEL" };
-  { name = "CO W KIBLU"; arity = Some 1; category = "KIBEL" };
-  { name = "CZY TO KIBEL"; arity = Some 1; category = "KIBEL" };
-  { name = "PRZEKOPIUJ KIBEL"; arity = Some 2; category = "KIBEL" };
-  { name = "PRZENIEŚ KIBEL"; arity = Some 2; category = "KIBEL" };
-  { name = "WYKOP WSZYSTKIE KIBLE"; arity = Some 1; category = "KIBEL" };
-
-  (* SKRZYNKA (Math operations) *)
-  { name = "ILE W SKRZYNCE"; arity = Some 1; category = "SKRZYNKA" };
-  { name = "POLICZ SKRZYNKI"; arity = Some 1; category = "SKRZYNKA" };
-  { name = "ZAOKRĄGLIJ DO SKRZYNKI"; arity = Some 1; category = "SKRZYNKA" };
-  { name = "OTWÓRZ SKRZYNKĘ"; arity = Some 1; category = "SKRZYNKA" };
-  { name = "PODZIEL SKRZYNKI"; arity = Some 2; category = "SKRZYNKA" };
-  { name = "RESZTA ZE SKRZYNKI"; arity = Some 2; category = "SKRZYNKA" };
-  { name = "LOSUJ ZE SKRZYNKI"; arity = Some 1; category = "SKRZYNKA" };
-
-  (* KLATKA (Network operations) *)
-  { name = "WYJDŹ NA KLATKĘ"; arity = Some 1; category = "KLATKA" };
-  { name = "ZAPUKAJ DO SĄSIADA"; arity = Some 2; category = "KLATKA" };
-  { name = "KTO NA KLATCE"; arity = None; category = "KLATKA" };
-  { name = "CZY SĄSIAD W DOMU"; arity = Some 1; category = "KLATKA" };
-
-  (* SZAFKA (HashMap/Dictionary operations) *)
-  { name = "OTWÓRZ SZAFKĘ"; arity = Some 0; category = "SZAFKA" };
-  { name = "WŁÓŻ DO SZAFKI"; arity = Some 3; category = "SZAFKA" };
-  { name = "WYJMIJ Z SZAFKI"; arity = Some 2; category = "SZAFKA" };
-  { name = "WYRZUĆ ZE SZAFKI"; arity = Some 2; category = "SZAFKA" };
-  { name = "CZY W SZAFCE"; arity = Some 2; category = "SZAFKA" };
-  { name = "WSZYSTKIE SZUFLADKI"; arity = Some 1; category = "SZAFKA" };
-  { name = "ILE W SZAFCE"; arity = Some 1; category = "SZAFKA" };
-
-  (* WERSALKA (List/Array operations) *)
-  { name = "ILE NA WERSALCE"; arity = Some 1; category = "WERSALKA" };
-  { name = "POŁÓŻ NA WERSALCE"; arity = Some 2; category = "WERSALKA" };
-  { name = "ZDEJMIJ Z WERSALKI"; arity = Some 1; category = "WERSALKA" };
-  { name = "CZY LEŻY NA WERSALCE"; arity = Some 2; category = "WERSALKA" };
+let builtins : (string list * int option) list = [
+  ["USIĄDŹ NA KANAPIE"; "USIADZ NA KANAPIE"], None;
+  ["ROZCIĄGNIJ KANAPĘ"], Some 2;
+  ["POTNIJ KANAPĘ"], Some 3;
+  ["PRZESUŃ NA KANAPIE"], Some 2;
+  ["POSKŁADAJ KANAPĘ"], Some 2;
+  ["WYTRZEP KANAPĘ"], Some 1;
+  ["ZAMIEŃ NA KANAPIE"], Some 3;
+  ["ILE MIEJSCA NA KANAPIE"], Some 1;
+  ["OTWÓRZ KIBEL"], Some 1;
+  ["ZAMKNIJ KIBEL"], Some 1;
+  ["SPUŚĆ WODĘ"], Some 2;
+  ["WYPOMPUJ"], Some 1;
+  ["CZY KIBEL ZAJĘTY"], Some 1;
+  ["OTWÓRZ KIBEL DO ZAPISU"], Some 1;
+  ["SYSTEM"], Some 1;
+  ["OTWÓRZ SZAFKĘ"], Some 0;
+  ["WŁÓŻ DO SZAFKI"], Some 3;
+  ["WYJMIJ Z SZAFKI"], Some 2;
+  ["WYRZUĆ ZE SZAFKI"], Some 2;
+  ["CZY W SZAFCE"], Some 2;
+  ["WSZYSTKIE SZUFLADKI"], Some 1;
+  ["ILE W SZAFCE"], Some 1;
+  ["ZRÓB KIBEL"], Some 1;
+  ["WYWAL KIBEL"], Some 1;
+  ["CO W KIBLU"], Some 1;
+  ["CZY TO KIBEL"], Some 1;
+  ["PRZEKOPIUJ KIBEL"], Some 2;
+  ["PRZENIEŚ KIBEL"], Some 2;
+  ["WYKOP WSZYSTKIE KIBLE"], Some 1;
+  ["ILE NA WERSALCE"], Some 1;
+  ["POŁÓŻ NA WERSALCE"], Some 2;
+  ["ZDEJMIJ Z WERSALKI"], Some 1;
+  ["CZY LEŻY NA WERSALCE"], Some 2;
+  ["DAJ MI HAJS"], Some 2;
+  ["ODDAJ WSZYSTKO"], Some 1;
+  ["KOMORNICZY WINDYKACJA"], Some 2;
+  ["ZAPISZ DO BLOKU"], Some 3;
+  ["CZYTAJ Z BLOKU"], Some 2;
+  ["ROZMIAR BLOKU"], Some 1;
+  ["ILE KASY LECI"], Some 0;
+  ["TAG_TRWALE"], Some 0;
+  ["TAG_POZIOM"], Some 0;
+  ["TAG_SMIECIOWE"], Some 0;
+  ["WŁĄCZ TELEWIZOR"; "WLACZ TELEWIZOR"], Some 2;
+  ["WYŁĄCZ TELEWIZOR"; "WYLACZ TELEWIZOR"], Some 1;
+  ["ZMIEŃ KANAŁ"; "ZMIEN KANAL"], Some 4;
+  ["CO LECI W TELEWIZORZE"], Some 3;
+  ["STWÓRZ TABELĘ"; "STWORZ TABELE"], Some 1;
+  ["WPISZ DO TABELI"], Some 3;
+  ["SPRAWDŹ W TABELI"; "SPRAWDZ W TABELI"], Some 2;
+  ["PISZ BAJT"], Some 3;
+  ["CZYTAJ BAJT"], Some 2;
+  ["KOPIUJ PAMIĘĆ"; "KOPIUJ PAMIEC"], Some 3;
+  ["ZRÓB BAJCIK"; "ZROB BAJCIK"], Some 1;
+  ["ZRÓB KRÓTKI"; "ZROB KROTKI"], Some 1;
+  ["ZRÓB DŁUGI"; "ZROB DLUGI"], Some 1;
+  ["ZRÓB UŁAMEK"; "ZROB ULAMEK"], Some 1;
+  ["KARTA LUBI DYM"], None;
+  ["CO TO ZA TYP"], Some 1;
+  ["OTWORZ"], Some 2;
+  ["ZAMKNIJ"], Some 1;
+  ["CZYTAJ"], None;
+  ["PISZ"], Some 2;
+  ["SKOCZ"], None;
+  ["POZYCJA"], Some 1;
+  ["TABLICA 2D"], Some 2;
+  ["TABLICA 3D"], Some 3;
+  ["POLAŁA SIĘ KREW"; "POLALA SIE KREW"], None;
+  ["OKNO_OTWORZ"; "OKNO OTWORZ"], Some 3;
+  ["OKNO_ZAMKNIJ"; "OKNO ZAMKNIJ"], Some 0;
+  ["PALETA_USTAW"; "PALETA USTAW"], Some 1;
+  ["PIKSEL_MALUJ"; "PIKSEL MALUJ"], Some 3;
+  ["EKRAN_ODŚWIEŹ"; "EKRAN_ODŚWIEŻ"; "EKRAN ODŚWIEŹ"; "EKRAN ODŚWIEŻ"; "EKRAN_ODSWIEZ"; "EKRAN ODSWIEZ"], Some 0;
+  ["EKRAN_CZYŚĆ"; "EKRAN CZYŚĆ"; "EKRAN_CZYSĆ"; "EKRAN CZYSĆ"; "EKRAN_CZYSC"; "EKRAN CZYSC"], Some 1;
+  ["BUFOR_RAMKI_POBIERZ"; "BUFOR RAMKI POBIERZ"], Some 2;
+  ["ZDARZENIE_CZEKAJ"; "ZDARZENIE CZEKAJ"], Some 0;
+  ["GNIAZDKO_OTWORZ"; "GNIAZDKO OTWORZ"], Some 1;
+  ["GNIAZDKO_WYSLIJ"; "GNIAZDKO WYSLIJ"], Some 4;
+  ["GNIAZDKO_ODBIERZ"; "GNIAZDKO ODBIERZ"], Some 2;
+  ["GNIAZDKO_ZAMKNIJ"; "GNIAZDKO ZAMKNIJ"], Some 1;
 ]
 
-(* Check if function is builtin *)
-let is_builtin name =
-  List.exists (fun f -> f.name = name) builtins
-
-(* Get builtin function info *)
-let get_builtin name =
-  List.find_opt (fun f -> f.name = name) builtins
-
-(* Get all builtins in a category *)
-let get_by_category category =
-  List.filter (fun f -> f.category = category) builtins
-
-(* Get list of all categories *)
-let categories =
-  List.fold_left (fun acc f ->
-    if List.mem f.category acc then acc else acc @ [f.category]
-  ) [] builtins
-
-(* Pretty print builtin info *)
-let string_of_builtin f =
-  let arity_str = match f.arity with
-    | None -> "variadic"
-    | Some n -> Printf.sprintf "%d" n
-  in
-  Printf.sprintf "%s (%s args) [%s]" f.name arity_str f.category
-
-(* Validate function call *)
-let validate_call name arg_count =
-  match get_builtin name with
-  | None -> None
-  | Some f ->
-      match f.arity with
-      | None -> Some true  (* Variadic - always valid *)
-      | Some expected ->
-          if arg_count = expected then Some true
-          else Some false
+(* Some arity dla znanej nazwy, None gdy to nie builtin *)
+let find name =
+  List.find_map (fun (names, arity) -> if List.mem name names then Some arity else None) builtins

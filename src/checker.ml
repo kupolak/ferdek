@@ -1,0 +1,120 @@
+(* ferdek --check: szuka błędów przed uruchomieniem programu.
+   Nieznane zmienne i funkcje oraz zła liczba argumentów - z plikiem i linią.
+   Celowo pobłażliwy: zmienne programu głównego są widoczne wszędzie (jak w interpreterze,
+   gdzie funkcja widzi globalne istniejące w chwili wywołania). *)
+
+open Ast
+
+type scope = {
+  vars: (string, unit) Hashtbl.t;
+  funcs: (string, function_decl) Hashtbl.t;     (* funkcje użytkownika *)
+  types: (string, unit) Hashtbl.t;              (* klasy, struktury, unie, enumy *)
+}
+
+let check ?(load_module = fun _ -> None) (prog : program) : string list =
+  let issues = ref [] in
+  let loc = ref ("", 0) in
+  let report msg =
+    let file, line = !loc in
+    let where = if line = 0 then "" else if file = "" then Printf.sprintf "linia %d: " line
+      else Printf.sprintf "%s, linia %d: " file line in
+    issues := (where ^ msg) :: !issues
+  in
+  let decls =
+    try Compiler.expand_imports load_module prog.declarations
+    with Compiler.Compile_error msg -> report msg; prog.declarations
+  in
+  let add tbl names = List.iter (fun n -> Hashtbl.replace tbl n ()) names in
+  let names_of stmts = let d, a = Compiler.block_names ([], []) stmts in d @ a in
+  let global = { vars = Hashtbl.create 64; funcs = Hashtbl.create 16; types = Hashtbl.create 16 } in
+  let classes = Hashtbl.create 8 in
+  List.iter (function
+    | Statement s -> add global.vars (names_of [s])
+    | FunctionDecl f -> Hashtbl.replace global.funcs f.name f
+    | EnumDecl e -> add global.types [e.name]; add global.vars (List.map fst e.values)
+    | ClassDecl c -> add global.types [c.name]; Hashtbl.replace classes c.name c
+    | StructDecl s -> add global.types [s.name]
+    | UnionDecl u -> add global.types [u.name]
+    | Import _ -> ()) decls;
+
+  let with_locals names =
+    let vars = Hashtbl.copy global.vars in
+    add vars names;
+    { global with vars }
+  in
+  let is_var sc n = Hashtbl.mem sc.vars n in
+
+  let check_arity name expected given =
+    match expected with
+    | Some n when n <> given ->
+        report (Printf.sprintf "%s oczekuje %d argumentów, podano %d" name n given)
+    | _ -> ()
+  in
+  let rec expr sc = function
+    | Identifier n ->
+        if not (is_var sc n || Hashtbl.mem sc.funcs n || Hashtbl.mem sc.types n) then
+          report ("Nieznana zmienna: " ^ n)
+    | FunctionCall (name, args) ->
+        List.iter (expr sc) args;
+        let given = List.length args in
+        (match Ferdek_stdlib.find name, Hashtbl.find_opt sc.funcs name with
+         | Some arity, _ -> check_arity name arity given
+         | None, _ when is_var sc name -> ()   (* funkcja trzymana w zmiennej *)
+         | None, Some f ->
+             let n = List.length f.params in
+             if f.is_variadic then
+               (if given < n then
+                  report (Printf.sprintf "%s oczekuje co najmniej %d argumentów, podano %d" name n given))
+             else check_arity name (Some n) given
+         | None, None -> report ("Nieznana funkcja: " ^ name))
+    | NewObject (c, args) ->
+        List.iter (expr sc) args;
+        if not (Hashtbl.mem sc.types c) then report ("Nieznana klasa: " ^ c)
+    | NewStruct t | NewUnion t ->
+        if not (Hashtbl.mem sc.types t) then report ("Nieznany typ: " ^ t)
+    | AddressOf n -> expr sc (Identifier n)
+    | FunctionRef n ->
+        if not (Hashtbl.mem sc.funcs n || is_var sc n) then report ("Nieznana funkcja: " ^ n)
+    | BinaryOp (a, _, b) | ComparisonOp (a, _, b) | LogicalOp (a, _, b) | BitwiseOp (a, _, b)
+    | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> expr sc a; expr sc b
+    | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
+    | Parenthesized e -> expr sc e
+    | ArrayLiteral es -> List.iter (expr sc) es
+    | IntLiteral _ | StringLiteral _ | BoolLiteral _ | NullLiteral -> ()
+  and stmt sc = function
+    | Located (file, line, s) -> loc := (file, line); stmt sc s
+    | VarDecl (_, e) | Assign (_, e) | Print e | PrintInline e | Throw e -> expr sc e
+    | ArrayDecl (_, es) -> List.iter (expr sc) es
+    | ArrayAssign (a, v) -> expr sc a; expr sc v
+    | If (c, a, b) -> expr sc c; block sc a; Option.iter (block sc) b
+    | While (c, b) -> expr sc c; block sc b
+    | For (_, a, b, k, body) -> expr sc a; expr sc b; Option.iter (expr sc) k; block sc body
+    | FunctionCallStmt (n, args) | FunctionCallWithAssign (_, n, args) -> expr sc (FunctionCall (n, args))
+    | Return e -> Option.iter (expr sc) e
+    | Try (a, _, b) -> block sc a; block sc b
+    | Read _ | Break | Continue -> ()
+  and block sc stmts = List.iter (stmt sc) stmts in
+
+  let check_function extra (f : function_decl) =
+    let sc = with_locals (extra @ f.params @ (if f.is_variadic then ["varargs"] else []) @ names_of f.body) in
+    block sc f.body
+  in
+  (* Metoda widzi pola i metody swojej klasy oraz przodków *)
+  let rec class_members (c : class_decl) =
+    let own = List.map fst c.fields @ List.map (fun (m : function_decl) -> m.name) c.methods in
+    match c.parent_class with
+    | Some p when Hashtbl.mem classes p -> own @ class_members (Hashtbl.find classes p)
+    | Some p -> report ("Nieznana klasa bazowa: " ^ p); own
+    | None -> own
+  in
+  List.iter (fun d ->
+    (match d with Statement _ -> () | _ -> loc := ("", 0));
+    match d with
+    | Statement s -> stmt global s
+    | FunctionDecl f -> check_function [] f
+    | ClassDecl c ->
+        List.iter (fun (_, e) -> expr global e) c.fields;
+        List.iter (check_function (class_members c)) c.methods
+    | StructDecl { fields; _ } | UnionDecl { fields; _ } -> List.iter (fun (_, e) -> expr global e) fields
+    | EnumDecl _ | Import _ -> ()) decls;
+  List.rev !issues

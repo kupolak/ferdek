@@ -93,9 +93,22 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl test-errors
+test: test-unit test-repl test-errors test-check
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
+
+# ferdek --check: poprawne programy przechodzą (pilnuje też rejestru builtinów),
+# a tests/check/*.ferdek zgłaszają dokładnie oczekiwane problemy
+test-check: build
+	@fail=0; for t in $(ALL_TESTS) $(basename $(wildcard examples/*.ferdek)); do \
+	  $(FERDEK) --check $$t.ferdek > _build/ferdek_chk.out 2>&1 || { echo "--- check $$t: FAIL"; cat _build/ferdek_chk.out; fail=$$((fail+1)); }; \
+	done; \
+	for t in $(basename $(wildcard tests/check/*.ferdek)); do \
+	  printf -- "--- check %s: " $$t; \
+	  if $(FERDEK) --check $$t.ferdek > _build/ferdek_chk.out 2>&1; then echo "FAIL (nic nie znalazł)"; fail=$$((fail+1)); \
+	  elif ! diff -u $$t.out _build/ferdek_chk.out; then echo "FAIL (inne problemy)"; fail=$$((fail+1)); \
+	  else echo OK; fi; \
+	done; [ $$fail -eq 0 ] && echo "--- check wszystkich programów: OK" || { echo "Padło testów checkera: $$fail"; exit 1; }
 
 # Programy, które MUSZĄ paść z konkretnym komunikatem i pozycją - w interpreterze i po kompilacji
 test-errors: build
@@ -143,4 +156,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-repl test-errors test-compiled test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-compiled test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
