@@ -1919,6 +1919,24 @@ and eval_stmt env = function
          | Some else_stmts -> List.iter (eval_stmt env) else_stmts
          | None -> ())
 
+  | For (var, from_e, to_e, step_e, body) ->
+      (* Granice liczone raz; zakres włącznie; continue też robi krok *)
+      let start = to_int (eval_expr env from_e) in
+      let stop = to_int (eval_expr env to_e) in
+      let step = match step_e with None -> 1 | Some e -> to_int (eval_expr env e) in
+      if step = 0 then raise (RuntimeError "KRĘCI CEMENT BETONIARA: krok nie może być zerem");
+      set_var env var (VInt start);
+      let in_range () =
+        let i = to_int (get_var env var) in
+        if step > 0 then i <= stop else i >= stop
+      in
+      (try
+        while in_range () do
+          (try List.iter (eval_stmt env) body with ContinueLoop -> ());
+          set_var env var (VInt (to_int (get_var env var) + step))
+        done
+      with BreakLoop -> ())
+
   | While (cond, body) ->
       let rec loop () =
         let cond_value = eval_expr env cond in

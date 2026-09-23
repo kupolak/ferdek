@@ -74,6 +74,12 @@ rule token = parse
   | "DO CHALUPY ALE JUZ" { END_IF }
   | "CHLUŚNIEM BO UŚNIEM" { WHILE }
   | "A ROBIĆ NI MA KOMU" { END_WHILE }
+  | "KRĘCI CEMENT BETONIARA" { FOR }
+  | "KRECI CEMENT BETONIARA" { FOR }
+  (* Zwykłe słowa pętli; dłuższe DO WIDZENIA PANU / DO CHAŁUPY / CO JEST KURDE wygrywają *)
+  | "OD" { FOR_FROM }
+  | "DO" { FOR_TO }
+  | "CO" { FOR_STEP }
 
   (* Keywords - FUNCTIONS *)
   | "ALE WIE PAN JA ZASADNICZO" { FUNC_DECL }

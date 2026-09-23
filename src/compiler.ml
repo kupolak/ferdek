@@ -42,6 +42,7 @@ let rec stmt_names (decl, assigned) = function
   | Read n | Assign (n, _) | FunctionCallWithAssign (n, _, _) -> (decl, n :: assigned)
   | If (_, a, b) -> block_names (block_names (decl, assigned) a) (Option.value b ~default:[])
   | While (_, b) -> block_names (decl, assigned) b
+  | For (v, _, _, _, b) -> block_names (decl, v :: assigned) b
   | Try (a, v, b) -> block_names (block_names (v :: decl, assigned) a) b
   | Located (_, _, s) -> stmt_names (decl, assigned) s
   | _ -> (decl, assigned)
@@ -97,7 +98,7 @@ let fresh ctx prefix =
 let rec has_try stmts = List.exists (function
   | Try _ -> true
   | If (_, a, b) -> has_try a || has_try (Option.value b ~default:[])
-  | While (_, b) -> has_try b
+  | While (_, b) | For (_, _, _, _, b) -> has_try b
   | Located (_, _, s) -> has_try [s]
   | _ -> false) stmts
 
@@ -211,7 +212,17 @@ and compile_call ctx name args =
   | None, _ ->
       error (Printf.sprintf "Nieznana funkcja: %s (albo wbudowana, której kompilator nie zna)" name)
 
-let rec compile_stmt ctx indent stmt =
+(* Ciało pętli; gdy w środku jest try, break/continue muszą zdjąć handlery założone w pętli *)
+let rec loop_body ctx indent body =
+  let h = if has_try body then fresh ctx "loop_handler" else "" in
+  let saved = ctx.loop_handlers in
+  ctx.loop_handlers <- h :: saved;
+  let code = String.concat "\n" (List.map (compile_stmt ctx (indent + 1)) body) in
+  ctx.loop_handlers <- saved;
+  let setup = if h = "" then "" else Printf.sprintf "%s    Handler* %s = ferdek_handler;\n" (String.make (indent * 4) ' ') h in
+  (setup, code)
+
+and compile_stmt ctx indent stmt =
   let ind = String.make (indent * 4) ' ' in
   let block stmts = String.concat "\n" (List.map (compile_stmt ctx (indent + 1)) stmts) in
   match stmt with
@@ -235,20 +246,27 @@ let rec compile_stmt ctx indent stmt =
         | Some stmts -> Printf.sprintf " else {\n%s\n%s}" (block stmts) ind
       in
       Printf.sprintf "%sif (to_bool(%s)) {\n%s\n%s}%s" ind (compile_expr ctx cond) (block then_stmts) ind else_code
-  | While (cond, body) when has_try body ->
-      (* break/continue z wnętrza try musi zdjąć handlery założone w pętli *)
-      let h = fresh ctx "loop_handler" in
-      ctx.loop_handlers <- h :: ctx.loop_handlers;
-      let body_code = block body in
-      ctx.loop_handlers <- List.tl ctx.loop_handlers;
-      Printf.sprintf "%s{\n%s    Handler* %s = ferdek_handler;\n%s    while (to_bool(%s)) {\n%s\n%s    }\n%s}"
-        ind ind h ind (compile_expr ctx cond) body_code ind ind
   | While (cond, body) ->
-      let saved = ctx.loop_handlers in
-      ctx.loop_handlers <- "" :: saved;
-      let body_code = block body in
-      ctx.loop_handlers <- saved;
-      Printf.sprintf "%swhile (to_bool(%s)) {\n%s\n%s}" ind (compile_expr ctx cond) body_code ind
+      let setup, body_code = loop_body ctx indent body in
+      Printf.sprintf "%s{\n%s%swhile (to_bool(%s)) {\n%s\n%s}\n%s}"
+        ind setup ind (compile_expr ctx cond) body_code ind ind
+  | For (var, from_e, to_e, step_e, body) ->
+      (* Kolejność jak w interpreterze: od, do, krok; C-owe for robi krok także po continue *)
+      let n = fresh ctx "" in
+      let v = var_c var in
+      let step = match step_e with None -> "1" | Some e -> Printf.sprintf "to_int(%s)" (compile_expr ctx e) in
+      let setup, body_code = loop_body ctx indent body in
+      String.concat "\n" [
+        ind ^ "{";
+        Printf.sprintf "%s    long long for_start%s = to_int(%s);" ind n (compile_expr ctx from_e);
+        Printf.sprintf "%s    long long for_stop%s = to_int(%s);" ind n (compile_expr ctx to_e);
+        Printf.sprintf "%s    long long for_step%s = %s;" ind n step;
+        Printf.sprintf "%s    if (for_step%s == 0) ferdek_die(\"KRĘCI CEMENT BETONIARA: krok nie może być zerem\");" ind n;
+        setup ^ Printf.sprintf "%sfor (%s = make_int(for_start%s); for_step%s > 0 ? to_int(%s) <= for_stop%s : to_int(%s) >= for_stop%s; %s = make_int(to_int(%s) + for_step%s)) {"
+          ind v n n v n v n v v n;
+        body_code;
+        ind ^ "}";
+        ind ^ "}" ]
   | FunctionCallStmt (name, args) ->
       Printf.sprintf "%s%s;" ind (compile_call ctx name args)
   | FunctionCallWithAssign (var, func, args) ->

@@ -8,7 +8,7 @@ open Ast
 %token PRINT PRINT_INLINE PRINT_NEWLINE READ
 %token ASSIGN_START ASSIGN_OP ASSIGN_END
 %token IF ELSE ELSE_IF END_IF
-%token WHILE END_WHILE
+%token WHILE END_WHILE FOR FOR_FROM FOR_TO FOR_STEP
 %token FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END ELLIPSIS
 %token FUNC_CALL FUNC_CALL_ASSIGN RETURN
 %token PLUS MINUS MULTIPLY DIVIDE MODULO
@@ -175,6 +175,10 @@ if_rest:
 while_stmt:
   | WHILE cond=expression body=list(statement) END_WHILE
     { While (cond, body) }
+  | FOR var=IDENTIFIER FOR_FROM a=expression FOR_TO b=expression body=list(statement) END_WHILE
+    { For (var, a, b, None, body) }
+  | FOR var=IDENTIFIER FOR_FROM a=expression FOR_TO b=expression FOR_STEP k=expression body=list(statement) END_WHILE
+    { For (var, a, b, Some k, body) }
   ;
 
 func_call_stmt:
