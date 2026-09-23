@@ -371,6 +371,16 @@ def docs():
         "Funkcje z sekcji SKRZYNKA, KLATKA i BABKA wymagają importu modułu, reszta jest wbudowana.",
         "Przykładowe programy: katalog [`examples/`](../examples).",
         "",
+        "## Wartości i liczby",
+        "",
+        "- Liczby całkowite (`5`, `-3`), z przecinkiem (`3.14`), tekst (`\"piwo\"`), prawda/fałsz, null, tablice (`[1, 2]`),",
+        "  mapy (SZAFKA), obiekty, funkcje jako wartości, wskaźniki.",
+        "- Działanie z liczbą z przecinkiem daje liczbę z przecinkiem; `7 / 2` to `3`, a `7.0 / 2` to `3.5`.",
+        "- `+` z tekstem skleja (`\"Piwa: \" + 6`); inne działania na tekście, który nie jest liczbą, to błąd.",
+        "- **Zakres liczb całkowitych:** interpreter liczy na 63 bitach (OCaml), skompilowany program na 64.",
+        "  W tym zakresie wyniki są identyczne; przy przepełnieniu (powyżej ok. 4,6 · 10^18) mogą się różnić.",
+        "- Tekst liczy się w znakach UTF-8 - `ż` to jeden znak.",
+        "",
     ]
     for title, entries in SECTIONS:
         rows = [(k, v) for k, v in entries.items() if k.split("(")[0] in known]
