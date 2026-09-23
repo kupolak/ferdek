@@ -393,7 +393,7 @@ let rec eval_expr env = function
        | VArray arr ->
            let index = to_int (eval_expr env index_expr) in
            if index < 0 || index >= Array.length arr then
-             raise (RuntimeError "Array indeks poza zakresem")
+             raise (RuntimeError "Indeks tablicy poza zakresem")
            else
              arr.(index)
        | VObject obj ->
@@ -405,8 +405,8 @@ let rec eval_expr env = function
            in
            (match Hashtbl.find_opt obj field_name with
             | Some v -> v
-            | None -> raise (RuntimeError (Printf.sprintf "Object has no field: %s" field_name)))
-       | _ -> raise (RuntimeError "To nie jest tablica or object"))
+            | None -> raise (RuntimeError (Printf.sprintf "Obiekt nie ma pola: %s" field_name)))
+       | _ -> raise (RuntimeError "To nie jest tablica ani obiekt"))
   | FunctionCall (name, args) ->
       eval_function_call env name args
   | NewObject (class_name, args) ->
@@ -673,7 +673,7 @@ and eval_stmt env = function
             (match container, idx with
              | VArray arr_vals, VInt i ->
                  if i < 0 || i >= Array.length arr_vals then
-                   raise (Failure (Printf.sprintf "Indeks poza zakresem: %d" i))
+                   raise (RuntimeError (Printf.sprintf "Indeks poza zakresem: %d" i))
                  else
                    arr_vals.(i) <- val_to_assign
              | VObject obj, VString s ->
@@ -681,11 +681,11 @@ and eval_stmt env = function
              | VObject obj, VInt i ->
                  Hashtbl.replace obj (string_of_int i) val_to_assign
              | _, VInt _ ->
-                 raise (Failure "Nie jest tablicą ani obiektem")
+                 raise (RuntimeError "To nie jest tablica ani obiekt")
              | _, _ ->
-                 raise (Failure "Indeks tablicy musi być liczbą całkowitą"))
+                 raise (RuntimeError "Indeks tablicy musi być liczbą całkowitą"))
         | _ ->
-            raise (Failure "Nieprawidłowe przypisanie do tablicy")
+            raise (RuntimeError "Nieprawidłowe przypisanie do tablicy")
       in
       assign_to_array arr_expr value
 

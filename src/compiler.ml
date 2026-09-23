@@ -108,6 +108,9 @@ type codegen_context = {
   mutable in_function: bool;
   mutable loop_handlers: string list;         (* Handler wyjątków z wejścia do pętli (break/continue) *)
   mutable counter: int;                       (* Unikalne nazwy pomocnicze *)
+  classes: (string, class_decl) Hashtbl.t;
+  records: (string, (string * expr) list) Hashtbl.t;  (* struktury i unie: pola do zainicjowania *)
+  mutable members: string list;               (* Pola i metody obiektu w kompilowanej metodzie *)
 }
 
 let fresh ctx prefix =
@@ -123,9 +126,18 @@ let rec has_try stmts = List.exists (function
 
 let is_var ctx name = List.mem name ctx.locals || Hashtbl.mem ctx.globals name
 
-(* Zmienna lokalna przesłania funkcję; funkcja wygrywa z globalną o tej samej nazwie *)
+(* W metodzie: pole/metoda obiektu, jeśli nie przesłania go zmienna lokalna *)
+let is_member ctx name = List.mem name ctx.members && not (List.mem name ctx.locals)
+
+(* Zmienna lokalna i pole obiektu przesłaniają funkcję; funkcja wygrywa z globalną o tej samej nazwie *)
 let is_function_name ctx name =
-  Hashtbl.mem ctx.funcs name && not (List.mem name ctx.locals)
+  Hashtbl.mem ctx.funcs name && not (List.mem name ctx.locals) && not (is_member ctx name)
+
+let is_type_name ctx name = Hashtbl.mem ctx.classes name || Hashtbl.mem ctx.records name
+
+let class_c cls = mangle "nc_" cls                       (* konstruktor obiektu klasy / struktury / unii *)
+let method_c cls m = mangle "m_" (cls ^ "__" ^ m)
+let method_wrap_c cls m = mangle "wm_" (cls ^ "__" ^ m)
 
 
 let comparison_c = function
@@ -169,10 +181,12 @@ let rec compile_expr ctx expr =
   | StringLiteral s -> Printf.sprintf "make_string(%s)" (c_string_literal s)
   | BoolLiteral b -> Printf.sprintf "make_bool(%s)" (if b then "true" else "false")
   | NullLiteral -> "make_null()"
+  | Identifier name when is_member ctx name -> Printf.sprintf "field_get(self, %s)" (c_string_literal name)
   | Identifier name | Reference (Identifier name) when is_function_name ctx name ->
       function_value ctx name
   | Identifier name ->
       if is_var ctx name then var_c name
+      else if is_type_name ctx name then unsupported "nazwa klasy/struktury jako wartość"
       else error (Printf.sprintf "Nieznana zmienna: %s" name)
   | BinaryOp (e1, op, e2) ->
       Printf.sprintf "%s(%s, %s)" (arith_c op) (compile_expr ctx e1) (compile_expr ctx e2)
@@ -194,13 +208,22 @@ let rec compile_expr ctx expr =
   | ToFixed e -> Printf.sprintf "to_fixed(%s)" (compile_expr ctx e)
   | FromFixed e -> Printf.sprintf "make_int(to_int(%s) >> 16)" (compile_expr ctx e)
   | ArrayAccess (arr, idx) ->
-      Printf.sprintf "array_get(%s, to_int(%s))" (compile_expr ctx arr) (compile_expr ctx idx)
+      Printf.sprintf "index_get(%s, %s)" (compile_expr ctx arr) (compile_expr ctx idx)
   | FunctionCall (name, args) -> compile_call ctx name args
   | Parenthesized e -> Printf.sprintf "(%s)" (compile_expr ctx e)
-  | NewObject _ -> unsupported "klasy (DZIAD ZDZIADZIAŁY JEDEN)"
-  | NewStruct _ -> unsupported "struktury (ZMONTUJ MEBEL)"
-  | NewUnion _ -> unsupported "unie (WEJDŹ DO UNII)"
-  | Reference _ | Dereference _ | AddressOf _ | PointerArithmetic _ -> unsupported "wskaźniki"
+  (* Argumenty konstruktora interpreter ignoruje (nawet ich nie liczy) - tu też *)
+  | NewObject (cls, _) ->
+      if not (Hashtbl.mem ctx.classes cls) then error (Printf.sprintf "Nieznana klasa: %s" cls);
+      class_c cls ^ "()"
+  | NewStruct name | NewUnion name ->
+      if not (Hashtbl.mem ctx.records name) then error (Printf.sprintf "Nieznany typ: %s" name);
+      class_c name ^ "()"
+  | Reference e -> Printf.sprintf "make_pointer(%s)" (compile_expr ctx e)
+  | AddressOf name -> Printf.sprintf "make_pointer(%s)" (compile_expr ctx (Identifier name))
+  | Dereference e -> Printf.sprintf "deref(%s)" (compile_expr ctx e)
+  | PointerArithmetic (e1, op, e2) ->
+      Printf.sprintf "pointer_step(%s, %s, %s)" (compile_expr ctx e1) (compile_expr ctx e2)
+        (if op = Minus then "-1" else "1")
   | FunctionRef name when is_function_name ctx name -> function_value ctx name
   | FunctionRef name -> error (Printf.sprintf "Nieznana funkcja: %s" name)
 
@@ -229,12 +252,22 @@ and compile_call ctx name args =
           error (Printf.sprintf "Funkcja %s oczekuje %s, podano %d" name (Errors.argumentow n) given);
         Printf.sprintf "%s(%s)" (fun_c name) (String.concat ", " c_args)
       end
-  | None, _ when is_var ctx name ->
+  | None, _ when List.mem name ctx.locals || (Hashtbl.mem ctx.globals name && not (is_member ctx name)
+                                               && not (Hashtbl.mem ctx.funcs name)) ->
       (* Wywołanie funkcji trzymanej w zmiennej - sprawdzenie typu i arności w runtime *)
       Printf.sprintf "call_value(%s, %s, %d, %s)" (var_c name) (c_string_literal name)
         (List.length args) (argv_c c_args)
+  | None, _ when is_member ctx name ->
+      (* Metoda (albo pole z funkcją) bieżącego obiektu *)
+      Printf.sprintf "call_value(field_get(self, %s), %s, %d, %s)" (c_string_literal name)
+        (c_string_literal name) (List.length args) (argv_c c_args)
   | None, _ ->
       error (Printf.sprintf "Nieznana funkcja: %s (albo wbudowana, której kompilator nie zna)" name)
+
+(* Przypisanie: zmienna lokalna/globalna albo - w metodzie - pole obiektu *)
+let assign ctx name value =
+  if is_member ctx name then Printf.sprintf "field_set(self, %s, %s);" (c_string_literal name) value
+  else Printf.sprintf "%s = %s;" (var_c name) value
 
 (* Ciało pętli; gdy w środku jest try, break/continue muszą zdjąć handlery założone w pętli *)
 let rec loop_body ctx indent body =
@@ -250,8 +283,7 @@ and compile_stmt ctx indent stmt =
   let ind = String.make (indent * 4) ' ' in
   let block stmts = String.concat "\n" (List.map (compile_stmt ctx (indent + 1)) stmts) in
   match stmt with
-  | VarDecl (name, e) | Assign (name, e) ->
-      Printf.sprintf "%s%s = %s;" ind (var_c name) (compile_expr ctx e)
+  | VarDecl (name, e) | Assign (name, e) -> ind ^ assign ctx name (compile_expr ctx e)
   | ArrayDecl (name, []) ->
       Printf.sprintf "%s%s = make_array(NULL, 0);" ind (var_c name)
   | ArrayDecl (name, exprs) ->
@@ -259,9 +291,9 @@ and compile_stmt ctx indent stmt =
         (String.concat ", " (List.map (compile_expr ctx) exprs)) (List.length exprs)
   | Print e -> Printf.sprintf "%sprint_value(%s);" ind (compile_expr ctx e)
   | PrintInline e -> Printf.sprintf "%sprint_inline(%s);" ind (compile_expr ctx e)
-  | Read name -> Printf.sprintf "%s%s = read_value();" ind (var_c name)
+  | Read name -> ind ^ assign ctx name "read_value()"
   | ArrayAssign (ArrayAccess (arr, idx), value) ->
-      Printf.sprintf "%sarray_set(%s, to_int(%s), %s);" ind
+      Printf.sprintf "%sindex_set(%s, %s, %s);" ind
         (compile_expr ctx arr) (compile_expr ctx idx) (compile_expr ctx value)
   | ArrayAssign _ -> error "Przypisanie do tablicy bez indeksu"
   | If (cond, then_stmts, else_stmts) ->
@@ -277,6 +309,7 @@ and compile_stmt ctx indent stmt =
   | For (var, from_e, to_e, step_e, body) ->
       (* Kolejność jak w interpreterze: od, do, krok; C-owe for robi krok także po continue *)
       let n = fresh ctx "" in
+      if is_member ctx var then unsupported "pole obiektu jako licznik pętli";
       let v = var_c var in
       let step = match step_e with None -> "1" | Some e -> Printf.sprintf "to_int(%s)" (compile_expr ctx e) in
       let setup, body_code = loop_body ctx indent body in
@@ -293,8 +326,7 @@ and compile_stmt ctx indent stmt =
         ind ^ "}" ]
   | FunctionCallStmt (name, args) ->
       Printf.sprintf "%s%s;" ind (compile_call ctx name args)
-  | FunctionCallWithAssign (var, func, args) ->
-      Printf.sprintf "%s%s = %s;" ind (var_c var) (compile_call ctx func args)
+  | FunctionCallWithAssign (var, func, args) -> ind ^ assign ctx var (compile_call ctx func args)
   | Return e ->
       if not ctx.in_function then unsupported "return poza funkcją";
       let v = match e with None -> "make_null()" | Some e -> compile_expr ctx e in
@@ -327,13 +359,19 @@ let fun_proto (f : function_decl) =
   Printf.sprintf "FerdekValue %s(%s)" (fun_c f.name)
     (if params = [] then "void" else String.concat ", " params)
 
-let compile_function ctx (f : function_decl) =
+(* Ciało funkcji albo metody. members <> [] = metoda: nazwy pól i metod obiektu (self) *)
+let compile_body ctx ~proto ~members (f : function_decl) =
   let decl, assigned = block_names ([], []) f.body in
-  (* Przypisanie do istniejącej zmiennej globalnej zmienia globalną (jak set_var w interpreterze) *)
-  let assigned_locals = List.filter (fun n -> not (Hashtbl.mem ctx.globals n)) assigned in
+  (* Funkcja: przypisanie do istniejącej globalnej zmienia globalną (set_var w interpreterze).
+     Metoda: przypisanie do czegoś, co nie jest polem, tworzy lokalną - set_var sprawdza
+     tylko obiekt (jeden poziom wyżej), do globalnych nie sięga. *)
+  let assigned_locals =
+    if members <> [] then List.filter (fun n -> not (List.mem n members)) assigned
+    else List.filter (fun n -> not (Hashtbl.mem ctx.globals n)) assigned in
   let locals = dedup (decl @ assigned_locals)
                |> List.filter (fun n -> not (List.mem n (all_params f))) in
   ctx.locals <- all_params f @ locals;
+  ctx.members <- members;
   ctx.in_function <- true;
   (* setjmp: lokalne zmieniane w try muszą być volatile, inaczej po longjmp mają śmieci.
      ponytail: parametry nie są volatile - przypisanie do parametru w try i odczyt w catch to UB *)
@@ -343,22 +381,78 @@ let compile_function ctx (f : function_decl) =
     :: List.map (fun n -> Printf.sprintf "    %sFerdekValue %s = make_null();" qual (var_c n)) locals in
   let body = List.map (compile_stmt ctx 1) f.body in
   ctx.locals <- [];
+  ctx.members <- [];
   ctx.in_function <- false;
-  String.concat "\n" ([Printf.sprintf "%s {" (fun_proto f)] @ decls @ body
+  String.concat "\n" ([Printf.sprintf "%s {" proto] @ decls @ body
                       @ ["    ferdek_handler = entry_handler;"; "    FERDEK_AT(entry_file, entry_line);";
                          "    return make_null();"; "}"])
 
 
-(* Wrapper (argc, argv) dla funkcji jako wartości; arność sprawdza call_value *)
+let compile_function ctx (f : function_decl) = compile_body ctx ~proto:(fun_proto f) ~members:[] f
+
+(* Metoda: jak funkcja, z obiektem (self) jako pierwszym parametrem *)
+let method_proto cls (m : function_decl) =
+  let params = List.map (fun p -> "FerdekValue " ^ var_c p) (all_params m) in
+  Printf.sprintf "FerdekValue %s(%s)" (method_c cls m.name) (String.concat ", " ("FerdekMap* self" :: params))
+
+(* Pola i metody widoczne w metodach klasy: własne i bezpośredniego rodzica (tylko tyle kopiuje interpreter) *)
+let class_members ctx (c : class_decl) =
+  let own (c : class_decl) = List.map fst c.fields @ List.map (fun (m : function_decl) -> m.name) c.methods in
+  own c @ (match c.parent_class with
+           | Some p when Hashtbl.mem ctx.classes p -> own (Hashtbl.find ctx.classes p)
+           | _ -> [])
+
+let compile_method ctx (c : class_decl) (m : function_decl) =
+  compile_body ctx ~proto:(method_proto c.name m) ~members:(class_members ctx c) m
+
+(* Wrapper (self, argc, argv) dla funkcji i metod jako wartości; arność sprawdza call_value *)
+let wrap_args (f : function_decl) =
+  let n = List.length f.params in
+  List.init n (Printf.sprintf "argv[%d]")
+  @ (if f.is_variadic then [Printf.sprintf "make_array(argv + %d, argc - %d)" n n] else [])
+
 let wrap_proto (f : function_decl) =
-  Printf.sprintf "static FerdekValue %s(int argc, FerdekValue* argv)" (wrap_c f.name)
+  Printf.sprintf "static FerdekValue %s(void* self, int argc, FerdekValue* argv)" (wrap_c f.name)
 
 let compile_wrapper (f : function_decl) =
-  let n = List.length f.params in
-  let args = List.init n (Printf.sprintf "argv[%d]")
-             @ (if f.is_variadic then [Printf.sprintf "make_array(argv + %d, argc - %d)" n n] else []) in
   String.concat "\n" [wrap_proto f ^ " {";
-                      Printf.sprintf "    return %s(%s);" (fun_c f.name) (String.concat ", " args); "}"]
+                      Printf.sprintf "    return %s(%s);" (fun_c f.name) (String.concat ", " (wrap_args f)); "}"]
+
+let method_wrap_proto cls (m : function_decl) =
+  Printf.sprintf "static FerdekValue %s(void* self, int argc, FerdekValue* argv)" (method_wrap_c cls m.name)
+
+let compile_method_wrapper cls (m : function_decl) =
+  String.concat "\n" [method_wrap_proto cls m ^ " {";
+                      Printf.sprintf "    return %s(%s);" (method_c cls m.name)
+                        (String.concat ", " ("(FerdekMap*)self" :: wrap_args m)); "}"]
+
+(* Konstruktor obiektu - kolejność jak eval_new_object: pola i metody rodzica, potem własne *)
+let constructor_proto name = Printf.sprintf "static FerdekValue %s(void)" (class_c name)
+
+let compile_class_constructor ctx (c : class_decl) =
+  let field (cls_fields : (string * expr) list) =
+    List.map (fun (n, e) -> Printf.sprintf "    map_put(obj, %s, %s);" (c_string_literal n) (compile_expr ctx e)) cls_fields in
+  let meths cls (ms : function_decl list) = List.map (fun (m : function_decl) ->
+    Printf.sprintf "    map_put(obj, %s, make_method(%s, %s, %d, %s, obj));" (c_string_literal m.name)
+      (method_wrap_c cls m.name) (c_string_literal m.name) (List.length m.params)
+      (if m.is_variadic then "true" else "false")) ms in
+  let parent = match c.parent_class with
+    | None -> []
+    | Some p ->
+        (match Hashtbl.find_opt ctx.classes p with
+         | Some pc -> field pc.fields @ meths pc.name pc.methods
+         | None -> error (Printf.sprintf "Nieznana klasa bazowa: %s" p)) in
+  String.concat "\n" ([constructor_proto c.name ^ " {";
+                       "    FerdekValue o = make_object();";
+                       "    FerdekMap* obj = o.value.map_val;"]
+                      @ parent @ field c.fields @ meths c.name c.methods @ ["    return o;"; "}"])
+
+let compile_record_constructor ctx name fields =
+  String.concat "\n" ([constructor_proto name ^ " {";
+                       "    FerdekValue o = make_object();";
+                       "    FerdekMap* obj = o.value.map_val;"]
+                      @ List.map (fun (n, e) -> Printf.sprintf "    map_put(obj, %s, %s);" (c_string_literal n) (compile_expr ctx e)) fields
+                      @ ["    return o;"; "}"])
 
 (* ============ TOP-LEVEL ============ *)
 
@@ -375,9 +469,7 @@ let compile_top_level ctx decl =
         (v + 1, Printf.sprintf "    %s = make_int(%dLL);" (var_c name) v :: acc)) (0, []) e.values in
       String.concat "\n" (List.rev lines)
   | Import _ -> ""  (* rozwinięte wcześniej przez expand_imports *)
-  | ClassDecl _ -> unsupported "klasy (ALE JAJA)"
-  | StructDecl _ -> unsupported "struktury (MEBEL)"
-  | UnionDecl _ -> unsupported "unie (WCHODZIMY DO UNII)"
+  | ClassDecl _ | StructDecl _ | UnionDecl _ -> ""  (* konstruktory generuje compile_program *)
 
 (* ============ RUNTIME LIBRARY ============ *)
 
@@ -400,7 +492,9 @@ typedef enum {
     TYPE_FIXED,
     TYPE_FUNCTION,
     TYPE_MAP,
-    TYPE_FLOAT
+    TYPE_FLOAT,
+    TYPE_OBJECT,     /* obiekt klasy / struktury / unii: pola w FerdekMap */
+    TYPE_POINTER
 } ValueType;
 
 typedef struct FerdekValue FerdekValue;
@@ -416,7 +510,9 @@ struct FerdekValue {
         char* string_val;
         bool bool_val;
         FerdekArray* array_val;   /* wskaźnik: kopia wartości współdzieli tablicę, jak w interpreterze */
-        struct { FerdekValue (*call)(int, FerdekValue*); const char* name; int arity; bool variadic; } fn_val;
+        /* self: obiekt, z którym związana jest metoda (NULL dla zwykłej funkcji) */
+        struct { FerdekValue (*call)(void*, int, FerdekValue*); const char* name; int arity; bool variadic; void* self; } fn_val;
+        FerdekValue* ptr_val;     /* wskaźnik: kopia wartości na stercie, jak ref w interpreterze */
         FerdekMap* map_val;       /* wskaźnik: kopia wartości współdzieli mapę, jak w interpreterze */
     } value;
 };
@@ -563,6 +659,16 @@ static char* to_str(FerdekValue v) {
             free(keys);
             return b.s;
         }
+        case TYPE_OBJECT: return strdup("<object>");
+        case TYPE_POINTER: {
+            StrBuf b = {0};
+            char* inner = to_str(*v.value.ptr_val);
+            buf_add(&b, "<pointer to ");
+            buf_add(&b, inner);
+            buf_add(&b, ">");
+            free(inner);
+            return b.s;
+        }
         case TYPE_FUNCTION: {
             StrBuf b = {0};
             buf_add(&b, "<function ");
@@ -677,14 +783,19 @@ static FerdekValue logic_or(FerdekValue a, FerdekValue b) { return make_bool(to_
 /* "1 argumentu", "2 argumentów" - jak Errors.argumentow */
 #define ARGUMENTOW(n) ((n) == 1 ? "argumentu" : "argumentów")
 
-static FerdekValue make_function(FerdekValue (*call)(int, FerdekValue*), const char* name, int arity, bool variadic) {
+static FerdekValue make_method(FerdekValue (*call)(void*, int, FerdekValue*), const char* name, int arity, bool variadic, void* self) {
     FerdekValue v;
     v.type = TYPE_FUNCTION;
     v.value.fn_val.call = call;
     v.value.fn_val.name = name;
     v.value.fn_val.arity = arity;
     v.value.fn_val.variadic = variadic;
+    v.value.fn_val.self = self;
     return v;
+}
+
+static FerdekValue make_function(FerdekValue (*call)(void*, int, FerdekValue*), const char* name, int arity, bool variadic) {
+    return make_method(call, name, arity, variadic, NULL);
 }
 
 /* name = nazwa użyta w wywołaniu (jak w komunikatach interpretera) */
@@ -694,7 +805,99 @@ static FerdekValue call_value(FerdekValue f, const char* name, int argc, FerdekV
         ferdek_die("Funkcja %s oczekuje co najmniej %d %s, podano %d", name, f.value.fn_val.arity, ARGUMENTOW(f.value.fn_val.arity), argc);
     if (!f.value.fn_val.variadic && argc != f.value.fn_val.arity)
         ferdek_die("Funkcja %s oczekuje %d %s, podano %d", name, f.value.fn_val.arity, ARGUMENTOW(f.value.fn_val.arity), argc);
-    return f.value.fn_val.call(argc, argv);
+    return f.value.fn_val.call(f.value.fn_val.self, argc, argv);
+}
+
+/* ---- Obiekty (pola w FerdekMap) i wskaźniki ---- */
+
+static void map_put(FerdekMap* m, const char* key, FerdekValue v) {
+    int i = map_find(m, key);
+    if (i >= 0) { m->vals[i] = v; return; }
+    if (m->len == m->cap) {
+        m->cap = m->cap ? m->cap * 2 : 8;
+        m->keys = realloc(m->keys, sizeof(char*) * m->cap);
+        m->vals = realloc(m->vals, sizeof(FerdekValue) * m->cap);
+    }
+    m->keys[m->len] = strdup(key);
+    m->vals[m->len++] = v;
+}
+
+static FerdekValue make_object(void) {
+    FerdekValue v;
+    v.type = TYPE_OBJECT;
+    v.value.map_val = calloc(1, sizeof(FerdekMap));
+    return v;
+}
+
+/* Pole obiektu w metodzie (nazwa znana z deklaracji klasy) */
+static FerdekValue field_get(FerdekMap* self, const char* name) {
+    int i = map_find(self, name);
+    if (i < 0) ferdek_die("Nieznana zmienna: %s", name);
+    return self->vals[i];
+}
+
+static void field_set(FerdekMap* self, const char* name, FerdekValue v) { map_put(self, name, v); }
+
+/* Klucz pola: tekst albo liczba (obj["x"], obj[1]) */
+static char* field_key(FerdekValue key) {
+    char num[32];
+    if (key.type == TYPE_STRING) return key.value.string_val;
+    if (key.type == TYPE_INT) { snprintf(num, sizeof num, "%lld", key.value.int_val); return strdup(num); }
+    ferdek_die("Nazwa pola obiektu musi być tekstem, a jest: %s", to_str(key));
+    return NULL;
+}
+
+/* t[i] i obj["pole"] - jak ArrayAccess w interpreterze */
+static FerdekValue index_get(FerdekValue c, FerdekValue key) {
+    if (c.type == TYPE_ARRAY) {
+        long long i = to_int(key);
+        if (i < 0 || i >= c.value.array_val->length) ferdek_die("Indeks tablicy poza zakresem");
+        return c.value.array_val->data[i];
+    }
+    if (c.type == TYPE_OBJECT) {
+        char* k = field_key(key);
+        int i = map_find(c.value.map_val, k);
+        if (i < 0) ferdek_die("Obiekt nie ma pola: %s", k);
+        return c.value.map_val->vals[i];
+    }
+    ferdek_die("To nie jest tablica ani obiekt");
+    return make_null();
+}
+
+/* t[i] = v i obj["pole"] = v - jak ArrayAssign w interpreterze (indeks tablicy tylko DŁUGI) */
+static void index_set(FerdekValue c, FerdekValue key, FerdekValue v) {
+    if (c.type == TYPE_ARRAY && key.type == TYPE_INT) {
+        long long i = key.value.int_val;
+        if (i < 0 || i >= c.value.array_val->length) ferdek_die("Indeks poza zakresem: %lld", i);
+        c.value.array_val->data[i] = v;
+    } else if (c.type == TYPE_OBJECT && (key.type == TYPE_STRING || key.type == TYPE_INT)) {
+        map_put(c.value.map_val, field_key(key), v);
+    } else if (key.type == TYPE_INT) {
+        ferdek_die("To nie jest tablica ani obiekt");
+    } else {
+        ferdek_die("Indeks tablicy musi być liczbą całkowitą");
+    }
+}
+
+static FerdekValue make_pointer(FerdekValue target) {
+    FerdekValue v;
+    v.type = TYPE_POINTER;
+    v.value.ptr_val = malloc(sizeof(FerdekValue));
+    *v.value.ptr_val = target;
+    return v;
+}
+
+static FerdekValue deref(FerdekValue p) {
+    if (p.type != TYPE_POINTER) ferdek_die("CO TAM JEST: to nie jest wskaźnik");
+    return *p.value.ptr_val;
+}
+
+/* KROK DALEJ / WSTECZ - jak w interpreterze: wskaźnik się nie przesuwa, liczby się dodają */
+static FerdekValue pointer_step(FerdekValue a, FerdekValue b, int dir) {
+    if (a.type == TYPE_POINTER && b.type == TYPE_INT) return a;
+    if (a.type == TYPE_INT && b.type == TYPE_INT) return make_int(a.value.int_val + dir * b.value.int_val);
+    ferdek_die("Nieprawidłowe działanie na wskaźniku");
+    return make_null();
 }
 
 static FerdekArray* as_array(FerdekValue a) {
@@ -1009,6 +1212,8 @@ static FerdekValue b_co_to_za_typ(int argc, FerdekValue* argv) {
         case TYPE_FUNCTION: return make_string("FUNKCJA");
         case TYPE_MAP: return make_string("SZAFKA");
         case TYPE_FLOAT: return make_string("PRZECINEK");
+        case TYPE_OBJECT: return make_string("OBIEKT");
+        case TYPE_POINTER: return make_string("WSKAŹNIK");
     }
     return make_string("?");
 }
@@ -1197,9 +1402,14 @@ let compile_program ?(load_module = fun _ -> None) prog =
   cur_loc := ("", 0);
   let prog = { declarations = expand_imports load_module prog.declarations } in
   let ctx = { funcs = Hashtbl.create 16; globals = Hashtbl.create 64; locals = [];
-              in_function = false; loop_handlers = []; counter = 0 } in
+              in_function = false; loop_handlers = []; counter = 0;
+              classes = Hashtbl.create 8; records = Hashtbl.create 8; members = [] } in
   List.iter (function
     | FunctionDecl f -> Hashtbl.replace ctx.funcs f.name f
+    | ClassDecl c -> Hashtbl.replace ctx.classes c.name c
+    | StructDecl s -> Hashtbl.replace ctx.records s.name s.fields
+    (* Unia: interpreter inicjuje tylko pierwsze pole *)
+    | UnionDecl u -> Hashtbl.replace ctx.records u.name (match u.fields with f :: _ -> [f] | [] -> [])
     | EnumDecl e -> List.iter (fun (n, _) -> Hashtbl.replace ctx.globals n ()) e.values
     | Statement s ->
         let decl, assigned = stmt_names ([], []) s in
@@ -1209,6 +1419,19 @@ let compile_program ?(load_module = fun _ -> None) prog =
   let functions = List.filter_map (function
     | FunctionDecl f -> Some (compile_function ctx f)
     | _ -> None) prog.declarations in
+  let classes = Hashtbl.fold (fun _ c acc -> c :: acc) ctx.classes []
+                |> List.sort (fun (a : class_decl) b -> compare a.name b.name) in
+  let methods = List.concat_map (fun (c : class_decl) ->
+    List.map (fun m -> (c, m)) c.methods) classes in
+  let method_code = List.map (fun (c, m) -> compile_method ctx c m) methods in
+  let method_wrappers = List.map (fun ((c : class_decl), m) -> compile_method_wrapper c.name m) methods in
+  let constructors = List.map (compile_class_constructor ctx) classes
+                     @ (Hashtbl.fold (fun n fs acc -> (n, fs) :: acc) ctx.records [] |> List.sort compare
+                        |> List.map (fun (n, fs) -> compile_record_constructor ctx n fs)) in
+  let object_protos = List.map (fun ((c : class_decl), m) -> method_proto c.name m ^ ";") methods
+                      @ List.map (fun ((c : class_decl), m) -> method_wrap_proto c.name m ^ ";") methods
+                      @ List.map (fun (c : class_decl) -> constructor_proto c.name ^ ";") classes
+                      @ Hashtbl.fold (fun n _ acc -> (constructor_proto n ^ ";") :: acc) ctx.records [] in
   let main_body = List.map (compile_top_level ctx) prog.declarations
                   |> List.filter (fun s -> s <> "") in
   let globals = Hashtbl.fold (fun n () acc -> n :: acc) ctx.globals [] |> dedup
@@ -1229,7 +1452,8 @@ let compile_program ?(load_module = fun _ -> None) prog =
     "#include <math.h>";
     "";
     runtime_library;
-  ] @ globals @ [""] @ protos @ [""] @ functions @ [""] @ wrappers @ [
+  ] @ globals @ [""] @ protos @ object_protos @ [""] @ functions @ method_code @ [""] @ wrappers
+    @ method_wrappers @ [""] @ constructors @ [
     "";
     "int main(void) {";
     "    clock_gettime(CLOCK_MONOTONIC, &program_start);";
