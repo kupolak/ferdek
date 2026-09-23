@@ -44,6 +44,7 @@ type expr =
   | ComparisonOp of expr * comparison_op * expr
   | LogicalOp of expr * logical_op * expr
   | BitwiseOp of expr * bitwise_op * expr
+  | ArrayLiteral of expr list                             (* [a, b, c] jako wyrażenie *)
   | LogicalNot of expr                                   (* Negacja logiczna (TAK BYĆ NIE BĘDZIE) *)
   | BitwiseNot of expr
   | ArrayAccess of expr * expr  (* Changed to support nested access: arr[i][j] *)

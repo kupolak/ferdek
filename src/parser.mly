@@ -418,6 +418,8 @@ factor:
     { FromFixed e }
   | LPAREN e=expression RPAREN
     { Parenthesized e }
+  | LBRACKET es=separated_list(COMMA, expression) RBRACKET
+    { ArrayLiteral es }
   ;
 
 %%

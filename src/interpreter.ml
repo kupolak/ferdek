@@ -338,6 +338,9 @@ let rec eval_expr env = function
       VInt (lnot n)
   | LogicalNot e ->
       VBool (not (to_bool (eval_expr env e)))
+  | ArrayLiteral es ->
+      (* Nowa tablica przy każdym obliczeniu - literał w pętli nie jest współdzielony *)
+      VArray (Array.of_list (List.map (eval_expr env) es))
   | ToFixed e ->
       (* Convert integer to fixed-point 16.16 format *)
       let v = eval_expr env e in

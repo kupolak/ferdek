@@ -174,6 +174,10 @@ let rec compile_expr ctx expr =
         (compile_expr ctx e1) (bitwise_c op) (compile_expr ctx e2)
   | BitwiseNot e -> Printf.sprintf "make_int(~to_int(%s))" (compile_expr ctx e)
   | LogicalNot e -> Printf.sprintf "make_bool(!to_bool(%s))" (compile_expr ctx e)
+  | ArrayLiteral [] -> "make_array(NULL, 0)"
+  | ArrayLiteral es ->
+      Printf.sprintf "make_array((FerdekValue[]){%s}, %d)"
+        (String.concat ", " (List.map (compile_expr ctx) es)) (List.length es)
   | ToFixed e -> Printf.sprintf "make_int(to_int(%s) << 16)" (compile_expr ctx e)
   | FromFixed e -> Printf.sprintf "make_int(to_int(%s) >> 16)" (compile_expr ctx e)
   | ArrayAccess (arr, idx) ->

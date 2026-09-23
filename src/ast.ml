@@ -44,6 +44,7 @@ type expr =
   | ComparisonOp of expr * comparison_op * expr          (* Comparison operation *)
   | LogicalOp of expr * logical_op * expr                (* Logical operation *)
   | BitwiseOp of expr * bitwise_op * expr                (* Bitwise operation *)
+  | ArrayLiteral of expr list                             (* [a, b, c] jako wyrażenie *)
   | LogicalNot of expr                                   (* Negacja logiczna (TAK BYĆ NIE BĘDZIE) *)
   | BitwiseNot of expr                                   (* Bitwise NOT (NA OPAK) *)
   | ArrayAccess of expr * expr                           (* Array element access (WYPIERDZIELAJ PAN NA POZYCJĘ) - supports nesting *)
@@ -203,6 +204,8 @@ let rec string_of_expr = function
       "~(" ^ string_of_expr e ^ ")"
   | LogicalNot e ->
       "!(" ^ string_of_expr e ^ ")"
+  | ArrayLiteral es ->
+      "[" ^ String.concat ", " (List.map string_of_expr es) ^ "]"
   | ArrayAccess (arr_expr, idx) ->
       string_of_expr arr_expr ^ "[" ^ string_of_expr idx ^ "]"
   | FunctionCall (name, args) ->
