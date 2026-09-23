@@ -142,7 +142,7 @@ let builtins = [
   ["PIERWIASTEK ZE SKRZYNKI"], ("b_pierwiastek", Some 1);
   ["SINUS ZE SKRZYNKI"], ("b_sinus", Some 1);
   ["COSINUS ZE SKRZYNKI"], ("b_cosinus", Some 1);
-  ["OTWÓRZ SZAFKĘ"], ("b_szafka_otworz", Some 0);
+  ["OTWÓRZ SZAFKĘ"], ("b_szafka_otworz", None);
   ["WŁÓŻ DO SZAFKI"], ("b_szafka_wloz", Some 3);
   ["WYJMIJ Z SZAFKI"], ("b_szafka_wyjmij", Some 2);
   ["WYRZUĆ ZE SZAFKI"], ("b_szafka_wyrzuc", Some 2);
@@ -1376,10 +1376,16 @@ static FerdekMap* map_arg(FerdekValue v, const char* msg) {
     return v.value.map_val;
 }
 
+static FerdekValue b_szafka_wloz(int argc, FerdekValue* argv);
 static FerdekValue b_szafka_otworz(int argc, FerdekValue* argv) {
+    if (argc % 2 != 0) ferdek_die("OTWÓRZ SZAFKĘ: potrzebne pary klucz, wartość (parzysta liczba argumentów)");
     FerdekValue v;
     v.type = TYPE_MAP;
     v.value.map_val = fx_calloc(1, sizeof(FerdekMap));
+    for (int i = 0; i < argc; i += 2) {
+        FerdekValue kv[3] = { v, argv[i], argv[i + 1] };
+        b_szafka_wloz(3, kv);
+    }
     return v;
 }
 

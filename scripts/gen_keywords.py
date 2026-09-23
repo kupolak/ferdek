@@ -206,7 +206,7 @@ SECTIONS = [
         "TABLICA 3D(x, y, z)": "Tablica 3D wypełniona zerami",
     }),
     ("SZAFKA - mapy", {
-        "OTWÓRZ SZAFKĘ()": "Nowa, pusta mapa",
+        "OTWÓRZ SZAFKĘ(k1, w1, ...)": "Nowa mapa; bez argumentów pusta, z parami klucz, wartość wypełniona",
         "WŁÓŻ DO SZAFKI(mapa, klucz, wartość)": "Zapisz wartość pod kluczem",
         "WYJMIJ Z SZAFKI(mapa, klucz)": "Wartość spod klucza (null, gdy brak)",
         "WYRZUĆ ZE SZAFKI(mapa, klucz)": "Usuń klucz",

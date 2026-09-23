@@ -1002,11 +1002,18 @@ let () =
        | _ -> raise (RuntimeError "SYSTEM oczekuje 1 argumentu")));
 
   (* ========== SZAFKA (HashMap/Dictionary) operations ========== *)
-  (* OTWÓRZ SZAFKĘ() - creates empty dictionary *)
-  ["OTWÓRZ SZAFKĘ"], Some 0, (fun env args ->
-      (match args with
-       | [] -> VHashMap (Hashtbl.create 16)
-       | _ -> raise (RuntimeError "OTWÓRZ SZAFKĘ oczekuje 0 argumentów")));
+  (* OTWÓRZ SZAFKĘ(klucz1, wartość1, ...) - nowa mapa, opcjonalnie od razu z parami *)
+  ["OTWÓRZ SZAFKĘ"], None, (fun env args ->
+      if List.length args mod 2 <> 0 then
+        raise (RuntimeError "OTWÓRZ SZAFKĘ: potrzebne pary klucz, wartość (parzysta liczba argumentów)");
+      let tbl = Hashtbl.create 16 in
+      let rec fill = function
+        | k :: v :: rest ->
+            let key = to_string (eval_expr env k) in
+            Hashtbl.replace tbl key (eval_expr env v); fill rest
+        | _ -> () in
+      fill args;
+      VHashMap tbl);
 
   (* WŁÓŻ DO SZAFKI(dict, key, value) - adds key-value pair *)
   ["WŁÓŻ DO SZAFKI"], Some 3, (fun env args ->
