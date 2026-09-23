@@ -99,8 +99,9 @@ let parse_file filename =
     (try Ok (resolve_local_imports filename (Parser.program Lexer.token lexbuf))
      with Parser.Error ->
        let p = lexbuf.Lexing.lex_start_p in
-       Error (Printf.sprintf "Błąd Parsowania! Walduś, coś tu jest pokręcone! W %s, linia %d, kolumna %d, przy '%s'"
-                filename p.Lexing.pos_lnum (p.Lexing.pos_cnum - p.Lexing.pos_bol + 1) (Lexing.lexeme lexbuf)))
+       Error (Printf.sprintf "Błąd Parsowania! Walduś, coś tu jest pokręcone! W %s, linia %d, kolumna %d, przy '%s'.%s"
+                filename p.Lexing.pos_lnum (p.Lexing.pos_cnum - p.Lexing.pos_bol + 1) (Lexing.lexeme lexbuf)
+                (Syntax_errors.hint preprocessed_content filename)))
   with
   | Lexer.LexError msg ->
       Error (Printf.sprintf "Błąd Leksera! Ktoś tu namieszał w słowach! W %s: %s (Paździoch ukradł słowa)." filename msg)
@@ -248,7 +249,7 @@ let repl () =
     | Parser.Error ->
         (* Parser potknął się dopiero na doklejonym końcu programu = brakuje reszty instrukcji *)
         if Lexing.lexeme lexbuf = program_end then Ok None
-        else Error "Błąd parsowania. Jak ten Walduś w szkole!"
+        else Error ("Błąd parsowania. Jak ten Walduś w szkole!" ^ Syntax_errors.hint code "")
   in
 
   let rec loop buf =

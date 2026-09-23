@@ -6,7 +6,7 @@
 
 (menhir
  (modules parser)
- (flags (--explain)))
+ (flags (--explain --table)))
 
 (library
  (name ferdek_lib)
@@ -21,13 +21,14 @@
   interpreter
   compiler
   checker
+  syntax_errors
   ferdek_stdlib
   builtins_string
   builtins_hashmap
   builtins_file
   builtins_list
   errors)
- (libraries unix str)
+ (libraries unix str menhirLib)
  (foreign_stubs
   (language c)
   (names graphics_stubs graphics_x11)
