@@ -20,6 +20,8 @@
 - Numbers with a decimal point, array literals anywhere, names starting with Polish letters.
 - `PO PIERWSZE PRIMO(x, miejsca)` formats a number with a fixed number of decimal places.
 - Map literals: `OTWÓRZ SZAFKĘ("a", 1, "b", 2)` creates a map filled with key/value pairs.
+- Anonymous functions: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2`. Local variables
+  (and object fields in methods) are captured by value when the function is created; globals stay live.
 - Import your own files (relative to the importing file); every module runs once.
 - New builtins: random numbers (`KARTA LUBI DYM`), time (`TRZEBA SPAĆ`, `JEST TRZECIA W NOCY`),
   math (`PIERWIASTEK/SINUS/COSINUS ZE SKRZYNKI`, real PI and rounding in SKRZYNKA), lists

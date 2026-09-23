@@ -61,6 +61,7 @@ type expr =
   | ToFixed of expr                                      (* Convert to fixed-point 16.16 (ZAMIEŃ NA FIXED) *)
   | FromFixed of expr                                    (* Convert from fixed-point 16.16 (WYJMIJ Z FIXED) *)
   | Parenthesized of expr                                (* Parenthesized expression *)
+  | Lambda of string list * expr                         (* JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x + 1 *)
 
 (* ============ STATEMENTS ============ *)
 
@@ -234,6 +235,21 @@ let rec string_of_expr = function
       "from_fixed(" ^ string_of_expr e ^ ")"
   | Parenthesized e ->
       "(" ^ string_of_expr e ^ ")"
+  | Lambda (params, body) ->
+      "fun(" ^ String.concat ", " params ^ ") -> " ^ string_of_expr body
+
+(* Nazwy, do których sięga wyrażenie (zmienne i funkcje), bez parametrów zagnieżdżonych lambd *)
+let rec expr_names = function
+  | Identifier n | FunctionRef n | AddressOf n -> [n]
+  | FunctionCall (n, args) -> n :: List.concat_map expr_names args
+  | NewObject (_, args) | ArrayLiteral args -> List.concat_map expr_names args
+  | BinaryOp (a, _, b) | ComparisonOp (a, _, b) | LogicalOp (a, _, b) | BitwiseOp (a, _, b)
+  | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> expr_names a @ expr_names b
+  | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
+  | Parenthesized e -> expr_names e
+  | Lambda (params, body) -> List.filter (fun n -> not (List.mem n params)) (expr_names body)
+  | IntLiteral _ | FloatLiteral _ | StringLiteral _ | BoolLiteral _ | NullLiteral
+  | NewStruct _ | NewUnion _ -> []
 
 (* Convert statement to string (simplified) *)
 let rec string_of_stmt indent = function

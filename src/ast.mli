@@ -61,6 +61,7 @@ type expr =
   | ToFixed of expr
   | FromFixed of expr
   | Parenthesized of expr
+  | Lambda of string list * expr
 
 (* ============ STATEMENTS ============ *)
 
@@ -163,6 +164,9 @@ val string_of_bitwise_op : bitwise_op -> string
 
 (* Convert expression to string *)
 val string_of_expr : expr -> string
+
+(* Nazwy zmiennych i funkcji użyte w wyrażeniu (bez parametrów lambd) *)
+val expr_names : expr -> string list
 
 (* Convert statement to string *)
 val string_of_stmt : string -> stmt -> string

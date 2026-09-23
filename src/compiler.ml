@@ -167,6 +167,7 @@ type codegen_context = {
   classes: (string, class_decl) Hashtbl.t;
   records: (string, (string * expr) list) Hashtbl.t;  (* struktury i unie: pola do zainicjowania *)
   mutable members: string list;               (* Pola i metody obiektu w kompilowanej metodzie *)
+  mutable lambdas: string list;               (* Kod funkcji z lambd, od ostatniej *)
 }
 
 let fresh ctx prefix =
@@ -282,6 +283,27 @@ let rec compile_expr ctx expr =
         (if op = Minus then "-1" else "1")
   | FunctionRef name when is_function_name ctx name -> function_value ctx name
   | FunctionRef name -> error (Printf.sprintf "Nieznana funkcja: %s" name)
+  | Lambda (params, body) ->
+      (* Osobna funkcja C; złapane zmienne lokalne i pola obiektu (kopie wartości) idą przez self *)
+      let caps = expr_names body
+                 |> List.filter (fun n -> not (List.mem n params) && (List.mem n ctx.locals || is_member ctx n))
+                 |> List.sort_uniq compare in
+      let cap_values = List.map (fun n -> compile_expr ctx (Identifier n)) caps in
+      let name = fresh ctx "lambda_" in
+      let saved = (ctx.locals, ctx.members, ctx.in_function, ctx.loop_handlers) in
+      ctx.locals <- params @ caps; ctx.members <- []; ctx.in_function <- true; ctx.loop_handlers <- [];
+      let code = compile_expr ctx body in
+      let (l, m, f, h) = saved in
+      ctx.locals <- l; ctx.members <- m; ctx.in_function <- f; ctx.loop_handlers <- h;
+      let bind src i n = Printf.sprintf "    FerdekValue %s = %s[%d];" (var_c n) src i in
+      ctx.lambdas <- String.concat "\n" (
+          [Printf.sprintf "static FerdekValue %s(void* self, int argc, FerdekValue* argv) {" name]
+          @ (if caps = [] then [] else ["    FerdekValue* caps = self;"])
+          @ List.mapi (bind "caps") caps @ List.mapi (bind "argv") params
+          @ [Printf.sprintf "    return %s;" code; "}"]) :: ctx.lambdas;
+      Printf.sprintf "make_method(%s, \"anonimowa\", %d, false, %s)" name (List.length params)
+        (if caps = [] then "NULL"
+         else Printf.sprintf "copy_values(%d, %s)" (List.length caps) (argv_c cap_values))
 
 and compile_call ctx name args =
   let c_args = List.map (compile_expr ctx) args in
@@ -903,6 +925,13 @@ static FerdekValue make_method(FerdekValue (*call)(void*, int, FerdekValue*), co
     v.value.fn_val.variadic = variadic;
     v.value.fn_val.self = self;
     return v;
+}
+
+/* Kopia złapanych wartości dla lambdy (self) */
+static void* copy_values(int n, FerdekValue* v) {
+    FerdekValue* copy = fx_malloc(sizeof(FerdekValue) * n);
+    memcpy(copy, v, sizeof(FerdekValue) * n);
+    return copy;
 }
 
 static FerdekValue make_function(FerdekValue (*call)(void*, int, FerdekValue*), const char* name, int arity, bool variadic) {
@@ -2123,7 +2152,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
   let prog = { declarations = expand_imports load_module prog.declarations } in
   let ctx = { funcs = Hashtbl.create 16; globals = Hashtbl.create 64; locals = [];
               in_function = false; loop_handlers = []; counter = 0;
-              classes = Hashtbl.create 8; records = Hashtbl.create 8; members = [] } in
+              classes = Hashtbl.create 8; records = Hashtbl.create 8; members = []; lambdas = [] } in
   List.iter (function
     | FunctionDecl f -> Hashtbl.replace ctx.funcs f.name f
     | ClassDecl c -> Hashtbl.replace ctx.classes c.name c
@@ -2184,7 +2213,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
     "#include <fcntl.h>";
     "";
     runtime_library;
-  ] @ graphics @ globals @ [""] @ protos @ object_protos @ [""] @ functions @ method_code @ [""] @ wrappers
+  ] @ graphics @ globals @ [""] @ protos @ object_protos @ [""] @ List.rev ctx.lambdas @ [""] @ functions @ method_code @ [""] @ wrappers
     @ method_wrappers @ [""] @ constructors @ [
     "";
     "int main(void) {";

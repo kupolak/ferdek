@@ -10,7 +10,7 @@ open Ast
 %token IF ELSE ELSE_IF END_IF
 %token WHILE END_WHILE FOR FOR_FROM FOR_TO FOR_STEP
 %token FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END ELLIPSIS
-%token FUNC_CALL FUNC_CALL_ASSIGN RETURN
+%token FUNC_CALL FUNC_CALL_ASSIGN RETURN LAMBDA
 %token PLUS MINUS MULTIPLY DIVIDE MODULO
 %token EQUAL NOT_EQUAL GREATER LESS GREATER_EQUAL
 %token AND OR NOT
@@ -318,6 +318,9 @@ enum_value:
 
 expression:
   | e=logical_expr { e }
+  (* Ciało lambdy sięga tak daleko, jak się da - jak fun w OCamlu *)
+  | LAMBDA LPAREN ps=separated_list(COMMA, IDENTIFIER) RPAREN body=expression
+    { Lambda (ps, body) }
   ;
 
 logical_expr:

@@ -72,6 +72,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `I JA INFORMUJĘ ŻE WYCHODZĘ` | return |
 | `W MORDĘ JEŻA` | Wywołanie funkcji: W MORDĘ JEŻA f(1, 2) |
 | `AFERA JEST` | Wynik funkcji do zmiennej: AFERA JEST x W MORDĘ JEŻA f() |
+| `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ` | Funkcja bez nazwy (lambda): JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2. Zmienne lokalne łapie przez wartość w chwili utworzenia |
 
 ## Typy złożone
 

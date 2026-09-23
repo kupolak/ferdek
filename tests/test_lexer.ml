@@ -33,6 +33,7 @@ let string_of_token = function
   | FUNC_PARAMS -> "FUNC_PARAMS"
   | FUNC_END -> "FUNC_END"
   | FUNC_CALL -> "FUNC_CALL"
+  | LAMBDA -> "LAMBDA"
   | FUNC_CALL_ASSIGN -> "FUNC_CALL_ASSIGN"
   | RETURN -> "RETURN"
   | PLUS -> "PLUS"

@@ -33,6 +33,7 @@ let keywords = [
   Parser.FUNC_END, "DO WIDZENIA PANU";
   Parser.ELLIPSIS, "...";
   Parser.FUNC_CALL, "W MORDĘ JEŻA";
+  Parser.LAMBDA, "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ";
   Parser.FUNC_CALL_ASSIGN, "AFERA JEST";
   Parser.RETURN, "I JA INFORMUJĘ ŻE WYCHODZĘ";
   Parser.PLUS, "BABKA DAWAJ RENTĘ";

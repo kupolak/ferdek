@@ -468,6 +468,20 @@ let rec eval_expr env = function
       with RuntimeError _ ->
         raise (RuntimeError (Printf.sprintf "Nieznana funkcja: %s" func_name)))
   | Parenthesized e -> eval_expr env e
+  | Lambda (params, body) ->
+      (* Zmienne lokalne (spoza środowiska globalnego) kopiujemy w chwili utworzenia - tak samo
+         robi kompilator do C; globalne lambda widzi na żywo *)
+      let rec root e = match e.parent with Some p -> root p | None -> e in
+      let global = root env in
+      let captured = create_env (Some global) in
+      let rec capture e n =
+        if e != global then
+          match Hashtbl.find_opt e.vars n with
+          | Some v -> Hashtbl.replace captured.vars n v
+          | None -> Option.iter (fun p -> capture p n) e.parent in
+      List.iter (capture env) (List.filter (fun n -> not (List.mem n params)) (expr_names body));
+      VFunction ({ name = "anonimowa"; params; is_variadic = false; has_return = true;
+                   body = [Return (Some body)] }, captured)
 
 (* Evaluate function call *)
 and eval_function_call env name args =

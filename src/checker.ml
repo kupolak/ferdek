@@ -82,6 +82,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
     | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
     | Parenthesized e -> expr sc e
     | ArrayLiteral es -> List.iter (expr sc) es
+    | Lambda (ps, body) -> let vars = Hashtbl.copy sc.vars in add vars ps; expr { sc with vars } body
     | IntLiteral _ | FloatLiteral _ | StringLiteral _ | BoolLiteral _ | NullLiteral -> ()
   and stmt sc = function
     | Located (file, line, s) -> loc := (file, line); stmt sc s

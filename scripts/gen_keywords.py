@@ -26,7 +26,7 @@ SCOPES = {
     "storage.type.ferdek": """VAR_DECL VAR_INIT ARRAY_DECL FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END
         CLASS EXTENDS STRUCT END_STRUCT UNION END_UNION ENUM END_ENUM IMPORT""",
     "keyword.other.ferdek": """PRINT PRINT_INLINE PRINT_NEWLINE READ ASSIGN_START ASSIGN_OP ASSIGN_END
-        FUNC_CALL FUNC_CALL_ASSIGN ARRAY_INDEX NEW NEW_STRUCT NEW_UNION POINTER_REF POINTER_DEREF
+        FUNC_CALL FUNC_CALL_ASSIGN LAMBDA ARRAY_INDEX NEW NEW_STRUCT NEW_UNION POINTER_REF POINTER_DEREF
         POINTER_ADDR POINTER_STEP_FORWARD POINTER_STEP_BACK TO_FIXED FROM_FIXED""",
     "keyword.operator.arithmetic.ferdek": "PLUS MINUS MULTIPLY DIVIDE MODULO",
     "keyword.operator.comparison.ferdek": "EQUAL NOT_EQUAL GREATER LESS GREATER_EQUAL",
@@ -130,6 +130,7 @@ SECTIONS = [
         "I JA INFORMUJĘ ŻE WYCHODZĘ": "return",
         "W MORDĘ JEŻA": "Wywołanie funkcji: W MORDĘ JEŻA f(1, 2)",
         "AFERA JEST": "Wynik funkcji do zmiennej: AFERA JEST x W MORDĘ JEŻA f()",
+        "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ": "Funkcja bez nazwy (lambda): JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2. Zmienne lokalne łapie przez wartość w chwili utworzenia",
     }),
     ("Typy złożone", {
         "ALE JAJA": "Definicja klasy",
