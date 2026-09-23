@@ -27,17 +27,11 @@ NO I GITARA
 JEDZIEM Z TYM ŚLEDZIEM "Po odejmowaniu 5: "
 PANIE SENSACJA REWELACJA wynik
 
-CYCU PRZYNIEŚ NO counter
-TO NIE SĄ TANIE RZECZY 0
 
 PANIE SENSACJA REWELACJA "=== Liczenie do 10 ==="
 
-CHLUŚNIEM BO UŚNIEM counter ŚWINIA 10
+KRĘCI CEMENT BETONIARA counter OD 0 DO 9
     PANIE SENSACJA REWELACJA counter
-    O KURDE MAM POMYSŁA counter
-    A PROSZĘ BARDZO counter
-    BABKA DAWAJ RENTĘ 1
-    NO I GITARA
 A ROBIĆ NI MA KOMU
 
 PANIE SENSACJA REWELACJA "=== Odliczanie od 5 do 1 ==="
@@ -45,12 +39,10 @@ PANIE SENSACJA REWELACJA "=== Odliczanie od 5 do 1 ==="
 CYCU PRZYNIEŚ NO odliczanie
 TO NIE SĄ TANIE RZECZY 5
 
+RYM CYM CYM Pętla while - gdy krok zależy od warunku, a nie od licznika
 CHLUŚNIEM BO UŚNIEM odliczanie GRUBA ŚWINIA 0
     PANIE SENSACJA REWELACJA odliczanie
-    O KURDE MAM POMYSŁA odliczanie
-    A PROSZĘ BARDZO odliczanie
-    PASZOŁ WON 1
-    NO I GITARA
+    O KURDE MAM POMYSŁA odliczanie A PROSZĘ BARDZO odliczanie PASZOŁ WON 1 NO I GITARA
 A ROBIĆ NI MA KOMU
 
 PANIE SENSACJA REWELACJA "=== Zakończono program ==="
