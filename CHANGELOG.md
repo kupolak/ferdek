@@ -41,6 +41,8 @@
 - `ferdek --check` (unknown names, wrong argument counts), `ferdek test` (runs `*_test.ferdek`),
   `ferdek --fmt` (indentation).
 - Errors report file and line; syntax errors say what was expected; all messages in Polish.
+- Several syntax errors are reported at once (up to 10): the broken statement is skipped and
+  parsing goes on, stopping early where a block is broken to avoid made-up follow-up errors.
 - The REPL keeps state between lines and accepts multi-line statements.
 - Full keyword reference in [docs/JEZYK.md](docs/JEZYK.md), generated from the lexer.
 

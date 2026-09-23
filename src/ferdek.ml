@@ -86,25 +86,82 @@ let resolve_local_imports filename (prog : Ast.program) =
           if Sys.file_exists path then Ast.Import path else Ast.Import name
       | d -> d) prog.declarations }
 
+(* Jeden przebieg parsera; przy błędzie: linia, komunikat i token, na którym się wyłożył *)
+let parse_text filename text =
+  let lexbuf = Lexing.from_string text in
+  lexbuf.Lexing.lex_curr_p <- { lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename };
+  (* Linia poprzedniego tokenu: błąd często wychodzi dopiero na początku następnej instrukcji *)
+  let prev_line = ref 1 and cur_line = ref 1 in
+  let token lb =
+    prev_line := !cur_line;
+    let t = Lexer.token lb in
+    cur_line := lb.Lexing.lex_start_p.Lexing.pos_lnum; t in
+  try Ok (Parser.program token lexbuf)
+  with Parser.Error ->
+    let p = lexbuf.Lexing.lex_start_p in
+    let tok = Lexing.lexeme lexbuf in
+    Error ((!prev_line, p.Lexing.pos_lnum),
+           Printf.sprintf "Błąd Parsowania! Walduś, coś tu jest pokręcone! W %s, linia %d, kolumna %d, przy '%s'.%s"
+             filename p.Lexing.pos_lnum (p.Lexing.pos_cnum - p.Lexing.pos_bol + 1) tok
+             (Syntax_errors.hint text filename))
+
+(* Linie otwierają albo zamykają blok (albo kończy program) - wtedy po jej wycięciu posypałyby
+   się fałszywe błędy dalej *)
+let line_is_structural line =
+  let lexbuf = Lexing.from_string line in
+  let rec go () = match Lexer.token lexbuf with
+    | Parser.EOF -> false
+    | t when Formatter.opens t || Formatter.closes t || t = Parser.PROGRAM_END || t = Parser.PROGRAM_START -> true
+    | _ -> go ()
+    | exception _ -> true in
+  go ()
+
+(* Pierwszy token linii zaczyna instrukcję *)
+let starts_statement line =
+  match Lexer.token (Lexing.from_string line) with
+  | Parser.VAR_DECL | ARRAY_DECL | PRINT | PRINT_INLINE | PRINT_NEWLINE | READ | ASSIGN_START
+  | IF | ELSE | ELSE_IF | END_IF | WHILE | END_WHILE | FOR | FUNC_CALL | FUNC_CALL_ASSIGN | RETURN
+  | TRY | CATCH | THROW | BREAK | CONTINUE | FUNC_DECL | FUNC_END | CLASS | STRUCT | END_STRUCT
+  | UNION | END_UNION | ENUM | END_ENUM | IMPORT | PROGRAM_START | PROGRAM_END -> true
+  | _ -> false
+  | exception _ -> true
+
+(* Po błędzie wycinamy (zastępujemy pustą) linię z błędem i parsujemy dalej, żeby pokazać
+   kilka błędów naraz. ponytail: naprawa na poziomie linii, bez odzyskiwania w gramatyce *)
+let max_syntax_errors = 10
+
+let parse_collecting filename text =
+  let rec go text errors =
+    match parse_text filename text with
+    | Ok prog when errors = [] -> Ok prog
+    | Ok _ -> Error (List.rev errors)
+    | Error (_, msg) when List.mem msg errors -> Error (List.rev errors)   (* wycięcie nie pomogło *)
+    | Error ((first, line), msg) ->
+        let errors = msg :: errors in
+        let lines = Array.of_list (String.split_on_char '\n' text) in
+        (* Wycinamy całą zepsutą instrukcję: od linii, w której się zaczęła, do linii błędu.
+           Gdy błąd wyszedł dopiero na początku następnej linii, ta linia zostaje. *)
+        let last = if first < line then line - 1 else line in
+        let rec back l = if l <= 1 || starts_statement lines.(l - 1) then l else back (l - 1) in
+        let span = if last > Array.length lines then []
+                   else let start = back first in List.init (last - start + 1) (fun i -> start + i) in
+        if List.length errors >= max_syntax_errors
+           || not (List.exists (fun l -> String.trim lines.(l - 1) <> "") span)
+           || List.exists (fun l -> line_is_structural lines.(l - 1)) span
+        then Error (List.rev errors)
+        else begin
+          List.iter (fun l -> lines.(l - 1) <- "") span;
+          go (String.concat "\n" (Array.to_list lines)) errors
+        end in
+  go text []
+
 (* Parse a file *)
 let parse_file filename =
   try
-    (* Step 1: Preprocess the file *)
-    let preprocessed_lines = Preprocessor.preprocess_file filename in
-    let preprocessed_content = String.concat "\n" preprocessed_lines in
-
-    (* Step 2: Parse the preprocessed content *)
-    let lexbuf = Lexing.from_string preprocessed_content in
-    lexbuf.Lexing.lex_curr_p <- {
-      lexbuf.Lexing.lex_curr_p with
-      Lexing.pos_fname = filename
-    };
-    (try Ok (resolve_local_imports filename (Parser.program Lexer.token lexbuf))
-     with Parser.Error ->
-       let p = lexbuf.Lexing.lex_start_p in
-       Error (Printf.sprintf "Błąd Parsowania! Walduś, coś tu jest pokręcone! W %s, linia %d, kolumna %d, przy '%s'.%s"
-                filename p.Lexing.pos_lnum (p.Lexing.pos_cnum - p.Lexing.pos_bol + 1) (Lexing.lexeme lexbuf)
-                (Syntax_errors.hint preprocessed_content filename)))
+    let preprocessed_content = String.concat "\n" (Preprocessor.preprocess_file filename) in
+    match parse_collecting filename preprocessed_content with
+    | Ok prog -> Ok (resolve_local_imports filename prog)
+    | Error msgs -> Error (String.concat "\nA fe! " msgs)
   with
   | Lexer.LexError msg ->
       Error (Printf.sprintf "Błąd Leksera! Ktoś tu namieszał w słowach! W %s: %s (Paździoch ukradł słowa)." filename msg)
