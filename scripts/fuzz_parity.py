@@ -98,7 +98,15 @@ class Gen:
             f"W MORDĘ JEŻA POSKŁADAJ WERSALKĘ({a})", f"W MORDĘ JEŻA ODWRÓĆ WERSALKĘ({a})",
             f"W MORDĘ JEŻA POŁÓŻ NA WERSALCE({a}, {self.expr('int', d)})",
             f"[{self.expr('int', d)}, {self.expr('int', d)}]",
+            f"W MORDĘ JEŻA PRZERABIAJ WERSALKĘ({a}, {self.lam(d)})",
         ])
+
+    # Lambda int -> int; ciało sięga też po zmienne z otoczenia (w funkcji: łapanie przez wartość)
+    def lam(self, d):
+        self.vars["int"].append("x")
+        body = self.expr("int", d)
+        self.vars["int"].remove("x")
+        return f"JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) {body}"
 
     # ---- instrukcje ----
     def stmts(self, n, d, ind):
