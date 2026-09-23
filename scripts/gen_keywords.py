@@ -232,6 +232,7 @@ SECTIONS = [
         "PRZEKOPIUJ KIBEL(skąd, dokąd)": "Skopiuj plik",
         "PRZENIEŚ KIBEL(skąd, dokąd)": "Przenieś plik",
         "WYKOP WSZYSTKIE KIBLE(ścieżka)": "Usuń katalog z zawartością",
+    "OPAKUJ W GAZETĘ(tekst)": "Zacytuj tekst jako jeden argument powłoki - używaj przy sklejaniu poleceń dla SYSTEM",
     }),
     ("Pamięć (alokator strefowy w stylu DOOM)", {
         "DAJ MI HAJS(rozmiar, tag)": "Zaalokuj blok pamięci",

@@ -21,6 +21,7 @@ let builtins : (string list * int option) list = [
   ["CZY KIBEL ZAJĘTY"], Some 1;
   ["OTWÓRZ KIBEL DO ZAPISU"], Some 1;
   ["SYSTEM"], Some 1;
+  ["OPAKUJ W GAZETĘ"], Some 1;
   ["OTWÓRZ SZAFKĘ"], Some 0;
   ["WŁÓŻ DO SZAFKI"], Some 3;
   ["WYJMIJ Z SZAFKI"], Some 2;

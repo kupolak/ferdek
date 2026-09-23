@@ -645,6 +645,12 @@ and eval_function_call env name args =
        | _ -> raise (RuntimeError "OTWÓRZ_KIBEL_DO_ZAPISU expects 1 argument"))
 
   (* SYSTEM(komenda) - wykonuje komendę systemową i zwraca output *)
+  (* OPAKUJ W GAZETĘ(tekst) - bezpieczne cytowanie argumentu dla powłoki (do SYSTEM) *)
+  | "OPAKUJ W GAZETĘ" ->
+      (match args with
+       | [arg] -> VString (Filename.quote (to_string (eval_expr env arg)))
+       | _ -> raise (RuntimeError "OPAKUJ W GAZETĘ expects 1 argument"))
+
   | "SYSTEM" ->
       (match args with
        | [cmd_arg] ->

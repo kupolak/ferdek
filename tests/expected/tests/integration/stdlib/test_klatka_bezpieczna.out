@@ -1,0 +1,6 @@
+x'; echo WYKONANE; echo '
+
+$(echo WYKONANE) `id`
+
+0
+Program zakończony pomyślnie. Piwo dla Pana!
