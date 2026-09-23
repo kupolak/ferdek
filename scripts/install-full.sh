@@ -39,6 +39,7 @@ if command -v apk &> /dev/null; then
         ocaml-compiler-libs \
         ocaml-runtime \
         opam \
+        libx11-dev \
         m4 \
         patch \
         unzip \
@@ -179,10 +180,10 @@ echo "Kopiowanie plików... (Fizyczna robota)"
 
 if [ "$NEED_SUDO" = true ]; then
     echo -e "${YELLOW}Wymagane sudo...${NC}"
-    sudo cp .build/main "$INSTALL_DIR/ferdek"
+    sudo cp _build/default/src/ferdek.exe "$INSTALL_DIR/ferdek"
     sudo chmod +x "$INSTALL_DIR/ferdek"
 else
-    cp .build/main "$INSTALL_DIR/ferdek"
+    cp _build/default/src/ferdek.exe "$INSTALL_DIR/ferdek"
     chmod +x "$INSTALL_DIR/ferdek"
 fi
 

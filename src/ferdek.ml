@@ -48,7 +48,7 @@ let find_stdlib_dir () =
 
 (* Wyświetla help *)
 let print_help () =
-  Printf.printf "Ferdek - Język Biedy i Zjednoczenia Narodowego v1.0\n\n";
+  Printf.printf "Ferdek - Język Biedy i Zjednoczenia Narodowego v2.0\n\n";
   Printf.printf "Jak uruchomić, żeby nie było wstydu: ferdek [opcje] [plik.ferdek]\n\n";
   Printf.printf "Opcje:\n";
   Printf.printf "  -h, --help              Pytaj o pomoc. Ferdek jest bezrobotny i ma czas.\n";
@@ -73,7 +73,7 @@ let print_help () =
 
 (* Wyświetla wersję *)
 let print_version () =
-  Printf.printf "Ferdek - Język Prawdziwych Polaków v1.0\n";
+  Printf.printf "Ferdek - Język Prawdziwych Polaków v2.0\n";
   Printf.printf "Nie ma pracy dla ludzi z naszym wykształceniem! / Walduś, to jest język!\n"
 
 (* Import lokalny: jeśli obok pliku leży <nazwa>.ferdek, import dostaje ścieżkę do niego.
@@ -298,7 +298,7 @@ let quick_run input_file =
 
 (* REPL *)
 let repl () =
-  Printf.printf "Ferdek REPL - Gadka Szmatka v1.0\n";
+  Printf.printf "Ferdek REPL - Gadka Szmatka v2.0\n";
   Printf.printf "Wpisz 'wypad' albo 'spadaj' aby iść na piwo (exit/quit)\n";
   Printf.printf "Instrukcje na kilka linii zbieram, aż będą kompletne. Pusta linia = porzuć.\n\n";
   let session = Interpreter.new_session () in
