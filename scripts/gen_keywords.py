@@ -182,8 +182,8 @@ SECTIONS = [
     }),
     ("KANAPA - tekst", {
         "USIĄDŹ NA KANAPIE(a, b, ...)": "Sklej teksty",
-        "ILE MIEJSCA NA KANAPIE(tekst)": "Długość tekstu (w bajtach)",
-        "POTNIJ KANAPĘ(tekst, od, do)": "Fragment tekstu",
+        "ILE MIEJSCA NA KANAPIE(tekst)": "Długość tekstu w znakach (ż to jeden znak)",
+        "POTNIJ KANAPĘ(tekst, od, do)": "Fragment tekstu (znaki od..do-1)",
         "ROZCIĄGNIJ KANAPĘ(tekst, długość)": "Dopełnij spacjami do długości",
         "PRZESUŃ NA KANAPIE(tekst, separator)": "Podziel tekst na tablicę",
         "POSKŁADAJ KANAPĘ(tablica, separator)": "Sklej tablicę w tekst",

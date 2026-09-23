@@ -1018,24 +1018,48 @@ static FerdekValue b_kanapa_usiadz(int argc, FerdekValue* argv) {
     return own_string(b.s);
 }
 
+/* Znaki UTF-8 jak utf8_chars w interpreterze: długość znaku z bajtu wiodącego */
+static int utf8_char_len(const char* s) {
+    unsigned char c = (unsigned char)s[0];
+    int len = c < 0x80 ? 1 : (c & 0xE0) == 0xC0 ? 2 : (c & 0xF0) == 0xE0 ? 3 : (c & 0xF8) == 0xF0 ? 4 : 1;
+    for (int k = 1; k < len; k++) if (!s[k]) return 1;   /* ucięty znak: bajt po bajcie */
+    return len;
+}
+
+/* Liczba znaków; offsets (jeśli podane) dostaje bajtowy początek każdego znaku + koniec */
+static long long utf8_index(const char* s, long long** offsets) {
+    long long n = 0, cap = 16;
+    long long* off = offsets ? malloc(sizeof(long long) * cap) : NULL;
+    const char* p = s;
+    while (*p) {
+        if (off) { if (n + 1 >= cap) { cap *= 2; off = realloc(off, sizeof(long long) * cap); } off[n] = p - s; }
+        p += utf8_char_len(p);
+        n++;
+    }
+    if (off) { off[n] = p - s; *offsets = off; }
+    return n;
+}
+
 static FerdekValue b_kanapa_rozciagnij(int argc, FerdekValue* argv) {
     char* s = to_str(argv[0]);
     long long target = to_int(argv[1]);
+    long long chars = utf8_index(s, NULL);
+    if (chars >= target) return own_string(s);
     size_t len = strlen(s);
-    if ((long long)len >= target) return own_string(s);
-    s = realloc(s, target + 1);
-    memset(s + len, ' ', target - len);
-    s[target] = '\0';
+    s = realloc(s, len + (target - chars) + 1);
+    memset(s + len, ' ', target - chars);
+    s[len + (target - chars)] = '\0';
     return own_string(s);
 }
 
 static FerdekValue b_kanapa_potnij(int argc, FerdekValue* argv) {
     char* s = to_str(argv[0]);
-    long long len = strlen(s), start = to_int(argv[1]), end = to_int(argv[2]);
+    long long* off;
+    long long len = utf8_index(s, &off), start = to_int(argv[1]), end = to_int(argv[2]);
     if (start < 0 || start >= len) ferdek_die("POTNIJ KANAPĘ: początek poza zakresem");
     if (end < start || end > len) ferdek_die("POTNIJ KANAPĘ: koniec poza zakresem");
-    s[end] = '\0';
-    return make_string(s + start);
+    s[off[end]] = '\0';
+    return make_string(s + off[start]);
 }
 
 static FerdekValue b_kanapa_przesun(int argc, FerdekValue* argv) {
@@ -1104,7 +1128,7 @@ static FerdekValue b_kanapa_zamien(int argc, FerdekValue* argv) {
 
 static FerdekValue b_kanapa_ile(int argc, FerdekValue* argv) {
     char* s = to_str(argv[0]);
-    FerdekValue n = make_int((long long)strlen(s));
+    FerdekValue n = make_int(utf8_index(s, NULL));
     free(s);
     return n;
 }
@@ -1112,10 +1136,11 @@ static FerdekValue b_kanapa_ile(int argc, FerdekValue* argv) {
 static FerdekValue b_kanapa_znak(int argc, FerdekValue* argv) {
     char* s = to_str(argv[0]);
     long long i = to_int(argv[1]);
-    if (i < 0 || i >= (long long)strlen(s)) ferdek_die("ZNAK Z KANAPY: indeks poza zakresem");
-    char c[2] = { s[i], '\0' };
-    free(s);
-    return make_string(c);
+    long long* off;
+    long long n = utf8_index(s, &off);
+    if (i < 0 || i >= n) ferdek_die("ZNAK Z KANAPY: indeks poza zakresem");
+    s[off[i + 1]] = '\0';
+    return make_string(s + off[i]);
 }
 
 /* Polskie litery w UTF-8: drugi bajt małej i wielkiej, pierwszy wspólny */

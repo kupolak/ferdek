@@ -868,8 +868,9 @@ let () =
        | [str_arg; idx_arg] ->
            let s = to_string (eval_expr env str_arg) in
            let i = to_int (eval_expr env idx_arg) in
-           if i < 0 || i >= String.length s then raise (RuntimeError "ZNAK Z KANAPY: indeks poza zakresem");
-           VString (String.make 1 s.[i])
+           let chars = Builtins_string.utf8_chars s in
+           if i < 0 || i >= Array.length chars then raise (RuntimeError "ZNAK Z KANAPY: indeks poza zakresem");
+           VString chars.(i)
        | _ -> raise (RuntimeError "ZNAK Z KANAPY oczekuje 2 argumentów")));
 
   ["KANAPA DO GÓRY"], Some 1, (fun env args ->
@@ -886,9 +887,7 @@ let () =
   ["ILE MIEJSCA NA KANAPIE"], Some 1, (fun env args ->
       (match args with
        | [arg] ->
-           let v = eval_expr env arg in
-           let s = to_string v in
-           VInt (String.length s)
+           VInt (Builtins_string.utf8_length (to_string (eval_expr env arg)))
        | _ -> raise (RuntimeError "ILE MIEJSCA NA KANAPIE oczekuje 1 argumentu")));
 
   (* OTWÓRZ KIBEL(ścieżka) - otwiera plik do odczytu *)

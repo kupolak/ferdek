@@ -73,6 +73,8 @@ class Gen:
             f"W MORDĘ JEŻA USIĄDŹ NA KANAPIE({a}, {self.expr('int', d)}, {self.expr('str', d)})",
             f'W MORDĘ JEŻA POSKŁADAJ KANAPĘ({self.expr("arr", d)}, "-")',
             f"W MORDĘ JEŻA CO TO ZA TYP({self.expr(self.pick(['int', 'float', 'arr']), d)})",
+            f"W MORDĘ JEŻA POTNIJ KANAPĘ({a}, {self.r.randint(0, 2)}, {self.r.randint(1, 4)})",
+            f"W MORDĘ JEŻA ZNAK Z KANAPY({a}, {self.r.randint(0, 3)})",
         ])
 
     def e_bool(self, leaf, d):

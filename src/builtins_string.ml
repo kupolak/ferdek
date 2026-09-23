@@ -1,22 +1,41 @@
 (* String library functions helpers *)
 
-(* Pad string to target length *)
+(* Tekst jako tablica znaków UTF-8 (każdy znak to 1-4 bajty). Polskie litery liczą się jako
+   jeden znak; nieprawidłowe bajty - każdy osobno. Tak samo liczy runtime C. *)
+let utf8_chars s =
+  let n = String.length s in
+  let rec go i acc =
+    if i >= n then Array.of_list (List.rev acc)
+    else
+      let c = Char.code s.[i] in
+      let len = if c < 0x80 then 1 else if c land 0xE0 = 0xC0 then 2
+                else if c land 0xF0 = 0xE0 then 3 else if c land 0xF8 = 0xF0 then 4 else 1 in
+      let len = if i + len > n then 1 else len in
+      go (i + len) (String.sub s i len :: acc)
+  in
+  go 0 []
+
+let utf8_length s = Array.length (utf8_chars s)
+
+(* Pad string to target length (w znakach) *)
 let kanapa_rozciagnij s target_len =
-  let current_len = String.length s in
+  let current_len = utf8_length s in
   if current_len >= target_len then
     s
   else
     let padding = String.make (target_len - current_len) ' ' in
     s ^ padding
 
-(* Substring with bounds checking *)
+(* Substring with bounds checking (indeksy w znakach) *)
 let kanapa_potnij s start end_pos =
-  if start < 0 || start >= String.length s then
-    raise (Failure "POTNIJ KANAPĘ: start index out of bounds")
-  else if end_pos < start || end_pos > String.length s then
-    raise (Failure "POTNIJ KANAPĘ: end index out of bounds")
+  let chars = utf8_chars s in
+  let len = Array.length chars in
+  if start < 0 || start >= len then
+    raise (Failure "POTNIJ KANAPĘ: początek poza zakresem")
+  else if end_pos < start || end_pos > len then
+    raise (Failure "POTNIJ KANAPĘ: koniec poza zakresem")
   else
-    String.sub s start (end_pos - start)
+    String.concat "" (Array.to_list (Array.sub chars start (end_pos - start)))
 
 (* Polskie litery w UTF-8: (mała, wielka) *)
 let polskie = ["ą", "Ą"; "ć", "Ć"; "ę", "Ę"; "ł", "Ł"; "ń", "Ń"; "ó", "Ó"; "ś", "Ś"; "ź", "Ź"; "ż", "Ż"]
