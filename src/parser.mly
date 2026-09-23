@@ -12,8 +12,8 @@ open Ast
 %token FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END ELLIPSIS
 %token FUNC_CALL FUNC_CALL_ASSIGN RETURN
 %token PLUS MINUS MULTIPLY DIVIDE MODULO
-%token EQUAL NOT_EQUAL GREATER LESS
-%token AND OR
+%token EQUAL NOT_EQUAL GREATER LESS GREATER_EQUAL
+%token AND OR NOT
 %token BIT_AND BIT_OR BIT_XOR BIT_SHIFT_LEFT BIT_SHIFT_RIGHT BIT_NOT
 %token TO_FIXED FROM_FIXED
 %token TRUE FALSE
@@ -310,10 +310,16 @@ expression:
   ;
 
 logical_expr:
-  | e1=logical_expr AND e2=bitwise_expr
+  | e1=logical_expr AND e2=not_expr
     { LogicalOp (e1, And, e2) }
-  | e1=logical_expr OR e2=bitwise_expr
+  | e1=logical_expr OR e2=not_expr
     { LogicalOp (e1, Or, e2) }
+  | e=not_expr { e }
+  ;
+
+(* TAK BYĆ NIE BĘDZIE: słabiej niż porównania, mocniej niż AND/OR (jak not w Pythonie) *)
+not_expr:
+  | NOT e=not_expr { LogicalNot e }
   | e=bitwise_expr { e }
   ;
 
@@ -340,6 +346,8 @@ comparison_expr:
     { ComparisonOp (e1, Greater, e2) }
   | e1=comparison_expr LESS e2=arith_expr
     { ComparisonOp (e1, Less, e2) }
+  | e1=comparison_expr GREATER_EQUAL e2=arith_expr
+    { ComparisonOp (e1, GreaterEqual, e2) }
   | e=arith_expr { e }
   ;
 

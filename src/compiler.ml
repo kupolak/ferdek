@@ -108,7 +108,7 @@ let is_function_name ctx name =
 
 
 let comparison_c = function
-  | Equal -> "==" | NotEqual -> "!=" | Greater -> ">" | Less -> "<"
+  | Equal -> "==" | NotEqual -> "!=" | Greater -> ">" | Less -> "<" | GreaterEqual -> ">="
 
 let arith_c = function
   | Plus -> "op_add" | Minus -> "op_sub" | Multiply -> "op_mul"
@@ -164,6 +164,7 @@ let rec compile_expr ctx expr =
       Printf.sprintf "make_int(to_int(%s) %s to_int(%s))"
         (compile_expr ctx e1) (bitwise_c op) (compile_expr ctx e2)
   | BitwiseNot e -> Printf.sprintf "make_int(~to_int(%s))" (compile_expr ctx e)
+  | LogicalNot e -> Printf.sprintf "make_bool(!to_bool(%s))" (compile_expr ctx e)
   | ToFixed e -> Printf.sprintf "make_int(to_int(%s) << 16)" (compile_expr ctx e)
   | FromFixed e -> Printf.sprintf "make_int(to_int(%s) >> 16)" (compile_expr ctx e)
   | ArrayAccess (arr, idx) ->

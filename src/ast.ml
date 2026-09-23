@@ -16,6 +16,7 @@ type comparison_op =
   | NotEqual     (* PAN TU NIE MIESZKASZ *)
   | Greater      (* MOJA NOGA JUŻ TUTAJ NIE POSTANIE *)
   | Less         (* CO SIĘ TAK WIERCISZ JAK GÓWNO W PRZERĘBLU *)
+  | GreaterEqual (* JA JESTEM PONAD TO *)
 
 (* Logical operators *)
 type logical_op =
@@ -43,6 +44,7 @@ type expr =
   | ComparisonOp of expr * comparison_op * expr          (* Comparison operation *)
   | LogicalOp of expr * logical_op * expr                (* Logical operation *)
   | BitwiseOp of expr * bitwise_op * expr                (* Bitwise operation *)
+  | LogicalNot of expr                                   (* Negacja logiczna (TAK BYĆ NIE BĘDZIE) *)
   | BitwiseNot of expr                                   (* Bitwise NOT (NA OPAK) *)
   | ArrayAccess of expr * expr                           (* Array element access (WYPIERDZIELAJ PAN NA POZYCJĘ) - supports nesting *)
   | FunctionCall of string * expr list                   (* Function call (W MORDĘ JEŻA) *)
@@ -163,6 +165,7 @@ let string_of_comparison_op = function
   | NotEqual -> "!="
   | Greater -> ">"
   | Less -> "<"
+  | GreaterEqual -> ">="
 
 (* Convert logical operator to string *)
 let string_of_logical_op = function
@@ -197,6 +200,8 @@ let rec string_of_expr = function
       "(" ^ string_of_expr e1 ^ " " ^ string_of_bitwise_op op ^ " " ^ string_of_expr e2 ^ ")"
   | BitwiseNot e ->
       "~(" ^ string_of_expr e ^ ")"
+  | LogicalNot e ->
+      "!(" ^ string_of_expr e ^ ")"
   | ArrayAccess (arr_expr, idx) ->
       string_of_expr arr_expr ^ "[" ^ string_of_expr idx ^ "]"
   | FunctionCall (name, args) ->

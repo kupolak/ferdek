@@ -12,6 +12,8 @@ let string_of_token = function
   | PRINT -> "PRINT"
   | PRINT_INLINE -> "PRINT_INLINE"
   | PRINT_NEWLINE -> "PRINT_NEWLINE"
+  | NOT -> "NOT"
+  | GREATER_EQUAL -> "GREATER_EQUAL"
   | READ -> "READ"
   | ASSIGN_START -> "ASSIGN_START"
   | ASSIGN_OP -> "ASSIGN_OP"

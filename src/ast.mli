@@ -16,6 +16,7 @@ type comparison_op =
   | NotEqual     (* PAN TU NIE MIESZKASZ *)
   | Greater      (* MOJA NOGA JUŻ TUTAJ NIE POSTANIE *)
   | Less         (* CO SIĘ TAK WIERCISZ JAK GÓWNO W PRZERĘBLU *)
+  | GreaterEqual (* JA JESTEM PONAD TO *)
 
 (* Logical operators *)
 type logical_op =
@@ -43,6 +44,7 @@ type expr =
   | ComparisonOp of expr * comparison_op * expr
   | LogicalOp of expr * logical_op * expr
   | BitwiseOp of expr * bitwise_op * expr
+  | LogicalNot of expr                                   (* Negacja logiczna (TAK BYĆ NIE BĘDZIE) *)
   | BitwiseNot of expr
   | ArrayAccess of expr * expr  (* Changed to support nested access: arr[i][j] *)
   | FunctionCall of string * expr list

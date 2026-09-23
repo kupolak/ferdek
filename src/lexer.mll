@@ -266,6 +266,7 @@ rule token = parse
   | "TO PANU SIE CHCE WTEDY KIEDY MNIE" { EQUAL }
   | "PAN TU NIE MIESZKASZ" { NOT_EQUAL }
   | "GRUBA ŚWINIA" { GREATER }
+  | "JA JESTEM PONAD TO" { GREATER_EQUAL }
   | "GRUBA SWINIA" { GREATER }
   | "ŁYSA PAŁA" { LESS }
   | "LYSA PALA" { LESS }
@@ -273,6 +274,8 @@ rule token = parse
   | "SWINIA" { LESS }
 
   (* Logical operators *)
+  | "TAK BYĆ NIE BĘDZIE" { NOT }
+  | "TAK BYC NIE BEDZIE" { NOT }
   | "PIWO I TELEWIZOR" { AND }
   | "ALBO JUTRO U ADWOKATA" { OR }
 

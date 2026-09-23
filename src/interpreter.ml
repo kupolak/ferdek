@@ -256,6 +256,7 @@ let eval_comparison_op op v1 v2 =
     | NotEqual -> c <> 0
     | Greater -> c > 0
     | Less -> c < 0
+    | GreaterEqual -> c >= 0
   )
 
 (* Evaluate logical operator *)
@@ -306,6 +307,8 @@ let rec eval_expr env = function
       let v = eval_expr env e in
       let n = to_int v in
       VInt (lnot n)
+  | LogicalNot e ->
+      VBool (not (to_bool (eval_expr env e)))
   | ToFixed e ->
       (* Convert integer to fixed-point 16.16 format *)
       let v = eval_expr env e in
