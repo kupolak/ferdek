@@ -51,7 +51,7 @@ ALL_TESTS = $(STDLIB_TESTS) $(FEATURE_TESTS) $(EXAMPLE_TESTS)
 
 # Testy, które kompilator do C musi przejść z identycznym wyjściem
 COMPILED_TESTS = $(addprefix examples/,bitwise bubble_sort fizzbuzz hello operations selection_sort simple_compile) \
-	$(addprefix tests/integration/features/,arrays functions scopes test_interpreter variables) \
+	$(addprefix tests/integration/features/,arrays conditional exceptions exceptions_nested functions preprocessor scopes test_interpreter variables) \
 	tests/integration/stdlib/test_dodaj_inline
 
 # Oczekiwane wyjście: tests/expected/<ścieżka>.out (brak pliku = sprawdzamy tylko kod wyjścia)

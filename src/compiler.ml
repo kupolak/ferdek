@@ -45,7 +45,19 @@ type codegen_context = {
   globals: (string, unit) Hashtbl.t;          (* Zmienne programu głównego *)
   mutable locals: string list;                (* Zmienne bieżącej funkcji *)
   mutable in_function: bool;
+  mutable loop_handlers: string list;         (* Handler wyjątków z wejścia do pętli (break/continue) *)
+  mutable counter: int;                       (* Unikalne nazwy pomocnicze *)
 }
+
+let fresh ctx prefix =
+  ctx.counter <- ctx.counter + 1;
+  Printf.sprintf "%s%d" prefix ctx.counter
+
+let rec has_try stmts = List.exists (function
+  | Try _ -> true
+  | If (_, a, b) -> has_try a || has_try (Option.value b ~default:[])
+  | While (_, b) -> has_try b
+  | _ -> false) stmts
 
 let is_var ctx name = List.mem name ctx.locals || Hashtbl.mem ctx.globals name
 
@@ -144,8 +156,20 @@ let rec compile_stmt ctx indent stmt =
         | Some stmts -> Printf.sprintf " else {\n%s\n%s}" (block stmts) ind
       in
       Printf.sprintf "%sif (to_bool(%s)) {\n%s\n%s}%s" ind (compile_expr ctx cond) (block then_stmts) ind else_code
+  | While (cond, body) when has_try body ->
+      (* break/continue z wnętrza try musi zdjąć handlery założone w pętli *)
+      let h = fresh ctx "loop_handler" in
+      ctx.loop_handlers <- h :: ctx.loop_handlers;
+      let body_code = block body in
+      ctx.loop_handlers <- List.tl ctx.loop_handlers;
+      Printf.sprintf "%s{\n%s    Handler* %s = ferdek_handler;\n%s    while (to_bool(%s)) {\n%s\n%s    }\n%s}"
+        ind ind h ind (compile_expr ctx cond) body_code ind ind
   | While (cond, body) ->
-      Printf.sprintf "%swhile (to_bool(%s)) {\n%s\n%s}" ind (compile_expr ctx cond) (block body) ind
+      let saved = ctx.loop_handlers in
+      ctx.loop_handlers <- "" :: saved;
+      let body_code = block body in
+      ctx.loop_handlers <- saved;
+      Printf.sprintf "%swhile (to_bool(%s)) {\n%s\n%s}" ind (compile_expr ctx cond) body_code ind
   | FunctionCallStmt (name, args) ->
       Printf.sprintf "%s%s;" ind (compile_call ctx name args)
   | FunctionCallWithAssign (var, func, args) ->
@@ -153,10 +177,22 @@ let rec compile_stmt ctx indent stmt =
   | Return e ->
       if not ctx.in_function then unsupported "return poza funkcją";
       let v = match e with None -> "make_null()" | Some e -> compile_expr ctx e in
-      Printf.sprintf "%sreturn %s;" ind v
-  | Try _ | Throw _ -> unsupported "wyjątki (HELENA MUSZĘ CI COŚ POWIEDZIEĆ)"
-  | Break -> ind ^ "break;"
-  | Continue -> ind ^ "continue;"
+      (* Wartość liczymy przed zdjęciem handlerów - może rzucić wyjątek *)
+      Printf.sprintf "%s{ FerdekValue ret = %s; ferdek_handler = entry_handler; return ret; }" ind v
+  | Try (try_stmts, var, catch_stmts) ->
+      let h = fresh ctx "handler" in
+      Printf.sprintf "%s{\n%s    Handler %s;\n%s    %s.prev = ferdek_handler;\n%s    ferdek_handler = &%s;\n%s    if (setjmp(%s.buf) == 0) {\n%s\n%s        ferdek_handler = %s.prev;\n%s    } else {\n%s        ferdek_handler = %s.prev;\n%s        %s = ferdek_exception;\n%s\n%s    }\n%s}"
+        ind ind h ind h ind h ind h
+        (String.concat "\n" (List.map (compile_stmt ctx (indent + 2)) try_stmts))
+        ind h ind ind h ind (var_c var)
+        (String.concat "\n" (List.map (compile_stmt ctx (indent + 2)) catch_stmts))
+        ind ind
+  | Throw e -> Printf.sprintf "%sferdek_throw(%s);" ind (compile_expr ctx e)
+  | Break | Continue ->
+      let kw = if stmt = Break then "break;" else "continue;" in
+      (match ctx.loop_handlers with
+       | h :: _ when h <> "" -> Printf.sprintf "%sferdek_handler = %s; %s" ind h kw
+       | _ -> ind ^ kw)
 
 (* ============ FUNCTIONS ============ *)
 
@@ -173,11 +209,16 @@ let compile_function ctx (f : function_decl) =
                |> List.filter (fun n -> not (List.mem n f.params)) in
   ctx.locals <- f.params @ locals;
   ctx.in_function <- true;
-  let decls = List.map (fun n -> Printf.sprintf "    FerdekValue %s = make_null();" (var_c n)) locals in
+  (* setjmp: lokalne zmieniane w try muszą być volatile, inaczej po longjmp mają śmieci.
+     ponytail: parametry nie są volatile - przypisanie do parametru w try i odczyt w catch to UB *)
+  let qual = if has_try f.body then "volatile " else "" in
+  let decls = "    Handler* entry_handler = ferdek_handler;"
+    :: List.map (fun n -> Printf.sprintf "    %sFerdekValue %s = make_null();" qual (var_c n)) locals in
   let body = List.map (compile_stmt ctx 1) f.body in
   ctx.locals <- [];
   ctx.in_function <- false;
-  String.concat "\n" ([Printf.sprintf "%s {" (fun_proto f)] @ decls @ body @ ["    return make_null();"; "}"])
+  String.concat "\n" ([Printf.sprintf "%s {" (fun_proto f)] @ decls @ body
+                      @ ["    ferdek_handler = entry_handler;"; "    return make_null();"; "}"])
 
 
 (* ============ TOP-LEVEL ============ *)
@@ -200,6 +241,9 @@ let compile_top_level ctx decl =
 (* ============ RUNTIME LIBRARY ============ *)
 
 let runtime_library = {|/* Ferdek Runtime Library */
+/* Nie każdy program używa każdej funkcji runtime'u */
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 /* ponytail: brak GC - pamięć stringów i tablic nie jest zwalniana (programy są krótkie) */
 
 typedef enum {
@@ -364,6 +408,22 @@ static void array_set(FerdekValue a, long long i, FerdekValue v) {
     arr->data[i] = v;
 }
 
+/* Wyjątki: stos handlerów na setjmp/longjmp */
+typedef struct Handler { jmp_buf buf; struct Handler* prev; } Handler;
+static Handler* ferdek_handler = NULL;
+static FerdekValue ferdek_exception;
+
+static void ferdek_throw(FerdekValue v) {
+    if (ferdek_handler == NULL) {
+        char* s = to_str(v);
+        fflush(stdout);
+        fprintf(stderr, "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Uncaught exception: %s\n", s);
+        exit(1);
+    }
+    ferdek_exception = v;
+    longjmp(ferdek_handler->buf, 1);
+}
+
 static void print_value(FerdekValue v) {
     char* s = to_str(v);
     puts(s);
@@ -382,7 +442,8 @@ static FerdekValue read_value(void) {
 (* ============ PROGRAM ============ *)
 
 let compile_program prog =
-  let ctx = { funcs = Hashtbl.create 16; globals = Hashtbl.create 64; locals = []; in_function = false } in
+  let ctx = { funcs = Hashtbl.create 16; globals = Hashtbl.create 64; locals = [];
+              in_function = false; loop_handlers = []; counter = 0 } in
   List.iter (function
     | FunctionDecl f -> Hashtbl.replace ctx.funcs f.name f
     | EnumDecl e -> List.iter (fun (n, _) -> Hashtbl.replace ctx.globals n ()) e.values
@@ -406,6 +467,7 @@ let compile_program prog =
     "#include <string.h>";
     "#include <stdbool.h>";
     "#include <stdarg.h>";
+    "#include <setjmp.h>";
     "";
     runtime_library;
   ] @ globals @ [""] @ protos @ [""] @ functions @ [
