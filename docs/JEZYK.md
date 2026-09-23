@@ -177,6 +177,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `ZRÓB UŁAMEK(x)` | Fixed-point 16.16 |
 | `CO TO ZA TYP(x)` | Nazwa typu wartości |
 | `KARTA LUBI DYM(min, max)` | Losowa liczba z zakresu; KARTA LUBI DYM(ziarno) ustawia ziarno |
+| `POLAŁA SIĘ KREW(format, ...)` | Zatrzymaj program z błędem (jak I_Error w DOOM); %s, %d w formacie |
 | `TRZEBA SPAĆ(ms)` | Uśpij program na podaną liczbę milisekund |
 | `JEST TRZECIA W NOCY()` | Milisekundy od startu programu (do mierzenia czasu) |
 | `PIERWIASTEK ZE SKRZYNKI(x)` | Pierwiastek kwadratowy (wbudowana, bez importu) |

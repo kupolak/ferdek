@@ -81,6 +81,48 @@ let builtins = [
   ["CO TO ZA TYP"], ("b_co_to_za_typ", Some 1);
   ["KARTA LUBI DYM"], ("b_karta_lubi_dym", None);
   ["TABLICA 2D"], ("b_tablica_2d", Some 2);
+  ["OTWÓRZ KIBEL"], ("b_otworz_kibel", Some 1);
+  ["OTWÓRZ KIBEL DO ZAPISU"], ("b_otworz_kibel_zapis", Some 1);
+  ["ZAMKNIJ KIBEL"], ("b_zamknij_kibel", Some 1);
+  ["SPUŚĆ WODĘ"], ("b_spusc_wode", Some 2);
+  ["WYPOMPUJ"], ("b_wypompuj", Some 1);
+  ["CZY KIBEL ZAJĘTY"], ("b_czy_kibel_zajety", Some 1);
+  ["ZRÓB KIBEL"], ("b_zrob_kibel", Some 1);
+  ["WYWAL KIBEL"], ("b_wywal_kibel", Some 1);
+  ["CO W KIBLU"], ("b_co_w_kiblu", Some 1);
+  ["CZY TO KIBEL"], ("b_czy_to_kibel", Some 1);
+  ["PRZEKOPIUJ KIBEL"], ("b_przekopiuj_kibel", Some 2);
+  ["PRZENIEŚ KIBEL"], ("b_przenies_kibel", Some 2);
+  ["WYKOP WSZYSTKIE KIBLE"], ("b_wykop_kible", Some 1);
+  ["SYSTEM"], ("b_system", Some 1);
+  ["OPAKUJ W GAZETĘ"], ("b_opakuj", Some 1);
+  ["DAJ MI HAJS"], ("b_daj_hajs", Some 2);
+  ["ODDAJ WSZYSTKO"], ("b_oddaj_wszystko", Some 1);
+  ["KOMORNICZY WINDYKACJA"], ("b_komornik", Some 2);
+  ["ZAPISZ DO BLOKU"], ("b_zapisz_blok", Some 3);
+  ["CZYTAJ Z BLOKU"], ("b_czytaj_blok", Some 2);
+  ["ROZMIAR BLOKU"], ("b_rozmiar_bloku", Some 1);
+  ["ILE KASY LECI"], ("b_ile_kasy", Some 0);
+  ["TAG_TRWALE"], ("b_tag_trwale", Some 0);
+  ["TAG_POZIOM"], ("b_tag_poziom", Some 0);
+  ["TAG_SMIECIOWE"], ("b_tag_smieciowe", Some 0);
+  ["PISZ BAJT"], ("b_pisz_bajt", Some 3);
+  ["CZYTAJ BAJT"], ("b_czytaj_bajt", Some 2);
+  ["KOPIUJ PAMIĘĆ"], ("b_kopiuj_pamiec", Some 3);
+  ["WŁĄCZ TELEWIZOR"], ("b_wlacz_tv", Some 2);
+  ["WYŁĄCZ TELEWIZOR"], ("b_wylacz_tv", Some 1);
+  ["ZMIEŃ KANAŁ"], ("b_zmien_kanal", Some 4);
+  ["CO LECI W TELEWIZORZE"], ("b_co_leci", Some 3);
+  ["STWÓRZ TABELĘ"], ("b_stworz_tabele", Some 1);
+  ["WPISZ DO TABELI"], ("b_wpisz_tabela", Some 3);
+  ["SPRAWDŹ W TABELI"], ("b_sprawdz_tabela", Some 2);
+  ["OTWORZ"], ("b_otworz", Some 2);
+  ["ZAMKNIJ"], ("b_zamknij", Some 1);
+  ["CZYTAJ"], ("b_czytaj", None);
+  ["PISZ"], ("b_pisz", Some 2);
+  ["SKOCZ"], ("b_skocz", None);
+  ["POZYCJA"], ("b_pozycja", Some 1);
+  ["POLAŁA SIĘ KREW"], ("b_polala_krew", None);
   ["TRZEBA SPAĆ"], ("b_trzeba_spac", Some 1);
   ["JEST TRZECIA W NOCY"], ("b_jest_trzecia", Some 0);
   ["PIERWIASTEK ZE SKRZYNKI"], ("b_pierwiastek", Some 1);
@@ -494,7 +536,8 @@ typedef enum {
     TYPE_MAP,
     TYPE_FLOAT,
     TYPE_OBJECT,     /* obiekt klasy / struktury / unii: pola w FerdekMap */
-    TYPE_POINTER
+    TYPE_POINTER,
+    TYPE_FILE
 } ValueType;
 
 typedef struct FerdekValue FerdekValue;
@@ -513,6 +556,7 @@ struct FerdekValue {
         /* self: obiekt, z którym związana jest metoda (NULL dla zwykłej funkcji) */
         struct { FerdekValue (*call)(void*, int, FerdekValue*); const char* name; int arity; bool variadic; void* self; } fn_val;
         FerdekValue* ptr_val;     /* wskaźnik: kopia wartości na stercie, jak ref w interpreterze */
+        struct { FILE* f; bool input; } file_val;
         FerdekMap* map_val;       /* wskaźnik: kopia wartości współdzieli mapę, jak w interpreterze */
     } value;
 };
@@ -660,6 +704,7 @@ static char* to_str(FerdekValue v) {
             return b.s;
         }
         case TYPE_OBJECT: return strdup("<object>");
+        case TYPE_FILE: return strdup("<file handle>");
         case TYPE_POINTER: {
             StrBuf b = {0};
             char* inner = to_str(*v.value.ptr_val);
@@ -1214,6 +1259,7 @@ static FerdekValue b_co_to_za_typ(int argc, FerdekValue* argv) {
         case TYPE_FLOAT: return make_string("PRZECINEK");
         case TYPE_OBJECT: return make_string("OBIEKT");
         case TYPE_POINTER: return make_string("WSKAŹNIK");
+        case TYPE_FILE: return make_string("KIBEL");
     }
     return make_string("?");
 }
@@ -1333,6 +1379,468 @@ static FerdekValue b_trzeba_spac(int argc, FerdekValue* argv) {
 
 static FerdekValue b_jest_trzecia(int argc, FerdekValue* argv) { return make_int((long long)ms_since_start()); }
 
+/* ---- KIBEL: pliki i katalogi (komunikaty jak Sys_error w interpreterze: "ścieżka: strerror") ---- */
+
+static FerdekValue make_file(FILE* f, bool input) {
+    FerdekValue v;
+    v.type = TYPE_FILE;
+    v.value.file_val.f = f;
+    v.value.file_val.input = input;
+    return v;
+}
+
+static FerdekValue b_otworz_kibel(int argc, FerdekValue* argv) {
+    char* path = to_str(argv[0]);
+    FILE* f = fopen(path, "r");
+    if (!f) ferdek_die("OTWÓRZ KIBEL: %s: %s", path, strerror(errno));
+    return make_file(f, true);
+}
+
+static FerdekValue b_otworz_kibel_zapis(int argc, FerdekValue* argv) {
+    char* path = to_str(argv[0]);
+    FILE* f = fopen(path, "w");
+    if (!f) ferdek_die("OTWÓRZ_KIBEL_DO_ZAPISU: %s: %s", path, strerror(errno));
+    return make_file(f, false);
+}
+
+static FerdekValue b_zamknij_kibel(int argc, FerdekValue* argv) {
+    if (argv[0].type != TYPE_FILE) ferdek_die("ZAMKNIJ_KIBEL: argument musi być uchwytem pliku");
+    fclose(argv[0].value.file_val.f);
+    return make_null();
+}
+
+static FerdekValue b_spusc_wode(int argc, FerdekValue* argv) {
+    char* data = to_str(argv[1]);
+    if (argv[0].type != TYPE_FILE) ferdek_die("SPUŚĆ_WODĘ: pierwszy argument musi być uchwytem pliku");
+    if (argv[0].value.file_val.input) ferdek_die("SPUŚĆ_WODĘ: nie można pisać do pliku otwartego do odczytu");
+    fputs(data, argv[0].value.file_val.f);
+    fflush(argv[0].value.file_val.f);
+    return make_null();
+}
+
+/* Wszystkie linie pliku (bez końców linii), jak input_line */
+static FerdekValue b_wypompuj(int argc, FerdekValue* argv) {
+    if (argv[0].type != TYPE_FILE) ferdek_die("WYPOMPUJ: argument musi być uchwytem pliku");
+    if (!argv[0].value.file_val.input) ferdek_die("WYPOMPUJ: nie można czytać z pliku otwartego do zapisu");
+    FerdekValue out = make_array(NULL, 0);
+    FerdekArray* arr = out.value.array_val;
+    char* line = NULL;
+    size_t cap = 0;
+    ssize_t n;
+    while ((n = getline(&line, &cap, argv[0].value.file_val.f)) != -1) {
+        if (n > 0 && line[n - 1] == '\n') line[n - 1] = '\0';
+        arr->data = realloc(arr->data, sizeof(FerdekValue) * (arr->length + 1));
+        arr->data[arr->length++] = make_string(line);
+    }
+    free(line);
+    return out;
+}
+
+static FerdekValue b_czy_kibel_zajety(int argc, FerdekValue* argv) {
+    struct stat st;
+    return make_bool(stat(to_str(argv[0]), &st) == 0);
+}
+
+static FerdekValue b_zrob_kibel(int argc, FerdekValue* argv) { return make_bool(mkdir(to_str(argv[0]), 0755) == 0); }
+static FerdekValue b_wywal_kibel(int argc, FerdekValue* argv) { return make_bool(rmdir(to_str(argv[0])) == 0); }
+
+static bool is_dir(const char* path) {
+    struct stat st;
+    return stat(path, &st) == 0 && S_ISDIR(st.st_mode);
+}
+
+static FerdekValue b_czy_to_kibel(int argc, FerdekValue* argv) { return make_bool(is_dir(to_str(argv[0]))); }
+
+/* Wpisy katalogu w kolejności readdir (jak w interpreterze), bez . i .. */
+static FerdekValue b_co_w_kiblu(int argc, FerdekValue* argv) {
+    FerdekValue out = make_array(NULL, 0);
+    FerdekArray* arr = out.value.array_val;
+    DIR* d = opendir(to_str(argv[0]));
+    if (!d) return out;
+    struct dirent* e;
+    while ((e = readdir(d)) != NULL) {
+        if (strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0) continue;
+        arr->data = realloc(arr->data, sizeof(FerdekValue) * (arr->length + 1));
+        arr->data[arr->length++] = make_string(e->d_name);
+    }
+    closedir(d);
+    return out;
+}
+
+static FerdekValue b_przekopiuj_kibel(int argc, FerdekValue* argv) {
+    FILE* in = fopen(to_str(argv[0]), "rb");
+    if (!in) return make_bool(false);
+    FILE* out = fopen(to_str(argv[1]), "wb");
+    if (!out) { fclose(in); return make_bool(false); }
+    char buf[4096];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof buf, in)) > 0) fwrite(buf, 1, n, out);
+    fclose(in);
+    fclose(out);
+    return make_bool(true);
+}
+
+static FerdekValue b_przenies_kibel(int argc, FerdekValue* argv) {
+    return make_bool(rename(to_str(argv[0]), to_str(argv[1])) == 0);
+}
+
+static void wykop(const char* path) {
+    if (is_dir(path)) {
+        DIR* d = opendir(path);
+        if (d) {
+            struct dirent* e;
+            while ((e = readdir(d)) != NULL) {
+                if (strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0) continue;
+                char* full = malloc(strlen(path) + strlen(e->d_name) + 2);
+                sprintf(full, "%s/%s", path, e->d_name);
+                wykop(full);
+                free(full);
+            }
+            closedir(d);
+        }
+        rmdir(path);
+    } else {
+        remove(path);
+    }
+}
+
+static FerdekValue b_wykop_kible(int argc, FerdekValue* argv) { wykop(to_str(argv[0])); return make_null(); }
+
+static FerdekValue b_system(int argc, FerdekValue* argv) {
+    fflush(stdout);
+    FILE* p = popen(to_str(argv[0]), "r");
+    if (!p) ferdek_die("SYSTEM: błąd: %s", strerror(errno));
+    StrBuf b = {0};
+    buf_add(&b, "");
+    char chunk[4096];
+    size_t n;
+    while ((n = fread(chunk, 1, sizeof chunk - 1, p)) > 0) { chunk[n] = '\0'; buf_add(&b, chunk); }
+    pclose(p);
+    return own_string(b.s);
+}
+
+/* Jak Filename.quote: '...' z ' zamienionym na '\'' */
+static FerdekValue b_opakuj(int argc, FerdekValue* argv) {
+    char* s = to_str(argv[0]);
+    StrBuf b = {0};
+    buf_add(&b, "'");
+    for (char* p = s; *p; p++) {
+        if (*p == '\'') buf_add(&b, "'\\''");
+        else { char c[2] = { *p, '\0' }; buf_add(&b, c); }
+    }
+    buf_add(&b, "'");
+    return own_string(b.s);
+}
+
+/* ---- Alokator strefowy (DAJ MI HAJS): bloki wartości, wskaźnik = wskaźnik na numer bloku ---- */
+
+typedef struct { long long size; int tag; FerdekValue* data; bool alive; } ZoneBlock;
+static ZoneBlock* zone = NULL;
+static long long zone_count = 0, zone_allocated = 0, zone_freed = 0;
+
+static int int_to_tag(long long n) { return n <= 1 ? 1 : (n <= 50 ? 50 : 100); }
+
+/* Blok spod wskaźnika; komunikaty zależą od funkcji, jak w interpreterze */
+static ZoneBlock* block_arg(FerdekValue p, const char* not_ptr, const char* bad_ptr, const char* no_block) {
+    if (p.type != TYPE_POINTER) ferdek_die("%s", not_ptr);
+    if (p.value.ptr_val->type != TYPE_INT) ferdek_die("%s", bad_ptr);
+    long long id = p.value.ptr_val->value.int_val;
+    if (id < 0 || id >= zone_count || !zone[id].alive) ferdek_die("%s", no_block);
+    return &zone[id];
+}
+
+static FerdekValue b_daj_hajs(int argc, FerdekValue* argv) {
+    long long size = to_int(argv[0]), tag = to_int(argv[1]);
+    if (size <= 0) ferdek_die("DAJ MI HAJS: rozmiar musi być dodatni");
+    zone = realloc(zone, sizeof(ZoneBlock) * (zone_count + 1));
+    ZoneBlock* b = &zone[zone_count];
+    b->size = size;
+    b->tag = int_to_tag(tag);
+    b->data = malloc(sizeof(FerdekValue) * size);
+    for (long long i = 0; i < size; i++) b->data[i] = make_null();
+    b->alive = true;
+    zone_allocated += size;
+    return make_pointer(make_int(zone_count++));
+}
+
+static FerdekValue b_oddaj_wszystko(int argc, FerdekValue* argv) {
+    ZoneBlock* b = block_arg(argv[0], "ODDAJ WSZYSTKO: argument musi być wskaźnikiem",
+                             "ODDAJ WSZYSTKO: nieprawidłowy wskaźnik", "ODDAJ WSZYSTKO: blok nie istnieje");
+    zone_freed += b->size;
+    b->alive = false;
+    return make_null();
+}
+
+static FerdekValue b_komornik(int argc, FerdekValue* argv) {
+    long long lo = to_int(argv[0]), hi = to_int(argv[1]), freed = 0;
+    for (long long i = 0; i < zone_count; i++)
+        if (zone[i].alive && zone[i].tag >= lo && zone[i].tag <= hi) {
+            zone_freed += zone[i].size;
+            zone[i].alive = false;
+            freed++;
+        }
+    return make_int(freed);
+}
+
+static FerdekValue b_zapisz_blok(int argc, FerdekValue* argv) {
+    long long i = to_int(argv[1]);
+    ZoneBlock* b = block_arg(argv[0], "ZAPISZ DO BLOKU: pierwszy argument musi być wskaźnikiem",
+                             "ZAPISZ DO BLOKU: nieprawidłowy wskaźnik", "ZAPISZ DO BLOKU: blok nie istnieje");
+    if (i < 0 || i >= b->size) ferdek_die("ZAPISZ DO BLOKU: indeks %lld poza zakresem (rozmiar: %lld)", i, b->size);
+    b->data[i] = argv[2];
+    return make_null();
+}
+
+static FerdekValue b_czytaj_blok(int argc, FerdekValue* argv) {
+    long long i = to_int(argv[1]);
+    ZoneBlock* b = block_arg(argv[0], "CZYTAJ Z BLOKU: pierwszy argument musi być wskaźnikiem",
+                             "CZYTAJ Z BLOKU: nieprawidłowy wskaźnik", "CZYTAJ Z BLOKU: blok nie istnieje");
+    if (i < 0 || i >= b->size) ferdek_die("CZYTAJ Z BLOKU: indeks %lld poza zakresem (rozmiar: %lld)", i, b->size);
+    return b->data[i];
+}
+
+static FerdekValue b_rozmiar_bloku(int argc, FerdekValue* argv) {
+    return make_int(block_arg(argv[0], "ROZMIAR BLOKU: argument musi być wskaźnikiem",
+                              "ROZMIAR BLOKU: nieprawidłowy wskaźnik", "ROZMIAR BLOKU: blok nie istnieje")->size);
+}
+
+static FerdekValue b_ile_kasy(int argc, FerdekValue* argv) {
+    long long blocks = 0;
+    for (long long i = 0; i < zone_count; i++) blocks += zone[i].alive;
+    FerdekValue m = b_szafka_otworz(0, NULL);
+    map_put(m.value.map_val, "allocated", make_int(zone_allocated));
+    map_put(m.value.map_val, "freed", make_int(zone_freed));
+    map_put(m.value.map_val, "current", make_int(zone_allocated - zone_freed));
+    map_put(m.value.map_val, "blocks", make_int(blocks));
+    return m;
+}
+
+static FerdekValue b_tag_trwale(int argc, FerdekValue* argv) { return make_int(1); }
+static FerdekValue b_tag_poziom(int argc, FerdekValue* argv) { return make_int(50); }
+static FerdekValue b_tag_smieciowe(int argc, FerdekValue* argv) { return make_int(100); }
+
+static FerdekValue b_pisz_bajt(int argc, FerdekValue* argv) {
+    long long off = to_int(argv[1]), val = to_int(argv[2]);
+    ZoneBlock* b = block_arg(argv[0], "PISZ BAJT: pierwszy argument musi być wskaźnikiem",
+                             "PISZ BAJT: pierwszy argument musi być wskaźnikiem", "PISZ BAJT: nieprawidłowy blok pamięci");
+    if (off < 0 || off >= b->size) ferdek_die("PISZ BAJT: przesunięcie poza zakresem");
+    b->data[off] = make_int(val);
+    return make_null();
+}
+
+static FerdekValue b_czytaj_bajt(int argc, FerdekValue* argv) {
+    long long off = to_int(argv[1]);
+    ZoneBlock* b = block_arg(argv[0], "CZYTAJ BAJT: pierwszy argument musi być wskaźnikiem",
+                             "CZYTAJ BAJT: pierwszy argument musi być wskaźnikiem", "CZYTAJ BAJT: nieprawidłowy blok pamięci");
+    if (off < 0 || off >= b->size) ferdek_die("CZYTAJ BAJT: przesunięcie poza zakresem");
+    return b->data[off];
+}
+
+static FerdekValue b_kopiuj_pamiec(int argc, FerdekValue* argv) {
+    long long size = to_int(argv[2]);
+    if (argv[0].type != TYPE_POINTER || argv[1].type != TYPE_POINTER ||
+        argv[0].value.ptr_val->type != TYPE_INT || argv[1].value.ptr_val->type != TYPE_INT)
+        ferdek_die("KOPIUJ PAMIĘĆ: argumenty muszą być wskaźnikami");
+    long long s = argv[0].value.ptr_val->value.int_val, d = argv[1].value.ptr_val->value.int_val;
+    if (s < 0 || s >= zone_count || !zone[s].alive || d < 0 || d >= zone_count || !zone[d].alive)
+        ferdek_die("KOPIUJ PAMIĘĆ: nieprawidłowe bloki pamięci");
+    if (size > zone[s].size || size > zone[d].size) ferdek_die("KOPIUJ PAMIĘĆ: rozmiar większy niż blok");
+    memmove(zone[d].data, zone[s].data, sizeof(FerdekValue) * size);
+    return make_null();
+}
+
+/* ---- TELEWIZOR (framebuffer w pamięci) i tablice wyszukiwania ---- */
+
+typedef struct { long long w, h; long long* px; bool alive; } Screen;
+static Screen* screens = NULL;
+static long long screen_count = 0;
+
+static Screen* screen_arg(FerdekValue p, const char* not_ptr, const char* bad) {
+    if (p.type != TYPE_POINTER || p.value.ptr_val->type != TYPE_INT) ferdek_die("%s", not_ptr);
+    long long id = p.value.ptr_val->value.int_val;
+    if (id < 0 || id >= screen_count || !screens[id].alive) ferdek_die("%s", bad);
+    return &screens[id];
+}
+
+static FerdekValue b_wlacz_tv(int argc, FerdekValue* argv) {
+    long long w = to_int(argv[0]), h = to_int(argv[1]);
+    if (w <= 0 || h <= 0) ferdek_die("WŁĄCZ TELEWIZOR: szerokość i wysokość muszą być dodatnie");
+    screens = realloc(screens, sizeof(Screen) * (screen_count + 1));
+    screens[screen_count] = (Screen){ w, h, calloc(w * h, sizeof(long long)), true };
+    return make_pointer(make_int(screen_count++));
+}
+
+static FerdekValue b_wylacz_tv(int argc, FerdekValue* argv) {
+    screen_arg(argv[0], "WYŁĄCZ TELEWIZOR: argument musi być wskaźnikiem na ekran",
+               "WYŁĄCZ TELEWIZOR: nieprawidłowy ekran")->alive = false;
+    return make_null();
+}
+
+static FerdekValue b_zmien_kanal(int argc, FerdekValue* argv) {
+    long long x = to_int(argv[1]), y = to_int(argv[2]), c = to_int(argv[3]);
+    Screen* s = screen_arg(argv[0], "ZMIEŃ KANAŁ: pierwszy argument musi być wskaźnikiem na ekran",
+                           "ZMIEŃ KANAŁ: nieprawidłowy ekran");
+    if (x < 0 || x >= s->w || y < 0 || y >= s->h) ferdek_die("ZMIEŃ KANAŁ: piksel poza ekranem");
+    s->px[y * s->w + x] = c;
+    return make_null();
+}
+
+static FerdekValue b_co_leci(int argc, FerdekValue* argv) {
+    long long x = to_int(argv[1]), y = to_int(argv[2]);
+    Screen* s = screen_arg(argv[0], "CO LECI W TELEWIZORZE: pierwszy argument musi być wskaźnikiem na ekran",
+                           "CO LECI W TELEWIZORZE: nieprawidłowy ekran");
+    if (x < 0 || x >= s->w || y < 0 || y >= s->h) ferdek_die("CO LECI W TELEWIZORZE: piksel poza ekranem");
+    return make_int(s->px[y * s->w + x]);
+}
+
+typedef struct { long long size; long long* data; } Lookup;
+static Lookup* lookups = NULL;
+static long long lookup_count = 0;
+
+static Lookup* lookup_arg(FerdekValue p, const char* not_ptr, const char* bad) {
+    if (p.type != TYPE_POINTER || p.value.ptr_val->type != TYPE_INT) ferdek_die("%s", not_ptr);
+    long long id = p.value.ptr_val->value.int_val;
+    if (id < 0 || id >= lookup_count) ferdek_die("%s", bad);
+    return &lookups[id];
+}
+
+static FerdekValue b_stworz_tabele(int argc, FerdekValue* argv) {
+    long long size = to_int(argv[0]);
+    if (size <= 0) ferdek_die("STWÓRZ TABELĘ: rozmiar musi być dodatni");
+    lookups = realloc(lookups, sizeof(Lookup) * (lookup_count + 1));
+    lookups[lookup_count] = (Lookup){ size, calloc(size, sizeof(long long)) };
+    return make_pointer(make_int(lookup_count++));
+}
+
+static FerdekValue b_wpisz_tabela(int argc, FerdekValue* argv) {
+    long long i = to_int(argv[1]), v = to_int(argv[2]);
+    Lookup* t = lookup_arg(argv[0], "WPISZ DO TABELI: pierwszy argument musi być wskaźnikiem na tabelę",
+                           "WPISZ DO TABELI: nieprawidłowa tabela");
+    if (i < 0 || i >= t->size) ferdek_die("WPISZ DO TABELI: indeks poza zakresem");
+    t->data[i] = v;
+    return make_null();
+}
+
+static FerdekValue b_sprawdz_tabela(int argc, FerdekValue* argv) {
+    long long i = to_int(argv[1]);
+    Lookup* t = lookup_arg(argv[0], "SPRAWDŹ W TABELI: pierwszy argument musi być wskaźnikiem na tabelę",
+                           "SPRAWDŹ W TABELI: nieprawidłowa tabela");
+    if (i < 0 || i >= t->size) ferdek_die("SPRAWDŹ W TABELI: indeks poza zakresem");
+    return make_int(t->data[i]);
+}
+
+/* ---- Niskopoziomowe I/O (OTWORZ / CZYTAJ / PISZ / SKOCZ / POZYCJA / ZAMKNIJ) ---- */
+
+static FerdekValue b_otworz(int argc, FerdekValue* argv) {
+    if (argv[0].type != TYPE_STRING) ferdek_die("OTWORZ: nazwa pliku musi być tekstem");
+    if (argv[1].type != TYPE_STRING) ferdek_die("OTWORZ: tryb musi być tekstem");
+    const char* name = argv[0].value.string_val;
+    const char* mode = argv[1].value.string_val;
+    bool input = strcmp(mode, "r") == 0 || strcmp(mode, "rb") == 0;
+    const char* cmode = input ? "rb"
+        : (strcmp(mode, "w") == 0 || strcmp(mode, "wb") == 0) ? "wb"
+        : (strcmp(mode, "a") == 0 || strcmp(mode, "ab") == 0) ? "ab" : NULL;
+    if (!cmode) ferdek_die("Nieprawidłowy tryb pliku: %s (dozwolone: 'r', 'w', 'a')", mode);
+    FILE* f = fopen(name, cmode);
+    if (!f) ferdek_die("Nie można otworzyć pliku '%s': %s: %s", name, name, strerror(errno));
+    return make_file(f, input);
+}
+
+static FerdekValue b_zamknij(int argc, FerdekValue* argv) {
+    if (argv[0].type != TYPE_FILE) ferdek_die("ZAMKNIJ: argument musi być uchwytem pliku");
+    fclose(argv[0].value.file_val.f);
+    return make_null();
+}
+
+static FerdekValue b_czytaj(int argc, FerdekValue* argv) {
+    if (argc == 2) {
+        long long size = to_int(argv[1]);
+        if (argv[0].type != TYPE_FILE || !argv[0].value.file_val.input)
+            ferdek_die("CZYTAJ GAZETĘ: pierwszy argument musi być uchwytem pliku do odczytu");
+        unsigned char* buf = malloc(size > 0 ? size : 1);
+        size_t n = fread(buf, 1, size, argv[0].value.file_val.f);
+        FerdekValue out = make_array(NULL, 0);
+        out.value.array_val->data = malloc(sizeof(FerdekValue) * (n > 0 ? n : 1));
+        for (size_t i = 0; i < n; i++) out.value.array_val->data[i] = make_typed(TYPE_BYTE, buf[i]);
+        out.value.array_val->length = (int)n;
+        free(buf);
+        return out;
+    }
+    if (argc == 1) {
+        if (argv[0].type != TYPE_FILE || !argv[0].value.file_val.input)
+            ferdek_die("CZYTAJ: argument musi być uchwytem pliku do odczytu");
+        int c = fgetc(argv[0].value.file_val.f);
+        return c == EOF ? make_int(-1) : make_typed(TYPE_BYTE, c);
+    }
+    ferdek_die("CZYTAJ oczekuje 1 albo 2 argumentów");
+    return make_null();
+}
+
+static FerdekValue b_pisz(int argc, FerdekValue* argv) {
+    if (argv[0].type != TYPE_FILE || argv[0].value.file_val.input)
+        ferdek_die("PISZ: pierwszy argument musi być uchwytem pliku do zapisu");
+    FILE* f = argv[0].value.file_val.f;
+    FerdekValue d = argv[1];
+    if (d.type == TYPE_ARRAY) {
+        for (int i = 0; i < d.value.array_val->length; i++) fputc((int)(to_int(d.value.array_val->data[i]) & 0xFF), f);
+        return make_int(d.value.array_val->length);
+    }
+    if (d.type == TYPE_STRING) { fputs(d.value.string_val, f); return make_int((long long)strlen(d.value.string_val)); }
+    if (d.type == TYPE_BYTE || d.type == TYPE_INT || d.type == TYPE_SHORT) { fputc((int)(d.value.int_val & 0xFF), f); return make_int(1); }
+    ferdek_die("PISZ: dane muszą być tablicą, tekstem albo bajtem");
+    return make_null();
+}
+
+static FerdekValue b_skocz(int argc, FerdekValue* argv) {
+    if (argc != 2 && argc != 3) ferdek_die("SKOCZ oczekuje 2 albo 3 argumentów (file_handle, offset, [mode])");
+    long long off = to_int(argv[1]);
+    long long mode = argc == 3 ? to_int(argv[2]) : 0;
+    if (argv[0].type != TYPE_FILE) ferdek_die("SKOCZ: pierwszy argument musi być uchwytem pliku");
+    FILE* f = argv[0].value.file_val.f;
+    long long pos;
+    if (mode == 0) pos = off;
+    else if (mode == 1) pos = ftell(f) + off;
+    else if (mode == -1) { pos = ftell(f) - off; if (pos < 0) pos = 0; }
+    else { ferdek_die("SKOCZ: tryb musi być 0 (od początku), 1 (do przodu) albo -1 (do tyłu)"); pos = 0; }
+    fseek(f, pos, SEEK_SET);
+    return make_int(pos);
+}
+
+static FerdekValue b_pozycja(int argc, FerdekValue* argv) {
+    if (argv[0].type != TYPE_FILE) ferdek_die("POZYCJA: argument musi być uchwytem pliku");
+    return make_int(ftell(argv[0].value.file_val.f));
+}
+
+/* POLAŁA SIĘ KREW(format, ...) - I_Error z DOOM-a; formatowanie jak w interpreterze */
+static FerdekValue b_polala_krew(int argc, FerdekValue* argv) {
+    if (argc == 0) ferdek_die("POLAŁA SIĘ KREW: potrzeba co najmniej jednego argumentu");
+    char* fmt = to_str(argv[0]);
+    StrBuf b = {0};
+    buf_add(&b, "");
+    int next = 1;
+    for (char* p = fmt; *p; ) {
+        if (p[0] == '%' && p[1]) {
+            char spec = p[1];
+            char num[32];
+            if ((spec == 'd' || spec == 'i') && next < argc) {
+                snprintf(num, sizeof num, "%lld", to_int(argv[next++])); buf_add(&b, num); p += 2; continue;
+            }
+            if (spec == 's' && next < argc) { char* s = to_str(argv[next++]); buf_add(&b, s); free(s); p += 2; continue; }
+            if (spec == '%') { buf_add(&b, "%"); p += 2; continue; }
+            if (next >= argc) { buf_add(&b, "%"); p += 1; continue; }   /* brak argumentów: zostaw samo % */
+            char keep[3] = { '%', spec, '\0' };
+            buf_add(&b, keep);
+            p += 2;
+            continue;
+        }
+        char c[2] = { *p, '\0' };
+        buf_add(&b, c);
+        p++;
+    }
+    ferdek_die("I_Error: %s", b.s);
+    return make_null();
+}
+
 static FerdekValue zeros(long long n) {
     FerdekValue v = make_array(NULL, 0);
     v.value.array_val->data = malloc(sizeof(FerdekValue) * n);
@@ -1450,6 +1958,10 @@ let compile_program ?(load_module = fun _ -> None) prog =
     "#include <time.h>";
     "#include <ctype.h>";
     "#include <math.h>";
+    "#include <errno.h>";
+    "#include <dirent.h>";
+    "#include <unistd.h>";
+    "#include <sys/stat.h>";
     "";
     runtime_library;
   ] @ globals @ [""] @ protos @ object_protos @ [""] @ functions @ method_code @ [""] @ wrappers

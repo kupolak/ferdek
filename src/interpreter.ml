@@ -1594,7 +1594,7 @@ let () =
                        let src_block = Hashtbl.find zone_blocks src_id in
                        let dst_block = Hashtbl.find zone_blocks dst_id in
                        if size > src_block.size || size > dst_block.size then
-                         raise (RuntimeError "KOPIUJ PAMIĘĆ: size exceeds block size")
+                         raise (RuntimeError "KOPIUJ PAMIĘĆ: rozmiar większy niż blok")
                        else begin
                          Array.blit src_block.data 0 dst_block.data 0 size;
                          VNull

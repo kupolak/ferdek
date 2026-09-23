@@ -1,0 +1,29 @@
+=== Test Framebuffer i Direct Memory Access (DOOM-style) ===
+
+Test 1: Tworzenie framebuffera (ekran 320x200)
+Utworzono framebuffer 320x200 pikseli
+
+Test 2: Pisanie pikseli do framebuffera
+Narysowano 5 białych pikseli (kolor 255)
+Piksel na (10,10) = 255
+
+Test 3: Lookup table (jak ylookup[] w DOOM)
+Wypełniono ylookup table
+ylookup[50] = 16000 (oczekiwane: 16000 = 50*320)
+
+Test 4: Bezpośredni dostęp do pamięci
+Wypełniono teksturę gradientem
+Bajt[0] = 0, Bajt[5] = 20, Bajt[10] = 40, Bajt[20] = 80
+
+Test 5: KOPIUJ PAMIĘĆ (memcpy)
+Skopiowano 30 bajtów
+Skopiowane bajty: 0, 20, 80
+
+Test 6: Symulacja DOOM R_DrawColumn
+Narysowano kolumnę tekstury (DOOM R_DrawColumn style)
+
+Test 7: Czyszczenie zasobów
+Zwolniono framebuffer i tekstury
+
+=== Framebuffer działa jak w DOOM! ===
+Program zakończony pomyślnie. Piwo dla Pana!
