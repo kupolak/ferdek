@@ -1,1 +1,1 @@
-Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Runtime error: WŁÓŻ DO SZAFKI: first argument must be a dictionary (tests/errors/szafka_nie_szafka.ferdek, linia 4)
+Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: WŁÓŻ DO SZAFKI: pierwszy argument musi być szafką (mapą) (tests/errors/szafka_nie_szafka.ferdek, linia 4)

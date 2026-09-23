@@ -1,2 +1,2 @@
 start
-Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Runtime error: Tekst "abc" to nie liczba (tests/errors/tekst_to_nie_liczba.ferdek, linia 3)
+Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Tekst "abc" to nie liczba (tests/errors/tekst_to_nie_liczba.ferdek, linia 3)

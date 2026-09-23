@@ -1,2 +1,2 @@
 linia 9
-Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Runtime error: Division by zero (tests/errors/dzielenie_w_funkcji.ferdek, linia 10)
+Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Dzielenie przez zero (tests/errors/dzielenie_w_funkcji.ferdek, linia 10)

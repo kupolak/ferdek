@@ -49,7 +49,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
   let check_arity name expected given =
     match expected with
     | Some n when n <> given ->
-        report (Printf.sprintf "%s oczekuje %d argumentów, podano %d" name n given)
+        report (Printf.sprintf "%s oczekuje %s, podano %d" name (Errors.argumentow n) given)
     | _ -> ()
   in
   let rec expr sc = function
@@ -66,7 +66,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
              let n = List.length f.params in
              if f.is_variadic then
                (if given < n then
-                  report (Printf.sprintf "%s oczekuje co najmniej %d argumentów, podano %d" name n given))
+                  report (Printf.sprintf "%s oczekuje co najmniej %s, podano %d" name (Errors.argumentow n) given))
              else check_arity name (Some n) given
          | None, None -> report ("Nieznana funkcja: " ^ name))
     | NewObject (c, args) ->

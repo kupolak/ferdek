@@ -202,7 +202,7 @@ and compile_call ctx name args =
   | Some (c_name, arity), _ ->
       (match arity with
        | Some n when n <> List.length args ->
-           error (Printf.sprintf "%s oczekuje %d argumentów, podano %d" name n (List.length args))
+           error (Printf.sprintf "%s oczekuje %s, podano %d" name (Errors.argumentow n) (List.length args))
        | _ -> ());
       Printf.sprintf "%s(%d, %s)" c_name (List.length args) (argv_c c_args)
   | None, Some f when is_function_name ctx name ->
@@ -210,14 +210,14 @@ and compile_call ctx name args =
       let given = List.length args in
       if f.is_variadic then begin
         if given < n then
-          error (Printf.sprintf "Funkcja %s oczekuje co najmniej %d argumentów, podano %d" name n given);
+          error (Printf.sprintf "Funkcja %s oczekuje co najmniej %s, podano %d" name (Errors.argumentow n) given);
         let fixed = List.filteri (fun i _ -> i < n) c_args in
         let rest = List.filteri (fun i _ -> i >= n) c_args in
         Printf.sprintf "%s(%s)" (fun_c name)
           (String.concat ", " (fixed @ [Printf.sprintf "make_array(%s, %d)" (argv_c rest) (List.length rest)]))
       end else begin
         if given <> n then
-          error (Printf.sprintf "Funkcja %s oczekuje %d argumentów, podano %d" name n given);
+          error (Printf.sprintf "Funkcja %s oczekuje %s, podano %d" name (Errors.argumentow n) given);
         Printf.sprintf "%s(%s)" (fun_c name) (String.concat ", " c_args)
       end
   | None, _ when is_var ctx name ->
@@ -426,7 +426,7 @@ static void print_loc(void) {
 static void ferdek_die(const char* fmt, ...) {
     va_list ap;
     fflush(stdout);
-    fprintf(stderr, "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Runtime error: ");
+    fprintf(stderr, "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: ");
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);
@@ -479,7 +479,7 @@ static long long to_int(FerdekValue v) {
             return strtoll(v.value.string_val, NULL, 10);
         case TYPE_NULL: return 0;
         case TYPE_FLOAT: ferdek_die("Liczba z przecinkiem tam, gdzie trzeba całkowitej (użyj ZRÓB DŁUGI)"); return 0;
-        default: ferdek_die("Cannot convert to integer"); return 0;
+        default: ferdek_die("Tego nie da się zamienić na liczbę"); return 0;
     }
 }
 
@@ -608,22 +608,22 @@ static FerdekValue op_mul(FerdekValue a, FerdekValue b) {
 static FerdekValue op_div(FerdekValue a, FerdekValue b) {
     if (ANY_FLOAT(a, b)) {
         double d = to_float(b);
-        if (d == 0.0) ferdek_die("Division by zero");
+        if (d == 0.0) ferdek_die("Dzielenie przez zero");
         return make_float(to_float(a) / d);
     }
     long long d = to_int(b);
-    if (d == 0) ferdek_die("Division by zero");
+    if (d == 0) ferdek_die("Dzielenie przez zero");
     return make_int(to_int(a) / d);
 }
 
 static FerdekValue op_mod(FerdekValue a, FerdekValue b) {
     if (ANY_FLOAT(a, b)) {
         double d = to_float(b);
-        if (d == 0.0) ferdek_die("Modulo by zero");
+        if (d == 0.0) ferdek_die("Reszta z dzielenia przez zero");
         return make_float(fmod(to_float(a), d));
     }
     long long d = to_int(b);
-    if (d == 0) ferdek_die("Modulo by zero");
+    if (d == 0) ferdek_die("Reszta z dzielenia przez zero");
     return make_int(to_int(a) % d);
 }
 
@@ -661,6 +661,9 @@ static FerdekValue compare_op(FerdekValue a, FerdekValue b, int op) {
 static FerdekValue logic_and(FerdekValue a, FerdekValue b) { return make_bool(to_bool(a) && to_bool(b)); }
 static FerdekValue logic_or(FerdekValue a, FerdekValue b) { return make_bool(to_bool(a) || to_bool(b)); }
 
+/* "1 argumentu", "2 argumentów" - jak Errors.argumentow */
+#define ARGUMENTOW(n) ((n) == 1 ? "argumentu" : "argumentów")
+
 static FerdekValue make_function(FerdekValue (*call)(int, FerdekValue*), const char* name, int arity, bool variadic) {
     FerdekValue v;
     v.type = TYPE_FUNCTION;
@@ -673,22 +676,22 @@ static FerdekValue make_function(FerdekValue (*call)(int, FerdekValue*), const c
 
 /* name = nazwa użyta w wywołaniu (jak w komunikatach interpretera) */
 static FerdekValue call_value(FerdekValue f, const char* name, int argc, FerdekValue* argv) {
-    if (f.type != TYPE_FUNCTION) ferdek_die("%s is not a function", name);
+    if (f.type != TYPE_FUNCTION) ferdek_die("%s to nie funkcja", name);
     if (f.value.fn_val.variadic && argc < f.value.fn_val.arity)
-        ferdek_die("Function %s expects at least %d arguments, got %d", name, f.value.fn_val.arity, argc);
+        ferdek_die("Funkcja %s oczekuje co najmniej %d %s, podano %d", name, f.value.fn_val.arity, ARGUMENTOW(f.value.fn_val.arity), argc);
     if (!f.value.fn_val.variadic && argc != f.value.fn_val.arity)
-        ferdek_die("Function %s expects %d arguments, got %d", name, f.value.fn_val.arity, argc);
+        ferdek_die("Funkcja %s oczekuje %d %s, podano %d", name, f.value.fn_val.arity, ARGUMENTOW(f.value.fn_val.arity), argc);
     return f.value.fn_val.call(argc, argv);
 }
 
 static FerdekArray* as_array(FerdekValue a) {
-    if (a.type != TYPE_ARRAY) ferdek_die("Not an array");
+    if (a.type != TYPE_ARRAY) ferdek_die("To nie jest tablica");
     return a.value.array_val;
 }
 
 static FerdekValue array_get(FerdekValue a, long long i) {
     FerdekArray* arr = as_array(a);
-    if (i < 0 || i >= arr->length) ferdek_die("Array index out of bounds");
+    if (i < 0 || i >= arr->length) ferdek_die("Array indeks poza zakresem");
     return arr->data[i];
 }
 
@@ -707,7 +710,7 @@ static void ferdek_throw(FerdekValue v) {
     if (ferdek_handler == NULL) {
         char* s = to_str(v);
         fflush(stdout);
-        fprintf(stderr, "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Uncaught exception: %s", s);
+        fprintf(stderr, "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Nikt nie złapał wyjątku: %s", s);
         print_loc();
         fprintf(stderr, "\n");
         exit(1);
@@ -752,8 +755,8 @@ static FerdekValue b_kanapa_rozciagnij(int argc, FerdekValue* argv) {
 static FerdekValue b_kanapa_potnij(int argc, FerdekValue* argv) {
     char* s = to_str(argv[0]);
     long long len = strlen(s), start = to_int(argv[1]), end = to_int(argv[2]);
-    if (start < 0 || start >= len) ferdek_die("POTNIJ KANAPĘ: start index out of bounds");
-    if (end < start || end > len) ferdek_die("POTNIJ KANAPĘ: end index out of bounds");
+    if (start < 0 || start >= len) ferdek_die("POTNIJ KANAPĘ: początek poza zakresem");
+    if (end < start || end > len) ferdek_die("POTNIJ KANAPĘ: koniec poza zakresem");
     s[end] = '\0';
     return make_string(s + start);
 }
@@ -777,7 +780,7 @@ static FerdekValue b_kanapa_przesun(int argc, FerdekValue* argv) {
 }
 
 static FerdekValue b_kanapa_poskladaj(int argc, FerdekValue* argv) {
-    if (argv[0].type != TYPE_ARRAY) ferdek_die("POSKŁADAJ KANAPĘ expects an array as first argument");
+    if (argv[0].type != TYPE_ARRAY) ferdek_die("POSKŁADAJ KANAPĘ: pierwszy argument musi być tablicą");
     FerdekArray* arr = argv[0].value.array_val;
     char* sep = to_str(argv[1]);
     StrBuf b = {0};
@@ -867,25 +870,25 @@ static FerdekArray* list_arg(FerdekValue v, const char* msg) {
 }
 
 static FerdekValue b_wersalka_ile(int argc, FerdekValue* argv) {
-    return make_int(list_arg(argv[0], "ILE NA WERSALCE: argument must be an array")->length);
+    return make_int(list_arg(argv[0], "ILE NA WERSALCE: argument musi być tablicą")->length);
 }
 
 /* Jak w interpreterze: zwraca nową tablicę, oryginał bez zmian */
 static FerdekValue b_wersalka_poloz(int argc, FerdekValue* argv) {
-    FerdekArray* arr = list_arg(argv[0], "POŁÓŻ NA WERSALCE: first argument must be an array");
+    FerdekArray* arr = list_arg(argv[0], "POŁÓŻ NA WERSALCE: pierwszy argument musi być tablicą");
     FerdekValue out = make_array(arr->data, arr->length + 1);
     out.value.array_val->data[arr->length] = argv[1];
     return out;
 }
 
 static FerdekValue b_wersalka_zdejmij(int argc, FerdekValue* argv) {
-    FerdekArray* arr = list_arg(argv[0], "ZDEJMIJ Z WERSALKI: argument must be an array");
+    FerdekArray* arr = list_arg(argv[0], "ZDEJMIJ Z WERSALKI: argument musi być tablicą");
     if (arr->length == 0) ferdek_die("ZDEJMIJ Z WERSALKI: lista jest pusta");
     return arr->data[arr->length - 1];
 }
 
 static FerdekValue b_wersalka_czy_lezy(int argc, FerdekValue* argv) {
-    FerdekArray* arr = list_arg(argv[0], "CZY LEŻY NA WERSALCE: first argument must be an array");
+    FerdekArray* arr = list_arg(argv[0], "CZY LEŻY NA WERSALCE: pierwszy argument musi być tablicą");
     FerdekValue x = argv[1];
     for (int i = 0; i < arr->length; i++) {
         FerdekValue a = arr->data[i];
@@ -936,7 +939,7 @@ static long long ferdek_rng = -1;
 
 static FerdekValue b_karta_lubi_dym(int argc, FerdekValue* argv) {
     if (argc == 1) { ferdek_rng = to_int(argv[0]) & 0x7FFFFFFF; return make_null(); }
-    if (argc != 2) ferdek_die("KARTA LUBI DYM expects 1 argument (seed) or 2 (min, max)");
+    if (argc != 2) ferdek_die("KARTA LUBI DYM oczekuje 1 argumentu (ziarno) albo 2 (min, max)");
     long long lo = to_int(argv[0]), hi = to_int(argv[1]);
     if (lo > hi) ferdek_die("KARTA LUBI DYM: min większe niż max");
     if (ferdek_rng < 0) ferdek_rng = ((long long)time(NULL) * 1000 + clock()) & 0x7FFFFFFF;
@@ -959,7 +962,7 @@ static FerdekValue b_szafka_otworz(int argc, FerdekValue* argv) {
 }
 
 static FerdekValue b_szafka_wloz(int argc, FerdekValue* argv) {
-    FerdekMap* m = map_arg(argv[0], "WŁÓŻ DO SZAFKI: first argument must be a dictionary");
+    FerdekMap* m = map_arg(argv[0], "WŁÓŻ DO SZAFKI: pierwszy argument musi być szafką (mapą)");
     char* key = to_str(argv[1]);
     int i = map_find(m, key);
     if (i >= 0) { m->vals[i] = argv[2]; free(key); return make_null(); }
@@ -974,7 +977,7 @@ static FerdekValue b_szafka_wloz(int argc, FerdekValue* argv) {
 }
 
 static FerdekValue b_szafka_wyjmij(int argc, FerdekValue* argv) {
-    FerdekMap* m = map_arg(argv[0], "WYJMIJ Z SZAFKI: first argument must be a dictionary");
+    FerdekMap* m = map_arg(argv[0], "WYJMIJ Z SZAFKI: pierwszy argument musi być szafką (mapą)");
     char* key = to_str(argv[1]);
     int i = map_find(m, key);
     free(key);
@@ -982,7 +985,7 @@ static FerdekValue b_szafka_wyjmij(int argc, FerdekValue* argv) {
 }
 
 static FerdekValue b_szafka_wyrzuc(int argc, FerdekValue* argv) {
-    FerdekMap* m = map_arg(argv[0], "WYRZUĆ ZE SZAFKI: first argument must be a dictionary");
+    FerdekMap* m = map_arg(argv[0], "WYRZUĆ ZE SZAFKI: pierwszy argument musi być szafką (mapą)");
     char* key = to_str(argv[1]);
     int i = map_find(m, key);
     free(key);
@@ -996,7 +999,7 @@ static FerdekValue b_szafka_wyrzuc(int argc, FerdekValue* argv) {
 }
 
 static FerdekValue b_szafka_czy_w(int argc, FerdekValue* argv) {
-    FerdekMap* m = map_arg(argv[0], "CZY W SZAFCE: first argument must be a dictionary");
+    FerdekMap* m = map_arg(argv[0], "CZY W SZAFCE: pierwszy argument musi być szafką (mapą)");
     char* key = to_str(argv[1]);
     bool found = map_find(m, key) >= 0;
     free(key);
@@ -1004,7 +1007,7 @@ static FerdekValue b_szafka_czy_w(int argc, FerdekValue* argv) {
 }
 
 static FerdekValue b_szafka_szufladki(int argc, FerdekValue* argv) {
-    FerdekMap* m = map_arg(argv[0], "WSZYSTKIE SZUFLADKI: argument must be a dictionary");
+    FerdekMap* m = map_arg(argv[0], "WSZYSTKIE SZUFLADKI: argument musi być szafką (mapą)");
     char** keys = map_sorted_keys(m);
     FerdekValue out = make_array(NULL, 0);
     out.value.array_val->data = malloc(sizeof(FerdekValue) * (m->len > 0 ? m->len : 1));
@@ -1015,7 +1018,7 @@ static FerdekValue b_szafka_szufladki(int argc, FerdekValue* argv) {
 }
 
 static FerdekValue b_szafka_ile(int argc, FerdekValue* argv) {
-    return make_int(map_arg(argv[0], "ILE W SZAFCE: argument must be a dictionary")->len);
+    return make_int(map_arg(argv[0], "ILE W SZAFCE: argument musi być szafką (mapą)")->len);
 }
 
 static FerdekValue zeros(long long n) {
@@ -1028,7 +1031,7 @@ static FerdekValue zeros(long long n) {
 
 static FerdekValue b_tablica_2d(int argc, FerdekValue* argv) {
     long long rows = to_int(argv[0]), cols = to_int(argv[1]);
-    if (rows <= 0 || cols <= 0) ferdek_die("TABLICA 2D: dimensions must be positive");
+    if (rows <= 0 || cols <= 0) ferdek_die("TABLICA 2D: wymiary muszą być dodatnie");
     FerdekValue t = zeros(rows);
     for (long long i = 0; i < rows; i++) t.value.array_val->data[i] = zeros(cols);
     return t;
@@ -1036,7 +1039,7 @@ static FerdekValue b_tablica_2d(int argc, FerdekValue* argv) {
 
 static FerdekValue b_tablica_3d(int argc, FerdekValue* argv) {
     long long x = to_int(argv[0]), y = to_int(argv[1]), z = to_int(argv[2]);
-    if (x <= 0 || y <= 0 || z <= 0) ferdek_die("TABLICA 3D: dimensions must be positive");
+    if (x <= 0 || y <= 0 || z <= 0) ferdek_die("TABLICA 3D: wymiary muszą być dodatnie");
     FerdekValue t = zeros(x);
     for (long long i = 0; i < x; i++) {
         FerdekValue plane = zeros(y);

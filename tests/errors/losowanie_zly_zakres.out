@@ -1,2 +1,2 @@
 przed
-Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Runtime error: KARTA LUBI DYM: min większe niż max (tests/errors/losowanie_zly_zakres.ferdek, linia 3)
+Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: KARTA LUBI DYM: min większe niż max (tests/errors/losowanie_zly_zakres.ferdek, linia 3)

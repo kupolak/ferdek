@@ -1,1 +1,1 @@
-Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Runtime error: ZNAK Z KANAPY: indeks poza zakresem (tests/errors/znak_poza_zakresem.ferdek, linia 2)
+Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: ZNAK Z KANAPY: indeks poza zakresem (tests/errors/znak_poza_zakresem.ferdek, linia 2)
