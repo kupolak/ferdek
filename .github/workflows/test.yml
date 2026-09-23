@@ -1,0 +1,39 @@
+name: Testy
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Grafika (X11) jest częścią biblioteki, więc potrzebne są nagłówki i libX11
+      - name: X11 (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev
+      - name: X11 (macOS)
+        if: runner.os == 'macOS'
+        run: brew install libx11
+
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.2
+
+      - name: Zależności OCaml
+        run: opam install -y dune menhir menhirLib
+
+      # Testy jednostkowe, integracyjne (interpreter + kompilacja do C), błędy, REPL,
+      # --check, aktualność docs/JEZYK.md. Bez sieci (test-network) i bez okien X11.
+      - name: make test
+        run: opam exec -- make test
+
+      # Losowe programy: interpreter i skompilowany C muszą dać to samo
+      - name: Zgodność trybów (fuzz)
+        run: opam exec -- make test-fuzz FUZZ_COUNT=30

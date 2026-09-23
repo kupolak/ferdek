@@ -31,8 +31,9 @@
  (foreign_stubs
   (language c)
   (names graphics_stubs graphics_x11)
-  (flags -I/opt/X11/include))
- (c_library_flags (-L/opt/X11/lib -lX11)))
+  ; XQuartz (/opt/X11) albo Homebrew (/opt/homebrew, /usr/local); na Linuksie ścieżki systemowe
+  (flags -I/opt/X11/include -I/opt/homebrew/include -I/usr/local/include))
+ (c_library_flags (-L/opt/X11/lib -L/opt/homebrew/lib -L/usr/local/lib -lX11)))
 
 (executable
  (name ferdek)
