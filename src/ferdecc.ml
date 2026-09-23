@@ -134,6 +134,7 @@ let () =
   | None -> usage ()
   | Some input ->
       let result =
+        try
         if run_mode then
           compile_run_cleanup input
         else if compile_only then
@@ -148,6 +149,9 @@ let () =
             | None -> Filename.remove_extension input
           in
           compile_and_link input output
+        with Compiler.Compile_error msg ->
+          Printf.eprintf "%s\n" msg;
+          Error msg
       in
       match result with
       | Ok () -> exit 0

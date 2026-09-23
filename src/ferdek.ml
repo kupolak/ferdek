@@ -148,75 +148,58 @@ let interpret_file filename =
       Printf.eprintf "A fe! %s\n" msg;
       1
 
-(* Kompiluje plik do C *)
-let compile_file input_file output_file =
+(* Parsuje i generuje kod C; błędy parsowania i nieobsługiwane konstrukcje -> Error *)
+let generate_c input_file =
   match parse_file input_file with
+  | Error msg -> Error msg
   | Ok ast ->
-      let c_code = Compiler.compile_program ast in
-      let oc = open_out output_file in
-      output_string oc c_code;
-      close_out oc;
+      (try Ok (Compiler.compile_program ast)
+       with Compiler.Compile_error msg -> Error msg)
+
+let write_file path content =
+  let oc = open_out path in
+  output_string oc content;
+  close_out oc
+
+(* cc zamiast gcc: na macOS i Linuksie to domyślny kompilator C *)
+let cc c_file exe = Sys.command (Printf.sprintf "cc -std=c99 -o %s %s" (Filename.quote exe) (Filename.quote c_file))
+
+(* -c: plik .c albo (inne rozszerzenie) gotowa binarka *)
+let compile_file input_file output_file =
+  match generate_c input_file with
+  | Error msg -> Printf.eprintf "A fe! %s\n" msg; 1
+  | Ok c_code when Filename.check_suffix output_file ".c" ->
+      write_file output_file c_code;
       Printf.printf "No i gitara! Kod C gotowy: %s -> %s\n" input_file output_file;
       0
-  | Error msg ->
-      Printf.eprintf "A fe! %s\n" msg;
-      1
-
-(* Kompiluje i linkuje do executable *)
-let compile_and_link input_file output_exe =
-  let c_file = (Filename.remove_extension input_file) ^ ".c" in
-  match parse_file input_file with
-  | Ok ast ->
-      let c_code = Compiler.compile_program ast in
-      let oc = open_out c_file in
-      output_string oc c_code;
-      close_out oc;
-      
-      let cmd = Printf.sprintf "gcc -o %s %s -std=c99" output_exe c_file in
-      Printf.printf "No to jazda! Kręcimy to C: %s\n" cmd;
-      let exit_code = Sys.command cmd in
-      if exit_code = 0 then begin
-        Printf.printf "Sukces! Działa! Halina, mam pieniądze! (Plik: %s)\n" output_exe;
+  | Ok c_code ->
+      let c_file = Filename.temp_file "ferdek_" ".c" in
+      write_file c_file c_code;
+      let rc = cc c_file output_file in
+      (try Sys.remove c_file with _ -> ());
+      if rc = 0 then begin
+        Printf.printf "Sukces! Działa! Halina, mam pieniądze! (Plik: %s)\n" output_file;
         0
       end else begin
-        Printf.eprintf "Błąd kompilacji gcc. A żeby cię Babka pokręciła! (Kod: %d)\n" exit_code;
+        Printf.eprintf "Błąd kompilacji C. A żeby cię Babka pokręciła! (Kod: %d)\n" rc;
         1
       end
-  | Error msg ->
-      Printf.eprintf "A fe! %s\n" msg;
-      1
 
-(* Kompiluje, uruchamia i czyści *)
+(* -r: kompiluje, uruchamia i sprząta *)
 let quick_run input_file =
-  match parse_file input_file with
-  | Ok ast ->
-      let c_code = Compiler.compile_program ast in
+  match generate_c input_file with
+  | Error msg -> Printf.eprintf "A fe! %s\n" msg; 1
+  | Ok c_code ->
       let temp_c = Filename.temp_file "ferdek_" ".c" in
       let temp_exe = Filename.temp_file "ferdek_" "" in
-
-      let oc = open_out temp_c in
-      output_string oc c_code;
-      close_out oc;
-
-      let compile_cmd = Printf.sprintf "gcc -o %s %s -std=c99 2>/dev/null"
-        temp_exe temp_c in
-
-      let compile_exit = Sys.command compile_cmd in
-
-      if compile_exit = 0 then begin
-        let run_exit = Sys.command temp_exe in
-        (try Sys.remove temp_c with _ -> ());
-        (try Sys.remove temp_exe with _ -> ());
-        run_exit
-      end else begin
-        (try Sys.remove temp_c with _ -> ());
-        (try Sys.remove temp_exe with _ -> ());
-        Printf.eprintf "Błąd kompilacji. Nawet szybki szlag się nie udał...\n";
-        1
-      end
-  | Error msg ->
-      Printf.eprintf "A fe! %s\n" msg;
-      1
+      write_file temp_c c_code;
+      let rc =
+        if cc temp_c temp_exe = 0 then Sys.command (Filename.quote temp_exe)
+        else (Printf.eprintf "Błąd kompilacji. Nawet szybki szlag się nie udał...\n"; 1)
+      in
+      (try Sys.remove temp_c with _ -> ());
+      (try Sys.remove temp_exe with _ -> ());
+      rc
 
 (* REPL *)
 let repl () =

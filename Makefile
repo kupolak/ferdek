@@ -49,6 +49,11 @@ EXAMPLE_TESTS = $(addprefix examples/,advanced_features arrays2d bitwise bubble_
 	selection_sort simple_compile structs types unions variadic variadic_simple)
 ALL_TESTS = $(STDLIB_TESTS) $(FEATURE_TESTS) $(EXAMPLE_TESTS)
 
+# Testy, które kompilator do C musi przejść z identycznym wyjściem
+COMPILED_TESTS = $(addprefix examples/,bitwise bubble_sort fizzbuzz hello operations selection_sort simple_compile) \
+	$(addprefix tests/integration/features/,arrays functions scopes test_interpreter variables) \
+	tests/integration/stdlib/test_dodaj_inline
+
 # Oczekiwane wyjście: tests/expected/<ścieżka>.out (brak pliku = sprawdzamy tylko kod wyjścia)
 # Uruchamia pliki .ferdek, zlicza porażki, kończy się błędem jeśli któryś padł
 run_ferdek = @fail=0; for t in $(1); do \
@@ -59,6 +64,19 @@ run_ferdek = @fail=0; for t in $(1); do \
 	    echo "FAIL (inne wyjście)"; head -20 _build/ferdek_test.diff; fail=$$((fail+1)); \
 	  else echo OK; fi; \
 	done; [ $$fail -eq 0 ] || { echo "Padło testów: $$fail"; exit 1; }
+
+# Kompiluje przez C, uruchamia i porównuje z tym samym .out co interpreter
+# (bez linii "Piwo dla Pana" - drukuje ją tylko interpreter)
+run_compiled = @fail=0; for t in $(1); do \
+	  printf -- "--- [C] %s: " $$t; \
+	  if ! $(FERDEK) -c $$t.ferdek -o _build/ferdek_ct > _build/ferdek_ct.log 2>&1; then \
+	    echo "FAIL (kompilacja)"; tail -3 _build/ferdek_ct.log; fail=$$((fail+1)); \
+	  elif ! _build/ferdek_ct > _build/ferdek_ct.out 2>&1 < /dev/null; then \
+	    echo FAIL; tail -3 _build/ferdek_ct.out; fail=$$((fail+1)); \
+	  elif ! grep -v "Piwo dla Pana" tests/expected/$$t.out | diff -u - _build/ferdek_ct.out > _build/ferdek_ct.diff; then \
+	    echo "FAIL (inne wyjście)"; head -20 _build/ferdek_ct.diff; fail=$$((fail+1)); \
+	  else echo OK; fi; \
+	done; [ $$fail -eq 0 ] || { echo "Padło testów kompilatora: $$fail"; exit 1; }
 
 # Testy jednostkowe
 test-unit:
@@ -76,6 +94,10 @@ test-examples: build
 # Wszystkie testy
 test: test-unit
 	$(call run_ferdek,$(ALL_TESTS))
+	$(call run_compiled,$(COMPILED_TESTS))
+
+test-compiled: build
+	$(call run_compiled,$(COMPILED_TESTS))
 
 test-network: build
 	$(call run_ferdek,tests/integration/stdlib/test_klatka)
@@ -105,4 +127,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: all build clean distclean test test-unit test-compiled test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
