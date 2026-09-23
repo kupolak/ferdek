@@ -333,6 +333,12 @@ let eval_bitwise_op op v1 v2 =
     | BitShiftRight -> n1 lsr n2
   )
 
+(* Tabela wbudowanych funkcji - wypełniana po definicji eval_expr (sekcja BUILTINS) *)
+let builtins : (string, int option * (environment -> expr list -> value)) Hashtbl.t = Hashtbl.create 128
+
+(* Nazwy i liczba argumentów wszystkich builtinów - dla ferdek --check *)
+let builtin_arities () = Hashtbl.fold (fun n (a, _) acc -> (n, a) :: acc) builtins []
+
 (* Evaluate expression *)
 let rec eval_expr env = function
   | IntLiteral n -> VInt n
@@ -460,1325 +466,14 @@ let rec eval_expr env = function
 
 (* Evaluate function call *)
 and eval_function_call env name args =
-  (* Check for built-in string functions - only Ferdek-style names from KLAMOTY/KANAPA *)
-  match name with
-  (* USIĄDŹ NA KANAPIE / USIADZ NA KANAPIE - Konkatenacja stringów *)
-  | "USIĄDŹ NA KANAPIE" | "USIADZ NA KANAPIE" ->
-      let arg_values = List.map (eval_expr env) args in
-      let strings = List.map to_string arg_values in
-      VString (String.concat "" strings)
-
-  (* ROZCIĄGNIJ KANAPĘ - Padduje string do określonej długości *)
-  | "ROZCIĄGNIJ KANAPĘ" ->
-      (match args with
-       | [str_arg; len_arg] ->
-           let s = to_string (eval_expr env str_arg) in
-           let target_len = to_int (eval_expr env len_arg) in
-           VString (Builtins_string.kanapa_rozciagnij s target_len)
-       | _ -> raise (RuntimeError (Errors.wrong_arg_count "ROZCIĄGNIJ KANAPĘ" 2 (List.length args))))
-
-  (* POTNIJ KANAPĘ - Substring (początek, koniec) *)
-  | "POTNIJ KANAPĘ" ->
-      (match args with
-       | [str_arg; start_arg; end_arg] ->
-           let s = to_string (eval_expr env str_arg) in
-           let start = to_int (eval_expr env start_arg) in
-           let end_pos = to_int (eval_expr env end_arg) in
-           (try
-             VString (Builtins_string.kanapa_potnij s start end_pos)
-           with Failure msg ->
-             raise (RuntimeError msg))
-       | _ -> raise (RuntimeError (Errors.wrong_arg_count "POTNIJ KANAPĘ" 3 (List.length args))))
-
-  (* PRZESUŃ NA KANAPIE - Split string *)
-  | "PRZESUŃ NA KANAPIE" ->
-      (match args with
-       | [str_arg; sep_arg] ->
-           let s = to_string (eval_expr env str_arg) in
-           let sep = to_string (eval_expr env sep_arg) in
-           let parts = Builtins_string.kanapa_przesun s sep in
-           VArray (Array.of_list (List.map (fun p -> VString p) parts))
-       | _ -> raise (RuntimeError "PRZESUŃ NA KANAPIE expects 2 arguments"))
-
-  (* POSKŁADAJ KANAPĘ - Join - łączy listę stringów *)
-  | "POSKŁADAJ KANAPĘ" ->
-      (match args with
-       | [arr_arg; sep_arg] ->
-           let arr_val = eval_expr env arr_arg in
-           let sep = to_string (eval_expr env sep_arg) in
-           (match arr_val with
-            | VArray arr ->
-                let strings = Array.to_list (Array.map to_string arr) in
-                VString (String.concat sep strings)
-            | _ -> raise (RuntimeError "POSKŁADAJ KANAPĘ expects an array as first argument"))
-       | _ -> raise (RuntimeError "POSKŁADAJ KANAPĘ expects 2 arguments"))
-
-  (* WYTRZEP KANAPĘ - Usuwa białe znaki z początku i końca (trim) *)
-  | "WYTRZEP KANAPĘ" ->
-      (match args with
-       | [arg] ->
-           let s = to_string (eval_expr env arg) in
-           VString (String.trim s)
-       | _ -> raise (RuntimeError "WYTRZEP KANAPĘ expects 1 argument"))
-
-  (* ZAMIEŃ NA KANAPIE - Replace *)
-  | "ZAMIEŃ NA KANAPIE" ->
-      (match args with
-       | [str_arg; old_arg; new_arg] ->
-           let s = to_string (eval_expr env str_arg) in
-           let old_str = to_string (eval_expr env old_arg) in
-           let new_str = to_string (eval_expr env new_arg) in
-           VString (Builtins_string.kanapa_zamien s old_str new_str)
-       | _ -> raise (RuntimeError "ZAMIEŃ NA KANAPIE expects 3 arguments"))
-
-  (* ZNAK Z KANAPY(s, i) - znak (bajt) na pozycji i, jak w POTNIJ KANAPĘ *)
-  | "ZNAK Z KANAPY" ->
-      (match args with
-       | [str_arg; idx_arg] ->
-           let s = to_string (eval_expr env str_arg) in
-           let i = to_int (eval_expr env idx_arg) in
-           if i < 0 || i >= String.length s then raise (RuntimeError "ZNAK Z KANAPY: indeks poza zakresem");
-           VString (String.make 1 s.[i])
-       | _ -> raise (RuntimeError "ZNAK Z KANAPY expects 2 arguments"))
-
-  | "KANAPA DO GÓRY" ->
-      (match args with
-       | [arg] -> VString (Builtins_string.kanapa_do_gory (to_string (eval_expr env arg)))
-       | _ -> raise (RuntimeError "KANAPA DO GÓRY expects 1 argument"))
-
-  | "KANAPA W DÓŁ" ->
-      (match args with
-       | [arg] -> VString (Builtins_string.kanapa_w_dol (to_string (eval_expr env arg)))
-       | _ -> raise (RuntimeError "KANAPA W DÓŁ expects 1 argument"))
-
-  (* ILE MIEJSCA NA KANAPIE - Zwraca długość stringu *)
-  | "ILE MIEJSCA NA KANAPIE" ->
-      (match args with
-       | [arg] ->
-           let v = eval_expr env arg in
-           let s = to_string v in
-           VInt (String.length s)
-       | _ -> raise (RuntimeError "ILE MIEJSCA NA KANAPIE expects 1 argument"))
-
-  (* OTWÓRZ KIBEL(ścieżka) - otwiera plik do odczytu *)
-  | "OTWÓRZ KIBEL" ->
-      (match args with
-       | [path_arg] ->
-           let path = to_string (eval_expr env path_arg) in
-           (try
-             let channel = open_in path in
-             VFileHandle (InputHandle channel)
-           with Sys_error msg ->
-             raise (RuntimeError (Printf.sprintf "OTWÓRZ KIBEL: %s" msg)))
-       | _ -> raise (RuntimeError "OTWÓRZ KIBEL expects 1 argument"))
-
-  (* ZAMKNIJ KIBEL(uchwyt) - zamyka plik *)
-  | "ZAMKNIJ KIBEL" ->
-      (match args with
-       | [handle_arg] ->
-           let handle_val = eval_expr env handle_arg in
-           (match handle_val with
-            | VFileHandle (InputHandle ch) ->
-                close_in ch;
-                VNull
-            | VFileHandle (OutputHandle ch) ->
-                close_out ch;
-                VNull
-            | _ -> raise (RuntimeError "ZAMKNIJ_KIBEL: argument must be a file handle"))
-       | _ -> raise (RuntimeError "ZAMKNIJ_KIBEL expects 1 argument"))
-
-  (* SPUŚĆ WODĘ(uchwyt, dane) - zapisuje do pliku *)
-  | "SPUŚĆ WODĘ" ->
-      (match args with
-       | [handle_arg; data_arg] ->
-           let handle_val = eval_expr env handle_arg in
-           let data = to_string (eval_expr env data_arg) in
-           (match handle_val with
-            | VFileHandle (OutputHandle ch) ->
-                output_string ch data;
-                flush ch;
-                VNull
-            | VFileHandle (InputHandle _) ->
-                raise (RuntimeError "SPUŚĆ_WODĘ: cannot write to input file handle")
-            | _ -> raise (RuntimeError "SPUŚĆ_WODĘ: first argument must be a file handle"))
-       | _ -> raise (RuntimeError "SPUŚĆ_WODĘ expects 2 arguments"))
-
-  (* WYPOMPUJ(uchwyt) - czyta cały plik *)
-  | "WYPOMPUJ" ->
-      (match args with
-       | [handle_arg] ->
-           let handle_val = eval_expr env handle_arg in
-           (match handle_val with
-            | VFileHandle (InputHandle ch) ->
-                let rec read_all acc =
-                  try
-                    let line = input_line ch in
-                    read_all (line :: acc)
-                  with End_of_file ->
-                    List.rev acc
-                in
-                let lines = read_all [] in
-                VArray (Array.of_list (List.map (fun s -> VString s) lines))
-            | VFileHandle (OutputHandle _) ->
-                raise (RuntimeError "WYPOMPUJ: cannot read from output file handle")
-            | _ -> raise (RuntimeError "WYPOMPUJ: argument must be a file handle"))
-       | _ -> raise (RuntimeError "WYPOMPUJ expects 1 argument"))
-
-  (* CZY KIBEL ZAJĘTY(ścieżka) - sprawdza czy plik istnieje *)
-  | "CZY KIBEL ZAJĘTY" ->
-      (match args with
-       | [path_arg] ->
-           let path = to_string (eval_expr env path_arg) in
-           VBool (Sys.file_exists path)
-       | _ -> raise (RuntimeError "CZY_KIBEL_ZAJĘTY expects 1 argument"))
-
-  (* OTWÓRZ KIBEL DO ZAPISU(ścieżka) - otwiera plik do zapisu *)
-  | "OTWÓRZ KIBEL DO ZAPISU" ->
-      (match args with
-       | [path_arg] ->
-           let path = to_string (eval_expr env path_arg) in
-           (try
-             let channel = open_out path in
-             VFileHandle (OutputHandle channel)
-           with Sys_error msg ->
-             raise (RuntimeError (Printf.sprintf "OTWÓRZ_KIBEL_DO_ZAPISU: %s" msg)))
-       | _ -> raise (RuntimeError "OTWÓRZ_KIBEL_DO_ZAPISU expects 1 argument"))
-
-  (* SYSTEM(komenda) - wykonuje komendę systemową i zwraca output *)
-  (* OPAKUJ W GAZETĘ(tekst) - bezpieczne cytowanie argumentu dla powłoki (do SYSTEM) *)
-  | "OPAKUJ W GAZETĘ" ->
-      (match args with
-       | [arg] -> VString (Filename.quote (to_string (eval_expr env arg)))
-       | _ -> raise (RuntimeError "OPAKUJ W GAZETĘ expects 1 argument"))
-
-  | "SYSTEM" ->
-      (match args with
-       | [cmd_arg] ->
-           let cmd = to_string (eval_expr env cmd_arg) in
-           (try
-             let ic = Unix.open_process_in cmd in
-             let buf = Buffer.create 256 in
-             (try
-               while true do
-                 Buffer.add_channel buf ic 1
-               done;
-               VString ""
-             with End_of_file ->
-               let _ = Unix.close_process_in ic in
-               let output = Buffer.contents buf in
-               VString output)
-           with Unix.Unix_error (err, _, _) ->
-             raise (RuntimeError (Printf.sprintf "SYSTEM error: %s" (Unix.error_message err))))
-       | _ -> raise (RuntimeError "SYSTEM expects 1 argument"))
-
-  (* ========== SZAFKA (HashMap/Dictionary) operations ========== *)
-
-  (* OTWÓRZ SZAFKĘ() - creates empty dictionary *)
-  | "OTWÓRZ SZAFKĘ" ->
-      (match args with
-       | [] -> VHashMap (Hashtbl.create 16)
-       | _ -> raise (RuntimeError "OTWÓRZ SZAFKĘ expects 0 arguments"))
-
-  (* WŁÓŻ DO SZAFKI(dict, key, value) - adds key-value pair *)
-  | "WŁÓŻ DO SZAFKI" ->
-      (match args with
-       | [dict_arg; key_arg; value_arg] ->
-           let dict_val = eval_expr env dict_arg in
-           let key = to_string (eval_expr env key_arg) in
-           let value = eval_expr env value_arg in
-           (match dict_val with
-            | VHashMap tbl ->
-                Hashtbl.replace tbl key value;
-                VNull
-            | _ -> raise (RuntimeError "WŁÓŻ DO SZAFKI: first argument must be a dictionary"))
-       | _ -> raise (RuntimeError "WŁÓŻ DO SZAFKI expects 3 arguments"))
-
-  (* WYJMIJ Z SZAFKI(dict, key) - gets value by key *)
-  | "WYJMIJ Z SZAFKI" ->
-      (match args with
-       | [dict_arg; key_arg] ->
-           let dict_val = eval_expr env dict_arg in
-           let key = to_string (eval_expr env key_arg) in
-           (match dict_val with
-            | VHashMap tbl ->
-                (match Hashtbl.find_opt tbl key with
-                 | Some v -> v
-                 | None -> VNull)
-            | _ -> raise (RuntimeError "WYJMIJ Z SZAFKI: first argument must be a dictionary"))
-       | _ -> raise (RuntimeError "WYJMIJ Z SZAFKI expects 2 arguments"))
-
-  (* WYRZUĆ ZE SZAFKI(dict, key) - removes key-value pair *)
-  | "WYRZUĆ ZE SZAFKI" ->
-      (match args with
-       | [dict_arg; key_arg] ->
-           let dict_val = eval_expr env dict_arg in
-           let key = to_string (eval_expr env key_arg) in
-           (match dict_val with
-            | VHashMap tbl ->
-                Hashtbl.remove tbl key;
-                VNull
-            | _ -> raise (RuntimeError "WYRZUĆ ZE SZAFKI: first argument must be a dictionary"))
-       | _ -> raise (RuntimeError "WYRZUĆ ZE SZAFKI expects 2 arguments"))
-
-  (* CZY W SZAFCE(dict, key) - checks if key exists *)
-  | "CZY W SZAFCE" ->
-      (match args with
-       | [dict_arg; key_arg] ->
-           let dict_val = eval_expr env dict_arg in
-           let key = to_string (eval_expr env key_arg) in
-           (match dict_val with
-            | VHashMap tbl ->
-                VBool (Builtins_hashmap.szafka_czy_w_szafce tbl key)
-            | _ -> raise (RuntimeError "CZY W SZAFCE: first argument must be a dictionary"))
-       | _ -> raise (RuntimeError "CZY W SZAFCE expects 2 arguments"))
-
-  (* WSZYSTKIE SZUFLADKI(dict) - returns list of all keys *)
-  | "WSZYSTKIE SZUFLADKI" ->
-      (match args with
-       | [dict_arg] ->
-           let dict_val = eval_expr env dict_arg in
-           (match dict_val with
-            | VHashMap tbl ->
-                let keys = Builtins_hashmap.szafka_wszystkie_szufladki tbl in
-                VArray (Array.of_list (List.map (fun k -> VString k) keys))
-            | _ -> raise (RuntimeError "WSZYSTKIE SZUFLADKI: argument must be a dictionary"))
-       | _ -> raise (RuntimeError "WSZYSTKIE SZUFLADKI expects 1 argument"))
-
-  (* ILE W SZAFCE(dict) - returns number of elements *)
-  | "ILE W SZAFCE" ->
-      (match args with
-       | [dict_arg] ->
-           let dict_val = eval_expr env dict_arg in
-           (match dict_val with
-            | VHashMap tbl ->
-                VInt (Builtins_hashmap.szafka_ile_w_szafce tbl)
-            | _ -> raise (RuntimeError "ILE W SZAFCE: argument must be a dictionary"))
-       | _ -> raise (RuntimeError "ILE W SZAFCE expects 1 argument"))
-
-  (* ========== KIBEL (File operations) ========== *)
-
-  (* ZRÓB KIBEL(path) - creates directory *)
-  | "ZRÓB KIBEL" ->
-      (match args with
-       | [path_arg] ->
-           let path = to_string (eval_expr env path_arg) in
-           VBool (Builtins_file.kibel_zrob path)
-       | _ -> raise (RuntimeError "ZRÓB KIBEL expects 1 argument"))
-
-  (* WYWAL KIBEL(path) - removes directory *)
-  | "WYWAL KIBEL" ->
-      (match args with
-       | [path_arg] ->
-           let path = to_string (eval_expr env path_arg) in
-           VBool (Builtins_file.kibel_wywal path)
-       | _ -> raise (RuntimeError "WYWAL KIBEL expects 1 argument"))
-
-  (* CO W KIBLU(path) - lists files in directory *)
-  | "CO W KIBLU" ->
-      (match args with
-       | [path_arg] ->
-           let path = to_string (eval_expr env path_arg) in
-           let files = Builtins_file.kibel_co_w_kiblu path in
-           VArray (Array.of_list (List.map (fun f -> VString f) files))
-       | _ -> raise (RuntimeError "CO W KIBLU expects 1 argument"))
-
-  (* CZY TO KIBEL(path) - checks if path is directory *)
-  | "CZY TO KIBEL" ->
-      (match args with
-       | [path_arg] ->
-           let path = to_string (eval_expr env path_arg) in
-           VBool (Builtins_file.kibel_czy_to_kibel path)
-       | _ -> raise (RuntimeError "CZY TO KIBEL expects 1 argument"))
-
-  (* PRZEKOPIUJ KIBEL(src, dest) - copies file *)
-  | "PRZEKOPIUJ KIBEL" ->
-      (match args with
-       | [src_arg; dest_arg] ->
-           let src = to_string (eval_expr env src_arg) in
-           let dest = to_string (eval_expr env dest_arg) in
-           VBool (Builtins_file.kibel_przekopiuj src dest)
-       | _ -> raise (RuntimeError "PRZEKOPIUJ KIBEL expects 2 arguments"))
-
-  (* PRZENIEŚ KIBEL(src, dest) - moves/renames file *)
-  | "PRZENIEŚ KIBEL" ->
-      (match args with
-       | [src_arg; dest_arg] ->
-           let src = to_string (eval_expr env src_arg) in
-           let dest = to_string (eval_expr env dest_arg) in
-           VBool (Builtins_file.kibel_przenies src dest)
-       | _ -> raise (RuntimeError "PRZENIEŚ KIBEL expects 2 arguments"))
-
-  (* WYKOP WSZYSTKIE KIBLE(path) - recursive delete *)
-  | "WYKOP WSZYSTKIE KIBLE" ->
-      (match args with
-       | [path_arg] ->
-           let path = to_string (eval_expr env path_arg) in
-           Builtins_file.kibel_wykop_wszystkie path;
-           VNull
-       | _ -> raise (RuntimeError "WYKOP WSZYSTKIE KIBLE expects 1 argument"))
-
-  (* ========== WERSALKA (List/Array operations) ========== *)
-
-  (* ILE NA WERSALCE(array) - returns array length *)
-  | "ILE NA WERSALCE" ->
-      (match args with
-       | [arr_arg] ->
-           let arr_val = eval_expr env arr_arg in
-           (match arr_val with
-            | VArray arr -> VInt (Builtins_list.wersalka_ile_na arr)
-            | _ -> raise (RuntimeError "ILE NA WERSALCE: argument must be an array"))
-       | _ -> raise (RuntimeError "ILE NA WERSALCE expects 1 argument"))
-
-  (* POŁÓŻ NA WERSALCE(array, element) - appends element to array *)
-  | "POŁÓŻ NA WERSALCE" ->
-      (match args with
-       | [arr_arg; elem_arg] ->
-           let arr_val = eval_expr env arr_arg in
-           let elem = eval_expr env elem_arg in
-           (match arr_val with
-            | VArray arr ->
-                let new_arr = Builtins_list.wersalka_poloz_na arr elem in
-                VArray new_arr
-            | _ -> raise (RuntimeError "POŁÓŻ NA WERSALCE: first argument must be an array"))
-       | _ -> raise (RuntimeError "POŁÓŻ NA WERSALCE expects 2 arguments"))
-
-  (* ZDEJMIJ Z WERSALKI(array) - pops last element *)
-  | "ZDEJMIJ Z WERSALKI" ->
-      (match args with
-       | [arr_arg] ->
-           let arr_val = eval_expr env arr_arg in
-           (match arr_val with
-            | VArray arr ->
-                (try
-                  let (new_arr, popped) = Builtins_list.wersalka_zdejmij_z arr in
-                  (* Return the popped element *)
-                  popped
-                with Failure msg ->
-                  raise (RuntimeError msg))
-            | _ -> raise (RuntimeError "ZDEJMIJ Z WERSALKI: argument must be an array"))
-       | _ -> raise (RuntimeError "ZDEJMIJ Z WERSALKI expects 1 argument"))
-
-  (* CZY LEŻY NA WERSALCE(array, element) - checks if element is in array *)
-  | "CZY LEŻY NA WERSALCE" ->
-      (match args with
-       | [arr_arg; elem_arg] ->
-           let arr_val = eval_expr env arr_arg in
-           let elem = eval_expr env elem_arg in
-           (match arr_val with
-            | VArray arr ->
-                let equal_func a b =
-                  match (a, b) with
-                  | (VInt x, VInt y) -> x = y
-                  | (VString x, VString y) -> x = y
-                  | (VBool x, VBool y) -> x = y
-                  | _ -> false
-                in
-                VBool (Builtins_list.wersalka_czy_lezy_na arr elem equal_func)
-            | _ -> raise (RuntimeError "CZY LEŻY NA WERSALCE: first argument must be an array"))
-       | _ -> raise (RuntimeError "CZY LEŻY NA WERSALCE expects 2 arguments"))
-
-  (* ============ MEMORY MANAGEMENT (DOOM-style Zone Allocator) ============ *)
-
-  (* DAJ MI HAJS - Z_Malloc(size, tag) - Allocate memory block *)
-  | "DAJ MI HAJS" ->
-      (match args with
-       | [size_arg; tag_arg] ->
-           let size = to_int (eval_expr env size_arg) in
-           let tag_val = to_int (eval_expr env tag_arg) in
-           if size <= 0 then
-             raise (RuntimeError "DAJ MI HAJS: size must be positive")
-           else begin
-             let tag = int_to_tag tag_val in
-             let id = !next_block_id in
-             next_block_id := !next_block_id + 1;
-             let block = {
-               size = size;
-               tag = tag;
-               data = Array.make size VNull;
-               id = id;
-             } in
-             Hashtbl.add zone_blocks id block;
-             total_allocated := !total_allocated + size;
-             (* Return pointer to block ID *)
-             VPointer (ref (VInt id))
-           end
-       | _ -> raise (RuntimeError "DAJ MI HAJS expects 2 arguments (size, tag)"))
-
-  (* ODDAJ_WSZYSTKO - Z_Free(ptr) - Free memory block *)
-  | "ODDAJ WSZYSTKO" ->
-      (match args with
-       | [ptr_arg] ->
-           let ptr_val = eval_expr env ptr_arg in
-           (match ptr_val with
-            | VPointer ptr ->
-                (match !ptr with
-                 | VInt block_id ->
-                     if Hashtbl.mem zone_blocks block_id then begin
-                       let block = Hashtbl.find zone_blocks block_id in
-                       total_freed := !total_freed + block.size;
-                       Hashtbl.remove zone_blocks block_id;
-                       VNull
-                     end else
-                       raise (RuntimeError "ODDAJ WSZYSTKO: block does not exist")
-                 | _ -> raise (RuntimeError "ODDAJ WSZYSTKO: invalid pointer"))
-            | _ -> raise (RuntimeError "ODDAJ WSZYSTKO expects a pointer"))
-       | _ -> raise (RuntimeError "ODDAJ WSZYSTKO expects 1 argument (pointer)"))
-
-  (* KOMORNICZY_WINDYKACJA - Z_FreeTags(lowtag, hightag) - Free blocks by tag range *)
-  | "KOMORNICZY WINDYKACJA" ->
-      (match args with
-       | [lowtag_arg; hightag_arg] ->
-           let lowtag = to_int (eval_expr env lowtag_arg) in
-           let hightag = to_int (eval_expr env hightag_arg) in
-           let freed_count = ref 0 in
-           let to_remove = ref [] in
-           Hashtbl.iter (fun id block ->
-             let tag_val = tag_to_int block.tag in
-             if tag_val >= lowtag && tag_val <= hightag then begin
-               total_freed := !total_freed + block.size;
-               to_remove := id :: !to_remove;
-               freed_count := !freed_count + 1
-             end
-           ) zone_blocks;
-           List.iter (Hashtbl.remove zone_blocks) !to_remove;
-           VInt !freed_count
-       | _ -> raise (RuntimeError "KOMORNICZY WINDYKACJA expects 2 arguments (lowtag, hightag)"))
-
-  (* ZAPISZ_DO_BLOKU - Write to memory block *)
-  | "ZAPISZ DO BLOKU" ->
-      (match args with
-       | [ptr_arg; index_arg; value_arg] ->
-           let ptr_val = eval_expr env ptr_arg in
-           let index = to_int (eval_expr env index_arg) in
-           let value = eval_expr env value_arg in
-           (match ptr_val with
-            | VPointer ptr ->
-                (match !ptr with
-                 | VInt block_id ->
-                     if Hashtbl.mem zone_blocks block_id then begin
-                       let block = Hashtbl.find zone_blocks block_id in
-                       if index >= 0 && index < block.size then begin
-                         block.data.(index) <- value;
-                         VNull
-                       end else
-                         raise (RuntimeError (Printf.sprintf "ZAPISZ DO BLOKU: index %d out of bounds (size: %d)" index block.size))
-                     end else
-                       raise (RuntimeError "ZAPISZ DO BLOKU: block does not exist")
-                 | _ -> raise (RuntimeError "ZAPISZ DO BLOKU: invalid pointer"))
-            | _ -> raise (RuntimeError "ZAPISZ DO BLOKU expects a pointer as first argument"))
-       | _ -> raise (RuntimeError "ZAPISZ DO BLOKU expects 3 arguments (ptr, index, value)"))
-
-  (* CZYTAJ_Z_BLOKU - Read from memory block *)
-  | "CZYTAJ Z BLOKU" ->
-      (match args with
-       | [ptr_arg; index_arg] ->
-           let ptr_val = eval_expr env ptr_arg in
-           let index = to_int (eval_expr env index_arg) in
-           (match ptr_val with
-            | VPointer ptr ->
-                (match !ptr with
-                 | VInt block_id ->
-                     if Hashtbl.mem zone_blocks block_id then begin
-                       let block = Hashtbl.find zone_blocks block_id in
-                       if index >= 0 && index < block.size then
-                         block.data.(index)
-                       else
-                         raise (RuntimeError (Printf.sprintf "CZYTAJ Z BLOKU: index %d out of bounds (size: %d)" index block.size))
-                     end else
-                       raise (RuntimeError "CZYTAJ Z BLOKU: block does not exist")
-                 | _ -> raise (RuntimeError "CZYTAJ Z BLOKU: invalid pointer"))
-            | _ -> raise (RuntimeError "CZYTAJ Z BLOKU expects a pointer as first argument"))
-       | _ -> raise (RuntimeError "CZYTAJ Z BLOKU expects 2 arguments (ptr, index)"))
-
-  (* ROZMIAR_BLOKU - Get memory block size *)
-  | "ROZMIAR BLOKU" ->
-      (match args with
-       | [ptr_arg] ->
-           let ptr_val = eval_expr env ptr_arg in
-           (match ptr_val with
-            | VPointer ptr ->
-                (match !ptr with
-                 | VInt block_id ->
-                     if Hashtbl.mem zone_blocks block_id then begin
-                       let block = Hashtbl.find zone_blocks block_id in
-                       VInt block.size
-                     end else
-                       raise (RuntimeError "ROZMIAR BLOKU: block does not exist")
-                 | _ -> raise (RuntimeError "ROZMIAR BLOKU: invalid pointer"))
-            | _ -> raise (RuntimeError "ROZMIAR BLOKU expects a pointer"))
-       | _ -> raise (RuntimeError "ROZMIAR BLOKU expects 1 argument (pointer)"))
-
-  (* ILE_KASY_LECI - Get memory statistics *)
-  | "ILE KASY LECI" ->
-      (match args with
-       | [] ->
-           let allocated = !total_allocated in
-           let freed = !total_freed in
-           let current = allocated - freed in
-           let block_count = Hashtbl.length zone_blocks in
-           (* Return hash map with stats *)
-           let stats = Hashtbl.create 4 in
-           Hashtbl.add stats "allocated" (VInt allocated);
-           Hashtbl.add stats "freed" (VInt freed);
-           Hashtbl.add stats "current" (VInt current);
-           Hashtbl.add stats "blocks" (VInt block_count);
-           VHashMap stats
-       | _ -> raise (RuntimeError "ILE KASY LECI expects no arguments"))
-
-  (* TAG_TRWALE - Memory tag constant (PU_STATIC) *)
-  | "TAG_TRWALE" ->
-      (match args with
-       | [] -> VInt 1
-       | _ -> raise (RuntimeError "TAG_TRWALE is a constant, no arguments expected"))
-
-  (* TAG_POZIOM - Memory tag constant (PU_LEVEL) *)
-  | "TAG_POZIOM" ->
-      (match args with
-       | [] -> VInt 50
-       | _ -> raise (RuntimeError "TAG_POZIOM is a constant, no arguments expected"))
-
-  (* TAG_SMIECIOWE - Memory tag constant (PU_CACHE) *)
-  | "TAG_SMIECIOWE" ->
-      (match args with
-       | [] -> VInt 100
-       | _ -> raise (RuntimeError "TAG_SMIECIOWE is a constant, no arguments expected"))
-
-  (* ============ FRAMEBUFFER FUNCTIONS (TELEWIZOR) ============ *)
-
-  (* WŁĄCZ TELEWIZOR(width, height) - Create framebuffer *)
-  | "WŁĄCZ TELEWIZOR" | "WLACZ TELEWIZOR" ->
-      (match args with
-       | [width_arg; height_arg] ->
-           let width = to_int (eval_expr env width_arg) in
-           let height = to_int (eval_expr env height_arg) in
-           if width <= 0 || height <= 0 then
-             raise (RuntimeError "WŁĄCZ TELEWIZOR: width and height must be positive")
-           else begin
-             let id = !next_fb_id in
-             next_fb_id := !next_fb_id + 1;
-             let total_pixels = width * height in
-             let fb = {
-               width = width;
-               height = height;
-               pixels = Array.make total_pixels 0;  (* Initialize to black *)
-               id = id;
-             } in
-             Hashtbl.add framebuffers id fb;
-             (* Return pointer to framebuffer ID *)
-             VPointer (ref (VInt id))
-           end
-       | _ -> raise (RuntimeError "WŁĄCZ TELEWIZOR expects 2 arguments (width, height)"))
-
-  (* WYŁĄCZ TELEWIZOR(fb_ptr) - Destroy framebuffer *)
-  | "WYŁĄCZ TELEWIZOR" | "WYLACZ TELEWIZOR" ->
-      (match args with
-       | [fb_arg] ->
-           let fb_val = eval_expr env fb_arg in
-           (match fb_val with
-            | VPointer ptr ->
-                (match !ptr with
-                 | VInt fb_id ->
-                     if Hashtbl.mem framebuffers fb_id then begin
-                       Hashtbl.remove framebuffers fb_id;
-                       VNull
-                     end else
-                       raise (RuntimeError "WYŁĄCZ TELEWIZOR: invalid framebuffer")
-                 | _ -> raise (RuntimeError "WYŁĄCZ TELEWIZOR: argument must be framebuffer pointer"))
-            | _ -> raise (RuntimeError "WYŁĄCZ TELEWIZOR: argument must be framebuffer pointer"))
-       | _ -> raise (RuntimeError "WYŁĄCZ TELEWIZOR expects 1 argument (framebuffer)"))
-
-  (* ZMIEŃ KANAŁ(fb_ptr, x, y, color) - Write pixel to framebuffer *)
-  | "ZMIEŃ KANAŁ" | "ZMIEN KANAL" ->
-      (match args with
-       | [fb_arg; x_arg; y_arg; color_arg] ->
-           let fb_val = eval_expr env fb_arg in
-           let x = to_int (eval_expr env x_arg) in
-           let y = to_int (eval_expr env y_arg) in
-           let color = to_int (eval_expr env color_arg) in
-           (match fb_val with
-            | VPointer ptr ->
-                (match !ptr with
-                 | VInt fb_id ->
-                     if Hashtbl.mem framebuffers fb_id then begin
-                       let fb = Hashtbl.find framebuffers fb_id in
-                       if x < 0 || x >= fb.width || y < 0 || y >= fb.height then
-                         raise (RuntimeError "ZMIEŃ KANAŁ: pixel coordinates out of bounds")
-                       else begin
-                         let offset = y * fb.width + x in
-                         fb.pixels.(offset) <- color;
-                         VNull
-                       end
-                     end else
-                       raise (RuntimeError "ZMIEŃ KANAŁ: invalid framebuffer")
-                 | _ -> raise (RuntimeError "ZMIEŃ KANAŁ: first argument must be framebuffer pointer"))
-            | _ -> raise (RuntimeError "ZMIEŃ KANAŁ: first argument must be framebuffer pointer"))
-       | _ -> raise (RuntimeError "ZMIEŃ KANAŁ expects 4 arguments (framebuffer, x, y, color)"))
-
-  (* CO LECI W TELEWIZORZE(fb_ptr, x, y) - Read pixel from framebuffer *)
-  | "CO LECI W TELEWIZORZE" ->
-      (match args with
-       | [fb_arg; x_arg; y_arg] ->
-           let fb_val = eval_expr env fb_arg in
-           let x = to_int (eval_expr env x_arg) in
-           let y = to_int (eval_expr env y_arg) in
-           (match fb_val with
-            | VPointer ptr ->
-                (match !ptr with
-                 | VInt fb_id ->
-                     if Hashtbl.mem framebuffers fb_id then begin
-                       let fb = Hashtbl.find framebuffers fb_id in
-                       if x < 0 || x >= fb.width || y < 0 || y >= fb.height then
-                         raise (RuntimeError "CO LECI W TELEWIZORZE: pixel coordinates out of bounds")
-                       else begin
-                         let offset = y * fb.width + x in
-                         VInt fb.pixels.(offset)
-                       end
-                     end else
-                       raise (RuntimeError "CO LECI W TELEWIZORZE: invalid framebuffer")
-                 | _ -> raise (RuntimeError "CO LECI W TELEWIZORZE: first argument must be framebuffer pointer"))
-            | _ -> raise (RuntimeError "CO LECI W TELEWIZORZE: first argument must be framebuffer pointer"))
-       | _ -> raise (RuntimeError "CO LECI W TELEWIZORZE expects 3 arguments (framebuffer, x, y)"))
-
-  (* ============ LOOKUP TABLE FUNCTIONS ============ *)
-
-  (* STWÓRZ TABELĘ(size) - Create lookup table *)
-  | "STWÓRZ TABELĘ" | "STWORZ TABELE" ->
-      (match args with
-       | [size_arg] ->
-           let size = to_int (eval_expr env size_arg) in
-           if size <= 0 then
-             raise (RuntimeError "STWÓRZ TABELĘ: size must be positive")
-           else begin
-             let id = !next_table_id in
-             next_table_id := !next_table_id + 1;
-             let table = {
-               data = Array.make size 0;
-               size = size;
-               id = id;
-             } in
-             Hashtbl.add lookup_tables id table;
-             VPointer (ref (VInt id))
-           end
-       | _ -> raise (RuntimeError "STWÓRZ TABELĘ expects 1 argument (size)"))
-
-  (* WPISZ DO TABELI(table_ptr, index, value) - Write to lookup table *)
-  | "WPISZ DO TABELI" ->
-      (match args with
-       | [table_arg; index_arg; value_arg] ->
-           let table_val = eval_expr env table_arg in
-           let index = to_int (eval_expr env index_arg) in
-           let value = to_int (eval_expr env value_arg) in
-           (match table_val with
-            | VPointer ptr ->
-                (match !ptr with
-                 | VInt table_id ->
-                     if Hashtbl.mem lookup_tables table_id then begin
-                       let table = Hashtbl.find lookup_tables table_id in
-                       if index < 0 || index >= table.size then
-                         raise (RuntimeError "WPISZ DO TABELI: index out of bounds")
-                       else begin
-                         table.data.(index) <- value;
-                         VNull
-                       end
-                     end else
-                       raise (RuntimeError "WPISZ DO TABELI: invalid lookup table")
-                 | _ -> raise (RuntimeError "WPISZ DO TABELI: first argument must be table pointer"))
-            | _ -> raise (RuntimeError "WPISZ DO TABELI: first argument must be table pointer"))
-       | _ -> raise (RuntimeError "WPISZ DO TABELI expects 3 arguments (table, index, value)"))
-
-  (* SPRAWDŹ W TABELI(table_ptr, index) - Read from lookup table *)
-  | "SPRAWDŹ W TABELI" | "SPRAWDZ W TABELI" ->
-      (match args with
-       | [table_arg; index_arg] ->
-           let table_val = eval_expr env table_arg in
-           let index = to_int (eval_expr env index_arg) in
-           (match table_val with
-            | VPointer ptr ->
-                (match !ptr with
-                 | VInt table_id ->
-                     if Hashtbl.mem lookup_tables table_id then begin
-                       let table = Hashtbl.find lookup_tables table_id in
-                       if index < 0 || index >= table.size then
-                         raise (RuntimeError "SPRAWDŹ W TABELI: index out of bounds")
-                       else
-                         VInt table.data.(index)
-                     end else
-                       raise (RuntimeError "SPRAWDŹ W TABELI: invalid lookup table")
-                 | _ -> raise (RuntimeError "SPRAWDŹ W TABELI: first argument must be table pointer"))
-            | _ -> raise (RuntimeError "SPRAWDŹ W TABELI: first argument must be table pointer"))
-       | _ -> raise (RuntimeError "SPRAWDŹ W TABELI expects 2 arguments (table, index)"))
-
-  (* ============ DIRECT MEMORY ACCESS ============ *)
-
-  (* PISZ BAJT(ptr, offset, value) - Write byte directly to memory block *)
-  | "PISZ BAJT" ->
-      (match args with
-       | [ptr_arg; offset_arg; value_arg] ->
-           let ptr_val = eval_expr env ptr_arg in
-           let offset = to_int (eval_expr env offset_arg) in
-           let value = to_int (eval_expr env value_arg) in
-           (* Same as ZAPISZ DO BLOKU but emphasizes byte-level access *)
-           (match ptr_val with
-            | VPointer ptr ->
-                (match !ptr with
-                 | VInt block_id ->
-                     if Hashtbl.mem zone_blocks block_id then begin
-                       let block = Hashtbl.find zone_blocks block_id in
-                       if offset < 0 || offset >= block.size then
-                         raise (RuntimeError "PISZ BAJT: offset out of bounds")
-                       else begin
-                         block.data.(offset) <- VInt value;
-                         VNull
-                       end
-                     end else
-                       raise (RuntimeError "PISZ BAJT: invalid memory block")
-                 | _ -> raise (RuntimeError "PISZ BAJT: first argument must be pointer"))
-            | _ -> raise (RuntimeError "PISZ BAJT: first argument must be pointer"))
-       | _ -> raise (RuntimeError "PISZ BAJT expects 3 arguments (ptr, offset, value)"))
-
-  (* CZYTAJ BAJT(ptr, offset) - Read byte directly from memory block *)
-  | "CZYTAJ BAJT" ->
-      (match args with
-       | [ptr_arg; offset_arg] ->
-           let ptr_val = eval_expr env ptr_arg in
-           let offset = to_int (eval_expr env offset_arg) in
-           (* Same as CZYTAJ Z BLOKU but emphasizes byte-level access *)
-           (match ptr_val with
-            | VPointer ptr ->
-                (match !ptr with
-                 | VInt block_id ->
-                     if Hashtbl.mem zone_blocks block_id then begin
-                       let block = Hashtbl.find zone_blocks block_id in
-                       if offset < 0 || offset >= block.size then
-                         raise (RuntimeError "CZYTAJ BAJT: offset out of bounds")
-                       else
-                         block.data.(offset)
-                     end else
-                       raise (RuntimeError "CZYTAJ BAJT: invalid memory block")
-                 | _ -> raise (RuntimeError "CZYTAJ BAJT: first argument must be pointer"))
-            | _ -> raise (RuntimeError "CZYTAJ BAJT: first argument must be pointer"))
-       | _ -> raise (RuntimeError "CZYTAJ BAJT expects 2 arguments (ptr, offset)"))
-
-  (* KOPIUJ PAMIĘĆ(src_ptr, dst_ptr, size) - Memory copy (like memcpy) *)
-  | "KOPIUJ PAMIĘĆ" | "KOPIUJ PAMIEC" ->
-      (match args with
-       | [src_arg; dst_arg; size_arg] ->
-           let src_val = eval_expr env src_arg in
-           let dst_val = eval_expr env dst_arg in
-           let size = to_int (eval_expr env size_arg) in
-           (match src_val, dst_val with
-            | VPointer src_ptr, VPointer dst_ptr ->
-                (match !src_ptr, !dst_ptr with
-                 | VInt src_id, VInt dst_id ->
-                     if Hashtbl.mem zone_blocks src_id && Hashtbl.mem zone_blocks dst_id then begin
-                       let src_block = Hashtbl.find zone_blocks src_id in
-                       let dst_block = Hashtbl.find zone_blocks dst_id in
-                       if size > src_block.size || size > dst_block.size then
-                         raise (RuntimeError "KOPIUJ PAMIĘĆ: size exceeds block size")
-                       else begin
-                         Array.blit src_block.data 0 dst_block.data 0 size;
-                         VNull
-                       end
-                     end else
-                       raise (RuntimeError "KOPIUJ PAMIĘĆ: invalid memory blocks")
-                 | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ: arguments must be pointers"))
-            | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ: arguments must be pointers"))
-       | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ expects 3 arguments (src, dst, size)"))
-
-  (* ============ TYPE CASTING FUNCTIONS ============ *)
-
-  (* ZRÓB BAJCIK(expr) - Cast to byte (0-255) *)
-  | "ZRÓB BAJCIK" | "ZROB BAJCIK" ->
-      (match args with
-       | [arg] ->
-           let value = to_int (eval_expr env arg) in
-           VByte (value land 0xFF)  (* Mask to 0-255 *)
-       | _ -> raise (RuntimeError "ZRÓB BAJCIK expects 1 argument"))
-
-  (* ZRÓB KRÓTKI(expr) - Cast to short (16-bit) *)
-  | "ZRÓB KRÓTKI" | "ZROB KROTKI" ->
-      (match args with
-       | [arg] ->
-           let value = to_int (eval_expr env arg) in
-           (* Sign-extend from 16-bit *)
-           let masked = value land 0xFFFF in
-           let short_val = if masked > 0x7FFF then masked - 0x10000 else masked in
-           VShort short_val
-       | _ -> raise (RuntimeError "ZRÓB KRÓTKI expects 1 argument"))
-
-  (* ZRÓB DŁUGI(expr) - Cast to int (32-bit, default) *)
-  | "ZRÓB DŁUGI" | "ZROB DLUGI" ->
-      (match args with
-       | [arg] ->
-           (* Jawne obcięcie liczby z przecinkiem *)
-           (match eval_expr env arg with
-            | VFloat f -> VInt (int_of_float f)
-            | v -> VInt (to_int v))
-       | _ -> raise (RuntimeError "ZRÓB DŁUGI expects 1 argument"))
-
-  (* ZRÓB UŁAMEK(expr) - Cast to fixed-point (same as ZAMIEŃ NA FIXED) *)
-  | "ZRÓB UŁAMEK" | "ZROB ULAMEK" ->
-      (match args with
-       | [arg] ->
-           let value = to_int (eval_expr env arg) in
-           VFixed (value lsl 16)  (* Convert to 16.16 fixed-point *)
-       | _ -> raise (RuntimeError "ZRÓB UŁAMEK expects 1 argument"))
-
-  (* CO TO ZA TYP(var) - Return type name *)
-  (* KARTA LUBI DYM(min, max) - losowa liczba; KARTA LUBI DYM(ziarno) - ustawia ziarno.
-     Własny LCG zamiast Random: ten sam ciąg co w skompilowanym C *)
-  | "KARTA LUBI DYM" ->
-      let rng_next () =
-        if !rng_state < 0 then rng_state := int_of_float (Unix.gettimeofday () *. 1000.) land 0x7FFFFFFF;
-        rng_state := (!rng_state * 1103515245 + 12345) land 0x7FFFFFFF;
-        !rng_state
-      in
-      (match List.map (eval_expr env) args with
-       | [seed] -> rng_state := to_int seed land 0x7FFFFFFF; VNull
-       | [lo; hi] ->
-           let lo = to_int lo and hi = to_int hi in
-           if lo > hi then raise (RuntimeError "KARTA LUBI DYM: min większe niż max");
-           VInt (lo + rng_next () mod (hi - lo + 1))
-       | _ -> raise (RuntimeError "KARTA LUBI DYM expects 1 argument (seed) or 2 (min, max)"))
-
-  | "CO TO ZA TYP" ->
-      (match args with
-       | [arg] ->
-           let value = eval_expr env arg in
-           let type_name = match value with
-             | VByte _ -> "BAJCIK"
-             | VShort _ -> "KRÓTKI"
-             | VInt _ -> "DŁUGI"
-             | VFixed _ -> "UŁAMEK"
-             | VFloat _ -> "PRZECINEK"
-             | VString _ -> "TEKST"
-             | VBool _ -> "PRAWDA/FAŁSZ"
-             | VNull -> "NIC"
-             | VArray _ -> "TABLICA"
-             | VHashMap _ -> "SZAFKA"
-             | VFunction _ -> "FUNKCJA"
-             | VClass _ -> "KLASA"
-             | VStruct _ -> "MEBEL"
-             | VUnion _ -> "UNIA"
-             | VEnum _ -> "LISTA"
-             | VObject _ -> "OBIEKT"
-             | VPointer _ -> "WSKAŹNIK"
-             | VFileHandle _ -> "KIBEL"
-           in
-           VString type_name
-       | _ -> raise (RuntimeError "CO TO ZA TYP expects 1 argument"))
-
-  (* ============ LOW-LEVEL I/O ============ *)
-
-  (* OTWORZ(filename, mode) - open() - Open file *)
-  | "OTWORZ" ->
-      (match args with
-       | [filename_arg; mode_arg] ->
-           let filename = match eval_expr env filename_arg with
-             | VString s -> s
-             | _ -> raise (RuntimeError "OTWORZ: filename must be string")
-           in
-           let mode = match eval_expr env mode_arg with
-             | VString s -> s
-             | _ -> raise (RuntimeError "OTWORZ: mode must be string")
-           in
-           (try
-              let handle = match mode with
-                | "r" | "rb" -> InputHandle (open_in_bin filename)
-                | "w" | "wb" -> OutputHandle (open_out_bin filename)
-                | "a" | "ab" -> OutputHandle (open_out_gen [Open_append; Open_binary; Open_creat] 0o666 filename)
-                | _ -> raise (RuntimeError (Printf.sprintf "Invalid file mode: %s (use 'r', 'w', 'a')" mode))
-              in
-              VFileHandle handle
-            with Sys_error msg ->
-              raise (RuntimeError (Printf.sprintf "Cannot open file '%s': %s" filename msg)))
-       | _ -> raise (RuntimeError "OTWORZ expects 2 arguments (filename, mode)"))
-
-  (* ZAMKNIJ(file_handle) - close() - Close file *)
-  | "ZAMKNIJ" ->
-      (match args with
-       | [handle_arg] ->
-           let handle = eval_expr env handle_arg in
-           (match handle with
-            | VFileHandle (InputHandle ch) -> close_in ch; VNull
-            | VFileHandle (OutputHandle ch) -> close_out ch; VNull
-            | _ -> raise (RuntimeError "ZAMKNIJ: argument must be file handle"))
-       | _ -> raise (RuntimeError "ZAMKNIJ expects 1 argument (file_handle)"))
-
-  (* CZYTAJ(file_handle, [num_bytes]) - read() - Read bytes *)
-  | "CZYTAJ" ->
-      (match args with
-       | [handle_arg; size_arg] ->
-           let handle = eval_expr env handle_arg in
-           let size = to_int (eval_expr env size_arg) in
-           (match handle with
-            | VFileHandle (InputHandle ch) ->
-                (try
-                   let buffer = Bytes.create size in
-                   let bytes_read = input ch buffer 0 size in
-                   (* Return array of bytes *)
-                   let byte_array = Array.init bytes_read (fun i -> VByte (Char.code (Bytes.get buffer i))) in
-                   VArray byte_array
-                 with End_of_file ->
-                   VArray [||])  (* Return empty array on EOF *)
-            | _ -> raise (RuntimeError "CZYTAJ GAZETĘ: first argument must be input file handle"))
-       | [handle_arg] ->
-           (* CZYTAJ BAJT - single argument means read single byte *)
-           let handle = eval_expr env handle_arg in
-           (match handle with
-            | VFileHandle (InputHandle ch) ->
-                (try
-                   let byte = input_byte ch in
-                   VByte byte
-                 with End_of_file ->
-                   VInt (-1))  (* Return -1 on EOF like C *)
-            | _ -> raise (RuntimeError "CZYTAJ: argument must be input file handle"))
-       | _ -> raise (RuntimeError "CZYTAJ expects 1 or 2 arguments"))
-
-  (* PISZ(file_handle, data) - write() - Write bytes *)
-  | "PISZ" ->
-      (match args with
-       | [handle_arg; data_arg] ->
-           let handle = eval_expr env handle_arg in
-           let data = eval_expr env data_arg in
-           (match handle with
-            | VFileHandle (OutputHandle ch) ->
-                (match data with
-                 | VArray bytes ->
-                     (* Write array of bytes *)
-                     Array.iter (fun b ->
-                       let byte_val = to_int b in
-                       output_byte ch byte_val
-                     ) bytes;
-                     VInt (Array.length bytes)
-                 | VString s ->
-                     (* Write string as bytes *)
-                     output_string ch s;
-                     VInt (String.length s)
-                 | VByte b | VInt b | VShort b ->
-                     (* PISZ BAJT - single byte/int means write single byte *)
-                     output_byte ch (b land 0xFF);
-                     VInt 1
-                 | _ -> raise (RuntimeError "PISZ: data must be array, string, or byte"))
-            | _ -> raise (RuntimeError "PISZ: first argument must be output file handle"))
-       | _ -> raise (RuntimeError "PISZ expects 2 arguments (file_handle, data)"))
-
-  (* SKOCZ(file_handle, offset, [mode]) - lseek() - Seek in file
-     mode: 0 = absolute (default), 1 = relative forward, -1 = relative backward *)
-  | "SKOCZ" ->
-      (match args with
-       | [handle_arg; offset_arg] ->
-           (* Default: absolute seek *)
-           let handle = eval_expr env handle_arg in
-           let pos = to_int (eval_expr env offset_arg) in
-           (match handle with
-            | VFileHandle (InputHandle ch) ->
-                seek_in ch pos;
-                VInt pos
-            | VFileHandle (OutputHandle ch) ->
-                seek_out ch pos;
-                VInt pos
-            | _ -> raise (RuntimeError "SKOCZ: first argument must be file handle"))
-       | [handle_arg; offset_arg; mode_arg] ->
-           (* With mode: 0 = absolute, 1 = forward, -1 = backward *)
-           let handle = eval_expr env handle_arg in
-           let offset = to_int (eval_expr env offset_arg) in
-           let mode = to_int (eval_expr env mode_arg) in
-           (match handle with
-            | VFileHandle (InputHandle ch) ->
-                let new_pos = match mode with
-                  | 0 -> offset  (* Absolute *)
-                  | 1 -> pos_in ch + offset  (* Relative forward *)
-                  | -1 -> max 0 (pos_in ch - offset)  (* Relative backward *)
-                  | _ -> raise (RuntimeError "SKOCZ: mode must be 0 (absolute), 1 (forward), or -1 (backward)")
-                in
-                seek_in ch new_pos;
-                VInt new_pos
-            | VFileHandle (OutputHandle ch) ->
-                let new_pos = match mode with
-                  | 0 -> offset  (* Absolute *)
-                  | 1 -> pos_out ch + offset  (* Relative forward *)
-                  | -1 -> max 0 (pos_out ch - offset)  (* Relative backward *)
-                  | _ -> raise (RuntimeError "SKOCZ: mode must be 0 (absolute), 1 (forward), or -1 (backward)")
-                in
-                seek_out ch new_pos;
-                VInt new_pos
-            | _ -> raise (RuntimeError "SKOCZ: first argument must be file handle"))
-       | _ -> raise (RuntimeError "SKOCZ expects 2 or 3 arguments (file_handle, offset, [mode])"))
-
-  (* POZYCJA(file_handle) - tell() - Get current file position *)
-  | "POZYCJA" ->
-      (match args with
-       | [handle_arg] ->
-           let handle = eval_expr env handle_arg in
-           (match handle with
-            | VFileHandle (InputHandle ch) ->
-                VInt (pos_in ch)
-            | VFileHandle (OutputHandle ch) ->
-                VInt (pos_out ch)
-            | _ -> raise (RuntimeError "POZYCJA: argument must be file handle"))
-       | _ -> raise (RuntimeError "POZYCJA expects 1 argument (file_handle)"))
-
-  (* ============ MULTIDIMENSIONAL ARRAYS ============ *)
-
-  (* TABLICA 2D(rows, cols) - Create 2D array *)
-  | "TABLICA 2D" ->
-      (match args with
-       | [rows_arg; cols_arg] ->
-           let rows = to_int (eval_expr env rows_arg) in
-           let cols = to_int (eval_expr env cols_arg) in
-           if rows <= 0 || cols <= 0 then
-             raise (RuntimeError "TABLICA 2D: dimensions must be positive")
-           else
-             (* Create array of arrays *)
-             let inner_arrays = Array.init rows (fun _ -> VArray (Array.make cols (VInt 0))) in
-             VArray inner_arrays
-       | _ -> raise (RuntimeError "TABLICA 2D expects 2 arguments (rows, cols)"))
-
-  (* TABLICA 3D(x, y, z) - Create 3D array *)
-  | "TABLICA 3D" ->
-      (match args with
-       | [x_arg; y_arg; z_arg] ->
-           let x = to_int (eval_expr env x_arg) in
-           let y = to_int (eval_expr env y_arg) in
-           let z = to_int (eval_expr env z_arg) in
-           if x <= 0 || y <= 0 || z <= 0 then
-             raise (RuntimeError "TABLICA 3D: dimensions must be positive")
-           else
-             (* Create array of arrays of arrays *)
-             let inner_arrays = Array.init x (fun _ ->
-               VArray (Array.init y (fun _ ->
-                 VArray (Array.make z (VInt 0))
-               ))
-             ) in
-             VArray inner_arrays
-       | _ -> raise (RuntimeError "TABLICA 3D expects 3 arguments (x, y, z)"))
-
-  (* POLAŁA SIĘ KREW(format, ...) - Variadic error function like I_Error *)
-  | "POLAŁA SIĘ KREW" | "POLALA SIE KREW" ->
-      (match args with
-       | [] -> raise (RuntimeError "POLAŁA SIĘ KREW: at least one argument required")
-       | format_arg :: rest_args ->
-           let format = to_string (eval_expr env format_arg) in
-           let arg_values = List.map (eval_expr env) rest_args in
-           (* Simple printf-like formatting: replace %d, %s, %i with arguments *)
-           let rec format_string fmt args_left acc =
-             if String.length fmt = 0 then
-               acc
-             else if String.length fmt >= 2 && String.get fmt 0 = '%' then
-               let spec = String.get fmt 1 in
-               match spec, args_left with
-               | 'd', v::rest | 'i', v::rest ->
-                   let num = to_int v in
-                   format_string (String.sub fmt 2 (String.length fmt - 2)) rest (acc ^ string_of_int num)
-               | 's', v::rest ->
-                   let str = to_string v in
-                   format_string (String.sub fmt 2 (String.length fmt - 2)) rest (acc ^ str)
-               | '%', _ ->
-                   format_string (String.sub fmt 2 (String.length fmt - 2)) args_left (acc ^ "%")
-               | _, [] ->
-                   (* No more args, keep format specifier *)
-                   format_string (String.sub fmt 1 (String.length fmt - 1)) [] (acc ^ String.make 1 (String.get fmt 0))
-               | _, _ ->
-                   (* Unknown specifier, keep it *)
-                   format_string (String.sub fmt 2 (String.length fmt - 2)) args_left (acc ^ "%" ^ String.make 1 spec)
-             else
-               format_string (String.sub fmt 1 (String.length fmt - 1)) args_left (acc ^ String.make 1 (String.get fmt 0))
-           in
-           let message = format_string format arg_values "" in
-           raise (RuntimeError (Printf.sprintf "I_Error: %s" message)))
-
-  (* ============ GRAPHICS (X11 - DOOM style) ============ *)
-
-  (* OKNO_OTWORZ(width, height, title) - Initialize graphics window *)
-  | "OKNO_OTWORZ" | "OKNO OTWORZ" ->
-      (match args with
-       | [width_arg; height_arg; title_arg] ->
-           let width = to_int (eval_expr env width_arg) in
-           let height = to_int (eval_expr env height_arg) in
-           let title = to_string (eval_expr env title_arg) in
-           let result = ferdek_window_open width height title in
-           if result = 0 then
-             raise (RuntimeError "OKNO_OTWORZ: Failed to open window")
-           else
-             VInt result
-       | _ -> raise (RuntimeError "OKNO_OTWORZ expects 3 arguments (width, height, title)"))
-
-  (* OKNO_ZAMKNIJ() - Close graphics window *)
-  | "OKNO_ZAMKNIJ" | "OKNO ZAMKNIJ" ->
-      (match args with
-       | [] ->
-           ferdek_window_close ();
-           VNull
-       | _ -> raise (RuntimeError "OKNO_ZAMKNIJ expects 0 arguments"))
-
-  (* PALETA_USTAW(palette_array) - Set 256-color palette *)
-  | "PALETA_USTAW" | "PALETA USTAW" ->
-      (match args with
-       | [palette_arg] ->
-           let palette_val = eval_expr env palette_arg in
-           (match palette_val with
-            | VArray arr ->
-                (* Palette should be 768 bytes (256 colors * 3 RGB) *)
-                if Array.length arr <> 768 then
-                  raise (RuntimeError "PALETA_USTAW: palette must be 768 bytes (256 colors * RGB)")
-                else begin
-                  (* Convert array of VByte to bytes *)
-                  let palette_bytes = Bytes.create 768 in
-                  Array.iteri (fun i v ->
-                    let byte_val = to_int v land 0xFF in
-                    Bytes.set palette_bytes i (Char.chr byte_val)
-                  ) arr;
-                  ferdek_palette_set palette_bytes;
-                  VNull
-                end
-            | _ -> raise (RuntimeError "PALETA_USTAW: argument must be array"))
-       | _ -> raise (RuntimeError "PALETA_USTAW expects 1 argument (palette_array)"))
-
-  (* PIKSEL_MALUJ(x, y, color) - Draw pixel *)
-  | "PIKSEL_MALUJ" | "PIKSEL MALUJ" ->
-      (match args with
-       | [x_arg; y_arg; color_arg] ->
-           let x = to_int (eval_expr env x_arg) in
-           let y = to_int (eval_expr env y_arg) in
-           let color = to_int (eval_expr env color_arg) land 0xFF in
-           ferdek_pixel_draw x y color;
-           VNull
-       | _ -> raise (RuntimeError "PIKSEL_MALUJ expects 3 arguments (x, y, color)"))
-
-  (* EKRAN_ODŚWIEŻ() - Refresh screen (blit framebuffer) *)
-  | "EKRAN_ODŚWIEŹ" | "EKRAN_ODŚWIEŻ" | "EKRAN ODŚWIEŹ" | "EKRAN ODŚWIEŻ" | "EKRAN_ODSWIEZ" | "EKRAN ODSWIEZ" ->
-      (match args with
-       | [] ->
-           ferdek_screen_refresh ();
-           VNull
-       | _ -> raise (RuntimeError "EKRAN_ODŚWIEŻ expects 0 arguments"))
-
-  (* EKRAN_CZYŚĆ(color) - Clear screen to color *)
-  | "EKRAN_CZYŚĆ" | "EKRAN CZYŚĆ" | "EKRAN_CZYSĆ" | "EKRAN CZYSĆ" | "EKRAN_CZYSC" | "EKRAN CZYSC" ->
-      (match args with
-       | [color_arg] ->
-           let color = to_int (eval_expr env color_arg) land 0xFF in
-           ferdek_screen_clear color;
-           VNull
-       | _ -> raise (RuntimeError "EKRAN_CZYŚĆ expects 1 argument (color)"))
-
-  (* BUFOR_RAMKI_POBIERZ(x, y) - Get pixel from framebuffer *)
-  | "BUFOR_RAMKI_POBIERZ" | "BUFOR RAMKI POBIERZ" ->
-      (match args with
-       | [x_arg; y_arg] ->
-           let x = to_int (eval_expr env x_arg) in
-           let y = to_int (eval_expr env y_arg) in
-           let pixel = ferdek_framebuffer_get x y in
-           VInt pixel
-       | _ -> raise (RuntimeError "BUFOR_RAMKI_POBIERZ expects 2 arguments (x, y)"))
-
-  (* ZDARZENIE_CZEKAJ() - Poll for event (non-blocking) *)
-  | "ZDARZENIE_CZEKAJ" | "ZDARZENIE CZEKAJ" ->
-      (match args with
-       | [] ->
-           let (ev_type, key, x, y) = ferdek_event_poll () in
-           (* Return array [type, key, x, y] *)
-           VArray [| VInt ev_type; VInt key; VInt x; VInt y |]
-       | _ -> raise (RuntimeError "ZDARZENIE_CZEKAJ expects 0 arguments"))
-
-  (* ============ NETWORKING (UDP - DOOM multiplayer style) ============ *)
-
-  (* GNIAZDKO_OTWORZ(port) - Create UDP socket and bind to port *)
-  | "GNIAZDKO_OTWORZ" | "GNIAZDKO OTWORZ" ->
-      (match args with
-       | [port_arg] ->
-           let port = to_int (eval_expr env port_arg) in
-           (try
-              let sockfd = Unix.socket Unix.PF_INET Unix.SOCK_DGRAM 0 in
-              (* Set non-blocking *)
-              Unix.set_nonblock sockfd;
-              (* Allow address reuse *)
-              Unix.setsockopt sockfd Unix.SO_REUSEADDR true;
-              (* Bind to port *)
-              let addr = Unix.ADDR_INET (Unix.inet_addr_any, port) in
-              Unix.bind sockfd addr;
-              Printf.printf "UDP socket opened on port %d\n%!" port;
-              VInt (Obj.magic sockfd : int)  (* Convert Unix.file_descr to int *)
-            with Unix.Unix_error (err, fn, _) ->
-              raise (RuntimeError (Printf.sprintf "GNIAZDKO_OTWORZ: %s: %s" fn (Unix.error_message err))))
-       | _ -> raise (RuntimeError "GNIAZDKO_OTWORZ expects 1 argument (port)"))
-
-  (* GNIAZDKO_WYSLIJ(sockfd, host, port, data) - Send UDP packet *)
-  | "GNIAZDKO_WYSLIJ" | "GNIAZDKO WYSLIJ" ->
-      (match args with
-       | [sockfd_arg; host_arg; port_arg; data_arg] ->
-           let sockfd = (Obj.magic (to_int (eval_expr env sockfd_arg)) : Unix.file_descr) in
-           let host = to_string (eval_expr env host_arg) in
-           let port = to_int (eval_expr env port_arg) in
-           let data_val = eval_expr env data_arg in
-           (match data_val with
-            | VString s ->
-                (try
-                   let addr = Unix.ADDR_INET (Unix.inet_addr_of_string host, port) in
-                   let sent = Unix.sendto sockfd (Bytes.of_string s) 0 (String.length s) [] addr in
-                   VInt sent
-                 with Unix.Unix_error (err, fn, _) ->
-                   raise (RuntimeError (Printf.sprintf "GNIAZDKO_WYSLIJ: %s: %s" fn (Unix.error_message err))))
-            | VArray arr ->
-                (* Convert byte array to string *)
-                let bytes = Bytes.create (Array.length arr) in
-                Array.iteri (fun i v ->
-                  let byte_val = to_int v land 0xFF in
-                  Bytes.set bytes i (Char.chr byte_val)
-                ) arr;
-                (try
-                   let addr = Unix.ADDR_INET (Unix.inet_addr_of_string host, port) in
-                   let sent = Unix.sendto sockfd bytes 0 (Bytes.length bytes) [] addr in
-                   VInt sent
-                 with Unix.Unix_error (err, fn, _) ->
-                   raise (RuntimeError (Printf.sprintf "GNIAZDKO_WYSLIJ: %s: %s" fn (Unix.error_message err))))
-            | _ -> raise (RuntimeError "GNIAZDKO_WYSLIJ: data must be string or byte array"))
-       | _ -> raise (RuntimeError "GNIAZDKO_WYSLIJ expects 4 arguments (sockfd, host, port, data)"))
-
-  (* GNIAZDKO_ODBIERZ(sockfd, bufsize) - Receive UDP packet (non-blocking) *)
-  | "GNIAZDKO_ODBIERZ" | "GNIAZDKO ODBIERZ" ->
-      (match args with
-       | [sockfd_arg; bufsize_arg] ->
-           let sockfd = (Obj.magic (to_int (eval_expr env sockfd_arg)) : Unix.file_descr) in
-           let bufsize = to_int (eval_expr env bufsize_arg) in
-           let buffer = Bytes.create bufsize in
-           (try
-              let (received, from_addr) = Unix.recvfrom sockfd buffer 0 bufsize [] in
-              if received = 0 then
-                VInt 0  (* No data *)
-              else begin
-                (* Extract sender info *)
-                let (host, port) = match from_addr with
-                  | Unix.ADDR_INET (addr, p) -> (Unix.string_of_inet_addr addr, p)
-                  | _ -> ("unknown", 0)
-                in
-                (* Return tuple [data, host, port] *)
-                let data_str = Bytes.sub_string buffer 0 received in
-                VArray [| VString data_str; VString host; VInt port |]
-              end
-            with
-            | Unix.Unix_error (Unix.EAGAIN, _, _)
-            | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
-                VInt 0  (* No data available *)
-            | Unix.Unix_error (err, fn, _) ->
-                raise (RuntimeError (Printf.sprintf "GNIAZDKO_ODBIERZ: %s: %s" fn (Unix.error_message err))))
-       | _ -> raise (RuntimeError "GNIAZDKO_ODBIERZ expects 2 arguments (sockfd, bufsize)"))
-
-  (* GNIAZDKO_ZAMKNIJ(sockfd) - Close UDP socket *)
-  | "GNIAZDKO_ZAMKNIJ" | "GNIAZDKO ZAMKNIJ" ->
-      (match args with
-       | [sockfd_arg] ->
-           let sockfd = (Obj.magic (to_int (eval_expr env sockfd_arg)) : Unix.file_descr) in
-           (try
-              Unix.close sockfd;
-              Printf.printf "UDP socket closed\n%!";
-              VNull
-            with Unix.Unix_error (err, fn, _) ->
-              raise (RuntimeError (Printf.sprintf "GNIAZDKO_ZAMKNIJ: %s: %s" fn (Unix.error_message err))))
-       | _ -> raise (RuntimeError "GNIAZDKO_ZAMKNIJ expects 1 argument (sockfd)"))
-
-  | _ ->
+  match Hashtbl.find_opt builtins name with
+  | Some (arity, impl) ->
+      (match arity with
+       | Some n when n <> List.length args ->
+           raise (RuntimeError (Errors.wrong_arg_count name n (List.length args)))
+       | _ -> ());
+      impl env args
+  | None ->
       (* Try to find user-defined function *)
       try
         let func = get_var env name in
@@ -2080,6 +775,1321 @@ let set_module_loader loader =
 (* Import a module *)
 (* Każdy moduł wykonujemy raz na sesję - jak kompilator, który wkleja go raz *)
 let imported_modules : (string, unit) Hashtbl.t = Hashtbl.create 8
+
+(* ============ BUILTINS ============ *)
+
+(* Wbudowane funkcje: nazwy (z wariantami), liczba argumentów (None = dowolna), implementacja.
+   Liczbę argumentów sprawdza eval_function_call; z tej tabeli czyta też ferdek --check. *)
+let () =
+  List.iter (fun (names, arity, impl) ->
+    List.iter (fun n -> Hashtbl.replace builtins n (arity, impl)) names) [
+
+  ["USIĄDŹ NA KANAPIE"; "USIADZ NA KANAPIE"], None, (fun env args ->
+      let arg_values = List.map (eval_expr env) args in
+      let strings = List.map to_string arg_values in
+      VString (String.concat "" strings));
+
+  (* ROZCIĄGNIJ KANAPĘ - Padduje string do określonej długości *)
+  ["ROZCIĄGNIJ KANAPĘ"], Some 2, (fun env args ->
+      (match args with
+       | [str_arg; len_arg] ->
+           let s = to_string (eval_expr env str_arg) in
+           let target_len = to_int (eval_expr env len_arg) in
+           VString (Builtins_string.kanapa_rozciagnij s target_len)
+       | _ -> raise (RuntimeError (Errors.wrong_arg_count "ROZCIĄGNIJ KANAPĘ" 2 (List.length args)))));
+
+  (* POTNIJ KANAPĘ - Substring (początek, koniec) *)
+  ["POTNIJ KANAPĘ"], Some 3, (fun env args ->
+      (match args with
+       | [str_arg; start_arg; end_arg] ->
+           let s = to_string (eval_expr env str_arg) in
+           let start = to_int (eval_expr env start_arg) in
+           let end_pos = to_int (eval_expr env end_arg) in
+           (try
+             VString (Builtins_string.kanapa_potnij s start end_pos)
+           with Failure msg ->
+             raise (RuntimeError msg))
+       | _ -> raise (RuntimeError (Errors.wrong_arg_count "POTNIJ KANAPĘ" 3 (List.length args)))));
+
+  (* PRZESUŃ NA KANAPIE - Split string *)
+  ["PRZESUŃ NA KANAPIE"], Some 2, (fun env args ->
+      (match args with
+       | [str_arg; sep_arg] ->
+           let s = to_string (eval_expr env str_arg) in
+           let sep = to_string (eval_expr env sep_arg) in
+           let parts = Builtins_string.kanapa_przesun s sep in
+           VArray (Array.of_list (List.map (fun p -> VString p) parts))
+       | _ -> raise (RuntimeError "PRZESUŃ NA KANAPIE expects 2 arguments")));
+
+  (* POSKŁADAJ KANAPĘ - Join - łączy listę stringów *)
+  ["POSKŁADAJ KANAPĘ"], Some 2, (fun env args ->
+      (match args with
+       | [arr_arg; sep_arg] ->
+           let arr_val = eval_expr env arr_arg in
+           let sep = to_string (eval_expr env sep_arg) in
+           (match arr_val with
+            | VArray arr ->
+                let strings = Array.to_list (Array.map to_string arr) in
+                VString (String.concat sep strings)
+            | _ -> raise (RuntimeError "POSKŁADAJ KANAPĘ expects an array as first argument"))
+       | _ -> raise (RuntimeError "POSKŁADAJ KANAPĘ expects 2 arguments")));
+
+  (* WYTRZEP KANAPĘ - Usuwa białe znaki z początku i końca (trim) *)
+  ["WYTRZEP KANAPĘ"], Some 1, (fun env args ->
+      (match args with
+       | [arg] ->
+           let s = to_string (eval_expr env arg) in
+           VString (String.trim s)
+       | _ -> raise (RuntimeError "WYTRZEP KANAPĘ expects 1 argument")));
+
+  (* ZAMIEŃ NA KANAPIE - Replace *)
+  ["ZAMIEŃ NA KANAPIE"], Some 3, (fun env args ->
+      (match args with
+       | [str_arg; old_arg; new_arg] ->
+           let s = to_string (eval_expr env str_arg) in
+           let old_str = to_string (eval_expr env old_arg) in
+           let new_str = to_string (eval_expr env new_arg) in
+           VString (Builtins_string.kanapa_zamien s old_str new_str)
+       | _ -> raise (RuntimeError "ZAMIEŃ NA KANAPIE expects 3 arguments")));
+
+  (* ZNAK Z KANAPY(s, i) - znak (bajt) na pozycji i, jak w POTNIJ KANAPĘ *)
+  ["ZNAK Z KANAPY"], Some 2, (fun env args ->
+      (match args with
+       | [str_arg; idx_arg] ->
+           let s = to_string (eval_expr env str_arg) in
+           let i = to_int (eval_expr env idx_arg) in
+           if i < 0 || i >= String.length s then raise (RuntimeError "ZNAK Z KANAPY: indeks poza zakresem");
+           VString (String.make 1 s.[i])
+       | _ -> raise (RuntimeError "ZNAK Z KANAPY expects 2 arguments")));
+
+  ["KANAPA DO GÓRY"], Some 1, (fun env args ->
+      (match args with
+       | [arg] -> VString (Builtins_string.kanapa_do_gory (to_string (eval_expr env arg)))
+       | _ -> raise (RuntimeError "KANAPA DO GÓRY expects 1 argument")));
+
+  ["KANAPA W DÓŁ"], Some 1, (fun env args ->
+      (match args with
+       | [arg] -> VString (Builtins_string.kanapa_w_dol (to_string (eval_expr env arg)))
+       | _ -> raise (RuntimeError "KANAPA W DÓŁ expects 1 argument")));
+
+  (* ILE MIEJSCA NA KANAPIE - Zwraca długość stringu *)
+  ["ILE MIEJSCA NA KANAPIE"], Some 1, (fun env args ->
+      (match args with
+       | [arg] ->
+           let v = eval_expr env arg in
+           let s = to_string v in
+           VInt (String.length s)
+       | _ -> raise (RuntimeError "ILE MIEJSCA NA KANAPIE expects 1 argument")));
+
+  (* OTWÓRZ KIBEL(ścieżka) - otwiera plik do odczytu *)
+  ["OTWÓRZ KIBEL"], Some 1, (fun env args ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           (try
+             let channel = open_in path in
+             VFileHandle (InputHandle channel)
+           with Sys_error msg ->
+             raise (RuntimeError (Printf.sprintf "OTWÓRZ KIBEL: %s" msg)))
+       | _ -> raise (RuntimeError "OTWÓRZ KIBEL expects 1 argument")));
+
+  (* ZAMKNIJ KIBEL(uchwyt) - zamyka plik *)
+  ["ZAMKNIJ KIBEL"], Some 1, (fun env args ->
+      (match args with
+       | [handle_arg] ->
+           let handle_val = eval_expr env handle_arg in
+           (match handle_val with
+            | VFileHandle (InputHandle ch) ->
+                close_in ch;
+                VNull
+            | VFileHandle (OutputHandle ch) ->
+                close_out ch;
+                VNull
+            | _ -> raise (RuntimeError "ZAMKNIJ_KIBEL: argument must be a file handle"))
+       | _ -> raise (RuntimeError "ZAMKNIJ_KIBEL expects 1 argument")));
+
+  (* SPUŚĆ WODĘ(uchwyt, dane) - zapisuje do pliku *)
+  ["SPUŚĆ WODĘ"], Some 2, (fun env args ->
+      (match args with
+       | [handle_arg; data_arg] ->
+           let handle_val = eval_expr env handle_arg in
+           let data = to_string (eval_expr env data_arg) in
+           (match handle_val with
+            | VFileHandle (OutputHandle ch) ->
+                output_string ch data;
+                flush ch;
+                VNull
+            | VFileHandle (InputHandle _) ->
+                raise (RuntimeError "SPUŚĆ_WODĘ: cannot write to input file handle")
+            | _ -> raise (RuntimeError "SPUŚĆ_WODĘ: first argument must be a file handle"))
+       | _ -> raise (RuntimeError "SPUŚĆ_WODĘ expects 2 arguments")));
+
+  (* WYPOMPUJ(uchwyt) - czyta cały plik *)
+  ["WYPOMPUJ"], Some 1, (fun env args ->
+      (match args with
+       | [handle_arg] ->
+           let handle_val = eval_expr env handle_arg in
+           (match handle_val with
+            | VFileHandle (InputHandle ch) ->
+                let rec read_all acc =
+                  try
+                    let line = input_line ch in
+                    read_all (line :: acc)
+                  with End_of_file ->
+                    List.rev acc
+                in
+                let lines = read_all [] in
+                VArray (Array.of_list (List.map (fun s -> VString s) lines))
+            | VFileHandle (OutputHandle _) ->
+                raise (RuntimeError "WYPOMPUJ: cannot read from output file handle")
+            | _ -> raise (RuntimeError "WYPOMPUJ: argument must be a file handle"))
+       | _ -> raise (RuntimeError "WYPOMPUJ expects 1 argument")));
+
+  (* CZY KIBEL ZAJĘTY(ścieżka) - sprawdza czy plik istnieje *)
+  ["CZY KIBEL ZAJĘTY"], Some 1, (fun env args ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           VBool (Sys.file_exists path)
+       | _ -> raise (RuntimeError "CZY_KIBEL_ZAJĘTY expects 1 argument")));
+
+  (* OTWÓRZ KIBEL DO ZAPISU(ścieżka) - otwiera plik do zapisu *)
+  ["OTWÓRZ KIBEL DO ZAPISU"], Some 1, (fun env args ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           (try
+             let channel = open_out path in
+             VFileHandle (OutputHandle channel)
+           with Sys_error msg ->
+             raise (RuntimeError (Printf.sprintf "OTWÓRZ_KIBEL_DO_ZAPISU: %s" msg)))
+       | _ -> raise (RuntimeError "OTWÓRZ_KIBEL_DO_ZAPISU expects 1 argument")));
+
+  (* SYSTEM(komenda) - wykonuje komendę systemową i zwraca output *)
+  (* OPAKUJ W GAZETĘ(tekst) - bezpieczne cytowanie argumentu dla powłoki (do SYSTEM) *)
+  ["OPAKUJ W GAZETĘ"], Some 1, (fun env args ->
+      (match args with
+       | [arg] -> VString (Filename.quote (to_string (eval_expr env arg)))
+       | _ -> raise (RuntimeError "OPAKUJ W GAZETĘ expects 1 argument")));
+
+  ["SYSTEM"], Some 1, (fun env args ->
+      (match args with
+       | [cmd_arg] ->
+           let cmd = to_string (eval_expr env cmd_arg) in
+           (try
+             let ic = Unix.open_process_in cmd in
+             let buf = Buffer.create 256 in
+             (try
+               while true do
+                 Buffer.add_channel buf ic 1
+               done;
+               VString ""
+             with End_of_file ->
+               let _ = Unix.close_process_in ic in
+               let output = Buffer.contents buf in
+               VString output)
+           with Unix.Unix_error (err, _, _) ->
+             raise (RuntimeError (Printf.sprintf "SYSTEM error: %s" (Unix.error_message err))))
+       | _ -> raise (RuntimeError "SYSTEM expects 1 argument")));
+
+  (* ========== SZAFKA (HashMap/Dictionary) operations ========== *)
+  (* OTWÓRZ SZAFKĘ() - creates empty dictionary *)
+  ["OTWÓRZ SZAFKĘ"], Some 0, (fun env args ->
+      (match args with
+       | [] -> VHashMap (Hashtbl.create 16)
+       | _ -> raise (RuntimeError "OTWÓRZ SZAFKĘ expects 0 arguments")));
+
+  (* WŁÓŻ DO SZAFKI(dict, key, value) - adds key-value pair *)
+  ["WŁÓŻ DO SZAFKI"], Some 3, (fun env args ->
+      (match args with
+       | [dict_arg; key_arg; value_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           let key = to_string (eval_expr env key_arg) in
+           let value = eval_expr env value_arg in
+           (match dict_val with
+            | VHashMap tbl ->
+                Hashtbl.replace tbl key value;
+                VNull
+            | _ -> raise (RuntimeError "WŁÓŻ DO SZAFKI: first argument must be a dictionary"))
+       | _ -> raise (RuntimeError "WŁÓŻ DO SZAFKI expects 3 arguments")));
+
+  (* WYJMIJ Z SZAFKI(dict, key) - gets value by key *)
+  ["WYJMIJ Z SZAFKI"], Some 2, (fun env args ->
+      (match args with
+       | [dict_arg; key_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           let key = to_string (eval_expr env key_arg) in
+           (match dict_val with
+            | VHashMap tbl ->
+                (match Hashtbl.find_opt tbl key with
+                 | Some v -> v
+                 | None -> VNull)
+            | _ -> raise (RuntimeError "WYJMIJ Z SZAFKI: first argument must be a dictionary"))
+       | _ -> raise (RuntimeError "WYJMIJ Z SZAFKI expects 2 arguments")));
+
+  (* WYRZUĆ ZE SZAFKI(dict, key) - removes key-value pair *)
+  ["WYRZUĆ ZE SZAFKI"], Some 2, (fun env args ->
+      (match args with
+       | [dict_arg; key_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           let key = to_string (eval_expr env key_arg) in
+           (match dict_val with
+            | VHashMap tbl ->
+                Hashtbl.remove tbl key;
+                VNull
+            | _ -> raise (RuntimeError "WYRZUĆ ZE SZAFKI: first argument must be a dictionary"))
+       | _ -> raise (RuntimeError "WYRZUĆ ZE SZAFKI expects 2 arguments")));
+
+  (* CZY W SZAFCE(dict, key) - checks if key exists *)
+  ["CZY W SZAFCE"], Some 2, (fun env args ->
+      (match args with
+       | [dict_arg; key_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           let key = to_string (eval_expr env key_arg) in
+           (match dict_val with
+            | VHashMap tbl ->
+                VBool (Builtins_hashmap.szafka_czy_w_szafce tbl key)
+            | _ -> raise (RuntimeError "CZY W SZAFCE: first argument must be a dictionary"))
+       | _ -> raise (RuntimeError "CZY W SZAFCE expects 2 arguments")));
+
+  (* WSZYSTKIE SZUFLADKI(dict) - returns list of all keys *)
+  ["WSZYSTKIE SZUFLADKI"], Some 1, (fun env args ->
+      (match args with
+       | [dict_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           (match dict_val with
+            | VHashMap tbl ->
+                let keys = Builtins_hashmap.szafka_wszystkie_szufladki tbl in
+                VArray (Array.of_list (List.map (fun k -> VString k) keys))
+            | _ -> raise (RuntimeError "WSZYSTKIE SZUFLADKI: argument must be a dictionary"))
+       | _ -> raise (RuntimeError "WSZYSTKIE SZUFLADKI expects 1 argument")));
+
+  (* ILE W SZAFCE(dict) - returns number of elements *)
+  ["ILE W SZAFCE"], Some 1, (fun env args ->
+      (match args with
+       | [dict_arg] ->
+           let dict_val = eval_expr env dict_arg in
+           (match dict_val with
+            | VHashMap tbl ->
+                VInt (Builtins_hashmap.szafka_ile_w_szafce tbl)
+            | _ -> raise (RuntimeError "ILE W SZAFCE: argument must be a dictionary"))
+       | _ -> raise (RuntimeError "ILE W SZAFCE expects 1 argument")));
+
+  (* ========== KIBEL (File operations) ========== *)
+  (* ZRÓB KIBEL(path) - creates directory *)
+  ["ZRÓB KIBEL"], Some 1, (fun env args ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           VBool (Builtins_file.kibel_zrob path)
+       | _ -> raise (RuntimeError "ZRÓB KIBEL expects 1 argument")));
+
+  (* WYWAL KIBEL(path) - removes directory *)
+  ["WYWAL KIBEL"], Some 1, (fun env args ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           VBool (Builtins_file.kibel_wywal path)
+       | _ -> raise (RuntimeError "WYWAL KIBEL expects 1 argument")));
+
+  (* CO W KIBLU(path) - lists files in directory *)
+  ["CO W KIBLU"], Some 1, (fun env args ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           let files = Builtins_file.kibel_co_w_kiblu path in
+           VArray (Array.of_list (List.map (fun f -> VString f) files))
+       | _ -> raise (RuntimeError "CO W KIBLU expects 1 argument")));
+
+  (* CZY TO KIBEL(path) - checks if path is directory *)
+  ["CZY TO KIBEL"], Some 1, (fun env args ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           VBool (Builtins_file.kibel_czy_to_kibel path)
+       | _ -> raise (RuntimeError "CZY TO KIBEL expects 1 argument")));
+
+  (* PRZEKOPIUJ KIBEL(src, dest) - copies file *)
+  ["PRZEKOPIUJ KIBEL"], Some 2, (fun env args ->
+      (match args with
+       | [src_arg; dest_arg] ->
+           let src = to_string (eval_expr env src_arg) in
+           let dest = to_string (eval_expr env dest_arg) in
+           VBool (Builtins_file.kibel_przekopiuj src dest)
+       | _ -> raise (RuntimeError "PRZEKOPIUJ KIBEL expects 2 arguments")));
+
+  (* PRZENIEŚ KIBEL(src, dest) - moves/renames file *)
+  ["PRZENIEŚ KIBEL"], Some 2, (fun env args ->
+      (match args with
+       | [src_arg; dest_arg] ->
+           let src = to_string (eval_expr env src_arg) in
+           let dest = to_string (eval_expr env dest_arg) in
+           VBool (Builtins_file.kibel_przenies src dest)
+       | _ -> raise (RuntimeError "PRZENIEŚ KIBEL expects 2 arguments")));
+
+  (* WYKOP WSZYSTKIE KIBLE(path) - recursive delete *)
+  ["WYKOP WSZYSTKIE KIBLE"], Some 1, (fun env args ->
+      (match args with
+       | [path_arg] ->
+           let path = to_string (eval_expr env path_arg) in
+           Builtins_file.kibel_wykop_wszystkie path;
+           VNull
+       | _ -> raise (RuntimeError "WYKOP WSZYSTKIE KIBLE expects 1 argument")));
+
+  (* ========== WERSALKA (List/Array operations) ========== *)
+  (* ILE NA WERSALCE(array) - returns array length *)
+  ["ILE NA WERSALCE"], Some 1, (fun env args ->
+      (match args with
+       | [arr_arg] ->
+           let arr_val = eval_expr env arr_arg in
+           (match arr_val with
+            | VArray arr -> VInt (Builtins_list.wersalka_ile_na arr)
+            | _ -> raise (RuntimeError "ILE NA WERSALCE: argument must be an array"))
+       | _ -> raise (RuntimeError "ILE NA WERSALCE expects 1 argument")));
+
+  (* POŁÓŻ NA WERSALCE(array, element) - appends element to array *)
+  ["POŁÓŻ NA WERSALCE"], Some 2, (fun env args ->
+      (match args with
+       | [arr_arg; elem_arg] ->
+           let arr_val = eval_expr env arr_arg in
+           let elem = eval_expr env elem_arg in
+           (match arr_val with
+            | VArray arr ->
+                let new_arr = Builtins_list.wersalka_poloz_na arr elem in
+                VArray new_arr
+            | _ -> raise (RuntimeError "POŁÓŻ NA WERSALCE: first argument must be an array"))
+       | _ -> raise (RuntimeError "POŁÓŻ NA WERSALCE expects 2 arguments")));
+
+  (* ZDEJMIJ Z WERSALKI(array) - pops last element *)
+  ["ZDEJMIJ Z WERSALKI"], Some 1, (fun env args ->
+      (match args with
+       | [arr_arg] ->
+           let arr_val = eval_expr env arr_arg in
+           (match arr_val with
+            | VArray arr ->
+                (try
+                  let (new_arr, popped) = Builtins_list.wersalka_zdejmij_z arr in
+                  (* Return the popped element *)
+                  popped
+                with Failure msg ->
+                  raise (RuntimeError msg))
+            | _ -> raise (RuntimeError "ZDEJMIJ Z WERSALKI: argument must be an array"))
+       | _ -> raise (RuntimeError "ZDEJMIJ Z WERSALKI expects 1 argument")));
+
+  (* CZY LEŻY NA WERSALCE(array, element) - checks if element is in array *)
+  ["CZY LEŻY NA WERSALCE"], Some 2, (fun env args ->
+      (match args with
+       | [arr_arg; elem_arg] ->
+           let arr_val = eval_expr env arr_arg in
+           let elem = eval_expr env elem_arg in
+           (match arr_val with
+            | VArray arr ->
+                let equal_func a b =
+                  match (a, b) with
+                  | (VInt x, VInt y) -> x = y
+                  | (VString x, VString y) -> x = y
+                  | (VBool x, VBool y) -> x = y
+                  | _ -> false
+                in
+                VBool (Builtins_list.wersalka_czy_lezy_na arr elem equal_func)
+            | _ -> raise (RuntimeError "CZY LEŻY NA WERSALCE: first argument must be an array"))
+       | _ -> raise (RuntimeError "CZY LEŻY NA WERSALCE expects 2 arguments")));
+
+  (* ============ MEMORY MANAGEMENT (DOOM-style Zone Allocator) ============ *)
+  (* DAJ MI HAJS - Z_Malloc(size, tag) - Allocate memory block *)
+  ["DAJ MI HAJS"], Some 2, (fun env args ->
+      (match args with
+       | [size_arg; tag_arg] ->
+           let size = to_int (eval_expr env size_arg) in
+           let tag_val = to_int (eval_expr env tag_arg) in
+           if size <= 0 then
+             raise (RuntimeError "DAJ MI HAJS: size must be positive")
+           else begin
+             let tag = int_to_tag tag_val in
+             let id = !next_block_id in
+             next_block_id := !next_block_id + 1;
+             let block = {
+               size = size;
+               tag = tag;
+               data = Array.make size VNull;
+               id = id;
+             } in
+             Hashtbl.add zone_blocks id block;
+             total_allocated := !total_allocated + size;
+             (* Return pointer to block ID *)
+             VPointer (ref (VInt id))
+           end
+       | _ -> raise (RuntimeError "DAJ MI HAJS expects 2 arguments (size, tag)")));
+
+  (* ODDAJ_WSZYSTKO - Z_Free(ptr) - Free memory block *)
+  ["ODDAJ WSZYSTKO"], Some 1, (fun env args ->
+      (match args with
+       | [ptr_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       total_freed := !total_freed + block.size;
+                       Hashtbl.remove zone_blocks block_id;
+                       VNull
+                     end else
+                       raise (RuntimeError "ODDAJ WSZYSTKO: block does not exist")
+                 | _ -> raise (RuntimeError "ODDAJ WSZYSTKO: invalid pointer"))
+            | _ -> raise (RuntimeError "ODDAJ WSZYSTKO expects a pointer"))
+       | _ -> raise (RuntimeError "ODDAJ WSZYSTKO expects 1 argument (pointer)")));
+
+  (* KOMORNICZY_WINDYKACJA - Z_FreeTags(lowtag, hightag) - Free blocks by tag range *)
+  ["KOMORNICZY WINDYKACJA"], Some 2, (fun env args ->
+      (match args with
+       | [lowtag_arg; hightag_arg] ->
+           let lowtag = to_int (eval_expr env lowtag_arg) in
+           let hightag = to_int (eval_expr env hightag_arg) in
+           let freed_count = ref 0 in
+           let to_remove = ref [] in
+           Hashtbl.iter (fun id block ->
+             let tag_val = tag_to_int block.tag in
+             if tag_val >= lowtag && tag_val <= hightag then begin
+               total_freed := !total_freed + block.size;
+               to_remove := id :: !to_remove;
+               freed_count := !freed_count + 1
+             end
+           ) zone_blocks;
+           List.iter (Hashtbl.remove zone_blocks) !to_remove;
+           VInt !freed_count
+       | _ -> raise (RuntimeError "KOMORNICZY WINDYKACJA expects 2 arguments (lowtag, hightag)")));
+
+  (* ZAPISZ_DO_BLOKU - Write to memory block *)
+  ["ZAPISZ DO BLOKU"], Some 3, (fun env args ->
+      (match args with
+       | [ptr_arg; index_arg; value_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           let index = to_int (eval_expr env index_arg) in
+           let value = eval_expr env value_arg in
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       if index >= 0 && index < block.size then begin
+                         block.data.(index) <- value;
+                         VNull
+                       end else
+                         raise (RuntimeError (Printf.sprintf "ZAPISZ DO BLOKU: index %d out of bounds (size: %d)" index block.size))
+                     end else
+                       raise (RuntimeError "ZAPISZ DO BLOKU: block does not exist")
+                 | _ -> raise (RuntimeError "ZAPISZ DO BLOKU: invalid pointer"))
+            | _ -> raise (RuntimeError "ZAPISZ DO BLOKU expects a pointer as first argument"))
+       | _ -> raise (RuntimeError "ZAPISZ DO BLOKU expects 3 arguments (ptr, index, value)")));
+
+  (* CZYTAJ_Z_BLOKU - Read from memory block *)
+  ["CZYTAJ Z BLOKU"], Some 2, (fun env args ->
+      (match args with
+       | [ptr_arg; index_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           let index = to_int (eval_expr env index_arg) in
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       if index >= 0 && index < block.size then
+                         block.data.(index)
+                       else
+                         raise (RuntimeError (Printf.sprintf "CZYTAJ Z BLOKU: index %d out of bounds (size: %d)" index block.size))
+                     end else
+                       raise (RuntimeError "CZYTAJ Z BLOKU: block does not exist")
+                 | _ -> raise (RuntimeError "CZYTAJ Z BLOKU: invalid pointer"))
+            | _ -> raise (RuntimeError "CZYTAJ Z BLOKU expects a pointer as first argument"))
+       | _ -> raise (RuntimeError "CZYTAJ Z BLOKU expects 2 arguments (ptr, index)")));
+
+  (* ROZMIAR_BLOKU - Get memory block size *)
+  ["ROZMIAR BLOKU"], Some 1, (fun env args ->
+      (match args with
+       | [ptr_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       VInt block.size
+                     end else
+                       raise (RuntimeError "ROZMIAR BLOKU: block does not exist")
+                 | _ -> raise (RuntimeError "ROZMIAR BLOKU: invalid pointer"))
+            | _ -> raise (RuntimeError "ROZMIAR BLOKU expects a pointer"))
+       | _ -> raise (RuntimeError "ROZMIAR BLOKU expects 1 argument (pointer)")));
+
+  (* ILE_KASY_LECI - Get memory statistics *)
+  ["ILE KASY LECI"], Some 0, (fun env args ->
+      (match args with
+       | [] ->
+           let allocated = !total_allocated in
+           let freed = !total_freed in
+           let current = allocated - freed in
+           let block_count = Hashtbl.length zone_blocks in
+           (* Return hash map with stats *)
+           let stats = Hashtbl.create 4 in
+           Hashtbl.add stats "allocated" (VInt allocated);
+           Hashtbl.add stats "freed" (VInt freed);
+           Hashtbl.add stats "current" (VInt current);
+           Hashtbl.add stats "blocks" (VInt block_count);
+           VHashMap stats
+       | _ -> raise (RuntimeError "ILE KASY LECI expects no arguments")));
+
+  (* TAG_TRWALE - Memory tag constant (PU_STATIC) *)
+  ["TAG_TRWALE"], Some 0, (fun env args ->
+      (match args with
+       | [] -> VInt 1
+       | _ -> raise (RuntimeError "TAG_TRWALE is a constant, no arguments expected")));
+
+  (* TAG_POZIOM - Memory tag constant (PU_LEVEL) *)
+  ["TAG_POZIOM"], Some 0, (fun env args ->
+      (match args with
+       | [] -> VInt 50
+       | _ -> raise (RuntimeError "TAG_POZIOM is a constant, no arguments expected")));
+
+  (* TAG_SMIECIOWE - Memory tag constant (PU_CACHE) *)
+  ["TAG_SMIECIOWE"], Some 0, (fun env args ->
+      (match args with
+       | [] -> VInt 100
+       | _ -> raise (RuntimeError "TAG_SMIECIOWE is a constant, no arguments expected")));
+
+  (* ============ FRAMEBUFFER FUNCTIONS (TELEWIZOR) ============ *)
+  (* WŁĄCZ TELEWIZOR(width, height) - Create framebuffer *)
+  ["WŁĄCZ TELEWIZOR"; "WLACZ TELEWIZOR"], Some 2, (fun env args ->
+      (match args with
+       | [width_arg; height_arg] ->
+           let width = to_int (eval_expr env width_arg) in
+           let height = to_int (eval_expr env height_arg) in
+           if width <= 0 || height <= 0 then
+             raise (RuntimeError "WŁĄCZ TELEWIZOR: width and height must be positive")
+           else begin
+             let id = !next_fb_id in
+             next_fb_id := !next_fb_id + 1;
+             let total_pixels = width * height in
+             let fb = {
+               width = width;
+               height = height;
+               pixels = Array.make total_pixels 0;  (* Initialize to black *)
+               id = id;
+             } in
+             Hashtbl.add framebuffers id fb;
+             (* Return pointer to framebuffer ID *)
+             VPointer (ref (VInt id))
+           end
+       | _ -> raise (RuntimeError "WŁĄCZ TELEWIZOR expects 2 arguments (width, height)")));
+
+  (* WYŁĄCZ TELEWIZOR(fb_ptr) - Destroy framebuffer *)
+  ["WYŁĄCZ TELEWIZOR"; "WYLACZ TELEWIZOR"], Some 1, (fun env args ->
+      (match args with
+       | [fb_arg] ->
+           let fb_val = eval_expr env fb_arg in
+           (match fb_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt fb_id ->
+                     if Hashtbl.mem framebuffers fb_id then begin
+                       Hashtbl.remove framebuffers fb_id;
+                       VNull
+                     end else
+                       raise (RuntimeError "WYŁĄCZ TELEWIZOR: invalid framebuffer")
+                 | _ -> raise (RuntimeError "WYŁĄCZ TELEWIZOR: argument must be framebuffer pointer"))
+            | _ -> raise (RuntimeError "WYŁĄCZ TELEWIZOR: argument must be framebuffer pointer"))
+       | _ -> raise (RuntimeError "WYŁĄCZ TELEWIZOR expects 1 argument (framebuffer)")));
+
+  (* ZMIEŃ KANAŁ(fb_ptr, x, y, color) - Write pixel to framebuffer *)
+  ["ZMIEŃ KANAŁ"; "ZMIEN KANAL"], Some 4, (fun env args ->
+      (match args with
+       | [fb_arg; x_arg; y_arg; color_arg] ->
+           let fb_val = eval_expr env fb_arg in
+           let x = to_int (eval_expr env x_arg) in
+           let y = to_int (eval_expr env y_arg) in
+           let color = to_int (eval_expr env color_arg) in
+           (match fb_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt fb_id ->
+                     if Hashtbl.mem framebuffers fb_id then begin
+                       let fb = Hashtbl.find framebuffers fb_id in
+                       if x < 0 || x >= fb.width || y < 0 || y >= fb.height then
+                         raise (RuntimeError "ZMIEŃ KANAŁ: pixel coordinates out of bounds")
+                       else begin
+                         let offset = y * fb.width + x in
+                         fb.pixels.(offset) <- color;
+                         VNull
+                       end
+                     end else
+                       raise (RuntimeError "ZMIEŃ KANAŁ: invalid framebuffer")
+                 | _ -> raise (RuntimeError "ZMIEŃ KANAŁ: first argument must be framebuffer pointer"))
+            | _ -> raise (RuntimeError "ZMIEŃ KANAŁ: first argument must be framebuffer pointer"))
+       | _ -> raise (RuntimeError "ZMIEŃ KANAŁ expects 4 arguments (framebuffer, x, y, color)")));
+
+  (* CO LECI W TELEWIZORZE(fb_ptr, x, y) - Read pixel from framebuffer *)
+  ["CO LECI W TELEWIZORZE"], Some 3, (fun env args ->
+      (match args with
+       | [fb_arg; x_arg; y_arg] ->
+           let fb_val = eval_expr env fb_arg in
+           let x = to_int (eval_expr env x_arg) in
+           let y = to_int (eval_expr env y_arg) in
+           (match fb_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt fb_id ->
+                     if Hashtbl.mem framebuffers fb_id then begin
+                       let fb = Hashtbl.find framebuffers fb_id in
+                       if x < 0 || x >= fb.width || y < 0 || y >= fb.height then
+                         raise (RuntimeError "CO LECI W TELEWIZORZE: pixel coordinates out of bounds")
+                       else begin
+                         let offset = y * fb.width + x in
+                         VInt fb.pixels.(offset)
+                       end
+                     end else
+                       raise (RuntimeError "CO LECI W TELEWIZORZE: invalid framebuffer")
+                 | _ -> raise (RuntimeError "CO LECI W TELEWIZORZE: first argument must be framebuffer pointer"))
+            | _ -> raise (RuntimeError "CO LECI W TELEWIZORZE: first argument must be framebuffer pointer"))
+       | _ -> raise (RuntimeError "CO LECI W TELEWIZORZE expects 3 arguments (framebuffer, x, y)")));
+
+  (* ============ LOOKUP TABLE FUNCTIONS ============ *)
+  (* STWÓRZ TABELĘ(size) - Create lookup table *)
+  ["STWÓRZ TABELĘ"; "STWORZ TABELE"], Some 1, (fun env args ->
+      (match args with
+       | [size_arg] ->
+           let size = to_int (eval_expr env size_arg) in
+           if size <= 0 then
+             raise (RuntimeError "STWÓRZ TABELĘ: size must be positive")
+           else begin
+             let id = !next_table_id in
+             next_table_id := !next_table_id + 1;
+             let table = {
+               data = Array.make size 0;
+               size = size;
+               id = id;
+             } in
+             Hashtbl.add lookup_tables id table;
+             VPointer (ref (VInt id))
+           end
+       | _ -> raise (RuntimeError "STWÓRZ TABELĘ expects 1 argument (size)")));
+
+  (* WPISZ DO TABELI(table_ptr, index, value) - Write to lookup table *)
+  ["WPISZ DO TABELI"], Some 3, (fun env args ->
+      (match args with
+       | [table_arg; index_arg; value_arg] ->
+           let table_val = eval_expr env table_arg in
+           let index = to_int (eval_expr env index_arg) in
+           let value = to_int (eval_expr env value_arg) in
+           (match table_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt table_id ->
+                     if Hashtbl.mem lookup_tables table_id then begin
+                       let table = Hashtbl.find lookup_tables table_id in
+                       if index < 0 || index >= table.size then
+                         raise (RuntimeError "WPISZ DO TABELI: index out of bounds")
+                       else begin
+                         table.data.(index) <- value;
+                         VNull
+                       end
+                     end else
+                       raise (RuntimeError "WPISZ DO TABELI: invalid lookup table")
+                 | _ -> raise (RuntimeError "WPISZ DO TABELI: first argument must be table pointer"))
+            | _ -> raise (RuntimeError "WPISZ DO TABELI: first argument must be table pointer"))
+       | _ -> raise (RuntimeError "WPISZ DO TABELI expects 3 arguments (table, index, value)")));
+
+  (* SPRAWDŹ W TABELI(table_ptr, index) - Read from lookup table *)
+  ["SPRAWDŹ W TABELI"; "SPRAWDZ W TABELI"], Some 2, (fun env args ->
+      (match args with
+       | [table_arg; index_arg] ->
+           let table_val = eval_expr env table_arg in
+           let index = to_int (eval_expr env index_arg) in
+           (match table_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt table_id ->
+                     if Hashtbl.mem lookup_tables table_id then begin
+                       let table = Hashtbl.find lookup_tables table_id in
+                       if index < 0 || index >= table.size then
+                         raise (RuntimeError "SPRAWDŹ W TABELI: index out of bounds")
+                       else
+                         VInt table.data.(index)
+                     end else
+                       raise (RuntimeError "SPRAWDŹ W TABELI: invalid lookup table")
+                 | _ -> raise (RuntimeError "SPRAWDŹ W TABELI: first argument must be table pointer"))
+            | _ -> raise (RuntimeError "SPRAWDŹ W TABELI: first argument must be table pointer"))
+       | _ -> raise (RuntimeError "SPRAWDŹ W TABELI expects 2 arguments (table, index)")));
+
+  (* ============ DIRECT MEMORY ACCESS ============ *)
+  (* PISZ BAJT(ptr, offset, value) - Write byte directly to memory block *)
+  ["PISZ BAJT"], Some 3, (fun env args ->
+      (match args with
+       | [ptr_arg; offset_arg; value_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           let offset = to_int (eval_expr env offset_arg) in
+           let value = to_int (eval_expr env value_arg) in
+           (* Same as ZAPISZ DO BLOKU but emphasizes byte-level access *)
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       if offset < 0 || offset >= block.size then
+                         raise (RuntimeError "PISZ BAJT: offset out of bounds")
+                       else begin
+                         block.data.(offset) <- VInt value;
+                         VNull
+                       end
+                     end else
+                       raise (RuntimeError "PISZ BAJT: invalid memory block")
+                 | _ -> raise (RuntimeError "PISZ BAJT: first argument must be pointer"))
+            | _ -> raise (RuntimeError "PISZ BAJT: first argument must be pointer"))
+       | _ -> raise (RuntimeError "PISZ BAJT expects 3 arguments (ptr, offset, value)")));
+
+  (* CZYTAJ BAJT(ptr, offset) - Read byte directly from memory block *)
+  ["CZYTAJ BAJT"], Some 2, (fun env args ->
+      (match args with
+       | [ptr_arg; offset_arg] ->
+           let ptr_val = eval_expr env ptr_arg in
+           let offset = to_int (eval_expr env offset_arg) in
+           (* Same as CZYTAJ Z BLOKU but emphasizes byte-level access *)
+           (match ptr_val with
+            | VPointer ptr ->
+                (match !ptr with
+                 | VInt block_id ->
+                     if Hashtbl.mem zone_blocks block_id then begin
+                       let block = Hashtbl.find zone_blocks block_id in
+                       if offset < 0 || offset >= block.size then
+                         raise (RuntimeError "CZYTAJ BAJT: offset out of bounds")
+                       else
+                         block.data.(offset)
+                     end else
+                       raise (RuntimeError "CZYTAJ BAJT: invalid memory block")
+                 | _ -> raise (RuntimeError "CZYTAJ BAJT: first argument must be pointer"))
+            | _ -> raise (RuntimeError "CZYTAJ BAJT: first argument must be pointer"))
+       | _ -> raise (RuntimeError "CZYTAJ BAJT expects 2 arguments (ptr, offset)")));
+
+  (* KOPIUJ PAMIĘĆ(src_ptr, dst_ptr, size) - Memory copy (like memcpy) *)
+  ["KOPIUJ PAMIĘĆ"; "KOPIUJ PAMIEC"], Some 3, (fun env args ->
+      (match args with
+       | [src_arg; dst_arg; size_arg] ->
+           let src_val = eval_expr env src_arg in
+           let dst_val = eval_expr env dst_arg in
+           let size = to_int (eval_expr env size_arg) in
+           (match src_val, dst_val with
+            | VPointer src_ptr, VPointer dst_ptr ->
+                (match !src_ptr, !dst_ptr with
+                 | VInt src_id, VInt dst_id ->
+                     if Hashtbl.mem zone_blocks src_id && Hashtbl.mem zone_blocks dst_id then begin
+                       let src_block = Hashtbl.find zone_blocks src_id in
+                       let dst_block = Hashtbl.find zone_blocks dst_id in
+                       if size > src_block.size || size > dst_block.size then
+                         raise (RuntimeError "KOPIUJ PAMIĘĆ: size exceeds block size")
+                       else begin
+                         Array.blit src_block.data 0 dst_block.data 0 size;
+                         VNull
+                       end
+                     end else
+                       raise (RuntimeError "KOPIUJ PAMIĘĆ: invalid memory blocks")
+                 | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ: arguments must be pointers"))
+            | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ: arguments must be pointers"))
+       | _ -> raise (RuntimeError "KOPIUJ PAMIĘĆ expects 3 arguments (src, dst, size)")));
+
+  (* ============ TYPE CASTING FUNCTIONS ============ *)
+  (* ZRÓB BAJCIK(expr) - Cast to byte (0-255) *)
+  ["ZRÓB BAJCIK"; "ZROB BAJCIK"], Some 1, (fun env args ->
+      (match args with
+       | [arg] ->
+           let value = to_int (eval_expr env arg) in
+           VByte (value land 0xFF)  (* Mask to 0-255 *)
+       | _ -> raise (RuntimeError "ZRÓB BAJCIK expects 1 argument")));
+
+  (* ZRÓB KRÓTKI(expr) - Cast to short (16-bit) *)
+  ["ZRÓB KRÓTKI"; "ZROB KROTKI"], Some 1, (fun env args ->
+      (match args with
+       | [arg] ->
+           let value = to_int (eval_expr env arg) in
+           (* Sign-extend from 16-bit *)
+           let masked = value land 0xFFFF in
+           let short_val = if masked > 0x7FFF then masked - 0x10000 else masked in
+           VShort short_val
+       | _ -> raise (RuntimeError "ZRÓB KRÓTKI expects 1 argument")));
+
+  (* ZRÓB DŁUGI(expr) - Cast to int (32-bit, default) *)
+  ["ZRÓB DŁUGI"; "ZROB DLUGI"], Some 1, (fun env args ->
+      (match args with
+       | [arg] ->
+           (* Jawne obcięcie liczby z przecinkiem *)
+           (match eval_expr env arg with
+            | VFloat f -> VInt (int_of_float f)
+            | v -> VInt (to_int v))
+       | _ -> raise (RuntimeError "ZRÓB DŁUGI expects 1 argument")));
+
+  (* ZRÓB UŁAMEK(expr) - Cast to fixed-point (same as ZAMIEŃ NA FIXED) *)
+  ["ZRÓB UŁAMEK"; "ZROB ULAMEK"], Some 1, (fun env args ->
+      (match args with
+       | [arg] ->
+           let value = to_int (eval_expr env arg) in
+           VFixed (value lsl 16)  (* Convert to 16.16 fixed-point *)
+       | _ -> raise (RuntimeError "ZRÓB UŁAMEK expects 1 argument"))
+
+  (* CO TO ZA TYP(var) - Return type name *)
+  (* KARTA LUBI DYM(min, max) - losowa liczba; KARTA LUBI DYM(ziarno) - ustawia ziarno.
+     Własny LCG zamiast Random: ten sam ciąg co w skompilowanym C *));
+
+  ["KARTA LUBI DYM"], None, (fun env args ->
+      let rng_next () =
+        if !rng_state < 0 then rng_state := int_of_float (Unix.gettimeofday () *. 1000.) land 0x7FFFFFFF;
+        rng_state := (!rng_state * 1103515245 + 12345) land 0x7FFFFFFF;
+        !rng_state
+      in
+      (match List.map (eval_expr env) args with
+       | [seed] -> rng_state := to_int seed land 0x7FFFFFFF; VNull
+       | [lo; hi] ->
+           let lo = to_int lo and hi = to_int hi in
+           if lo > hi then raise (RuntimeError "KARTA LUBI DYM: min większe niż max");
+           VInt (lo + rng_next () mod (hi - lo + 1))
+       | _ -> raise (RuntimeError "KARTA LUBI DYM expects 1 argument (seed) or 2 (min, max)")));
+
+  ["CO TO ZA TYP"], Some 1, (fun env args ->
+      (match args with
+       | [arg] ->
+           let value = eval_expr env arg in
+           let type_name = match value with
+             | VByte _ -> "BAJCIK"
+             | VShort _ -> "KRÓTKI"
+             | VInt _ -> "DŁUGI"
+             | VFixed _ -> "UŁAMEK"
+             | VFloat _ -> "PRZECINEK"
+             | VString _ -> "TEKST"
+             | VBool _ -> "PRAWDA/FAŁSZ"
+             | VNull -> "NIC"
+             | VArray _ -> "TABLICA"
+             | VHashMap _ -> "SZAFKA"
+             | VFunction _ -> "FUNKCJA"
+             | VClass _ -> "KLASA"
+             | VStruct _ -> "MEBEL"
+             | VUnion _ -> "UNIA"
+             | VEnum _ -> "LISTA"
+             | VObject _ -> "OBIEKT"
+             | VPointer _ -> "WSKAŹNIK"
+             | VFileHandle _ -> "KIBEL"
+           in
+           VString type_name
+       | _ -> raise (RuntimeError "CO TO ZA TYP expects 1 argument")));
+
+  (* ============ LOW-LEVEL I/O ============ *)
+  (* OTWORZ(filename, mode) - open() - Open file *)
+  ["OTWORZ"], Some 2, (fun env args ->
+      (match args with
+       | [filename_arg; mode_arg] ->
+           let filename = match eval_expr env filename_arg with
+             | VString s -> s
+             | _ -> raise (RuntimeError "OTWORZ: filename must be string")
+           in
+           let mode = match eval_expr env mode_arg with
+             | VString s -> s
+             | _ -> raise (RuntimeError "OTWORZ: mode must be string")
+           in
+           (try
+              let handle = match mode with
+                | "r" | "rb" -> InputHandle (open_in_bin filename)
+                | "w" | "wb" -> OutputHandle (open_out_bin filename)
+                | "a" | "ab" -> OutputHandle (open_out_gen [Open_append; Open_binary; Open_creat] 0o666 filename)
+                | _ -> raise (RuntimeError (Printf.sprintf "Invalid file mode: %s (use 'r', 'w', 'a')" mode))
+              in
+              VFileHandle handle
+            with Sys_error msg ->
+              raise (RuntimeError (Printf.sprintf "Cannot open file '%s': %s" filename msg)))
+       | _ -> raise (RuntimeError "OTWORZ expects 2 arguments (filename, mode)")));
+
+  (* ZAMKNIJ(file_handle) - close() - Close file *)
+  ["ZAMKNIJ"], Some 1, (fun env args ->
+      (match args with
+       | [handle_arg] ->
+           let handle = eval_expr env handle_arg in
+           (match handle with
+            | VFileHandle (InputHandle ch) -> close_in ch; VNull
+            | VFileHandle (OutputHandle ch) -> close_out ch; VNull
+            | _ -> raise (RuntimeError "ZAMKNIJ: argument must be file handle"))
+       | _ -> raise (RuntimeError "ZAMKNIJ expects 1 argument (file_handle)")));
+
+  (* CZYTAJ(file_handle, [num_bytes]) - read() - Read bytes *)
+  ["CZYTAJ"], None, (fun env args ->
+      (match args with
+       | [handle_arg; size_arg] ->
+           let handle = eval_expr env handle_arg in
+           let size = to_int (eval_expr env size_arg) in
+           (match handle with
+            | VFileHandle (InputHandle ch) ->
+                (try
+                   let buffer = Bytes.create size in
+                   let bytes_read = input ch buffer 0 size in
+                   (* Return array of bytes *)
+                   let byte_array = Array.init bytes_read (fun i -> VByte (Char.code (Bytes.get buffer i))) in
+                   VArray byte_array
+                 with End_of_file ->
+                   VArray [||])  (* Return empty array on EOF *)
+            | _ -> raise (RuntimeError "CZYTAJ GAZETĘ: first argument must be input file handle"))
+       | [handle_arg] ->
+           (* CZYTAJ BAJT - single argument means read single byte *)
+           let handle = eval_expr env handle_arg in
+           (match handle with
+            | VFileHandle (InputHandle ch) ->
+                (try
+                   let byte = input_byte ch in
+                   VByte byte
+                 with End_of_file ->
+                   VInt (-1))  (* Return -1 on EOF like C *)
+            | _ -> raise (RuntimeError "CZYTAJ: argument must be input file handle"))
+       | _ -> raise (RuntimeError "CZYTAJ expects 1 or 2 arguments")));
+
+  (* PISZ(file_handle, data) - write() - Write bytes *)
+  ["PISZ"], Some 2, (fun env args ->
+      (match args with
+       | [handle_arg; data_arg] ->
+           let handle = eval_expr env handle_arg in
+           let data = eval_expr env data_arg in
+           (match handle with
+            | VFileHandle (OutputHandle ch) ->
+                (match data with
+                 | VArray bytes ->
+                     (* Write array of bytes *)
+                     Array.iter (fun b ->
+                       let byte_val = to_int b in
+                       output_byte ch byte_val
+                     ) bytes;
+                     VInt (Array.length bytes)
+                 | VString s ->
+                     (* Write string as bytes *)
+                     output_string ch s;
+                     VInt (String.length s)
+                 | VByte b | VInt b | VShort b ->
+                     (* PISZ BAJT - single byte/int means write single byte *)
+                     output_byte ch (b land 0xFF);
+                     VInt 1
+                 | _ -> raise (RuntimeError "PISZ: data must be array, string, or byte"))
+            | _ -> raise (RuntimeError "PISZ: first argument must be output file handle"))
+       | _ -> raise (RuntimeError "PISZ expects 2 arguments (file_handle, data)"))
+
+  (* SKOCZ(file_handle, offset, [mode]) - lseek() - Seek in file
+     mode: 0 = absolute (default), 1 = relative forward, -1 = relative backward *));
+
+  ["SKOCZ"], None, (fun env args ->
+      (match args with
+       | [handle_arg; offset_arg] ->
+           (* Default: absolute seek *)
+           let handle = eval_expr env handle_arg in
+           let pos = to_int (eval_expr env offset_arg) in
+           (match handle with
+            | VFileHandle (InputHandle ch) ->
+                seek_in ch pos;
+                VInt pos
+            | VFileHandle (OutputHandle ch) ->
+                seek_out ch pos;
+                VInt pos
+            | _ -> raise (RuntimeError "SKOCZ: first argument must be file handle"))
+       | [handle_arg; offset_arg; mode_arg] ->
+           (* With mode: 0 = absolute, 1 = forward, -1 = backward *)
+           let handle = eval_expr env handle_arg in
+           let offset = to_int (eval_expr env offset_arg) in
+           let mode = to_int (eval_expr env mode_arg) in
+           (match handle with
+            | VFileHandle (InputHandle ch) ->
+                let new_pos = match mode with
+                  | 0 -> offset  (* Absolute *)
+                  | 1 -> pos_in ch + offset  (* Relative forward *)
+                  | -1 -> max 0 (pos_in ch - offset)  (* Relative backward *)
+                  | _ -> raise (RuntimeError "SKOCZ: mode must be 0 (absolute), 1 (forward), or -1 (backward)")
+                in
+                seek_in ch new_pos;
+                VInt new_pos
+            | VFileHandle (OutputHandle ch) ->
+                let new_pos = match mode with
+                  | 0 -> offset  (* Absolute *)
+                  | 1 -> pos_out ch + offset  (* Relative forward *)
+                  | -1 -> max 0 (pos_out ch - offset)  (* Relative backward *)
+                  | _ -> raise (RuntimeError "SKOCZ: mode must be 0 (absolute), 1 (forward), or -1 (backward)")
+                in
+                seek_out ch new_pos;
+                VInt new_pos
+            | _ -> raise (RuntimeError "SKOCZ: first argument must be file handle"))
+       | _ -> raise (RuntimeError "SKOCZ expects 2 or 3 arguments (file_handle, offset, [mode])")));
+
+  (* POZYCJA(file_handle) - tell() - Get current file position *)
+  ["POZYCJA"], Some 1, (fun env args ->
+      (match args with
+       | [handle_arg] ->
+           let handle = eval_expr env handle_arg in
+           (match handle with
+            | VFileHandle (InputHandle ch) ->
+                VInt (pos_in ch)
+            | VFileHandle (OutputHandle ch) ->
+                VInt (pos_out ch)
+            | _ -> raise (RuntimeError "POZYCJA: argument must be file handle"))
+       | _ -> raise (RuntimeError "POZYCJA expects 1 argument (file_handle)")));
+
+  (* ============ MULTIDIMENSIONAL ARRAYS ============ *)
+  (* TABLICA 2D(rows, cols) - Create 2D array *)
+  ["TABLICA 2D"], Some 2, (fun env args ->
+      (match args with
+       | [rows_arg; cols_arg] ->
+           let rows = to_int (eval_expr env rows_arg) in
+           let cols = to_int (eval_expr env cols_arg) in
+           if rows <= 0 || cols <= 0 then
+             raise (RuntimeError "TABLICA 2D: dimensions must be positive")
+           else
+             (* Create array of arrays *)
+             let inner_arrays = Array.init rows (fun _ -> VArray (Array.make cols (VInt 0))) in
+             VArray inner_arrays
+       | _ -> raise (RuntimeError "TABLICA 2D expects 2 arguments (rows, cols)")));
+
+  (* TABLICA 3D(x, y, z) - Create 3D array *)
+  ["TABLICA 3D"], Some 3, (fun env args ->
+      (match args with
+       | [x_arg; y_arg; z_arg] ->
+           let x = to_int (eval_expr env x_arg) in
+           let y = to_int (eval_expr env y_arg) in
+           let z = to_int (eval_expr env z_arg) in
+           if x <= 0 || y <= 0 || z <= 0 then
+             raise (RuntimeError "TABLICA 3D: dimensions must be positive")
+           else
+             (* Create array of arrays of arrays *)
+             let inner_arrays = Array.init x (fun _ ->
+               VArray (Array.init y (fun _ ->
+                 VArray (Array.make z (VInt 0))
+               ))
+             ) in
+             VArray inner_arrays
+       | _ -> raise (RuntimeError "TABLICA 3D expects 3 arguments (x, y, z)")));
+
+  (* POLAŁA SIĘ KREW(format, ...) - Variadic error function like I_Error *)
+  ["POLAŁA SIĘ KREW"; "POLALA SIE KREW"], None, (fun env args ->
+      (match args with
+       | [] -> raise (RuntimeError "POLAŁA SIĘ KREW: at least one argument required")
+       | format_arg :: rest_args ->
+           let format = to_string (eval_expr env format_arg) in
+           let arg_values = List.map (eval_expr env) rest_args in
+           (* Simple printf-like formatting: replace %d, %s, %i with arguments *)
+           let rec format_string fmt args_left acc =
+             if String.length fmt = 0 then
+               acc
+             else if String.length fmt >= 2 && String.get fmt 0 = '%' then
+               let spec = String.get fmt 1 in
+               match spec, args_left with
+               | 'd', v::rest | 'i', v::rest ->
+                   let num = to_int v in
+                   format_string (String.sub fmt 2 (String.length fmt - 2)) rest (acc ^ string_of_int num)
+               | 's', v::rest ->
+                   let str = to_string v in
+                   format_string (String.sub fmt 2 (String.length fmt - 2)) rest (acc ^ str)
+               | '%', _ ->
+                   format_string (String.sub fmt 2 (String.length fmt - 2)) args_left (acc ^ "%")
+               | _, [] ->
+                   (* No more args, keep format specifier *)
+                   format_string (String.sub fmt 1 (String.length fmt - 1)) [] (acc ^ String.make 1 (String.get fmt 0))
+               | _, _ ->
+                   (* Unknown specifier, keep it *)
+                   format_string (String.sub fmt 2 (String.length fmt - 2)) args_left (acc ^ "%" ^ String.make 1 spec)
+             else
+               format_string (String.sub fmt 1 (String.length fmt - 1)) args_left (acc ^ String.make 1 (String.get fmt 0))
+           in
+           let message = format_string format arg_values "" in
+           raise (RuntimeError (Printf.sprintf "I_Error: %s" message))));
+
+  (* ============ GRAPHICS (X11 - DOOM style) ============ *)
+  (* OKNO_OTWORZ(width, height, title) - Initialize graphics window *)
+  ["OKNO_OTWORZ"; "OKNO OTWORZ"], Some 3, (fun env args ->
+      (match args with
+       | [width_arg; height_arg; title_arg] ->
+           let width = to_int (eval_expr env width_arg) in
+           let height = to_int (eval_expr env height_arg) in
+           let title = to_string (eval_expr env title_arg) in
+           let result = ferdek_window_open width height title in
+           if result = 0 then
+             raise (RuntimeError "OKNO_OTWORZ: Failed to open window")
+           else
+             VInt result
+       | _ -> raise (RuntimeError "OKNO_OTWORZ expects 3 arguments (width, height, title)")));
+
+  (* OKNO_ZAMKNIJ() - Close graphics window *)
+  ["OKNO_ZAMKNIJ"; "OKNO ZAMKNIJ"], Some 0, (fun env args ->
+      (match args with
+       | [] ->
+           ferdek_window_close ();
+           VNull
+       | _ -> raise (RuntimeError "OKNO_ZAMKNIJ expects 0 arguments")));
+
+  (* PALETA_USTAW(palette_array) - Set 256-color palette *)
+  ["PALETA_USTAW"; "PALETA USTAW"], Some 1, (fun env args ->
+      (match args with
+       | [palette_arg] ->
+           let palette_val = eval_expr env palette_arg in
+           (match palette_val with
+            | VArray arr ->
+                (* Palette should be 768 bytes (256 colors * 3 RGB) *)
+                if Array.length arr <> 768 then
+                  raise (RuntimeError "PALETA_USTAW: palette must be 768 bytes (256 colors * RGB)")
+                else begin
+                  (* Convert array of VByte to bytes *)
+                  let palette_bytes = Bytes.create 768 in
+                  Array.iteri (fun i v ->
+                    let byte_val = to_int v land 0xFF in
+                    Bytes.set palette_bytes i (Char.chr byte_val)
+                  ) arr;
+                  ferdek_palette_set palette_bytes;
+                  VNull
+                end
+            | _ -> raise (RuntimeError "PALETA_USTAW: argument must be array"))
+       | _ -> raise (RuntimeError "PALETA_USTAW expects 1 argument (palette_array)")));
+
+  (* PIKSEL_MALUJ(x, y, color) - Draw pixel *)
+  ["PIKSEL_MALUJ"; "PIKSEL MALUJ"], Some 3, (fun env args ->
+      (match args with
+       | [x_arg; y_arg; color_arg] ->
+           let x = to_int (eval_expr env x_arg) in
+           let y = to_int (eval_expr env y_arg) in
+           let color = to_int (eval_expr env color_arg) land 0xFF in
+           ferdek_pixel_draw x y color;
+           VNull
+       | _ -> raise (RuntimeError "PIKSEL_MALUJ expects 3 arguments (x, y, color)")));
+
+  (* EKRAN_ODŚWIEŻ() - Refresh screen (blit framebuffer) *)
+  ["EKRAN_ODŚWIEŹ"; "EKRAN_ODŚWIEŻ"; "EKRAN ODŚWIEŹ"; "EKRAN ODŚWIEŻ"; "EKRAN_ODSWIEZ"; "EKRAN ODSWIEZ"], Some 0, (fun env args ->
+      (match args with
+       | [] ->
+           ferdek_screen_refresh ();
+           VNull
+       | _ -> raise (RuntimeError "EKRAN_ODŚWIEŻ expects 0 arguments")));
+
+  (* EKRAN_CZYŚĆ(color) - Clear screen to color *)
+  ["EKRAN_CZYŚĆ"; "EKRAN CZYŚĆ"; "EKRAN_CZYSĆ"; "EKRAN CZYSĆ"; "EKRAN_CZYSC"; "EKRAN CZYSC"], Some 1, (fun env args ->
+      (match args with
+       | [color_arg] ->
+           let color = to_int (eval_expr env color_arg) land 0xFF in
+           ferdek_screen_clear color;
+           VNull
+       | _ -> raise (RuntimeError "EKRAN_CZYŚĆ expects 1 argument (color)")));
+
+  (* BUFOR_RAMKI_POBIERZ(x, y) - Get pixel from framebuffer *)
+  ["BUFOR_RAMKI_POBIERZ"; "BUFOR RAMKI POBIERZ"], Some 2, (fun env args ->
+      (match args with
+       | [x_arg; y_arg] ->
+           let x = to_int (eval_expr env x_arg) in
+           let y = to_int (eval_expr env y_arg) in
+           let pixel = ferdek_framebuffer_get x y in
+           VInt pixel
+       | _ -> raise (RuntimeError "BUFOR_RAMKI_POBIERZ expects 2 arguments (x, y)")));
+
+  (* ZDARZENIE_CZEKAJ() - Poll for event (non-blocking) *)
+  ["ZDARZENIE_CZEKAJ"; "ZDARZENIE CZEKAJ"], Some 0, (fun env args ->
+      (match args with
+       | [] ->
+           let (ev_type, key, x, y) = ferdek_event_poll () in
+           (* Return array [type, key, x, y] *)
+           VArray [| VInt ev_type; VInt key; VInt x; VInt y |]
+       | _ -> raise (RuntimeError "ZDARZENIE_CZEKAJ expects 0 arguments")));
+
+  (* ============ NETWORKING (UDP - DOOM multiplayer style) ============ *)
+  (* GNIAZDKO_OTWORZ(port) - Create UDP socket and bind to port *)
+  ["GNIAZDKO_OTWORZ"; "GNIAZDKO OTWORZ"], Some 1, (fun env args ->
+      (match args with
+       | [port_arg] ->
+           let port = to_int (eval_expr env port_arg) in
+           (try
+              let sockfd = Unix.socket Unix.PF_INET Unix.SOCK_DGRAM 0 in
+              (* Set non-blocking *)
+              Unix.set_nonblock sockfd;
+              (* Allow address reuse *)
+              Unix.setsockopt sockfd Unix.SO_REUSEADDR true;
+              (* Bind to port *)
+              let addr = Unix.ADDR_INET (Unix.inet_addr_any, port) in
+              Unix.bind sockfd addr;
+              Printf.printf "UDP socket opened on port %d\n%!" port;
+              VInt (Obj.magic sockfd : int)  (* Convert Unix.file_descr to int *)
+            with Unix.Unix_error (err, fn, _) ->
+              raise (RuntimeError (Printf.sprintf "GNIAZDKO_OTWORZ: %s: %s" fn (Unix.error_message err))))
+       | _ -> raise (RuntimeError "GNIAZDKO_OTWORZ expects 1 argument (port)")));
+
+  (* GNIAZDKO_WYSLIJ(sockfd, host, port, data) - Send UDP packet *)
+  ["GNIAZDKO_WYSLIJ"; "GNIAZDKO WYSLIJ"], Some 4, (fun env args ->
+      (match args with
+       | [sockfd_arg; host_arg; port_arg; data_arg] ->
+           let sockfd = (Obj.magic (to_int (eval_expr env sockfd_arg)) : Unix.file_descr) in
+           let host = to_string (eval_expr env host_arg) in
+           let port = to_int (eval_expr env port_arg) in
+           let data_val = eval_expr env data_arg in
+           (match data_val with
+            | VString s ->
+                (try
+                   let addr = Unix.ADDR_INET (Unix.inet_addr_of_string host, port) in
+                   let sent = Unix.sendto sockfd (Bytes.of_string s) 0 (String.length s) [] addr in
+                   VInt sent
+                 with Unix.Unix_error (err, fn, _) ->
+                   raise (RuntimeError (Printf.sprintf "GNIAZDKO_WYSLIJ: %s: %s" fn (Unix.error_message err))))
+            | VArray arr ->
+                (* Convert byte array to string *)
+                let bytes = Bytes.create (Array.length arr) in
+                Array.iteri (fun i v ->
+                  let byte_val = to_int v land 0xFF in
+                  Bytes.set bytes i (Char.chr byte_val)
+                ) arr;
+                (try
+                   let addr = Unix.ADDR_INET (Unix.inet_addr_of_string host, port) in
+                   let sent = Unix.sendto sockfd bytes 0 (Bytes.length bytes) [] addr in
+                   VInt sent
+                 with Unix.Unix_error (err, fn, _) ->
+                   raise (RuntimeError (Printf.sprintf "GNIAZDKO_WYSLIJ: %s: %s" fn (Unix.error_message err))))
+            | _ -> raise (RuntimeError "GNIAZDKO_WYSLIJ: data must be string or byte array"))
+       | _ -> raise (RuntimeError "GNIAZDKO_WYSLIJ expects 4 arguments (sockfd, host, port, data)")));
+
+  (* GNIAZDKO_ODBIERZ(sockfd, bufsize) - Receive UDP packet (non-blocking) *)
+  ["GNIAZDKO_ODBIERZ"; "GNIAZDKO ODBIERZ"], Some 2, (fun env args ->
+      (match args with
+       | [sockfd_arg; bufsize_arg] ->
+           let sockfd = (Obj.magic (to_int (eval_expr env sockfd_arg)) : Unix.file_descr) in
+           let bufsize = to_int (eval_expr env bufsize_arg) in
+           let buffer = Bytes.create bufsize in
+           (try
+              let (received, from_addr) = Unix.recvfrom sockfd buffer 0 bufsize [] in
+              if received = 0 then
+                VInt 0  (* No data *)
+              else begin
+                (* Extract sender info *)
+                let (host, port) = match from_addr with
+                  | Unix.ADDR_INET (addr, p) -> (Unix.string_of_inet_addr addr, p)
+                  | _ -> ("unknown", 0)
+                in
+                (* Return tuple [data, host, port] *)
+                let data_str = Bytes.sub_string buffer 0 received in
+                VArray [| VString data_str; VString host; VInt port |]
+              end
+            with
+            | Unix.Unix_error (Unix.EAGAIN, _, _)
+            | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
+                VInt 0  (* No data available *)
+            | Unix.Unix_error (err, fn, _) ->
+                raise (RuntimeError (Printf.sprintf "GNIAZDKO_ODBIERZ: %s: %s" fn (Unix.error_message err))))
+       | _ -> raise (RuntimeError "GNIAZDKO_ODBIERZ expects 2 arguments (sockfd, bufsize)")));
+
+  (* GNIAZDKO_ZAMKNIJ(sockfd) - Close UDP socket *)
+  ["GNIAZDKO_ZAMKNIJ"; "GNIAZDKO ZAMKNIJ"], Some 1, (fun env args ->
+      (match args with
+       | [sockfd_arg] ->
+           let sockfd = (Obj.magic (to_int (eval_expr env sockfd_arg)) : Unix.file_descr) in
+           (try
+              Unix.close sockfd;
+              Printf.printf "UDP socket closed\n%!";
+              VNull
+            with Unix.Unix_error (err, fn, _) ->
+              raise (RuntimeError (Printf.sprintf "GNIAZDKO_ZAMKNIJ: %s: %s" fn (Unix.error_message err))))
+       | _ -> raise (RuntimeError "GNIAZDKO_ZAMKNIJ expects 1 argument (sockfd)")));
+  ]
+
 
 let rec import_module env module_name =
   if Hashtbl.mem imported_modules module_name then () else begin

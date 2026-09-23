@@ -12,6 +12,8 @@ type scope = {
 }
 
 let check ?(load_module = fun _ -> None) (prog : program) : string list =
+  let builtin_arity = Hashtbl.create 128 in
+  List.iter (fun (n, a) -> Hashtbl.replace builtin_arity n a) (Interpreter.builtin_arities ());
   let issues = ref [] in
   let loc = ref ("", 0) in
   let report msg =
@@ -57,7 +59,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
     | FunctionCall (name, args) ->
         List.iter (expr sc) args;
         let given = List.length args in
-        (match Ferdek_stdlib.find name, Hashtbl.find_opt sc.funcs name with
+        (match Hashtbl.find_opt builtin_arity name, Hashtbl.find_opt sc.funcs name with
          | Some arity, _ -> check_arity name arity given
          | None, _ when is_var sc name -> ()   (* funkcja trzymana w zmiennej *)
          | None, Some f ->

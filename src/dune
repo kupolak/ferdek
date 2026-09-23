@@ -22,7 +22,6 @@
   compiler
   checker
   syntax_errors
-  ferdek_stdlib
   builtins_string
   builtins_hashmap
   builtins_file

@@ -35,6 +35,9 @@ val string_of_value : value -> string
 (* Set module loader function *)
 val set_module_loader : (string -> program option) -> unit
 
+(* Nazwy wbudowanych funkcji i liczba argumentów (None = dowolna) *)
+val builtin_arities : unit -> (string * int option) list
+
 (* Execute a program *)
 val eval_program : program -> (unit, string) result
 
