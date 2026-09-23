@@ -13,7 +13,7 @@ let whitespace = [' ' '\t']
 let newline = '\n' | '\r' | "\r\n"
 let digit = ['0'-'9']
 let letter = ['a'-'z' 'A'-'Z']
-let identifier_char = letter | digit | '_'
+let identifier_char = letter | digit | '_' | ['\128'-'\255'] (* bajty UTF-8: ą, ł, ż... *)
 
 rule token = parse
   (* Whitespace *)

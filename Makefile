@@ -8,16 +8,19 @@ all: build
 # Build using dune (handles C stubs, graphics, etc.)
 build:
 	dune build
-
-# Alias for dune-built executables
-$(BUILD_DIR)/ferdek: build
+	@mkdir -p .build
 	@ln -sf _build/default/src/ferdek.exe .build/ferdek 2>/dev/null || true
-
-$(BUILD_DIR)/ferdecc: build
 	@ln -sf _build/default/src/ferdecc.exe .build/ferdecc 2>/dev/null || true
 
-$(BUILD_DIR)/main: build
-	@ln -sf _build/default/src/main.exe .build/main 2>/dev/null || true
+# Create local symlinks to executables (convenience)
+link: build
+	@mkdir -p .build
+	@ln -sf _build/default/src/ferdek.exe .build/ferdek 2>/dev/null || true
+	@ln -sf _build/default/src/ferdecc.exe .build/ferdecc 2>/dev/null || true
+
+# Install into user's PATH using the install script
+install: build
+	@./scripts/install.sh
 
 # Czyszczenie plików pośrednich
 clean:
@@ -35,54 +38,38 @@ clean:
 distclean: clean
 	rm -f *.conflicts
 
-# Test jednostkowe (using dune test)
-test:
-	@echo "=== Building tests ==="
-	dune build @runtest 2>/dev/null || echo "No unit tests configured"
-	@echo "=== Tests completed ==="
+FERDEK = _build/default/src/ferdek.exe
 
-# Test integracyjne - stdlib
+STDLIB_TESTS = $(addprefix tests/integration/stdlib/,test_stdlib test_kanapa test_klatka test_szafka test_wersalka test_kibel)
+FEATURE_TESTS = $(addprefix tests/integration/features/,variables arrays conditional functions)
+# ponytail: graphics_demo pominięte - wymaga X11/XQuartz
+EXAMPLE_TESTS = $(addprefix examples/,hello fizzbuzz variadic_simple)
+
+# Uruchamia pliki .ferdek, zlicza porażki, kończy się błędem jeśli któryś padł
+run_ferdek = @fail=0; for t in $(1); do \
+	  printf -- "--- %s: " $$t; \
+	  if $(FERDEK) $$t.ferdek > _build/ferdek_test.log 2>&1; then echo OK; \
+	  else echo FAIL; tail -3 _build/ferdek_test.log; fail=$$((fail+1)); fi; \
+	done; [ $$fail -eq 0 ] || { echo "Padło testów: $$fail"; exit 1; }
+
+# Testy jednostkowe
+test-unit:
+	dune build @runtest
+
 test-stdlib: build
-	@echo "=== Testy modułów KLAMOTY ==="
-	@echo "\n--- Test SKRZYNKA (math) ---"
-	_build/default/src/main.exe tests/integration/stdlib/test_stdlib.ferdek
-	@echo "\n--- Test KANAPA (strings) ---"
-	_build/default/src/main.exe tests/integration/stdlib/test_kanapa.ferdek
-	@echo "\n--- Test KLATKA (networking) ---"
-	_build/default/src/main.exe tests/integration/stdlib/test_klatka.ferdek
-	@echo "\n--- Test SZAFKA (hashmap) ---"
-	_build/default/src/main.exe tests/integration/stdlib/test_szafka.ferdek
-	@echo "\n--- Test WERSALKA (lists) ---"
-	_build/default/src/main.exe tests/integration/stdlib/test_wersalka.ferdek
-	@echo "\n--- Test KIBEL (file ops) ---"
-	_build/default/src/main.exe tests/integration/stdlib/test_kibel.ferdek
+	$(call run_ferdek,$(STDLIB_TESTS))
 
-# Test integracyjne - funkcje języka
 test-features: build
-	@echo "=== Testy funkcji języka ==="
-	@echo "\n--- Zmienne ---"
-	_build/default/src/main.exe tests/integration/features/variables.ferdek
-	@echo "\n--- Tablice ---"
-	_build/default/src/main.exe tests/integration/features/arrays.ferdek
-	@echo "\n--- Warunki ---"
-	_build/default/src/main.exe tests/integration/features/conditional.ferdek
-	@echo "\n--- Funkcje ---"
-	_build/default/src/main.exe tests/integration/features/functions.ferdek
+	$(call run_ferdek,$(FEATURE_TESTS))
 
-# Test przykładów
 test-examples: build
-	@echo "=== Test przykładów ==="
-	@echo "\n--- Hello World ---"
-	_build/default/src/main.exe examples/hello.ferdek
-	@echo "\n--- FizzBuzz ---"
-	_build/default/src/main.exe examples/fizzbuzz.ferdek
-	@echo "\n--- Graphics Demo ---"
-	_build/default/src/main.exe examples/graphics_demo.ferdek
-	@echo "\n--- Variadic Functions ---"
-	_build/default/src/main.exe examples/variadic_simple.ferdek
+	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test-all: test test-stdlib test-features test-examples
+test: test-unit
+	$(call run_ferdek,$(STDLIB_TESTS) $(FEATURE_TESTS) $(EXAMPLE_TESTS))
+
+test-all: test
 
 # Reinstalacja (uninstall + install)
 r: reinstall
@@ -99,4 +86,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-stdlib test-features test-examples test-all r reinstall
+.PHONY: all build clean distclean test test-unit test-stdlib test-features test-examples test-all link install r reinstall

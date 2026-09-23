@@ -52,7 +52,28 @@ make
 ./scripts/install.sh
 ```
 
-Run tests with `make test`.
+Run tests with `make test` (fails if any test fails).
+
+You can create a local wrapper/symlink with:
+
+```bash
+make link   # creates `.build/ferdek` pointing at the built binary
+./.build/ferdek examples/hello.ferdek
+```
+
+To make `ferdek` available system-wide (or for your user), run the installer which will copy the `ferdek` binary to `$HOME/.local/bin` or `/usr/local/bin`:
+
+```bash
+./scripts/install.sh
+# then ensure that ~/.local/bin is in your PATH (or run as root to install to /usr/local/bin)
+```
+
+If you prefer, you can also install via the quick installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kupolak/ferdek/main/scripts/install-full.sh | bash
+```
+
 
 ## Usage
 

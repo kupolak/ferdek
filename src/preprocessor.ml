@@ -149,7 +149,7 @@ let preprocess_file filename =
       cond_stack := new_stack;
       match output with
       | Some l -> result := l :: !result
-      | None -> ()
+      | None -> result := "" :: !result (* zachowaj numery linii *)
     done;
     close_in ic;
     List.rev !result
@@ -170,7 +170,7 @@ let preprocess_string content =
     cond_stack := new_stack;
     match output with
     | Some l -> result := l :: !result
-    | None -> ()
+    | None -> result := "" :: !result
   ) lines;
 
   if !cond_stack <> [] then

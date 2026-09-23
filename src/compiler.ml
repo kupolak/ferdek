@@ -79,7 +79,16 @@ let rec compile_expr ctx expr =
       Printf.sprintf "make_int(%d)" n
 
   | StringLiteral s ->
-      let escaped = String.escaped s in
+      (* String.escaped daje dziesiętne \197, a C czyta ósemkowo - escapujemy sami *)
+      let buf = Buffer.create (String.length s) in
+      String.iter (fun c -> match c with
+        | '"' -> Buffer.add_string buf "\\\""
+        | '\\' -> Buffer.add_string buf "\\\\"
+        | '\n' -> Buffer.add_string buf "\\n"
+        | '\t' -> Buffer.add_string buf "\\t"
+        | c when Char.code c < 32 -> Buffer.add_string buf (Printf.sprintf "\\%03o" (Char.code c))
+        | c -> Buffer.add_char buf c) s;
+      let escaped = Buffer.contents buf in
       Printf.sprintf "make_string(\"%s\")" escaped
 
   | BoolLiteral b ->

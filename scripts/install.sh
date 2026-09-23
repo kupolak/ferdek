@@ -21,9 +21,9 @@ echo ""
 # ETAP 1: Sprawdzenie pliku (PAŹDZIOCH i WALDUŚ)
 # ---------------------------------------------------------
 
-if [ ! -f "_build/default/src/main.exe" ]; then
+if [ ! -f "_build/default/src/ferdek.exe" ]; then
     echo -e "${RED}A NIECH TO DUNDER ŚWIŚNIE! BŁĄD!${NC}"
-    echo "Nie ma pliku '_build/default/src/main.exe'!"
+    echo "Nie ma pliku '_build/default/src/ferdek.exe'!"
     echo -e "${YELLOW}Paździoch:${NC} 'Panie Kiepski, ja nic nie brałem! To pomówienia!'"
     echo -e "${GREEN}Ferdek:${NC} 'Menda jedna... na pewno ukradł i opchnął na bazarze!'"
     echo -e "${CYAN}Walduś:${NC} 'Tato, a po co w ogóle jest ten plik?'"
@@ -84,10 +84,10 @@ echo "Kopiowanie plików... (Fizyczna robota, brzydzę się tym)"
 
 if [ "$NEED_SUDO" = true ]; then
     echo -e "${YELLOW}Wymagane sudo... Halinka, pożycz uprawnienia!${NC}"
-    sudo cp _build/default/src/main.exe "$INSTALL_DIR/ferdek"
+    sudo cp _build/default/src/ferdek.exe "$INSTALL_DIR/ferdek"
     sudo chmod +x "$INSTALL_DIR/ferdek"
 else
-    cp _build/default/src/main.exe "$INSTALL_DIR/ferdek"
+    cp _build/default/src/ferdek.exe "$INSTALL_DIR/ferdek"
     chmod +x "$INSTALL_DIR/ferdek"
 fi
 
