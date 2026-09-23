@@ -14,6 +14,8 @@ let newline = '\n' | '\r' | "\r\n"
 let digit = ['0'-'9']
 let letter = ['a'-'z' 'A'-'Z']
 let identifier_char = letter | digit | '_' | ['\128'-'\255'] (* bajty UTF-8: ą, ł, ż... *)
+(* Polska litera na początku nazwy (żółw): bajt wiodący UTF-8 dla ą-ż i bajt kontynuacji *)
+let utf8_letter = ['\195'-'\197'] ['\128'-'\191']
 
 rule token = parse
   (* Whitespace *)
@@ -333,7 +335,7 @@ rule token = parse
   | '-' (digit+ as num) { INTEGER (- (int_of_string num)) }
 
   (* Identifiers *)
-  | letter identifier_char* as id { IDENTIFIER id }
+  | (letter | utf8_letter) identifier_char* as id { IDENTIFIER id }
 
   (* End of file *)
   | eof { EOF }
