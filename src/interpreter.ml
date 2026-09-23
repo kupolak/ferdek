@@ -2148,6 +2148,15 @@ let () =
 
   ["JEST TRZECIA W NOCY"], Some 0, (fun _ _ ->
       VInt (int_of_float ((Unix.gettimeofday () -. program_start) *. 1000.)));
+
+  (* PO PIERWSZE PRIMO(x, miejsca) - liczba jako tekst z ustaloną liczbą miejsc po przecinku *)
+  ["PO PIERWSZE PRIMO"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [x; places] ->
+          let n = to_int places in
+          if n < 0 || n > 30 then raise (RuntimeError "PO PIERWSZE PRIMO: liczba miejsc musi być od 0 do 30");
+          VString (Printf.sprintf "%.*f" n (to_float x))
+      | _ -> VNull);
   ]
 
 

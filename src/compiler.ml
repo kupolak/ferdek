@@ -81,6 +81,7 @@ let builtins = [
   ["CO TO ZA TYP"], ("b_co_to_za_typ", Some 1);
   ["KARTA LUBI DYM"], ("b_karta_lubi_dym", None);
   ["TABLICA 2D"], ("b_tablica_2d", Some 2);
+  ["PO PIERWSZE PRIMO"], ("b_po_pierwsze_primo", Some 2);
   ["OTWÓRZ KIBEL"], ("b_otworz_kibel", Some 1);
   ["OTWÓRZ KIBEL DO ZAPISU"], ("b_otworz_kibel_zapis", Some 1);
   ["ZAMKNIJ KIBEL"], ("b_zamknij_kibel", Some 1);
@@ -2000,6 +2001,15 @@ static FerdekValue b_gniazdko_zamknij(int argc, FerdekValue* argv) {
     printf("Gniazdko UDP zamknięte\n");
     fflush(stdout);
     return make_null();
+}
+
+static FerdekValue b_po_pierwsze_primo(int argc, FerdekValue* argv) {
+    double x = to_float(argv[0]);
+    long long n = to_int(argv[1]);
+    if (n < 0 || n > 30) ferdek_die("PO PIERWSZE PRIMO: liczba miejsc musi być od 0 do 30");
+    char buf[512];
+    snprintf(buf, sizeof buf, "%.*f", (int)n, x);
+    return make_string(buf);
 }
 
 static FerdekValue zeros(long long n) {

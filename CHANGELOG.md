@@ -18,6 +18,7 @@
   (`TAK BYĆ NIE BĘDZIE`), `>=` (`JA JESTEM PONAD TO`), else if (`AAA TO ZMIENIA POSTAĆ RZECZY`),
   for loops (`KRĘCI CEMENT BETONIARA i OD 1 DO 10 CO 2`).
 - Numbers with a decimal point, array literals anywhere, names starting with Polish letters.
+- `PO PIERWSZE PRIMO(x, miejsca)` formats a number with a fixed number of decimal places.
 - Import your own files (relative to the importing file); every module runs once.
 - New builtins: random numbers (`KARTA LUBI DYM`), time (`TRZEBA SPAĆ`, `JEST TRZECIA W NOCY`),
   math (`PIERWIASTEK/SINUS/COSINUS ZE SKRZYNKI`, real PI and rounding in SKRZYNKA), lists
