@@ -36,6 +36,7 @@
   compiler
   checker
   graphics_source
+  formatter
   syntax_errors
   builtins_string
   builtins_hashmap

@@ -38,6 +38,12 @@ ferdek test            # current directory
 ferdek test tests/     # or a given one
 ```
 
+Tidy up indentation (4 spaces per block; comments and strings untouched):
+
+```bash
+ferdek --fmt program.ferdek > program_ladny.ferdek
+```
+
 Check a program without running it (unknown names, wrong argument counts):
 
 ```bash

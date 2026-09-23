@@ -59,6 +59,8 @@ let print_help () =
   Printf.printf "  -r, --run               Szybki szlag! Kompiluj i odpal (tryb testowy).\n";
   Printf.printf "  --check <plik>          Sprawdź bez uruchamiania: nieznane zmienne, funkcje, liczba argumentów.\n";
   Printf.printf "  test [katalog]          Uruchom wszystkie pliki *_test.ferdek (np. z BABKĄ) i podsumuj.\n";
+  Printf.printf "  --fmt <plik>            Wypisz program z uporządkowanymi wcięciami.\n";
+  Printf.printf "  --fmt-check <plik>      Sprawdź, że formatowanie nie zmienia programu i jest stabilne.\n";
   Printf.printf "  --repl                  Pogadaj sobie z Ferdkiem (tryb interaktywny).\n\n";
 
   Printf.printf "Przykłady (A niech to dunder świśnie!):\n";
@@ -196,6 +198,31 @@ let run_tests dir =
       Printf.printf "Zaliczone: %d/%d%s\n" (total - bad) total
         (if bad = 0 then " - Babka zadowolona!" else " - Babka niezadowolona.");
       if bad = 0 then 0 else 1
+
+(* --fmt i --fmt-check *)
+let read_file path = In_channel.with_open_bin path In_channel.input_all
+
+let fmt_file filename =
+  match read_file filename with
+  | src -> print_string (Formatter.format src); 0
+  | exception Sys_error msg -> Printf.eprintf "A fe! %s\n" msg; 1
+
+(* Sformatowany program ma to samo AST (bez numerów linii), a drugie formatowanie nic nie zmienia *)
+let fmt_check filename =
+  let src = read_file filename in
+  let once = Formatter.format src in
+  let tmp = Filename.concat (Filename.dirname filename) (".fmt_check_" ^ Filename.basename filename) in
+  Out_channel.with_open_bin tmp (fun oc -> output_string oc once);
+  let ast f = match parse_file f with Ok a -> Some (Ast.string_of_program a) | Error _ -> None in
+  let same_ast = ast filename = ast tmp in
+  (try Sys.remove tmp with _ -> ());
+  let stable = Formatter.format once = once in
+  if same_ast && stable then 0
+  else begin
+    Printf.eprintf "%s: %s\n" filename
+      (if not same_ast then "formatowanie zmienia program!" else "formatowanie nie jest stabilne");
+    1
+  end
 
 (* --check: błędy przed uruchomieniem *)
 let check_file filename =
@@ -339,6 +366,9 @@ let () =
       | "test" when input_file = None && i = 1 ->
           let dir = if i + 1 < argc then Sys.argv.(i + 1) else "." in
           exit (run_tests dir)
+      | "--fmt" | "--fmt-check" as flag ->
+          if i + 1 >= argc then (print_help (); exit 1);
+          exit ((if flag = "--fmt" then fmt_file else fmt_check) Sys.argv.(i + 1))
       | "--check" ->
           if i + 1 >= argc then (print_help (); exit 1);
           parse_args (i + 2) `Check output_file (Some Sys.argv.(i + 1))

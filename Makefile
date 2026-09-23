@@ -91,7 +91,7 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl test-errors test-check test-docs test-runner
+test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
 
@@ -100,6 +100,13 @@ FUZZ_COUNT ?= 20
 FUZZ_SEED ?= 2026
 test-fuzz: build
 	python3 scripts/fuzz_parity.py $(FUZZ_COUNT) $(FUZZ_SEED)
+
+# ferdek --fmt: dla każdego programu w repo formatowanie nie zmienia AST i jest stabilne
+FMT_FILES = $(wildcard examples/*.ferdek tests/integration/*/*.ferdek tests/integration/features/moduly/*.ferdek \
+	stdlib/KLAMOTY/*.ferdek stdlib/KLAMOTY/BABKA/*.ferdek tests/errors/*.ferdek tests/check/*.ferdek tests/ferdek_test/*/*.ferdek)
+test-fmt: build
+	@fail=0; for f in $(FMT_FILES); do $(FERDEK) --fmt-check $$f || fail=$$((fail+1)); done; \
+	[ $$fail -eq 0 ] && echo "--- ferdek --fmt: OK" || { echo "Padło testów formattera: $$fail"; exit 1; }
 
 # ferdek test: katalog z dobrymi testami przechodzi, z oblanym - kończy się błędem
 test-runner: build
@@ -174,4 +181,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner docs test-compiled test-fuzz test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt docs test-compiled test-fuzz test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

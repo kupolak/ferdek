@@ -346,7 +346,12 @@ rule token = parse
   | "..." { ELLIPSIS }
 
   (* Literals *)
-  | '"' { read_string (Buffer.create 16) lexbuf }
+  | '"' {
+      (* Początek tokena = otwierający cudzysłów (read_string przesuwa lex_start_p na zamykający) *)
+      let start = lexbuf.lex_start_p in
+      let tok = read_string (Buffer.create 16) lexbuf in
+      lexbuf.lex_start_p <- start;
+      tok }
   | (digit+ '.' digit+) as f { FLOAT (float_of_string f) }
   | '-' ((digit+ '.' digit+) as f) { FLOAT (-. (float_of_string f)) }
   | digit+ as num { INTEGER (int_of_string num) }
