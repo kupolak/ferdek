@@ -95,6 +95,10 @@ test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
 
+# Czas: interpreter vs skompilowany C (bench/*.ferdek), wyniki muszą się zgadzać
+bench: build
+	python3 scripts/bench.py
+
 # Losowe programy: interpreter i skompilowany C muszą dać identyczne wyjście (make test-fuzz FUZZ_COUNT=100)
 FUZZ_COUNT ?= 20
 FUZZ_SEED ?= 2026
@@ -181,4 +185,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt docs test-compiled test-fuzz test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
