@@ -233,7 +233,7 @@ let compile_top_level ctx decl =
         let v = Option.value v ~default:next in
         (v + 1, Printf.sprintf "    %s = make_int(%dLL);" (var_c name) v :: acc)) (0, []) e.values in
       String.concat "\n" (List.rev lines)
-  | Import _ -> unsupported "importy modułów"
+  | Import _ -> ""  (* rozwinięte wcześniej przez expand_imports *)
   | ClassDecl _ -> unsupported "klasy (ALE JAJA)"
   | StructDecl _ -> unsupported "struktury (MEBEL)"
   | UnionDecl _ -> unsupported "unie (WCHODZIMY DO UNII)"
@@ -441,7 +441,23 @@ static FerdekValue read_value(void) {
 
 (* ============ PROGRAM ============ *)
 
-let compile_program prog =
+(* Import = wklejenie deklaracji modułu w miejscu importu (jak wykonanie w interpreterze).
+   Każdy moduł raz - ponowny import niczego nie zmienia. *)
+let expand_imports load_module decls =
+  let seen = Hashtbl.create 8 in
+  let rec expand decls = List.concat_map (function
+    | Import name when Hashtbl.mem seen name -> []
+    | Import name ->
+        Hashtbl.add seen name ();
+        (match load_module name with
+         | Some m -> expand m.declarations
+         | None -> error (Printf.sprintf "Nie ma takiego modułu: %s" name))
+    | d -> [d]) decls
+  in
+  expand decls
+
+let compile_program ?(load_module = fun _ -> None) prog =
+  let prog = { declarations = expand_imports load_module prog.declarations } in
   let ctx = { funcs = Hashtbl.create 16; globals = Hashtbl.create 64; locals = [];
               in_function = false; loop_handlers = []; counter = 0 } in
   List.iter (function

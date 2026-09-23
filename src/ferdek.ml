@@ -153,7 +153,7 @@ let generate_c input_file =
   match parse_file input_file with
   | Error msg -> Error msg
   | Ok ast ->
-      (try Ok (Compiler.compile_program ast)
+      (try Ok (Compiler.compile_program ~load_module:load_stdlib_module ast)
        with Compiler.Compile_error msg -> Error msg)
 
 let write_file path content =
