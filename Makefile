@@ -91,7 +91,7 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl test-errors test-check test-docs
+test: test-unit test-repl test-errors test-check test-docs test-runner
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
 
@@ -100,6 +100,12 @@ FUZZ_COUNT ?= 20
 FUZZ_SEED ?= 2026
 test-fuzz: build
 	python3 scripts/fuzz_parity.py $(FUZZ_COUNT) $(FUZZ_SEED)
+
+# ferdek test: katalog z dobrymi testami przechodzi, z oblanym - kończy się błędem
+test-runner: build
+	@$(FERDEK) test tests/ferdek_test/dobre > _build/ferdek_runner.log 2>&1 || { cat _build/ferdek_runner.log; exit 1; }
+	@! $(FERDEK) test tests/ferdek_test/zle > _build/ferdek_runner.log 2>&1 || { echo "ferdek test nie wykrył oblanego testu"; exit 1; }
+	@echo "--- ferdek test: OK"
 
 # docs/JEZYK.md i opisy słów muszą nadążać za lekserem
 test-docs:
@@ -168,4 +174,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs docs test-compiled test-fuzz test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner docs test-compiled test-fuzz test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

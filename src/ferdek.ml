@@ -58,6 +58,7 @@ let print_help () =
   Printf.printf "  -o <wyjście>            Gdzie to schować, żeby Halina nie znalazła? (Plik wyjściowy)\n";
   Printf.printf "  -r, --run               Szybki szlag! Kompiluj i odpal (tryb testowy).\n";
   Printf.printf "  --check <plik>          Sprawdź bez uruchamiania: nieznane zmienne, funkcje, liczba argumentów.\n";
+  Printf.printf "  test [katalog]          Uruchom wszystkie pliki *_test.ferdek (np. z BABKĄ) i podsumuj.\n";
   Printf.printf "  --repl                  Pogadaj sobie z Ferdkiem (tryb interaktywny).\n\n";
 
   Printf.printf "Przykłady (A niech to dunder świśnie!):\n";
@@ -164,6 +165,37 @@ let interpret_file filename =
   | Error msg ->
       Printf.eprintf "A fe! %s\n" msg;
       1
+
+(* ferdek test [katalog]: każdy *_test.ferdek osobno; porażka = niezerowy kod wyjścia *)
+let run_tests dir =
+  let rec find dir =
+    Sys.readdir dir |> Array.to_list |> List.sort compare
+    |> List.concat_map (fun name ->
+         let path = Filename.concat dir name in
+         if Sys.is_directory path then (if name.[0] = '.' || name = "_build" then [] else find path)
+         else if Filename.check_suffix name "_test.ferdek" then [path] else [])
+  in
+  match find dir with
+  | [] -> Printf.printf "Nie ma żadnych plików *_test.ferdek w %s\n" dir; 1
+  | files ->
+      let log = Filename.temp_file "ferdek_test_" ".log" in
+      let failed = List.filter (fun file ->
+        let rc = Sys.command (Printf.sprintf "%s %s > %s 2>&1 < /dev/null"
+                                (Filename.quote Sys.executable_name) (Filename.quote file) (Filename.quote log)) in
+        if rc = 0 then (Printf.printf "--- %s: OK\n%!" file; false)
+        else begin
+          Printf.printf "--- %s: OBLANY\n" file;
+          let lines = In_channel.with_open_bin log In_channel.input_all |> String.split_on_char '\n'
+                      |> List.filter (( <> ) "") in
+          let n = List.length lines in
+          List.iteri (fun i l -> if i >= n - 3 then Printf.printf "    %s\n" l) lines;
+          true
+        end) files in
+      (try Sys.remove log with _ -> ());
+      let total = List.length files and bad = List.length failed in
+      Printf.printf "Zaliczone: %d/%d%s\n" (total - bad) total
+        (if bad = 0 then " - Babka zadowolona!" else " - Babka niezadowolona.");
+      if bad = 0 then 0 else 1
 
 (* --check: błędy przed uruchomieniem *)
 let check_file filename =
@@ -304,6 +336,9 @@ let () =
       | "-v" | "--version" ->
           print_version ();
           exit 0
+      | "test" when input_file = None && i = 1 ->
+          let dir = if i + 1 < argc then Sys.argv.(i + 1) else "." in
+          exit (run_tests dir)
       | "--check" ->
           if i + 1 >= argc then (print_help (); exit 1);
           parse_args (i + 2) `Check output_file (Some Sys.argv.(i + 1))

@@ -31,6 +31,13 @@ Some examples:
 - `"Piwa: " BABKA DAWAJ RENTĘ 6` - `+` with text concatenates; arithmetic on non-numeric text is an error
 - `ZNAK Z KANAPY(s, i)`, `KANAPA DO GÓRY(s)`, `KANAPA W DÓŁ(s)` - character at position, upper/lower case (Polish letters too)
 
+Run your tests - every `*_test.ferdek` file under a directory (use BABKA for assertions):
+
+```bash
+ferdek test            # current directory
+ferdek test tests/     # or a given one
+```
+
 Check a program without running it (unknown names, wrong argument counts):
 
 ```bash
