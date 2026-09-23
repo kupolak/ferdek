@@ -95,6 +95,12 @@ test: test-unit test-repl test-errors test-check test-docs
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
 
+# Losowe programy: interpreter i skompilowany C muszą dać identyczne wyjście (make test-fuzz FUZZ_COUNT=100)
+FUZZ_COUNT ?= 20
+FUZZ_SEED ?= 2026
+test-fuzz: build
+	python3 scripts/fuzz_parity.py $(FUZZ_COUNT) $(FUZZ_SEED)
+
 # docs/JEZYK.md i opisy słów muszą nadążać za lekserem
 test-docs:
 	@python3 scripts/gen_keywords.py --check && echo "--- docs/JEZYK.md: OK"
@@ -162,4 +168,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs docs test-compiled test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs docs test-compiled test-fuzz test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
