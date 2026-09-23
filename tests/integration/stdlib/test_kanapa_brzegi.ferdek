@@ -1,0 +1,26 @@
+CO JEST KURDE
+
+RYM CYM CYM Split: separator wielo-znakowy, pierwszy znak separatora bez całego separatora
+AFERA JEST a W MORDĘ JEŻA PRZESUŃ NA KANAPIE("ab-c--d", "--")
+PANIE SENSACJA REWELACJA a
+RYM CYM CYM Separator na brzegach daje puste elementy
+AFERA JEST b W MORDĘ JEŻA PRZESUŃ NA KANAPIE(",x,", ",")
+PANIE SENSACJA REWELACJA b
+AFERA JEST dl W MORDĘ JEŻA ILE NA WERSALCE(b)
+PANIE SENSACJA REWELACJA dl
+
+RYM CYM CYM Replace: częściowe dopasowanie nie zjada liter, pusty wzorzec = bez zmian
+AFERA JEST c W MORDĘ JEŻA ZAMIEŃ NA KANAPIE("xa-ya--z", "--", "+")
+PANIE SENSACJA REWELACJA c
+AFERA JEST d W MORDĘ JEŻA ZAMIEŃ NA KANAPIE("abc", "", "+")
+PANIE SENSACJA REWELACJA d
+
+RYM CYM CYM Join i konkatenacja różnych typów
+AFERA JEST e W MORDĘ JEŻA POSKŁADAJ KANAPĘ(a, " i ")
+PANIE SENSACJA REWELACJA e
+AFERA JEST f W MORDĘ JEŻA USIĄDŹ NA KANAPIE("piwa: ", 6, " ", A ŻEBYŚ PAN WIEDZIAŁ)
+PANIE SENSACJA REWELACJA f
+AFERA JEST g W MORDĘ JEŻA ILE MIEJSCA NA KANAPIE("żółw")
+PANIE SENSACJA REWELACJA g
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

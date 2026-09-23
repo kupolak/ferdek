@@ -38,6 +38,35 @@ and block_names acc stmts = List.fold_left stmt_names acc stmts
 
 let dedup l = List.sort_uniq compare l
 
+(* ============ BUILTINS ============ *)
+
+(* Builtiny interpretera, które zna kompilator: nazwy Ferdka -> funkcja C i liczba argumentów
+   (None = dowolna). Funkcje C mają sygnaturę b_x(int argc, FerdekValue* argv). *)
+let builtins = [
+  ["USIĄDŹ NA KANAPIE"; "USIADZ NA KANAPIE"], ("b_kanapa_usiadz", None);
+  ["ROZCIĄGNIJ KANAPĘ"], ("b_kanapa_rozciagnij", Some 2);
+  ["POTNIJ KANAPĘ"], ("b_kanapa_potnij", Some 3);
+  ["PRZESUŃ NA KANAPIE"], ("b_kanapa_przesun", Some 2);
+  ["POSKŁADAJ KANAPĘ"], ("b_kanapa_poskladaj", Some 2);
+  ["WYTRZEP KANAPĘ"], ("b_kanapa_wytrzep", Some 1);
+  ["ZAMIEŃ NA KANAPIE"], ("b_kanapa_zamien", Some 3);
+  ["ILE MIEJSCA NA KANAPIE"], ("b_kanapa_ile", Some 1);
+  ["ILE NA WERSALCE"], ("b_wersalka_ile", Some 1);
+  ["POŁÓŻ NA WERSALCE"], ("b_wersalka_poloz", Some 2);
+  ["ZDEJMIJ Z WERSALKI"], ("b_wersalka_zdejmij", Some 1);
+  ["CZY LEŻY NA WERSALCE"], ("b_wersalka_czy_lezy", Some 2);
+  ["ZRÓB BAJCIK"; "ZROB BAJCIK"], ("b_zrob_bajcik", Some 1);
+  ["ZRÓB KRÓTKI"; "ZROB KROTKI"], ("b_zrob_krotki", Some 1);
+  ["ZRÓB DŁUGI"; "ZROB DLUGI"], ("b_zrob_dlugi", Some 1);
+  ["ZRÓB UŁAMEK"; "ZROB ULAMEK"], ("b_zrob_ulamek", Some 1);
+  ["CO TO ZA TYP"], ("b_co_to_za_typ", Some 1);
+  ["TABLICA 2D"], ("b_tablica_2d", Some 2);
+  ["TABLICA 3D"], ("b_tablica_3d", Some 3);
+]
+
+let find_builtin name =
+  List.find_map (fun (names, b) -> if List.mem name names then Some b else None) builtins
+
 (* ============ CODE GENERATION ============ *)
 
 type codegen_context = {
@@ -122,14 +151,22 @@ let rec compile_expr ctx expr =
 
 and compile_call ctx name args =
   let c_args = List.map (compile_expr ctx) args in
-  match Hashtbl.find_opt ctx.funcs name with
-  | Some f ->
+  (* Builtiny mają pierwszeństwo przed funkcjami użytkownika - jak w interpreterze *)
+  match find_builtin name, Hashtbl.find_opt ctx.funcs name with
+  | Some (c_name, arity), _ ->
+      (match arity with
+       | Some n when n <> List.length args ->
+           error (Printf.sprintf "%s oczekuje %d argumentów, podano %d" name n (List.length args))
+       | _ -> ());
+      let argv = if c_args = [] then "make_null()" else String.concat ", " c_args in
+      Printf.sprintf "%s(%d, (FerdekValue[]){%s})" c_name (List.length args) argv
+  | None, Some f ->
       if f.is_variadic then unsupported "funkcje wariadyczne";
       if List.length args <> List.length f.params then
         error (Printf.sprintf "Funkcja %s oczekuje %d argumentów, podano %d"
                  name (List.length f.params) (List.length args));
       Printf.sprintf "%s(%s)" (fun_c name) (String.concat ", " c_args)
-  | None ->
+  | None, None ->
       if is_var ctx name then unsupported "wywołania funkcji ze zmiennej (wskaźniki do funkcji)"
       else error (Printf.sprintf "Nieznana funkcja: %s (albo wbudowana, której kompilator nie zna)" name)
 
@@ -244,6 +281,7 @@ let runtime_library = {|/* Ferdek Runtime Library */
 /* Nie każdy program używa każdej funkcji runtime'u */
 #pragma GCC diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 /* ponytail: brak GC - pamięć stringów i tablic nie jest zwalniana (programy są krótkie) */
 
 typedef enum {
@@ -251,7 +289,10 @@ typedef enum {
     TYPE_INT,
     TYPE_STRING,
     TYPE_BOOL,
-    TYPE_ARRAY
+    TYPE_ARRAY,
+    TYPE_BYTE,       /* ZRÓB BAJCIK/KRÓTKI/UŁAMEK - liczby z własnym typem dla CO TO ZA TYP */
+    TYPE_SHORT,
+    TYPE_FIXED
 } ValueType;
 
 typedef struct FerdekValue FerdekValue;
@@ -301,7 +342,7 @@ static FerdekValue make_array(FerdekValue* data, int length) {
 
 static long long to_int(FerdekValue v) {
     switch (v.type) {
-        case TYPE_INT: return v.value.int_val;
+        case TYPE_INT: case TYPE_BYTE: case TYPE_SHORT: case TYPE_FIXED: return v.value.int_val;
         case TYPE_BOOL: return v.value.bool_val ? 1 : 0;
         case TYPE_STRING: {
             /* jak int_of_string w interpreterze: cały string musi być liczbą, inaczej 0 */
@@ -316,7 +357,7 @@ static long long to_int(FerdekValue v) {
 
 static bool to_bool(FerdekValue v) {
     switch (v.type) {
-        case TYPE_INT: return v.value.int_val != 0;
+        case TYPE_INT: case TYPE_BYTE: case TYPE_SHORT: case TYPE_FIXED: return v.value.int_val != 0;
         case TYPE_BOOL: return v.value.bool_val;
         case TYPE_STRING: return v.value.string_val[0] != '\0';
         case TYPE_NULL: return false;
@@ -341,7 +382,9 @@ static void buf_add(StrBuf* b, const char* t) {
 static char* to_str(FerdekValue v) {
     char num[32];
     switch (v.type) {
-        case TYPE_INT: snprintf(num, sizeof num, "%lld", v.value.int_val); return strdup(num);
+        case TYPE_INT: case TYPE_BYTE: case TYPE_SHORT: case TYPE_FIXED:
+            snprintf(num, sizeof num, "%lld", v.value.int_val);
+            return strdup(num);
         case TYPE_STRING: return strdup(v.value.string_val);
         case TYPE_BOOL: return strdup(v.value.bool_val ? "true" : "false");
         case TYPE_NULL: return strdup("null");
@@ -422,6 +465,207 @@ static void ferdek_throw(FerdekValue v) {
     }
     ferdek_exception = v;
     longjmp(ferdek_handler->buf, 1);
+}
+
+/* ---- Builtiny (semantyka jak w interpreterze) ---- */
+
+static FerdekValue make_typed(ValueType t, long long n) { FerdekValue v = make_int(n); v.type = t; return v; }
+
+static FerdekValue own_string(char* s) {   /* bez kopiowania - s już zaalokowany */
+    FerdekValue v;
+    v.type = TYPE_STRING;
+    v.value.string_val = s;
+    return v;
+}
+
+static FerdekValue b_kanapa_usiadz(int argc, FerdekValue* argv) {
+    StrBuf b = {0};
+    buf_add(&b, "");
+    for (int i = 0; i < argc; i++) {
+        char* s = to_str(argv[i]);
+        buf_add(&b, s);
+        free(s);
+    }
+    return own_string(b.s);
+}
+
+static FerdekValue b_kanapa_rozciagnij(int argc, FerdekValue* argv) {
+    char* s = to_str(argv[0]);
+    long long target = to_int(argv[1]);
+    size_t len = strlen(s);
+    if ((long long)len >= target) return own_string(s);
+    s = realloc(s, target + 1);
+    memset(s + len, ' ', target - len);
+    s[target] = '\0';
+    return own_string(s);
+}
+
+static FerdekValue b_kanapa_potnij(int argc, FerdekValue* argv) {
+    char* s = to_str(argv[0]);
+    long long len = strlen(s), start = to_int(argv[1]), end = to_int(argv[2]);
+    if (start < 0 || start >= len) ferdek_die("POTNIJ KANAPĘ: start index out of bounds");
+    if (end < start || end > len) ferdek_die("POTNIJ KANAPĘ: end index out of bounds");
+    s[end] = '\0';
+    return make_string(s + start);
+}
+
+static FerdekValue b_kanapa_przesun(int argc, FerdekValue* argv) {
+    char* s = to_str(argv[0]);
+    char* sep = to_str(argv[1]);
+    size_t seplen = strlen(sep);
+    FerdekValue parts = make_array(NULL, 0);
+    FerdekArray* arr = parts.value.array_val;
+    char* p = s;
+    for (;;) {
+        char* hit = seplen ? strstr(p, sep) : NULL;
+        if (hit) *hit = '\0';
+        arr->data = realloc(arr->data, sizeof(FerdekValue) * (arr->length + 1));
+        arr->data[arr->length++] = make_string(p);
+        if (!hit) break;
+        p = hit + seplen;
+    }
+    return parts;
+}
+
+static FerdekValue b_kanapa_poskladaj(int argc, FerdekValue* argv) {
+    if (argv[0].type != TYPE_ARRAY) ferdek_die("POSKŁADAJ KANAPĘ expects an array as first argument");
+    FerdekArray* arr = argv[0].value.array_val;
+    char* sep = to_str(argv[1]);
+    StrBuf b = {0};
+    buf_add(&b, "");
+    for (int i = 0; i < arr->length; i++) {
+        char* item = to_str(arr->data[i]);
+        if (i > 0) buf_add(&b, sep);
+        buf_add(&b, item);
+        free(item);
+    }
+    return own_string(b.s);
+}
+
+static bool is_trim_space(char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f'; }
+
+static FerdekValue b_kanapa_wytrzep(int argc, FerdekValue* argv) {
+    char* s = to_str(argv[0]);
+    char* start = s;
+    while (*start && is_trim_space(*start)) start++;
+    char* end = start + strlen(start);
+    while (end > start && is_trim_space(end[-1])) end--;
+    *end = '\0';
+    return make_string(start);
+}
+
+static FerdekValue b_kanapa_zamien(int argc, FerdekValue* argv) {
+    char* s = to_str(argv[0]);
+    char* old = to_str(argv[1]);
+    char* new = to_str(argv[2]);
+    if (!*old) return own_string(s);
+    StrBuf b = {0};
+    buf_add(&b, "");
+    char* p = s;
+    char* hit;
+    while ((hit = strstr(p, old)) != NULL) {
+        *hit = '\0';
+        buf_add(&b, p);
+        buf_add(&b, new);
+        p = hit + strlen(old);
+    }
+    buf_add(&b, p);
+    return own_string(b.s);
+}
+
+static FerdekValue b_kanapa_ile(int argc, FerdekValue* argv) {
+    char* s = to_str(argv[0]);
+    FerdekValue n = make_int((long long)strlen(s));
+    free(s);
+    return n;
+}
+
+static FerdekArray* list_arg(FerdekValue v, const char* msg) {
+    if (v.type != TYPE_ARRAY) ferdek_die("%s", msg);
+    return v.value.array_val;
+}
+
+static FerdekValue b_wersalka_ile(int argc, FerdekValue* argv) {
+    return make_int(list_arg(argv[0], "ILE NA WERSALCE: argument must be an array")->length);
+}
+
+/* Jak w interpreterze: zwraca nową tablicę, oryginał bez zmian */
+static FerdekValue b_wersalka_poloz(int argc, FerdekValue* argv) {
+    FerdekArray* arr = list_arg(argv[0], "POŁÓŻ NA WERSALCE: first argument must be an array");
+    FerdekValue out = make_array(arr->data, arr->length + 1);
+    out.value.array_val->data[arr->length] = argv[1];
+    return out;
+}
+
+static FerdekValue b_wersalka_zdejmij(int argc, FerdekValue* argv) {
+    FerdekArray* arr = list_arg(argv[0], "ZDEJMIJ Z WERSALKI: argument must be an array");
+    if (arr->length == 0) ferdek_die("ZDEJMIJ Z WERSALKI: lista jest pusta");
+    return arr->data[arr->length - 1];
+}
+
+static FerdekValue b_wersalka_czy_lezy(int argc, FerdekValue* argv) {
+    FerdekArray* arr = list_arg(argv[0], "CZY LEŻY NA WERSALCE: first argument must be an array");
+    FerdekValue x = argv[1];
+    for (int i = 0; i < arr->length; i++) {
+        FerdekValue a = arr->data[i];
+        if (a.type != x.type) continue;
+        if ((a.type == TYPE_INT && a.value.int_val == x.value.int_val) ||
+            (a.type == TYPE_STRING && strcmp(a.value.string_val, x.value.string_val) == 0) ||
+            (a.type == TYPE_BOOL && a.value.bool_val == x.value.bool_val))
+            return make_bool(true);
+    }
+    return make_bool(false);
+}
+
+static FerdekValue b_zrob_bajcik(int argc, FerdekValue* argv) { return make_typed(TYPE_BYTE, to_int(argv[0]) & 0xFF); }
+static FerdekValue b_zrob_dlugi(int argc, FerdekValue* argv) { return make_int(to_int(argv[0])); }
+static FerdekValue b_zrob_ulamek(int argc, FerdekValue* argv) { return make_typed(TYPE_FIXED, to_int(argv[0]) * 65536); }
+
+static FerdekValue b_zrob_krotki(int argc, FerdekValue* argv) {
+    long long m = to_int(argv[0]) & 0xFFFF;
+    return make_typed(TYPE_SHORT, m > 0x7FFF ? m - 0x10000 : m);
+}
+
+static FerdekValue b_co_to_za_typ(int argc, FerdekValue* argv) {
+    switch (argv[0].type) {
+        case TYPE_BYTE: return make_string("BAJCIK");
+        case TYPE_SHORT: return make_string("KRÓTKI");
+        case TYPE_INT: return make_string("DŁUGI");
+        case TYPE_FIXED: return make_string("UŁAMEK");
+        case TYPE_STRING: return make_string("TEKST");
+        case TYPE_BOOL: return make_string("PRAWDA/FAŁSZ");
+        case TYPE_NULL: return make_string("NIC");
+        case TYPE_ARRAY: return make_string("TABLICA");
+    }
+    return make_string("?");
+}
+
+static FerdekValue zeros(long long n) {
+    FerdekValue v = make_array(NULL, 0);
+    v.value.array_val->data = malloc(sizeof(FerdekValue) * n);
+    for (long long i = 0; i < n; i++) v.value.array_val->data[i] = make_int(0);
+    v.value.array_val->length = (int)n;
+    return v;
+}
+
+static FerdekValue b_tablica_2d(int argc, FerdekValue* argv) {
+    long long rows = to_int(argv[0]), cols = to_int(argv[1]);
+    if (rows <= 0 || cols <= 0) ferdek_die("TABLICA 2D: dimensions must be positive");
+    FerdekValue t = zeros(rows);
+    for (long long i = 0; i < rows; i++) t.value.array_val->data[i] = zeros(cols);
+    return t;
+}
+
+static FerdekValue b_tablica_3d(int argc, FerdekValue* argv) {
+    long long x = to_int(argv[0]), y = to_int(argv[1]), z = to_int(argv[2]);
+    if (x <= 0 || y <= 0 || z <= 0) ferdek_die("TABLICA 3D: dimensions must be positive");
+    FerdekValue t = zeros(x);
+    for (long long i = 0; i < x; i++) {
+        FerdekValue plane = zeros(y);
+        for (long long j = 0; j < y; j++) plane.value.array_val->data[j] = zeros(z);
+        t.value.array_val->data[i] = plane;
+    }
+    return t;
 }
 
 static void print_value(FerdekValue v) {
