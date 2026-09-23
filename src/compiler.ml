@@ -774,6 +774,8 @@ static const char* str_view(FerdekValue v, char* num, size_t n, char** owned) {
 
 /* + z tekstem po którejkolwiek stronie skleja - jak w interpreterze */
 static FerdekValue op_add(FerdekValue a, FerdekValue b) {
+    /* Szybka ścieżka: dwie liczby całkowite - ten sam wynik co ogólna, bez rozgałęzień */
+    if (a.type == TYPE_INT && b.type == TYPE_INT) return make_int(a.value.int_val + b.value.int_val);
     if (a.type == TYPE_STRING || b.type == TYPE_STRING) {
         char na[32], nb[32];
         char *oa, *ob;
@@ -796,10 +798,12 @@ static FerdekValue op_add(FerdekValue a, FerdekValue b) {
 #define ANY_FLOAT(a, b) ((a).type == TYPE_FLOAT || (b).type == TYPE_FLOAT)
 
 static FerdekValue op_sub(FerdekValue a, FerdekValue b) {
+    if (a.type == TYPE_INT && b.type == TYPE_INT) return make_int(a.value.int_val - b.value.int_val);
     return ANY_FLOAT(a, b) ? make_float(to_float(a) - to_float(b)) : make_int(to_int(a) - to_int(b));
 }
 
 static FerdekValue op_mul(FerdekValue a, FerdekValue b) {
+    if (a.type == TYPE_INT && b.type == TYPE_INT) return make_int(a.value.int_val * b.value.int_val);
     return ANY_FLOAT(a, b) ? make_float(to_float(a) * to_float(b)) : make_int(to_int(a) * to_int(b));
 }
 
@@ -849,7 +853,13 @@ static int compare3(FerdekValue a, FerdekValue b, bool equality) {
 }
 
 static FerdekValue compare_op(FerdekValue a, FerdekValue b, int op) {
-    int c = compare3(a, b, op == CMP_EQ || op == CMP_NE);
+    int c;
+    if (a.type == TYPE_INT && b.type == TYPE_INT) {
+        long long x = a.value.int_val, y = b.value.int_val;
+        c = (x > y) - (x < y);
+    } else {
+        c = compare3(a, b, op == CMP_EQ || op == CMP_NE);
+    }
     switch (op) {
         case CMP_EQ: return make_bool(c == 0);
         case CMP_NE: return make_bool(c != 0);
