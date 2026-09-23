@@ -257,7 +257,7 @@ let cc c_file exe =
     try ignore (Str.search_forward (Str.regexp_string "X11/Xlib.h") code 0);
         " -I/opt/X11/include -I/opt/homebrew/include -I/usr/local/include -L/opt/X11/lib -L/opt/homebrew/lib -L/usr/local/lib -lX11"
     with Not_found -> "" in
-  Sys.command (Printf.sprintf "cc -std=c99 -o %s %s -lm%s" (Filename.quote exe) (Filename.quote c_file) x11)
+  Sys.command (Printf.sprintf "cc -std=c99 -O2 -o %s %s -lm%s" (Filename.quote exe) (Filename.quote c_file) x11)
 
 (* -c: plik .c albo (inne rozszerzenie) gotowa binarka *)
 let compile_file input_file output_file =
