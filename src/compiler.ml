@@ -81,6 +81,8 @@ let builtins = [
   ["CO TO ZA TYP"], ("b_co_to_za_typ", Some 1);
   ["KARTA LUBI DYM"], ("b_karta_lubi_dym", None);
   ["TABLICA 2D"], ("b_tablica_2d", Some 2);
+  ["TRZEBA SPAĆ"], ("b_trzeba_spac", Some 1);
+  ["JEST TRZECIA W NOCY"], ("b_jest_trzecia", Some 0);
   ["PIERWIASTEK ZE SKRZYNKI"], ("b_pierwiastek", Some 1);
   ["SINUS ZE SKRZYNKI"], ("b_sinus", Some 1);
   ["COSINUS ZE SKRZYNKI"], ("b_cosinus", Some 1);
@@ -1106,6 +1108,26 @@ static FerdekValue b_pierwiastek(int argc, FerdekValue* argv) {
 static FerdekValue b_sinus(int argc, FerdekValue* argv) { return make_float(sin(to_float(argv[0]))); }
 static FerdekValue b_cosinus(int argc, FerdekValue* argv) { return make_float(cos(to_float(argv[0]))); }
 
+/* Czas - jak w interpreterze */
+static struct timespec program_start;
+
+static double ms_since_start(void) {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    return (now.tv_sec - program_start.tv_sec) * 1000.0 + (now.tv_nsec - program_start.tv_nsec) / 1e6;
+}
+
+static FerdekValue b_trzeba_spac(int argc, FerdekValue* argv) {
+    double ms = to_float(argv[0]);
+    if (ms < 0.0) ferdek_die("TRZEBA SPAĆ: czas nie może być ujemny");
+    fflush(stdout);
+    struct timespec t = { (time_t)(ms / 1000.0), (long)(fmod(ms, 1000.0) * 1e6) };
+    nanosleep(&t, NULL);
+    return make_null();
+}
+
+static FerdekValue b_jest_trzecia(int argc, FerdekValue* argv) { return make_int((long long)ms_since_start()); }
+
 static FerdekValue zeros(long long n) {
     FerdekValue v = make_array(NULL, 0);
     v.value.array_val->data = malloc(sizeof(FerdekValue) * n);
@@ -1195,6 +1217,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
   let wrappers = Hashtbl.fold (fun _ f acc -> compile_wrapper f :: acc) ctx.funcs [] |> dedup in
 
   String.concat "\n" ([
+    "#define _POSIX_C_SOURCE 200809L  /* strdup, nanosleep, clock_gettime przy -std=c99 */";
     "#include <stdio.h>";
     "#include <stdlib.h>";
     "#include <string.h>";
@@ -1209,6 +1232,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
   ] @ globals @ [""] @ protos @ [""] @ functions @ [""] @ wrappers @ [
     "";
     "int main(void) {";
+    "    clock_gettime(CLOCK_MONOTONIC, &program_start);";
   ] @ main_body @ [
     "    return 0;";
     "}";

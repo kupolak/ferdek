@@ -11,10 +11,10 @@ CHLUŚNIEM BO UŚNIEM i ŁYSA PAŁA 4
     AFERA JEST wiadomosc W MORDE JEZA USIĄDŹ NA KANAPIE("Pakiet numer ", i)
     W MORDE JEZA GNIAZDKO_WYSLIJ(gniazdko, "127.0.0.1", 5666, wiadomosc)
 
-    RYM CYM CYM Czekaj na odpowiedź (odpytywanie, limit prób)
+    RYM CYM CYM Czekaj na odpowiedź: co 10 ms, najwyżej 2 sekundy
     CYCU PRZYNIEŚ NO proby
     TO NIE SĄ TANIE RZECZY 0
-    CHLUŚNIEM BO UŚNIEM proby ŁYSA PAŁA 1000000
+    CHLUŚNIEM BO UŚNIEM proby ŁYSA PAŁA 200
         AFERA JEST pakiet W MORDE JEZA GNIAZDKO_ODBIERZ(gniazdko, 1024)
         AFERA JEST typ W MORDE JEZA CO TO ZA TYP(pakiet)
         NO JAK NIE JAK TAK typ TO PANU SIĘ CHCE WTEDY KIEDY MNIE "TABLICA"
@@ -23,10 +23,11 @@ CHLUŚNIEM BO UŚNIEM i ŁYSA PAŁA 4
             PANIE SENSACJA REWELACJA dane
             A POCAŁUJCIE MNIE WSZYSCY W DUPĘ
         DO CHAŁUPY ALE JUŻ
+        W MORDE JEZA TRZEBA SPAĆ(10)
         O KURDE MAM POMYSŁA proby A PROSZĘ BARDZO proby BABKA DAWAJ RENTĘ 1 NO I GITARA
     A ROBIĆ NI MA KOMU
 
-    NO JAK NIE JAK TAK proby TO PANU SIĘ CHCE WTEDY KIEDY MNIE 1000000
+    NO JAK NIE JAK TAK proby TO PANU SIĘ CHCE WTEDY KIEDY MNIE 200
         PANIE SENSACJA REWELACJA "Brak odpowiedzi - czy udp_server.ferdek działa?"
     DO CHAŁUPY ALE JUŻ
 

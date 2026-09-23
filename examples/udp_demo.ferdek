@@ -22,14 +22,11 @@ PANIE SENSACJA REWELACJA "  → Pakiet 3 wysłany"
 
 PANIE SENSACJA REWELACJA ""
 
-RYM CYM CYM Krótkie opóźnienie
-AFERA JEST delay W MORDE JEZA ZROB DLUGI(0)
-CHLUŚNIEM BO UŚNIEM delay ŁYSA PAŁA 100000
-    O KURDE MAM POMYSŁA delay A PROSZĘ BARDZO delay BABKA DAWAJ RENTĘ 1 NO I GITARA
-A ROBIĆ NI MA KOMU
+RYM CYM CYM Krótkie opóźnienie, żeby pakiety zdążyły dojść
+W MORDE JEZA TRZEBA SPAĆ(100)
 
 RYM CYM CYM Odbierz pakiety (zwraca [data, host, port])
-PANIE SENSACJA REWELACJA "Odbier am pakiety z socketu..."
+PANIE SENSACJA REWELACJA "Odbieram pakiety z socketu..."
 
 AFERA JEST packet1 W MORDE JEZA GNIAZDKO_ODBIERZ(sock, 1024)
 PANIE SENSACJA REWELACJA "✓ Pakiet 1 otrzymany"

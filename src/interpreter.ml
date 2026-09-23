@@ -54,6 +54,9 @@ let loc_suffix () =
   | ("", line) -> Printf.sprintf " (linia %d)" line
   | (file, line) -> Printf.sprintf " (%s, linia %d)" file line
 
+(* Chwila startu programu - dla JEST TRZECIA W NOCY *)
+let program_start = Unix.gettimeofday ()
+
 (* Stan generatora liczb losowych; -1 = jeszcze nie zasiany (zasiewamy czasem) *)
 let rng_state = ref (-1)
 
@@ -2131,6 +2134,17 @@ let () =
   ["SINUS ZE SKRZYNKI"], Some 1, (fun env args -> VFloat (sin (to_float (eval_expr env (List.hd args)))));
 
   ["COSINUS ZE SKRZYNKI"], Some 1, (fun env args -> VFloat (cos (to_float (eval_expr env (List.hd args)))));
+
+  (* Czas: TRZEBA SPAĆ(ms) usypia, JEST TRZECIA W NOCY() - milisekundy od startu programu *)
+  ["TRZEBA SPAĆ"], Some 1, (fun env args ->
+      let ms = to_float (eval_expr env (List.hd args)) in
+      if ms < 0.0 then raise (RuntimeError "TRZEBA SPAĆ: czas nie może być ujemny");
+      flush stdout;
+      Unix.sleepf (ms /. 1000.);
+      VNull);
+
+  ["JEST TRZECIA W NOCY"], Some 0, (fun _ _ ->
+      VInt (int_of_float ((Unix.gettimeofday () -. program_start) *. 1000.)));
   ]
 
 
