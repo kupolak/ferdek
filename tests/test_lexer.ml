@@ -54,6 +54,7 @@ let string_of_token = function
   | RPAREN -> "RPAREN"
   | COMMA -> "COMMA"
   | IMPORT -> "IMPORT"
+  | IMPORT_AS -> "IMPORT_AS"
   | SLASH -> "SLASH"
   | ARRAY_DECL -> "ARRAY_DECL"
   | ARRAY_INDEX -> "ARRAY_INDEX"

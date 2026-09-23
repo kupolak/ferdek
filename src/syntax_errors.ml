@@ -64,6 +64,7 @@ let keywords = [
   Parser.RPAREN, ")";
   Parser.COMMA, ",";
   Parser.IMPORT, "O KOGO MOJE PIĘKNE OCZY WIDZĄ";
+  Parser.IMPORT_AS, "JAKO";
   Parser.SLASH, "/";
   Parser.ARRAY_DECL, "PANIE TO JEST PRYWATNA PUBLICZNA TABLICA";
   Parser.ARRAY_INDEX, "WYPIERDZIELAJ PAN NA POZYCJĘ";

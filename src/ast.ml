@@ -135,6 +135,7 @@ type import_stmt = string                                (* Module import (O KOG
 (* Top-level declaration *)
 type top_level_decl =
   | Import of import_stmt
+  | ImportAs of import_stmt * string                     (* O KOGO MOJE PIĘKNE OCZY WIDZĄ moduł JAKO m - nazwy jako m.nazwa *)
   | Statement of stmt
   | FunctionDecl of function_decl
   | ClassDecl of class_decl
@@ -340,6 +341,20 @@ and block_decls stmts = List.concat_map (function
   | Try (a, v, b) -> v :: block_decls (a @ b)
   | _ -> []) stmts
 
+(* Zmienne zadeklarowane (VarDecl/ArrayDecl/catch) i przypisane w bloku.
+   Ferdek nie ma zasięgu blokowego: zmienna z pętli żyje w całej funkcji. *)
+let rec targets_stmt (decl, assigned) = function
+  | VarDecl (n, _) | ArrayDecl (n, _) -> (n :: decl, assigned)
+  | Read n | Assign (n, _) | FunctionCallWithAssign (n, _, _) -> (decl, n :: assigned)
+  | If (_, a, b) -> targets_block (targets_block (decl, assigned) a) (Option.value b ~default:[])
+  | While (_, b) -> targets_block (decl, assigned) b
+  | ForEach (v, _, b) -> targets_block (decl, v :: assigned) b
+  | For (v, _, _, _, b) -> targets_block (decl, v :: assigned) b
+  | Try (a, v, b) -> targets_block (targets_block (v :: decl, assigned) a) b
+  | Located (_, _, s) -> targets_stmt (decl, assigned) s
+  | _ -> (decl, assigned)
+and targets_block acc stmts = List.fold_left targets_stmt acc stmts
+
 let string_of_function_decl indent fdecl =
   let params_str = String.concat ", " fdecl.params in
   let body_str = String.concat "\n" (List.map (string_of_stmt (indent ^ "  ")) fdecl.body) in
@@ -390,6 +405,8 @@ let string_of_enum_decl indent (e : enum_decl) =
 let string_of_top_level_decl (decl : top_level_decl) : string = match decl with
   | Import module_name ->
       "import " ^ module_name
+  | ImportAs (module_name, alias) ->
+      "import " ^ module_name ^ " as " ^ alias
   | Statement stmt ->
       string_of_stmt "" stmt
   | FunctionDecl fdecl ->

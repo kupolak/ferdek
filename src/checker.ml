@@ -37,7 +37,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
     | ClassDecl c -> add global.types [c.name]; Hashtbl.replace classes c.name c
     | StructDecl s -> add global.types [s.name]
     | UnionDecl u -> add global.types [u.name]
-    | Import _ -> ()) decls;
+    | Import _ | ImportAs _ -> ()) decls;
 
   let with_locals names =
     let vars = Hashtbl.copy global.vars in
@@ -123,5 +123,5 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
         List.iter (fun (_, e) -> expr global e) c.fields;
         List.iter (check_function (class_members c)) c.methods
     | StructDecl { fields; _ } | UnionDecl { fields; _ } -> List.iter (fun (_, e) -> expr global e) fields
-    | EnumDecl _ | Import _ -> ()) decls;
+    | EnumDecl _ | Import _ | ImportAs _ -> ()) decls;
   List.rev !issues

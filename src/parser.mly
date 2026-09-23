@@ -18,7 +18,7 @@ open Ast
 %token TO_FIXED FROM_FIXED
 %token TRUE FALSE
 %token LPAREN RPAREN COMMA
-%token IMPORT SLASH
+%token IMPORT IMPORT_AS SLASH
 %token ARRAY_DECL
 %token ARRAY_INDEX
 %token TRY
@@ -60,7 +60,7 @@ open Ast
 %type <Ast.struct_decl> struct_decl
 %type <Ast.union_decl> union_decl
 %type <Ast.enum_decl> enum_decl
-%type <Ast.import_stmt> import_stmt
+%type <Ast.top_level_decl> import_stmt
 %type <Ast.top_level_decl> top_level_decl
 
 /* Start symbol */
@@ -80,7 +80,7 @@ program:
   ;
 
 top_level_decl:
-  | i=import_stmt { Import i }
+  | i=import_stmt { i }
   | s=statement { Statement s }
   | f=function_decl { FunctionDecl f }
   | c=class_decl { ClassDecl c }
@@ -92,7 +92,8 @@ top_level_decl:
 /* ============ IMPORTS ============ */
 
 import_stmt:
-  | IMPORT path=import_path { path }
+  | IMPORT path=import_path { Import path }
+  | IMPORT path=import_path IMPORT_AS alias=IDENTIFIER { ImportAs (path, alias) }
   ;
 
 import_path:

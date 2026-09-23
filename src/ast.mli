@@ -135,6 +135,7 @@ type import_stmt = string
 (* Top-level declaration *)
 type top_level_decl =
   | Import of import_stmt
+  | ImportAs of import_stmt * string   (* moduł, alias *)
   | Statement of stmt
   | FunctionDecl of function_decl
   | ClassDecl of class_decl
@@ -172,6 +173,10 @@ val stmt_names : stmt -> string list
 
 (* Zmienne deklarowane w bloku: CYCU PRZYNIEŚ NO, tablice, zmienna z HELENA MAM ZAWAŁ *)
 val block_decls : stmt list -> string list
+
+(* (zadeklarowane, przypisane) w bloku - nazwy, które instrukcje tworzą albo zmieniają *)
+val targets_stmt : string list * string list -> stmt -> string list * string list
+val targets_block : string list * string list -> stmt list -> string list * string list
 
 (* Convert statement to string *)
 val string_of_stmt : string -> stmt -> string

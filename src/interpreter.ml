@@ -21,11 +21,14 @@ let set_module_loader loader =
 let imported_modules : (string, unit) Hashtbl.t = Hashtbl.create 8
 
 
-let rec import_module env module_name =
-  if Hashtbl.mem imported_modules module_name then () else begin
-  Hashtbl.add imported_modules module_name ();
+let rec import_module ?alias env module_name =
+  (* ten sam moduł pod innym aliasem to osobna kopia - jak w kompilatorze *)
+  let key = Option.value alias ~default:"" ^ " " ^ module_name in
+  if Hashtbl.mem imported_modules key then () else begin
+  Hashtbl.add imported_modules key ();
   match !module_loader module_name with
   | Some module_ast ->
+      let module_ast = match alias with Some a -> Qualify.qualify a module_ast | None -> module_ast in
       (* Execute module in current environment *)
       List.iter (eval_top_level_decl env) module_ast.declarations
   | None ->
@@ -38,6 +41,9 @@ let rec import_module env module_name =
 and eval_top_level_decl env = function
   | Import module_name ->
       import_module env module_name
+
+  | ImportAs (module_name, alias) ->
+      import_module ~alias env module_name
 
   | Statement stmt ->
       eval_stmt env stmt

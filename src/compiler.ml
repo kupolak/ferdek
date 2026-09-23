@@ -35,19 +35,8 @@ let var_c = mangle "v_"
 let fun_c = mangle "f_"
 let wrap_c = mangle "w_"   (* wrapper (argc, argv) - funkcja jako wartość *)
 
-(* Zmienne zadeklarowane (VarDecl/ArrayDecl/catch) i przypisane w bloku.
-   Ferdek nie ma zasięgu blokowego: zmienna z pętli żyje w całej funkcji. *)
-let rec stmt_names (decl, assigned) = function
-  | VarDecl (n, _) | ArrayDecl (n, _) -> (n :: decl, assigned)
-  | Read n | Assign (n, _) | FunctionCallWithAssign (n, _, _) -> (decl, n :: assigned)
-  | If (_, a, b) -> block_names (block_names (decl, assigned) a) (Option.value b ~default:[])
-  | While (_, b) -> block_names (decl, assigned) b
-  | ForEach (v, _, b) -> block_names (decl, v :: assigned) b
-  | For (v, _, _, _, b) -> block_names (decl, v :: assigned) b
-  | Try (a, v, b) -> block_names (block_names (v :: decl, assigned) a) b
-  | Located (_, _, s) -> stmt_names (decl, assigned) s
-  | _ -> (decl, assigned)
-and block_names acc stmts = List.fold_left stmt_names acc stmts
+let stmt_names = targets_stmt
+let block_names = targets_block
 
 let dedup l = List.sort_uniq compare l
 
@@ -578,7 +567,7 @@ let compile_top_level ctx decl =
         let v = Option.value v ~default:next in
         (v + 1, Printf.sprintf "    %s = make_int(%dLL);" (var_c name) v :: acc)) (0, []) e.values in
       String.concat "\n" (List.rev lines)
-  | Import _ -> ""  (* rozwinięte wcześniej przez expand_imports *)
+  | Import _ | ImportAs _ -> ""  (* rozwinięte wcześniej przez expand_imports *)
   | ClassDecl _ | StructDecl _ | UnionDecl _ -> ""  (* konstruktory generuje compile_program *)
 
 (* ============ RUNTIME LIBRARY ============ *)
@@ -2192,13 +2181,17 @@ static FerdekValue gfx_zdarzenie(int argc, FerdekValue* argv) {
 let expand_imports load_module decls =
   let seen = Hashtbl.create 8 in
   let rec expand decls = List.concat_map (function
-    | Import name when Hashtbl.mem seen name -> []
-    | Import name ->
-        Hashtbl.add seen name ();
-        (match load_module name with
-         | Some m -> expand m.declarations
-         | None -> error (Printf.sprintf "Nie ma takiego modułu: %s" name))
+    | Import name -> load name (fun m -> m)
+    | ImportAs (name, alias) -> load ~alias name (Qualify.qualify alias)
     | d -> [d]) decls
+  and load ?(alias = "") name transform =
+    let key = alias ^ " " ^ name in   (* ten sam moduł pod innym aliasem to osobna kopia *)
+    if Hashtbl.mem seen key then [] else begin
+      Hashtbl.add seen key ();
+      match load_module name with
+      | Some m -> expand (transform m).declarations
+      | None -> error (Printf.sprintf "Nie ma takiego modułu: %s" name)
+    end
   in
   expand decls
 

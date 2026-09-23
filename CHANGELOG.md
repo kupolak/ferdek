@@ -20,6 +20,9 @@
 - Numbers with a decimal point, array literals anywhere, names starting with Polish letters.
 - `PO PIERWSZE PRIMO(x, miejsca)` formats a number with a fixed number of decimal places.
 - Map literals: `OTWÓRZ SZAFKĘ("a", 1, "b", 2)` creates a map filled with key/value pairs.
+- Modules with a namespace: `O KOGO MOJE PIĘKNE OCZY WIDZĄ matma JAKO m`, then `m.dodaj(1, 2)`,
+  `m.PI`. The module's top-level names get the `m.` prefix, so they cannot clash with yours;
+  the plain import works as before. `JAKO` is now a keyword.
 - Loop over elements: `KRĘCI CEMENT BETONIARA x Z kolekcja` ... `A ROBIĆ NI MA KOMU` - array
   elements, map keys (sorted) or characters of a text. `Z` is now a keyword.
 - Anonymous functions: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2`, or with statements:

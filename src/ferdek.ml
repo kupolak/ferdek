@@ -81,10 +81,12 @@ let print_version () =
    Dzięki temu zagnieżdżone importy liczą się od pliku, który importuje. *)
 let resolve_local_imports filename (prog : Ast.program) =
   let dir = Filename.dirname filename in
+  let local name =
+    let path = Filename.concat dir (name ^ ".ferdek") in
+    if Sys.file_exists path then path else name in
   { Ast.declarations = List.map (function
-      | Ast.Import name ->
-          let path = Filename.concat dir (name ^ ".ferdek") in
-          if Sys.file_exists path then Ast.Import path else Ast.Import name
+      | Ast.Import name -> Ast.Import (local name)
+      | Ast.ImportAs (name, alias) -> Ast.ImportAs (local name, alias)
       | d -> d) prog.declarations }
 
 (* Jeden przebieg parsera; przy błędzie: linia, komunikat i token, na którym się wyłożył *)

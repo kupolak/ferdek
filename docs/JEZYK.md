@@ -23,6 +23,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `CO JEST KURDE` | Początek programu |
 | `MOJA NOGA JUŻ TUTAJ NIE POSTANIE` | Koniec programu |
 | `O KOGO MOJE PIĘKNE OCZY WIDZĄ` | Import: plik obok (moj_plik) albo moduł stdlib (KLAMOTY/SKRZYNKA) |
+| `JAKO` | Import z przestrzenią nazw: O KOGO MOJE PIĘKNE OCZY WIDZĄ matma JAKO m, potem m.dodaj(1, 2), m.PI |
 | `CYCU PRZYNIEŚ` | Import, krótsza forma: CYCU PRZYNIEŚ BABKA |
 
 ## Zmienne i wypisywanie

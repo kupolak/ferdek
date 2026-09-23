@@ -26,7 +26,8 @@ Some examples:
 - `KRĘCI CEMENT BETONIARA i OD 1 DO 10 CO 2` ... `A ROBIĆ NI MA KOMU` - for loop
 - `KRĘCI CEMENT BETONIARA piwo Z lodowka` ... `A ROBIĆ NI MA KOMU` - loop over array elements, map keys or characters
 - `KARTA LUBI DYM(1, 6)` - random number (`KARTA LUBI DYM(seed)` sets the seed)
-- `O KOGO MOJE PIĘKNE OCZY WIDZĄ moj_plik` - import `moj_plik.ferdek` next to your file (or a stdlib module)
+- `O KOGO MOJE PIĘKNE OCZY WIDZĄ moj_plik` - import `moj_plik.ferdek` next to your file (or a stdlib module);
+  `... WIDZĄ matma JAKO m` keeps the module's names apart: `m.dodaj(1, 2)`, `m.PI`
 - `3.14` - numbers with a decimal point (`7 / 2` is still `3`, `7.0 / 2` is `3.5`; `ZRÓB DŁUGI(3.9)` truncates)
 - `[1, 2, 3]` - array literals work anywhere, e.g. as function arguments
 - `"Piwa: " BABKA DAWAJ RENTĘ 6` - `+` with text concatenates; arithmetic on non-numeric text is an error

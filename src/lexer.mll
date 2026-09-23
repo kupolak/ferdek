@@ -101,6 +101,7 @@ rule token = parse
   (* Keywords - MODULES AND IMPORTS *)
   | "O KOGO MOJE PIĘKNE OCZY WIDZĄ" { IMPORT }
   | "O KOGO MOJE PIEKNE OCZY WIDZA" { IMPORT }
+  | "JAKO" { IMPORT_AS }
   | "CYCU PRZYNIEŚ" { IMPORT }
   | "CYCU PRZYNES" { IMPORT }
 
@@ -363,7 +364,8 @@ rule token = parse
   | '-' (digit+ as num) { INTEGER (- (int_of_string num)) }
 
   (* Identifiers *)
-  | (letter | utf8_letter) identifier_char* as id { IDENTIFIER id }
+  (* m.nazwa - nazwa z modułu zaimportowanego JAKO m *)
+  | (letter | utf8_letter) identifier_char* ('.' (letter | utf8_letter) identifier_char*)* as id { IDENTIFIER id }
 
   (* End of file *)
   | eof { EOF }
