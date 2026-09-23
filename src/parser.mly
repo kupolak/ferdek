@@ -63,6 +63,10 @@ open Ast
 %type <Ast.top_level_decl> top_level_decl
 
 /* Start symbol */
+(* "RETURN W MORDĘ JEŻA f()" = zwróć f(), a nie pusty return + wywołanie *)
+%nonassoc RETURN_BARE
+%nonassoc FUNC_CALL
+
 %start <Ast.program> program
 
 %%
@@ -174,11 +178,12 @@ func_call_with_assign:
 
 return_stmt:
   | RETURN e=expression { Return (Some e) }
-  | RETURN { Return None }
+  | RETURN %prec RETURN_BARE { Return None }
   ;
 
 try_stmt:
-  | TRY try_block=list(statement) CATCH catch_var=IDENTIFIER catch_block=list(statement)
+  (* Blok catch zamyka DO CHAŁUPY ALE JUŻ - bez tego połykał resztę programu *)
+  | TRY try_block=list(statement) CATCH catch_var=IDENTIFIER catch_block=list(statement) END_IF
     { Try (try_block, catch_var, catch_block) }
   ;
 
@@ -212,7 +217,6 @@ function_decl:
 (* Helper rule for variadic params: either "..." or "a, b, c, ..." *)
 param_list_with_ellipsis:
   | ELLIPSIS { [] }
-  | p=IDENTIFIER COMMA ELLIPSIS { [p] }
   | p=IDENTIFIER COMMA rest=param_list_with_ellipsis { p :: rest }
   ;
 
@@ -335,6 +339,10 @@ arith_expr:
     { BinaryOp (e1, Plus, e2) }
   | e1=arith_expr MINUS e2=term
     { BinaryOp (e1, Minus, e2) }
+  | e1=arith_expr POINTER_STEP_FORWARD e2=term
+    { PointerArithmetic (e1, Plus, e2) }
+  | e1=arith_expr POINTER_STEP_BACK e2=term
+    { PointerArithmetic (e1, Minus, e2) }
   | e=term { e }
   ;
 
@@ -375,10 +383,6 @@ factor:
     { Dereference e }
   | POINTER_ADDR id=IDENTIFIER
     { AddressOf id }
-  | e1=factor POINTER_STEP_FORWARD e2=factor
-    { PointerArithmetic (e1, Plus, e2) }
-  | e1=factor POINTER_STEP_BACK e2=factor
-    { PointerArithmetic (e1, Minus, e2) }
   | BIT_NOT e=factor
     { BitwiseNot e }
   | TO_FIXED e=factor

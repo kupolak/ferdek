@@ -1,0 +1,20 @@
+CO JEST KURDE
+
+RYM CYM CYM Try bez wyjątku - kod po bloku musi się wykonać
+HELENA MUSZĘ CI COŚ POWIEDZIEĆ
+    PANIE SENSACJA REWELACJA "try bez wyjatku"
+HELENA MAM ZAWAŁ blad
+    O KARWASZ TWARZ "catch wykonany bez wyjatku"
+DO CHAŁUPY ALE JUŻ
+PANIE SENSACJA REWELACJA "po pierwszym try"
+
+RYM CYM CYM Try z wyjątkiem - catch dostaje wartość
+HELENA MUSZĘ CI COŚ POWIEDZIEĆ
+    O KARWASZ TWARZ "bum"
+    O KARWASZ TWARZ "kod po throw sie wykonal"
+HELENA MAM ZAWAŁ blad
+    PANIE SENSACJA REWELACJA blad
+DO CHAŁUPY ALE JUŻ
+PANIE SENSACJA REWELACJA "po drugim try"
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
