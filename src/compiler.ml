@@ -362,6 +362,7 @@ let runtime_library = {|/* Ferdek Runtime Library */
 #pragma GCC diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 #pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-variable"
 /* ponytail: brak GC - pamięć stringów i tablic nie jest zwalniana (programy są krótkie) */
 
 typedef enum {
