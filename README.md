@@ -18,6 +18,12 @@ Some examples:
 - `HELENA MAM ZAWAŁ` - catch exception
 - `A POCAŁUJCIE MNIE WSZYSCY W DUPĘ` - break
 - `W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM` - null
+- `JEDZIEM Z TYM ŚLEDZIEM` - print without a newline (`NO TO ENTER` ends the line)
+- `TAK BYĆ NIE BĘDZIE` - logical not; `JA JESTEM PONAD TO` - `>=`
+- `AAA TO ZMIENIA POSTAĆ RZECZY` - else if
+- `KRĘCI CEMENT BETONIARA i OD 1 DO 10 CO 2` ... `A ROBIĆ NI MA KOMU` - for loop
+- `KARTA LUBI DYM(1, 6)` - random number (`KARTA LUBI DYM(seed)` sets the seed)
+- `O KOGO MOJE PIĘKNE OCZY WIDZĄ moj_plik` - import `moj_plik.ferdek` next to your file (or a stdlib module)
 
 ## Installation
 
