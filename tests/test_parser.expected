@@ -1,0 +1,59 @@
+========================================
+  FERDEK PARSER TESTS
+========================================
+
+Test 1: Hello World
+-------------------
+program:
+print "Cześć, tu Ferdek!"
+
+Test 2: Variable Declaration
+----------------------------
+program:
+var piwa = 6
+
+Test 3: Arithmetic Expression
+-----------------------------
+program:
+var wynik = 10
+wynik = (wynik + 5)
+
+Test 4: If Statement
+--------------------
+program:
+var kasa = 100
+if (kasa > 0)
+  print "Mam kasę!"
+else
+  print "Brak kasy"
+
+Test 5: While Loop
+------------------
+program:
+var licznik = 5
+while (licznik > 0)
+  print licznik
+  licznik = (licznik - 1)
+
+Test 6: Function Declaration
+----------------------------
+program:
+function dodaj(a, b) -> value
+  var wynik = 0
+  wynik = (a + b)
+  return wynik
+
+Test 7: Array Declaration
+-------------------------
+program:
+array liczby = [1, 2, 3, 4, 5]
+
+Test 8: Boolean Expressions
+---------------------------
+program:
+var prawda = true
+var falsz = false
+
+========================================
+  ALL TESTS COMPLETED
+========================================

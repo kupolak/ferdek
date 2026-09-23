@@ -1,0 +1,72 @@
+=== Ferdek Language Lexer Test ===
+
+Test: Hello World
+-------------------
+PROGRAM_START
+PRINT
+STRING("Cześć, tu Ferdek!")
+PROGRAM_END
+EOF
+
+Test: Variable declaration
+-------------------
+VAR_DECL
+IDENTIFIER(piwa)
+VAR_INIT
+INTEGER(6)
+EOF
+
+Test: Arithmetic operators
+-------------------
+ASSIGN_START
+IDENTIFIER(x)
+ASSIGN_OP
+IDENTIFIER(y)
+PLUS
+INTEGER(5)
+ASSIGN_END
+EOF
+
+Test: If-else statement
+-------------------
+IF
+IDENTIFIER(x)
+GREATER
+INTEGER(0)
+ELSE
+END_IF
+EOF
+
+Test: Comments
+-------------------
+VAR_DECL
+IDENTIFIER(x)
+VAR_INIT
+INTEGER(42)
+EOF
+
+Test: Boolean values
+-------------------
+TRUE
+FALSE
+EOF
+
+Test: Function declaration
+-------------------
+FUNC_DECL
+IDENTIFIER(dodaj)
+FUNC_PARAMS
+IDENTIFIER(a)
+COMMA
+IDENTIFIER(b)
+FUNC_END
+EOF
+
+Test: Import with path
+-------------------
+IMPORT
+IDENTIFIER(KLAMOTY)
+SLASH
+IDENTIFIER(SKRZYNKA)
+EOF
+

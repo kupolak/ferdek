@@ -136,7 +136,7 @@ let () =
     "O KURDE MAM POMYSŁA x\nA PROSZĘ BARDZO y BABKA DAWAJ RENTĘ 5\nNO I GITARA";
   
   test_string "If-else statement"
-    "NO JAK NIE JAK TAK x MOJA NOGA JUŻ TUTAJ NIE POSTANIE 0\nA DUPA TAM\nDO CHAŁUPY ALE JUŻ";
+    "NO JAK NIE JAK TAK x GRUBA ŚWINIA 0\nA DUPA TAM\nDO CHAŁUPY ALE JUŻ";
   
   test_string "Comments"
     "CYCU PRZYNIEŚ NO x RYM CYM CYM This is a comment\nTO NIE SĄ TANIE RZECZY 42";

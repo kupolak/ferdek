@@ -1,0 +1,62 @@
+========================================
+  TESTY MODUŁU AST - JĘZYK FERDEK
+========================================
+
+Test 1: Proste wyrażenie arytmetyczne
+  (5 + 3)
+
+Test 2: Deklaracja zmiennej
+  var piwa = 6
+
+Test 3: Instrukcja print
+  print "Cześć, tu Ferdek!"
+
+Test 4: Instrukcja if/else
+if (kasa > 0)
+  print "Mam kasę na browarka!"
+else
+  print "Halinka, pożycz stówkę..."
+
+Test 5: Pętla while
+while (piwa > 0)
+  print piwa
+  piwa = (piwa - 1)
+
+Test 6: Deklaracja funkcji
+function dolej_browarka(ile) -> value
+  var wynik = 0
+  wynik = (ile + 2)
+  return wynik
+
+Test 7: Deklaracja tablicy
+  array liczby = [1, 2, 3]
+
+Test 8: Dostęp do tablicy
+  liczby[0]
+
+Test 9: Wyrażenie logiczne
+  ((reszta3 == 0) && (reszta5 == 0))
+
+Test 11: Obsługa wyjątków
+try
+  print "Próbuję..."
+catch err
+  print "Złapałem błąd!"
+
+Test 12: Deklaracja klasy
+class Ferdek
+  wiek = 50
+  function powitanie()
+    print "Cześć!"
+
+Test 10: Kompletny program
+program:
+var piwa = 6
+print piwa
+function test()
+  print "Hello"
+import modul
+
+========================================
+  WSZYSTKIE TESTY ZAKOŃCZONE
+========================================
