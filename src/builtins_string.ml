@@ -18,6 +18,16 @@ let kanapa_potnij s start end_pos =
   else
     String.sub s start (end_pos - start)
 
+(* Polskie litery w UTF-8: (mała, wielka) *)
+let polskie = ["ą", "Ą"; "ć", "Ć"; "ę", "Ę"; "ł", "Ł"; "ń", "Ń"; "ó", "Ó"; "ś", "Ś"; "ź", "Ź"; "ż", "Ż"]
+
+let zamien_wszystkie pary s =
+  List.fold_left (fun acc (z, na) -> Str.global_substitute (Str.regexp_string z) (fun _ -> na) acc) s pary
+
+(* Wielkie / małe litery - ASCII i polskie znaki *)
+let kanapa_do_gory s = zamien_wszystkie polskie (String.uppercase_ascii s)
+let kanapa_w_dol s = zamien_wszystkie (List.map (fun (m, w) -> (w, m)) polskie) (String.lowercase_ascii s)
+
 (* Split string by separator; separator na początku/końcu daje puste elementy *)
 let kanapa_przesun s sep =
   if sep = "" then [s]

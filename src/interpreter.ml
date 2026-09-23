@@ -506,6 +506,26 @@ and eval_function_call env name args =
            VString (Builtins_string.kanapa_zamien s old_str new_str)
        | _ -> raise (RuntimeError "ZAMIEŃ NA KANAPIE expects 3 arguments"))
 
+  (* ZNAK Z KANAPY(s, i) - znak (bajt) na pozycji i, jak w POTNIJ KANAPĘ *)
+  | "ZNAK Z KANAPY" ->
+      (match args with
+       | [str_arg; idx_arg] ->
+           let s = to_string (eval_expr env str_arg) in
+           let i = to_int (eval_expr env idx_arg) in
+           if i < 0 || i >= String.length s then raise (RuntimeError "ZNAK Z KANAPY: indeks poza zakresem");
+           VString (String.make 1 s.[i])
+       | _ -> raise (RuntimeError "ZNAK Z KANAPY expects 2 arguments"))
+
+  | "KANAPA DO GÓRY" ->
+      (match args with
+       | [arg] -> VString (Builtins_string.kanapa_do_gory (to_string (eval_expr env arg)))
+       | _ -> raise (RuntimeError "KANAPA DO GÓRY expects 1 argument"))
+
+  | "KANAPA W DÓŁ" ->
+      (match args with
+       | [arg] -> VString (Builtins_string.kanapa_w_dol (to_string (eval_expr env arg)))
+       | _ -> raise (RuntimeError "KANAPA W DÓŁ expects 1 argument"))
+
   (* ILE MIEJSCA NA KANAPIE - Zwraca długość stringu *)
   | "ILE MIEJSCA NA KANAPIE" ->
       (match args with

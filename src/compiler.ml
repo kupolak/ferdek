@@ -63,6 +63,9 @@ let builtins = [
   ["WYTRZEP KANAPĘ"], ("b_kanapa_wytrzep", Some 1);
   ["ZAMIEŃ NA KANAPIE"], ("b_kanapa_zamien", Some 3);
   ["ILE MIEJSCA NA KANAPIE"], ("b_kanapa_ile", Some 1);
+  ["ZNAK Z KANAPY"], ("b_kanapa_znak", Some 2);
+  ["KANAPA DO GÓRY"], ("b_kanapa_do_gory", Some 1);
+  ["KANAPA W DÓŁ"], ("b_kanapa_w_dol", Some 1);
   ["ILE NA WERSALCE"], ("b_wersalka_ile", Some 1);
   ["POŁÓŻ NA WERSALCE"], ("b_wersalka_poloz", Some 2);
   ["ZDEJMIJ Z WERSALKI"], ("b_wersalka_zdejmij", Some 1);
@@ -791,6 +794,38 @@ static FerdekValue b_kanapa_ile(int argc, FerdekValue* argv) {
     return n;
 }
 
+static FerdekValue b_kanapa_znak(int argc, FerdekValue* argv) {
+    char* s = to_str(argv[0]);
+    long long i = to_int(argv[1]);
+    if (i < 0 || i >= (long long)strlen(s)) ferdek_die("ZNAK Z KANAPY: indeks poza zakresem");
+    char c[2] = { s[i], '\0' };
+    free(s);
+    return make_string(c);
+}
+
+/* Polskie litery w UTF-8: drugi bajt małej i wielkiej, pierwszy wspólny */
+static const unsigned char polskie[][3] = {
+    {0xC4, 0x85, 0x84}, {0xC4, 0x87, 0x86}, {0xC4, 0x99, 0x98}, {0xC5, 0x82, 0x81}, {0xC5, 0x84, 0x83},
+    {0xC3, 0xB3, 0x93}, {0xC5, 0x9B, 0x9A}, {0xC5, 0xBA, 0xB9}, {0xC5, 0xBC, 0xBB},
+};
+
+static FerdekValue change_case(FerdekValue v, bool upper) {
+    unsigned char* s = (unsigned char*)to_str(v);
+    for (size_t i = 0; s[i]; i++) {
+        if (s[i] < 0x80) { s[i] = upper ? toupper(s[i]) : tolower(s[i]); continue; }
+        for (size_t k = 0; k < sizeof polskie / sizeof polskie[0] && s[i + 1]; k++) {
+            if (s[i] == polskie[k][0] && s[i + 1] == polskie[k][upper ? 1 : 2]) {
+                s[i + 1] = polskie[k][upper ? 2 : 1];
+                break;
+            }
+        }
+    }
+    return own_string((char*)s);
+}
+
+static FerdekValue b_kanapa_do_gory(int argc, FerdekValue* argv) { return change_case(argv[0], true); }
+static FerdekValue b_kanapa_w_dol(int argc, FerdekValue* argv) { return change_case(argv[0], false); }
+
 static FerdekArray* list_arg(FerdekValue v, const char* msg) {
     if (v.type != TYPE_ARRAY) ferdek_die("%s", msg);
     return v.value.array_val;
@@ -1036,6 +1071,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
     "#include <stdarg.h>";
     "#include <setjmp.h>";
     "#include <time.h>";
+    "#include <ctype.h>";
     "";
     runtime_library;
   ] @ globals @ [""] @ protos @ [""] @ functions @ [""] @ wrappers @ [
