@@ -28,6 +28,10 @@
 - Handles the whole language, including classes, structs, unions, pointers, exceptions, files,
   memory, maps, UDP and X11 graphics. Compiled programs print exactly what the interpreter prints,
   error messages included (checked by tests and a fuzzer).
+- Compiled programs are optimized (`-O2`, fast paths for integers, string literals without copying):
+  7-23x faster than the interpreter on `make bench` (was 2-4x).
+- With the Boehm GC installed, compiled programs free memory (a 2M-iteration text loop: 3 MB instead
+  of 32 MB and growing).
 
 ### Tools
 - `ferdek --check` (unknown names, wrong argument counts), `ferdek test` (runs `*_test.ferdek`),
