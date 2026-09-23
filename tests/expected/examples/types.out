@@ -1,97 +1,52 @@
 === Test Systemu Typów Liczbowych (DOOM-style) ===
 
 Test 1: BAJCIK (byte) - 8-bit unsigned
-ZRÓB BAJCIK(42) = 
-42
- (typ: 
-BAJCIK
-)
+ZRÓB BAJCIK(42) = 42 (typ: BAJCIK)
 
-ZRÓB BAJCIK(300) = 
-44
- (300 & 0xFF = 44)
+ZRÓB BAJCIK(300) = 44 (300 & 0xFF = 44)
 
 Pomiń test wartości ujemnej
 
 Test 2: KRÓTKI (short) - 16-bit integer
-ZRÓB KRÓTKI(1000) = 
-1000
- (typ: 
-KRÓTKI
-)
+ZRÓB KRÓTKI(1000) = 1000 (typ: KRÓTKI)
 
 Pomiń test wartości ujemnej
 
-ZRÓB KRÓTKI(40000) = 
--25536
- (with sign extension)
+ZRÓB KRÓTKI(40000) = -25536 (with sign extension)
 
 Test 3: DŁUGI (int) - 32-bit (default type)
-ZRÓB DŁUGI(123456) = 
-123456
- (typ: 
-DŁUGI
-)
+ZRÓB DŁUGI(123456) = 123456 (typ: DŁUGI)
 
-default_int = 
-999
- (typ: 
-DŁUGI
-)
+default_int = 999 (typ: DŁUGI)
 
 Test 4: UŁAMEK (fixed_t) - fixed-point 16.16
-ZRÓB UŁAMEK(1) = 
-65536
- (1 << 16 = 65536 = 1.0 in fixed-point)
- (typ: 
-UŁAMEK
-)
+ZRÓB UŁAMEK(1) = 65536 (1 << 16 = 65536 = 1.0 in fixed-point) (typ: UŁAMEK)
 
-ZRÓB UŁAMEK(5) = 
-327680
- (5 << 16 = 327680)
+ZRÓB UŁAMEK(5) = 327680 (5 << 16 = 327680)
 
 Test 5: Konwersje między typami
-BAJCIK(200) -> DŁUGI = 
-200
+BAJCIK(200) -> DŁUGI = 200
 
-DŁUGI(1000) -> BAJCIK = 
-232
- (1000 & 0xFF = 232)
+DŁUGI(1000) -> BAJCIK = 232 (1000 & 0xFF = 232)
 
-KRÓTKI(500) -> BAJCIK = 
-244
- (500 & 0xFF = 244)
+KRÓTKI(500) -> BAJCIK = 244 (500 & 0xFF = 244)
 
-DŁUGI(10) -> UŁAMEK = 
-655360
- (10 << 16 = 655360)
+DŁUGI(10) -> UŁAMEK = 655360 (10 << 16 = 655360)
 
 Test 6: CO TO ZA TYP - runtime type checking
-CO TO ZA TYP(BAJCIK): 
-BAJCIK
-CO TO ZA TYP(KRÓTKI): 
-KRÓTKI
-CO TO ZA TYP(DŁUGI): 
-DŁUGI
-CO TO ZA TYP(UŁAMEK): 
-UŁAMEK
+CO TO ZA TYP(BAJCIK): BAJCIK
+CO TO ZA TYP(KRÓTKI): KRÓTKI
+CO TO ZA TYP(DŁUGI): DŁUGI
+CO TO ZA TYP(UŁAMEK): UŁAMEK
 
 Test 7: DOOM palette colors (bytes 0-255)
-Kolor czerwony (palette index): 
-169
-Kolor zielony (palette index): 
-112
-Kolor niebieski (palette index): 
-255
+Kolor czerwony (palette index): 169
+Kolor zielony (palette index): 112
+Kolor niebieski (palette index): 255
 
 Test 8: DOOM fixed-point dla pozycji gracza
-Pozycja gracza X (fixed): 
-6553600
- (100 << 16 = 6553600)
-Pozycja gracza Y (fixed): 
-3276800
- (50 << 16 = 3276800)
+Pozycja gracza X (fixed): 6553600 (100 << 16 = 6553600)
+Pozycja gracza Y (fixed): 3276800 (50 << 16 = 3276800)
 
 === Typy liczbowe działają jak w DOOM! ===
 Program zakończony pomyślnie. Piwo dla Pana!

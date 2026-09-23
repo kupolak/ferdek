@@ -23,14 +23,11 @@ NumberUnion utworzona!
 Pozwala na efektywne przełączanie między fixed i int
 
 Test 7: Unia + operacje bitowe
-Kolor RGBA: 
-16711680
- (0xFF0000 = czerwony w RGB)
+Kolor RGBA: 16711680 (0xFF0000 = czerwony w RGB)
 
 === Wszystkie testy unii zakończone! ===
 
-Unie w Ferdeku działają jak w C i DOOM:
-- Wszystkie pola dzielą tę samą przestrzeń pamięci
+Unie w Ferdeku działają jak w C i DOOM: - Wszystkie pola dzielą tę samą przestrzeń pamięci
 - Tylko pierwsze pole jest inicjalizowane
 - Idealne do oszczędzania pamięci i wielotypowych danych
 Program zakończony pomyślnie. Piwo dla Pana!

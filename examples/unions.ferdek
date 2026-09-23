@@ -151,14 +151,14 @@ RYM CYM CYM Przykładowa wartość RGBA (czerwony = 0xFF0000)
 CYCU PRZYNIEŚ NO czerwony
 TO NIE SĄ TANIE RZECZY 16711680
 
-PANIE SENSACJA REWELACJA "Kolor RGBA: "
-PANIE SENSACJA REWELACJA czerwony
+JEDZIEM Z TYM ŚLEDZIEM "Kolor RGBA: "
+JEDZIEM Z TYM ŚLEDZIEM czerwony
 PANIE SENSACJA REWELACJA " (0xFF0000 = czerwony w RGB)"
 PANIE SENSACJA REWELACJA ""
 
 PANIE SENSACJA REWELACJA "=== Wszystkie testy unii zakończone! ==="
 PANIE SENSACJA REWELACJA ""
-PANIE SENSACJA REWELACJA "Unie w Ferdeku działają jak w C i DOOM:"
+JEDZIEM Z TYM ŚLEDZIEM "Unie w Ferdeku działają jak w C i DOOM: "
 PANIE SENSACJA REWELACJA "- Wszystkie pola dzielą tę samą przestrzeń pamięci"
 PANIE SENSACJA REWELACJA "- Tylko pierwsze pole jest inicjalizowane"
 PANIE SENSACJA REWELACJA "- Idealne do oszczędzania pamięci i wielotypowych danych"

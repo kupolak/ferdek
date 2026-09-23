@@ -9,8 +9,8 @@ PANIE SENSACJA REWELACJA "Test 1: Podstawowe wskaźniki do funkcji"
 RYM CYM CYM Definiujemy prostą funkcję
 ALE WIE PAN JA ZASADNICZO powitaj
 NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO imie
-    PANIE SENSACJA REWELACJA "Witaj, "
-    PANIE SENSACJA REWELACJA imie
+    JEDZIEM Z TYM ŚLEDZIEM "Witaj, "
+    JEDZIEM Z TYM ŚLEDZIEM imie
     PANIE SENSACJA REWELACJA "!"
 DO WIDZENIA PANU
 
@@ -51,13 +51,13 @@ TO NIE SĄ TANIE RZECZY PALCEM POKAZUJĘ pomnoz
 RYM CYM CYM Wywołanie dodaj przez wskaźnik
 AFERA JEST suma
 W MORDĘ JEŻA operacja1(10, 5)
-PANIE SENSACJA REWELACJA "10 + 5 = "
+JEDZIEM Z TYM ŚLEDZIEM "10 + 5 = "
 PANIE SENSACJA REWELACJA suma
 
 RYM CYM CYM Wywołanie pomnoz przez wskaźnik
 AFERA JEST iloczyn
 W MORDĘ JEŻA operacja2(10, 5)
-PANIE SENSACJA REWELACJA "10 * 5 = "
+JEDZIEM Z TYM ŚLEDZIEM "10 * 5 = "
 PANIE SENSACJA REWELACJA iloczyn
 PANIE SENSACJA REWELACJA ""
 
@@ -78,12 +78,12 @@ DO WIDZENIA PANU
 RYM CYM CYM Użycie z różnymi callbackami
 AFERA JEST wynik1
 W MORDĘ JEŻA wykonaj_operacje(PALCEM POKAZUJĘ dodaj, 7, 3)
-PANIE SENSACJA REWELACJA "wykonaj_operacje(dodaj, 7, 3) = "
+JEDZIEM Z TYM ŚLEDZIEM "wykonaj_operacje(dodaj, 7, 3) = "
 PANIE SENSACJA REWELACJA wynik1
 
 AFERA JEST wynik2
 W MORDĘ JEŻA wykonaj_operacje(PALCEM POKAZUJĘ pomnoz, 7, 3)
-PANIE SENSACJA REWELACJA "wykonaj_operacje(pomnoz, 7, 3) = "
+JEDZIEM Z TYM ŚLEDZIEM "wykonaj_operacje(pomnoz, 7, 3) = "
 PANIE SENSACJA REWELACJA wynik2
 PANIE SENSACJA REWELACJA ""
 

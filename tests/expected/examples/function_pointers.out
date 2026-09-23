@@ -1,21 +1,15 @@
 === Test Wskaźników do Funkcji (Function Pointers) ===
 
 Test 1: Podstawowe wskaźniki do funkcji
-Witaj, 
-Ferdek
-!
+Witaj, Ferdek!
 
 Test 2: Funkcje z wartością zwrotną
-10 + 5 = 
-15
-10 * 5 = 
-50
+10 + 5 = 15
+10 * 5 = 50
 
 Test 3: Przekazywanie funkcji jako argument
-wykonaj_operacje(dodaj, 7, 3) = 
-10
-wykonaj_operacje(pomnoz, 7, 3) = 
-21
+wykonaj_operacje(dodaj, 7, 3) = 10
+wykonaj_operacje(pomnoz, 7, 3) = 21
 
 Test 4: Wskaźniki funkcji w strukturach (jak w DOOM)
 Thinkery utworzone (akcje wymagają modyfikacji pól)
