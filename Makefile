@@ -91,9 +91,17 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl test-errors test-check
+test: test-unit test-repl test-errors test-check test-docs
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
+
+# docs/JEZYK.md i opisy słów muszą nadążać za lekserem
+test-docs:
+	@python3 scripts/gen_keywords.py --check && echo "--- docs/JEZYK.md: OK"
+
+# Słownik języka + gramatyka i podpowiedzi dla VS Code (jeśli obok leży ferdek-vscode)
+docs: build
+	python3 scripts/gen_keywords.py $(wildcard ferdek-vscode)
 
 # ferdek --check: poprawne programy przechodzą (pilnuje też rejestru builtinów),
 # a tests/check/*.ferdek zgłaszają dokładnie oczekiwane problemy
@@ -154,4 +162,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-compiled test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs docs test-compiled test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

@@ -10,6 +10,8 @@ There's a [VS Code extension](https://github.com/kupolak/ferdek-vscode) with syn
 
 Ferdek uses quotes from the TV show as keywords. Instead of boring `while` you write `CHLUŚNIEM BO UŚNIEM`, and instead of `print` you get `PANIE SENSACJA REWELACJA`.
 
+Full list of keywords and builtins: [docs/JEZYK.md](docs/JEZYK.md).
+
 Some examples:
 - `CO JEST KURDE` - start program
 - `PANIE SENSACJA REWELACJA` - print
