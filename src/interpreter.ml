@@ -2121,6 +2121,16 @@ let () =
           let f = function_arg "PRZEFILTRUJ WERSALKĘ" f in
           VArray (Array.of_list (List.filter (fun x -> to_bool (f [x])) (Array.to_list a)))
       | _ -> raise (RuntimeError "PRZEFILTRUJ WERSALKĘ: pierwszy argument musi być tablicą"));
+
+  (* SKRZYNKA: pierwiastek, sinus, cosinus (w radianach) - wynik z przecinkiem *)
+  ["PIERWIASTEK ZE SKRZYNKI"], Some 1, (fun env args ->
+      let x = to_float (eval_expr env (List.hd args)) in
+      if x < 0.0 then raise (RuntimeError "PIERWIASTEK ZE SKRZYNKI: pierwiastek z liczby ujemnej");
+      VFloat (sqrt x));
+
+  ["SINUS ZE SKRZYNKI"], Some 1, (fun env args -> VFloat (sin (to_float (eval_expr env (List.hd args)))));
+
+  ["COSINUS ZE SKRZYNKI"], Some 1, (fun env args -> VFloat (cos (to_float (eval_expr env (List.hd args)))));
   ]
 
 

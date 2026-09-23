@@ -177,6 +177,9 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `ZRÓB UŁAMEK(x)` | Fixed-point 16.16 |
 | `CO TO ZA TYP(x)` | Nazwa typu wartości |
 | `KARTA LUBI DYM(min, max)` | Losowa liczba z zakresu; KARTA LUBI DYM(ziarno) ustawia ziarno |
+| `PIERWIASTEK ZE SKRZYNKI(x)` | Pierwiastek kwadratowy (wbudowana, bez importu) |
+| `SINUS ZE SKRZYNKI(x)` | Sinus kąta w radianach (wbudowana) |
+| `COSINUS ZE SKRZYNKI(x)` | Cosinus kąta w radianach (wbudowana) |
 
 ## KIBEL - pliki
 
@@ -228,10 +231,12 @@ Przykładowe programy: katalog [`examples/`](../examples).
 
 | Słowo | Znaczenie |
 |---|---|
-| `ILE W SKRZYNCE()` | SKRZYNKA: przybliżenie PI (liczba całkowita) |
+| `ILE W SKRZYNCE()` | SKRZYNKA: PI (3.141592653589793) |
 | `POLICZ SKRZYNKI(liczba)` | SKRZYNKA: wartość bezwzględna |
-| `ZAOKRĄGLIJ DO SKRZYNKI(liczba)` | SKRZYNKA: zaokrąglenie |
-| `OTWÓRZ SKRZYNKĘ(podstawa, wykładnik)` | SKRZYNKA: potęga |
+| `ZAOKRĄGLIJ DO SKRZYNKI(liczba)` | SKRZYNKA: zaokrąglenie do liczby całkowitej (połówki od zera) |
+| `MNIEJSZA ZE SKRZYNEK(a, b)` | SKRZYNKA: mniejsza z dwóch liczb |
+| `WIĘKSZA ZE SKRZYNEK(a, b)` | SKRZYNKA: większa z dwóch liczb |
+| `OTWÓRZ SKRZYNKĘ(podstawa, wykładnik)` | SKRZYNKA: potęga (wykładnik całkowity, nieujemny) |
 | `PODZIEL SKRZYNKI(a, b)` | SKRZYNKA: dzielenie całkowite |
 | `RESZTA ZE SKRZYNKI(a, b)` | SKRZYNKA: reszta z dzielenia |
 | `LOSUJ ZE SKRZYNKI(min, max)` | SKRZYNKA: losowa liczba |

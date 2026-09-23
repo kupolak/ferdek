@@ -81,6 +81,9 @@ let builtins = [
   ["CO TO ZA TYP"], ("b_co_to_za_typ", Some 1);
   ["KARTA LUBI DYM"], ("b_karta_lubi_dym", None);
   ["TABLICA 2D"], ("b_tablica_2d", Some 2);
+  ["PIERWIASTEK ZE SKRZYNKI"], ("b_pierwiastek", Some 1);
+  ["SINUS ZE SKRZYNKI"], ("b_sinus", Some 1);
+  ["COSINUS ZE SKRZYNKI"], ("b_cosinus", Some 1);
   ["OTWÓRZ SZAFKĘ"], ("b_szafka_otworz", Some 0);
   ["WŁÓŻ DO SZAFKI"], ("b_szafka_wloz", Some 3);
   ["WYJMIJ Z SZAFKI"], ("b_szafka_wyjmij", Some 2);
@@ -1094,6 +1097,14 @@ static FerdekValue b_szafka_szufladki(int argc, FerdekValue* argv) {
 static FerdekValue b_szafka_ile(int argc, FerdekValue* argv) {
     return make_int(map_arg(argv[0], "ILE W SZAFCE: argument musi być szafką (mapą)")->len);
 }
+
+static FerdekValue b_pierwiastek(int argc, FerdekValue* argv) {
+    double x = to_float(argv[0]);
+    if (x < 0.0) ferdek_die("PIERWIASTEK ZE SKRZYNKI: pierwiastek z liczby ujemnej");
+    return make_float(sqrt(x));
+}
+static FerdekValue b_sinus(int argc, FerdekValue* argv) { return make_float(sin(to_float(argv[0]))); }
+static FerdekValue b_cosinus(int argc, FerdekValue* argv) { return make_float(cos(to_float(argv[0]))); }
 
 static FerdekValue zeros(long long n) {
     FerdekValue v = make_array(NULL, 0);
