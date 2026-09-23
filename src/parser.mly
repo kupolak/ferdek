@@ -5,7 +5,7 @@ open Ast
 /* Token declarations */
 %token PROGRAM_START PROGRAM_END
 %token VAR_DECL VAR_INIT
-%token PRINT READ
+%token PRINT PRINT_INLINE PRINT_NEWLINE READ
 %token ASSIGN_START ASSIGN_OP ASSIGN_END
 %token IF ELSE END_IF
 %token WHILE END_WHILE
@@ -136,6 +136,9 @@ array_decl:
 
 print_stmt:
   | PRINT e=expression { Print e }
+  (* JEDZIEM Z TYM ŚLEDZIEM - bez końca linii; NO TO ENTER - sam koniec linii *)
+  | PRINT_INLINE e=expression { PrintInline e }
+  | PRINT_NEWLINE { Print (StringLiteral "") }
   ;
 
 read_stmt:

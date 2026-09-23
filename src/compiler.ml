@@ -221,6 +221,7 @@ let rec compile_stmt ctx indent stmt =
       Printf.sprintf "%s%s = make_array((FerdekValue[]){%s}, %d);" ind (var_c name)
         (String.concat ", " (List.map (compile_expr ctx) exprs)) (List.length exprs)
   | Print e -> Printf.sprintf "%sprint_value(%s);" ind (compile_expr ctx e)
+  | PrintInline e -> Printf.sprintf "%sprint_inline(%s);" ind (compile_expr ctx e)
   | Read name -> Printf.sprintf "%s%s = read_value();" ind (var_c name)
   | ArrayAssign (ArrayAccess (arr, idx), value) ->
       Printf.sprintf "%sarray_set(%s, to_int(%s), %s);" ind
@@ -774,6 +775,12 @@ static FerdekValue b_tablica_3d(int argc, FerdekValue* argv) {
 static void print_value(FerdekValue v) {
     char* s = to_str(v);
     puts(s);
+    free(s);
+}
+
+static void print_inline(FerdekValue v) {
+    char* s = to_str(v);
+    fputs(s, stdout);
     free(s);
 }
 

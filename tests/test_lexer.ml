@@ -10,6 +10,8 @@ let string_of_token = function
   | VAR_DECL -> "VAR_DECL"
   | VAR_INIT -> "VAR_INIT"
   | PRINT -> "PRINT"
+  | PRINT_INLINE -> "PRINT_INLINE"
+  | PRINT_NEWLINE -> "PRINT_NEWLINE"
   | READ -> "READ"
   | ASSIGN_START -> "ASSIGN_START"
   | ASSIGN_OP -> "ASSIGN_OP"

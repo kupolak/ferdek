@@ -65,6 +65,7 @@ type stmt =
   | VarDecl of string * expr
   | ArrayDecl of string * expr list
   | Print of expr
+  | PrintInline of expr
   | Read of string
   | Assign of string * expr
   | ArrayAssign of expr * expr  (* Changed to support nested access: arr[i][j] = val *)

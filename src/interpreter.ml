@@ -1846,6 +1846,12 @@ and eval_stmt env = function
       let value = eval_expr env expr in
       print_endline (string_of_value value)
 
+  | PrintInline expr ->
+      let value = eval_expr env expr in
+      (* flush: kolejność z komunikatami błędów na stderr jak w skompilowanym C *)
+      print_string (string_of_value value);
+      flush stdout
+
   | Read name ->
       let line = read_line () in
       let value = try VInt (int_of_string line) with _ -> VString line in

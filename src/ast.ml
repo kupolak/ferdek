@@ -65,6 +65,7 @@ type stmt =
   | VarDecl of string * expr                             (* Variable declaration (CYCU PRZYNIEŚ NO ... TO NIE SĄ TANIE RZECZY) *)
   | ArrayDecl of string * expr list                      (* Array declaration (PANIE TO JEST PRYWATNA PUBLICZNA TABLICA) *)
   | Print of expr                                        (* Print statement (PANIE SENSACJA REWELACJA) *)
+  | PrintInline of expr                                  (* Print bez końca linii (JEDZIEM Z TYM ŚLEDZIEM) *)
   | Read of string                                       (* Read input (CO TAM U PANA SŁYCHAĆ) *)
   | Assign of string * expr                              (* Assignment (O KURDE MAM POMYSŁA ... A PROSZĘ BARDZO ... NO I GITARA) *)
   | ArrayAssign of expr * expr                           (* Array element assignment - supports nested: arr[i][j] = val *)
@@ -231,6 +232,8 @@ let rec string_of_stmt indent = function
       indent ^ "array " ^ name ^ " = [" ^ String.concat ", " (List.map string_of_expr exprs) ^ "]"
   | Print expr ->
       indent ^ "print " ^ string_of_expr expr
+  | PrintInline expr ->
+      indent ^ "print_inline " ^ string_of_expr expr
   | Read name ->
       indent ^ "read " ^ name
   | Assign (name, expr) ->
