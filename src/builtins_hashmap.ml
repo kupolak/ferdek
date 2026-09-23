@@ -1,8 +1,8 @@
 (* HashMap (dictionary/map) library functions helpers for SZAFKA *)
 
-(* Get all keys from hashtable *)
+(* Get all keys from hashtable - posortowane, żeby wynik był powtarzalny *)
 let szafka_wszystkie_szufladki tbl =
-  Hashtbl.fold (fun k _ acc -> k :: acc) tbl []
+  List.sort compare (Hashtbl.fold (fun k _ acc -> k :: acc) tbl [])
 
 (* Get all values from hashtable *)
 let szafka_wszystkie_wartosci tbl =

@@ -74,6 +74,13 @@ let builtins = [
   ["CO TO ZA TYP"], ("b_co_to_za_typ", Some 1);
   ["KARTA LUBI DYM"], ("b_karta_lubi_dym", None);
   ["TABLICA 2D"], ("b_tablica_2d", Some 2);
+  ["OTWÓRZ SZAFKĘ"], ("b_szafka_otworz", Some 0);
+  ["WŁÓŻ DO SZAFKI"], ("b_szafka_wloz", Some 3);
+  ["WYJMIJ Z SZAFKI"], ("b_szafka_wyjmij", Some 2);
+  ["WYRZUĆ ZE SZAFKI"], ("b_szafka_wyrzuc", Some 2);
+  ["CZY W SZAFCE"], ("b_szafka_czy_w", Some 2);
+  ["WSZYSTKIE SZUFLADKI"], ("b_szafka_szufladki", Some 1);
+  ["ILE W SZAFCE"], ("b_szafka_ile", Some 1);
   ["TABLICA 3D"], ("b_tablica_3d", Some 3);
 ]
 
@@ -374,11 +381,14 @@ typedef enum {
     TYPE_BYTE,       /* ZRÓB BAJCIK/KRÓTKI/UŁAMEK - liczby z własnym typem dla CO TO ZA TYP */
     TYPE_SHORT,
     TYPE_FIXED,
-    TYPE_FUNCTION
+    TYPE_FUNCTION,
+    TYPE_MAP
 } ValueType;
 
 typedef struct FerdekValue FerdekValue;
 typedef struct { FerdekValue* data; int length; } FerdekArray;
+/* ponytail: mapa jako tablica par z wyszukiwaniem liniowym; hash, gdy mapy urosną do tysięcy kluczy */
+typedef struct { char** keys; FerdekValue* vals; int len, cap; } FerdekMap;
 
 struct FerdekValue {
     ValueType type;
@@ -388,6 +398,7 @@ struct FerdekValue {
         bool bool_val;
         FerdekArray* array_val;   /* wskaźnik: kopia wartości współdzieli tablicę, jak w interpreterze */
         struct { FerdekValue (*call)(int, FerdekValue*); const char* name; int arity; bool variadic; } fn_val;
+        FerdekMap* map_val;       /* wskaźnik: kopia wartości współdzieli mapę, jak w interpreterze */
     } value;
 };
 
@@ -473,6 +484,21 @@ static void buf_add(StrBuf* b, const char* t) {
     b->len += n;
 }
 
+static int map_find(FerdekMap* m, const char* key) {
+    for (int i = 0; i < m->len; i++) if (strcmp(m->keys[i], key) == 0) return i;
+    return -1;
+}
+
+static int cmp_key_ptr(const void* a, const void* b) { return strcmp(*(char* const*)a, *(char* const*)b); }
+
+/* Klucze posortowane - jak w interpreterze; zwraca nową tablicę wskaźników */
+static char** map_sorted_keys(FerdekMap* m) {
+    char** keys = malloc(sizeof(char*) * (m->len > 0 ? m->len : 1));
+    memcpy(keys, m->keys, sizeof(char*) * m->len);
+    qsort(keys, m->len, sizeof(char*), cmp_key_ptr);
+    return keys;
+}
+
 /* Tekstowa postać wartości - identyczna jak string_of_value w interpreterze */
 static char* to_str(FerdekValue v) {
     char num[32];
@@ -483,6 +509,23 @@ static char* to_str(FerdekValue v) {
         case TYPE_STRING: return strdup(v.value.string_val);
         case TYPE_BOOL: return strdup(v.value.bool_val ? "true" : "false");
         case TYPE_NULL: return strdup("null");
+        case TYPE_MAP: {
+            FerdekMap* m = v.value.map_val;
+            char** keys = map_sorted_keys(m);
+            StrBuf b = {0};
+            buf_add(&b, "{");
+            for (int i = 0; i < m->len; i++) {
+                char* item = to_str(m->vals[map_find(m, keys[i])]);
+                if (i > 0) buf_add(&b, ", ");
+                buf_add(&b, keys[i]);
+                buf_add(&b, ": ");
+                buf_add(&b, item);
+                free(item);
+            }
+            buf_add(&b, "}");
+            free(keys);
+            return b.s;
+        }
         case TYPE_FUNCTION: {
             StrBuf b = {0};
             buf_add(&b, "<function ");
@@ -761,6 +804,7 @@ static FerdekValue b_co_to_za_typ(int argc, FerdekValue* argv) {
         case TYPE_NULL: return make_string("NIC");
         case TYPE_ARRAY: return make_string("TABLICA");
         case TYPE_FUNCTION: return make_string("FUNKCJA");
+        case TYPE_MAP: return make_string("SZAFKA");
     }
     return make_string("?");
 }
@@ -776,6 +820,80 @@ static FerdekValue b_karta_lubi_dym(int argc, FerdekValue* argv) {
     if (ferdek_rng < 0) ferdek_rng = ((long long)time(NULL) * 1000 + clock()) & 0x7FFFFFFF;
     ferdek_rng = (ferdek_rng * 1103515245 + 12345) & 0x7FFFFFFF;
     return make_int(lo + ferdek_rng % (hi - lo + 1));
+}
+
+/* ---- SZAFKA (mapy; klucze to tekstowa postać argumentu, jak w interpreterze) ---- */
+
+static FerdekMap* map_arg(FerdekValue v, const char* msg) {
+    if (v.type != TYPE_MAP) ferdek_die("%s", msg);
+    return v.value.map_val;
+}
+
+static FerdekValue b_szafka_otworz(int argc, FerdekValue* argv) {
+    FerdekValue v;
+    v.type = TYPE_MAP;
+    v.value.map_val = calloc(1, sizeof(FerdekMap));
+    return v;
+}
+
+static FerdekValue b_szafka_wloz(int argc, FerdekValue* argv) {
+    FerdekMap* m = map_arg(argv[0], "WŁÓŻ DO SZAFKI: first argument must be a dictionary");
+    char* key = to_str(argv[1]);
+    int i = map_find(m, key);
+    if (i >= 0) { m->vals[i] = argv[2]; free(key); return make_null(); }
+    if (m->len == m->cap) {
+        m->cap = m->cap ? m->cap * 2 : 8;
+        m->keys = realloc(m->keys, sizeof(char*) * m->cap);
+        m->vals = realloc(m->vals, sizeof(FerdekValue) * m->cap);
+    }
+    m->keys[m->len] = key;
+    m->vals[m->len++] = argv[2];
+    return make_null();
+}
+
+static FerdekValue b_szafka_wyjmij(int argc, FerdekValue* argv) {
+    FerdekMap* m = map_arg(argv[0], "WYJMIJ Z SZAFKI: first argument must be a dictionary");
+    char* key = to_str(argv[1]);
+    int i = map_find(m, key);
+    free(key);
+    return i >= 0 ? m->vals[i] : make_null();
+}
+
+static FerdekValue b_szafka_wyrzuc(int argc, FerdekValue* argv) {
+    FerdekMap* m = map_arg(argv[0], "WYRZUĆ ZE SZAFKI: first argument must be a dictionary");
+    char* key = to_str(argv[1]);
+    int i = map_find(m, key);
+    free(key);
+    if (i >= 0) {
+        free(m->keys[i]);
+        m->keys[i] = m->keys[m->len - 1];   /* kolejność w środku bez znaczenia - wypisujemy posortowane */
+        m->vals[i] = m->vals[m->len - 1];
+        m->len--;
+    }
+    return make_null();
+}
+
+static FerdekValue b_szafka_czy_w(int argc, FerdekValue* argv) {
+    FerdekMap* m = map_arg(argv[0], "CZY W SZAFCE: first argument must be a dictionary");
+    char* key = to_str(argv[1]);
+    bool found = map_find(m, key) >= 0;
+    free(key);
+    return make_bool(found);
+}
+
+static FerdekValue b_szafka_szufladki(int argc, FerdekValue* argv) {
+    FerdekMap* m = map_arg(argv[0], "WSZYSTKIE SZUFLADKI: argument must be a dictionary");
+    char** keys = map_sorted_keys(m);
+    FerdekValue out = make_array(NULL, 0);
+    out.value.array_val->data = malloc(sizeof(FerdekValue) * (m->len > 0 ? m->len : 1));
+    for (int i = 0; i < m->len; i++) out.value.array_val->data[i] = make_string(keys[i]);
+    out.value.array_val->length = m->len;
+    free(keys);
+    return out;
+}
+
+static FerdekValue b_szafka_ile(int argc, FerdekValue* argv) {
+    return make_int(map_arg(argv[0], "ILE W SZAFCE: argument must be a dictionary")->len);
 }
 
 static FerdekValue zeros(long long n) {

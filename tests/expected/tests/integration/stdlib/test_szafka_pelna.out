@@ -1,0 +1,16 @@
+{7: siedem, alkohol: true, piwa: 6, zupa: pomidorowa}
+[7, alkohol, piwa, zupa]
+4
+SZAFKA
+12
+siedem
+null
+false
+true
+{7: siedem, alkohol: true, piwa: 12}
+4
+[{lista: [1, 2]}]
+{7: siedem, alkohol: true, piwa: 12, wewnetrzna: {lista: [1, 2]}, z funkcji: 1}
+{}
+[]
+Program zakończony pomyślnie. Piwo dla Pana!
