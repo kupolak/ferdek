@@ -32,6 +32,10 @@
   parser
   lexer
   preprocessor
+  value
+  eval
+  interp_builtins
+  interp_builtins_doom
   interpreter
   compiler
   checker
