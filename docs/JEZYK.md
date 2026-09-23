@@ -54,6 +54,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `OD` | Początek zakresu pętli for |
 | `DO` | Koniec zakresu pętli for (włącznie) |
 | `CO` | Krok pętli for (domyślnie 1, ujemny liczy w dół) |
+| `Z` | Pętla po elementach: KRĘCI CEMENT BETONIARA x Z kolekcja - tablica (elementy), szafka (klucze, posortowane) albo tekst (znaki) |
 | `A ROBIĆ NI MA KOMU` | Koniec pętli |
 | `A POCAŁUJCIE MNIE WSZYSCY W DUPĘ` | break |
 | `AKUKARACZA` | continue |

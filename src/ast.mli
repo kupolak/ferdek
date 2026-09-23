@@ -77,6 +77,7 @@ type stmt =
   | If of expr * stmt list * stmt list option
   | While of expr * stmt list
   | For of string * expr * expr * expr option * stmt list  (* KRĘCI CEMENT BETONIARA i OD a DO b [CO krok] ... A ROBIĆ NI MA KOMU *)
+  | ForEach of string * expr * stmt list                 (* KRĘCI CEMENT BETONIARA x Z kolekcja ... A ROBIĆ NI MA KOMU *)
   | FunctionCallStmt of string * expr list
   | FunctionCallWithAssign of string * string * expr list
   | Return of expr option

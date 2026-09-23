@@ -91,6 +91,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
     | ArrayAssign (a, v) -> expr sc a; expr sc v
     | If (c, a, b) -> expr sc c; block sc a; Option.iter (block sc) b
     | While (c, b) -> expr sc c; block sc b
+    | ForEach (_, c, b) -> expr sc c; block sc b
     | For (_, a, b, k, body) -> expr sc a; expr sc b; Option.iter (expr sc) k; block sc body
     | FunctionCallStmt (n, args) | FunctionCallWithAssign (_, n, args) -> expr sc (FunctionCall (n, args))
     | Return e -> Option.iter (expr sc) e

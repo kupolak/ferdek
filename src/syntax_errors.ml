@@ -27,6 +27,7 @@ let keywords = [
   Parser.FOR_FROM, "OD";
   Parser.FOR_TO, "DO";
   Parser.FOR_STEP, "CO";
+  Parser.FOR_IN, "Z";
   Parser.FUNC_DECL, "ALE WIE PAN JA ZASADNICZO";
   Parser.FUNC_RETURNS, "NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ";
   Parser.FUNC_PARAMS, "NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO";

@@ -18,6 +18,7 @@ let string_of_token = function
   | FOR_FROM -> "FOR_FROM"
   | FOR_TO -> "FOR_TO"
   | FOR_STEP -> "FOR_STEP"
+  | FOR_IN -> "FOR_IN"
   | GREATER_EQUAL -> "GREATER_EQUAL"
   | READ -> "READ"
   | ASSIGN_START -> "ASSIGN_START"

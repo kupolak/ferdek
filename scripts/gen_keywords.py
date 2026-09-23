@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # Token z leksera -> zakres kolorowania
 SCOPES = {
-    "keyword.control.ferdek": """IF ELSE ELSE_IF END_IF WHILE END_WHILE FOR FOR_FROM FOR_TO FOR_STEP
+    "keyword.control.ferdek": """IF ELSE ELSE_IF END_IF WHILE END_WHILE FOR FOR_FROM FOR_TO FOR_STEP FOR_IN
         TRY CATCH THROW BREAK CONTINUE RETURN PROGRAM_START PROGRAM_END""",
     "storage.type.ferdek": """VAR_DECL VAR_INIT ARRAY_DECL FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END
         CLASS EXTENDS STRUCT END_STRUCT UNION END_UNION ENUM END_ENUM IMPORT""",
@@ -115,6 +115,7 @@ SECTIONS = [
         "OD": "Początek zakresu pętli for",
         "DO": "Koniec zakresu pętli for (włącznie)",
         "CO": "Krok pętli for (domyślnie 1, ujemny liczy w dół)",
+        "Z": "Pętla po elementach: KRĘCI CEMENT BETONIARA x Z kolekcja - tablica (elementy), szafka (klucze, posortowane) albo tekst (znaki)",
         "A ROBIĆ NI MA KOMU": "Koniec pętli",
         "A POCAŁUJCIE MNIE WSZYSCY W DUPĘ": "break",
         "AKUKARACZA": "continue",

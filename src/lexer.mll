@@ -82,6 +82,7 @@ rule token = parse
   | "OD" { FOR_FROM }
   | "DO" { FOR_TO }
   | "CO" { FOR_STEP }
+  | "Z" { FOR_IN }
 
   (* Keywords - FUNCTIONS *)
   | "ALE WIE PAN JA ZASADNICZO" { FUNC_DECL }

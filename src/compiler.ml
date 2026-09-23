@@ -42,6 +42,7 @@ let rec stmt_names (decl, assigned) = function
   | Read n | Assign (n, _) | FunctionCallWithAssign (n, _, _) -> (decl, n :: assigned)
   | If (_, a, b) -> block_names (block_names (decl, assigned) a) (Option.value b ~default:[])
   | While (_, b) -> block_names (decl, assigned) b
+  | ForEach (v, _, b) -> block_names (decl, v :: assigned) b
   | For (v, _, _, _, b) -> block_names (decl, v :: assigned) b
   | Try (a, v, b) -> block_names (block_names (v :: decl, assigned) a) b
   | Located (_, _, s) -> stmt_names (decl, assigned) s
@@ -177,7 +178,7 @@ let fresh ctx prefix =
 let rec has_try stmts = List.exists (function
   | Try _ -> true
   | If (_, a, b) -> has_try a || has_try (Option.value b ~default:[])
-  | While (_, b) | For (_, _, _, _, b) -> has_try b
+  | While (_, b) | For (_, _, _, _, b) | ForEach (_, _, b) -> has_try b
   | Located (_, _, s) -> has_try [s]
   | _ -> false) stmts
 
@@ -399,6 +400,18 @@ and compile_stmt ctx indent stmt =
         Printf.sprintf "%s    if (for_step%s == 0) ferdek_die(\"KRĘCI CEMENT BETONIARA: krok nie może być zerem\");" ind n;
         setup ^ Printf.sprintf "%sfor (%s = make_int(for_start%s); for_step%s > 0 ? to_int(%s) <= for_stop%s : to_int(%s) >= for_stop%s; %s = make_int(to_int(%s) + for_step%s)) {"
           ind v n n v n v n v v n;
+        body_code;
+        ind ^ "}";
+        ind ^ "}" ]
+  | ForEach (var, coll, body) ->
+      let n = fresh ctx "" in
+      if is_member ctx var then unsupported "pole obiektu jako zmienna pętli";
+      let setup, body_code = loop_body ctx indent body in
+      String.concat "\n" [
+        ind ^ "{";
+        Printf.sprintf "%s    FerdekArray* each%s = foreach_items(%s);" ind n (compile_expr ctx coll);
+        setup ^ Printf.sprintf "%sfor (long long each_i%s = 0; each_i%s < each%s->length; each_i%s++) {" ind n n n n;
+        Printf.sprintf "%s    %s" ind (assign ctx var (Printf.sprintf "each%s->data[each_i%s]" n n));
         body_code;
         ind ^ "}";
         ind ^ "}" ]
@@ -1474,6 +1487,30 @@ static FerdekValue b_szafka_szufladki(int argc, FerdekValue* argv) {
     out.value.array_val->length = m->len;
     fx_free(keys);
     return out;
+}
+
+/* Kopia elementów dla pętli KRĘCI CEMENT BETONIARA x Z kolekcja - jak w interpreterze */
+static FerdekArray* foreach_items(FerdekValue v) {
+    if (v.type == TYPE_ARRAY) return make_array(v.value.array_val->data, v.value.array_val->length).value.array_val;
+    if (v.type == TYPE_MAP) return b_szafka_szufladki(1, &v).value.array_val;
+    if (v.type == TYPE_STRING) {
+        long long* off;
+        long long n = utf8_index(v.value.string_val, &off);
+        FerdekValue out = make_array(NULL, 0);
+        out.value.array_val->data = fx_malloc(sizeof(FerdekValue) * (n > 0 ? n : 1));
+        for (long long i = 0; i < n; i++) {
+            size_t len = off[i + 1] - off[i];
+            char* c = fx_malloc(len + 1);
+            memcpy(c, v.value.string_val + off[i], len);
+            c[len] = '\0';
+            out.value.array_val->data[i] = own_string(c);
+        }
+        out.value.array_val->length = n;
+        fx_free(off);
+        return out.value.array_val;
+    }
+    ferdek_die("KRĘCI CEMENT BETONIARA ... Z: po tym nie da się przejść (tablica, szafka albo tekst)");
+    return NULL;
 }
 
 static FerdekValue b_szafka_ile(int argc, FerdekValue* argv) {

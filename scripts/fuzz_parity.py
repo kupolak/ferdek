@@ -135,6 +135,10 @@ class Gen:
                 body.append(f"{ind}    NO JAK NIE JAK TAK {self.expr('bool', 1)}")
                 body.append(f"{ind}        {self.pick(['AKUKARACZA', 'A POCAŁUJCIE MNIE WSZYSCY W DUPĘ'])}")
                 body.append(f"{ind}    DO CHAŁUPY ALE JUŻ")
+            if self.r.random() < 0.4:   # pętla po elementach tablicy albo znakach tekstu
+                coll = self.expr(self.pick(["arr", "str"]), 1)
+                return ([f"{ind}KRĘCI CEMENT BETONIARA e{d} Z {coll}", f"{ind}    PANIE SENSACJA REWELACJA e{d}"]
+                        + body + [f"{ind}A ROBIĆ NI MA KOMU"])
             # Każdy poziom zagnieżdżenia ma własny licznik - wspólny cofałby zewnętrzną pętlę w nieskończoność
             return [f"{ind}KRĘCI CEMENT BETONIARA k{d} OD {lo} DO {hi}{step}"] + body + [f"{ind}A ROBIĆ NI MA KOMU"]
         if k == "while":

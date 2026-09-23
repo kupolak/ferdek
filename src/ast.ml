@@ -77,6 +77,7 @@ type stmt =
   | If of expr * stmt list * stmt list option            (* If statement (NO JAK NIE JAK TAK ... A DUPA TAM ... DO CHAŁUPY ALE JUŻ) *)
   | While of expr * stmt list                            (* While loop (CHLUŚNIEM BO UŚNIEM ... A ROBIĆ NI MA KOMU) *)
   | For of string * expr * expr * expr option * stmt list  (* KRĘCI CEMENT BETONIARA i OD a DO b [CO krok] ... A ROBIĆ NI MA KOMU *)
+  | ForEach of string * expr * stmt list                 (* KRĘCI CEMENT BETONIARA x Z kolekcja ... A ROBIĆ NI MA KOMU *)
   | FunctionCallStmt of string * expr list               (* Function call statement (W MORDĘ JEŻA) *)
   | FunctionCallWithAssign of string * string * expr list (* Function call with assignment (AFERA JEST ... W MORDĘ JEŻA) *)
   | Return of expr option                                (* Return statement (I JA INFORMUJĘ ŻE WYCHODZĘ) *)
@@ -279,6 +280,9 @@ let rec string_of_stmt indent = function
       let step_str = match step with None -> "" | Some e -> " step " ^ string_of_expr e in
       let body_str = String.concat "\n" (List.map (string_of_stmt (indent ^ "  ")) body) in
       indent ^ "for " ^ var ^ " = " ^ string_of_expr a ^ " to " ^ string_of_expr b ^ step_str ^ "\n" ^ body_str
+  | ForEach (var, coll, body) ->
+      let body_str = String.concat "\n" (List.map (string_of_stmt (indent ^ "  ")) body) in
+      indent ^ "for " ^ var ^ " in " ^ string_of_expr coll ^ "\n" ^ body_str
   | While (cond, body) ->
       let body_str = String.concat "\n" (List.map (string_of_stmt (indent ^ "  ")) body) in
       indent ^ "while " ^ string_of_expr cond ^ "\n" ^ body_str
