@@ -49,3 +49,9 @@ pomysl.c
 # Temporary files
 /tmp/
 *.tmp
+
+# Osobne projekty trzymane obok (własne repo / kod referencyjny)
+/DOOM/
+/boczek/
+/ferdek-vscode/
+/kupolak.github.io/
