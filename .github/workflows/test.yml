@@ -28,7 +28,7 @@ jobs:
           ocaml-compiler: 5.2
 
       - name: Zależności OCaml
-        run: opam install -y dune menhir menhirLib
+        run: opam install -y dune menhir menhirLib yojson
 
       # Testy jednostkowe, integracyjne (interpreter + kompilacja do C), błędy, REPL,
       # --check, aktualność docs/JEZYK.md. Bez sieci (test-network) i bez okien X11.

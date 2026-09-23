@@ -91,7 +91,7 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt
+test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
 
@@ -157,6 +157,10 @@ test-repl: build
 test-compiled: build
 	$(call run_compiled,$(COMPILED_TESTS))
 
+# Serwer LSP: definicje, użycia, zmiana nazwy
+test-lsp: build
+	python3 scripts/test_lsp.py $(FERDEK)
+
 test-network: build
 	$(call run_ferdek,tests/integration/stdlib/test_klatka)
 
@@ -185,4 +189,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

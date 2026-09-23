@@ -59,7 +59,7 @@ if command -v apk &> /dev/null; then
     eval $(opam env)
     
     echo -e "${CYAN}Instaluję menhir...${NC}"
-    opam install menhir -y
+    opam install menhir menhirLib yojson -y
     eval $(opam env)
     
     echo -e "${GREEN}✓ Opam i menhir zainstalowane!${NC}"

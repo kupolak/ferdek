@@ -91,13 +91,13 @@ sudo apt-get install git
 brew install opam
 opam init
 opam switch create 4.14.0
-opam install menhir
+opam install menhir menhirLib yojson
 
 # Linux
 sudo apt-get install opam
 opam init
 opam switch create 4.14.0
-opam install menhir
+opam install menhir menhirLib yojson
 ```
 
 ## Rozwój

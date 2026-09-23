@@ -42,12 +42,13 @@
   graphics_source
   formatter
   syntax_errors
+  lsp
   builtins_string
   builtins_hashmap
   builtins_file
   builtins_list
   errors)
- (libraries unix str menhirLib)
+ (libraries unix str menhirLib yojson)
  (foreign_stubs
   (language c)
   (names graphics_stubs graphics_x11)

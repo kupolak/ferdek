@@ -52,6 +52,13 @@ Check a program without running it (unknown names, wrong argument counts):
 ferdek --check program.ferdek
 ```
 
+Editors: `ferdek --lsp` is a Language Server (stdin/stdout) with go to definition, find references
+and rename, within one file. Point any LSP client at it, e.g. in Neovim:
+
+```lua
+vim.lsp.start({ name = "ferdek", cmd = { "ferdek", "--lsp" } })
+```
+
 ## Installation
 
 ### Quick install
@@ -72,11 +79,11 @@ Then:
 ```bash
 # macOS
 brew install ocaml opam
-opam init && opam install menhir
+opam init && opam install menhir menhirLib yojson
 
 # Linux
 sudo apt-get install ocaml opam
-opam init && opam install menhir
+opam init && opam install menhir menhirLib yojson
 
 # Build
 git clone https://github.com/kupolak/ferdek.git
