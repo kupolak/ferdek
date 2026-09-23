@@ -42,10 +42,4 @@
   (:standard -w -27-32))
  (libraries ferdek_lib))
 
-(executable
- (name ferdecc)
- (modules ferdecc)
- (flags
-  (:standard -w -27-32))
- (libraries ferdek_lib))
 

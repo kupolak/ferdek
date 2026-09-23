@@ -10,13 +10,11 @@ build:
 	dune build
 	@mkdir -p .build
 	@ln -sf _build/default/src/ferdek.exe .build/ferdek 2>/dev/null || true
-	@ln -sf _build/default/src/ferdecc.exe .build/ferdecc 2>/dev/null || true
 
 # Create local symlinks to executables (convenience)
 link: build
 	@mkdir -p .build
 	@ln -sf _build/default/src/ferdek.exe .build/ferdek 2>/dev/null || true
-	@ln -sf _build/default/src/ferdecc.exe .build/ferdecc 2>/dev/null || true
 
 # Install into user's PATH using the install script
 install: build
@@ -29,7 +27,7 @@ clean:
 	rm -f *.cmi *.cmo *.cmx *.o *.c
 	rm -f src/*.cmi src/*.cmo src/*.cmx src/*.o
 	rm -f tests/*.cmi tests/*.cmo tests/*.cmx tests/*.o
-	rm -f test_lexer test_ast test_parser ferdek ferdecc
+	rm -f test_lexer test_ast test_parser ferdek
 	rm -f examples/*.c examples/fizzbuzz examples/simple_compile
 	rm -f tests/integration/stdlib/*.c tests/integration/features/*.c
 	rm -f pomysl pomysl.c
