@@ -1937,7 +1937,7 @@ let rec import_module env module_name =
       (* Execute module in current environment *)
       List.iter (eval_top_level_decl env) module_ast.declarations
   | None ->
-      Printf.eprintf "Failed to load module: %s\n" module_name
+      raise (RuntimeError (Printf.sprintf "Nie ma takiego modułu: %s" module_name))
 
 (* ============ TOP-LEVEL DECLARATIONS ============ *)
 

@@ -128,15 +128,9 @@ let load_stdlib_module module_name =
                 let prefixed_path = Filename.concat (Filename.concat stdlib_dir "KLAMOTY") (stdlib_module ^ ".ferdek") in
                 (match try_load_from_path prefixed_path with
                 | Some ast -> Some ast
-                | None ->
-                    Printf.eprintf "Module not found: %s\n" module_name;
-                    None)
-              else begin
-                Printf.eprintf "Module not found: %s\n" module_name;
-                None
-              end))
+                | None -> None)
+              else None))
   | None ->
-      Printf.eprintf "Cannot find stdlib directory for module: %s\n" module_name;
       None
 
 (* Interpretuje plik *)

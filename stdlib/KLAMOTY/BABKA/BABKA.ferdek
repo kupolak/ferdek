@@ -284,6 +284,9 @@ NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
         PANIE SENSACJA REWELACJA "WYNIK: BABKA ZADOWOLONA!"
     A DUPA TAM
         PANIE SENSACJA REWELACJA "WYNIK: BABKA NIEZADOWOLONA!"
+        PANIE SENSACJA REWELACJA "========================================"
+        RYM CYM CYM Wyjątek = niezerowy kod wyjścia, żeby make test wyłapał porażkę
+        O KARWASZ TWARZ "BABKA NIEZADOWOLONA - są niezaliczone testy"
     DO CHAŁUPY ALE JUŻ
     PANIE SENSACJA REWELACJA "========================================"
 DO WIDZENIA PANU

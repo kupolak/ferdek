@@ -40,7 +40,7 @@ distclean: clean
 
 FERDEK = _build/default/src/ferdek.exe
 
-STDLIB_TESTS = $(addprefix tests/integration/stdlib/,test_stdlib test_kanapa test_klatka test_szafka test_wersalka test_kibel)
+STDLIB_TESTS = $(addprefix tests/integration/stdlib/,test_stdlib test_kanapa test_klatka test_szafka test_wersalka test_kibel) stdlib/KLAMOTY/BABKA/przyklad_testow
 FEATURE_TESTS = $(addprefix tests/integration/features/,variables arrays conditional functions objects)
 # ponytail: graphics_demo pominięte - wymaga X11/XQuartz
 EXAMPLE_TESTS = $(addprefix examples/,hello fizzbuzz variadic_simple)

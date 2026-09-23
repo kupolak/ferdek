@@ -1,0 +1,37 @@
+CO JEST KURDE
+
+RYM CYM CYM Serwer UDP (port 5666, jak w DOOM). Uruchom najpierw, potem udp_client.ferdek
+RYM CYM CYM Odpowiada "ACK: <dane>" na każdy pakiet, kończy po 3 pakietach.
+
+AFERA JEST gniazdko W MORDE JEZA GNIAZDKO_OTWORZ(5666)
+PANIE SENSACJA REWELACJA "Serwer nasłuchuje na porcie 5666..."
+
+CYCU PRZYNIEŚ NO odebrane
+TO NIE SĄ TANIE RZECZY 0
+
+CHLUŚNIEM BO UŚNIEM odebrane ŁYSA PAŁA 3
+    RYM CYM CYM Nieblokujące: zwraca 0 gdy brak danych, albo [dane, host, port]
+    AFERA JEST pakiet W MORDE JEZA GNIAZDKO_ODBIERZ(gniazdko, 1024)
+    AFERA JEST typ W MORDE JEZA CO TO ZA TYP(pakiet)
+
+    NO JAK NIE JAK TAK typ TO PANU SIĘ CHCE WTEDY KIEDY MNIE "TABLICA"
+        CYCU PRZYNIEŚ NO dane
+        TO NIE SĄ TANIE RZECZY WYPIERDZIELAJ PAN NA POZYCJĘ pakiet[0]
+        CYCU PRZYNIEŚ NO host
+        TO NIE SĄ TANIE RZECZY WYPIERDZIELAJ PAN NA POZYCJĘ pakiet[1]
+        CYCU PRZYNIEŚ NO port
+        TO NIE SĄ TANIE RZECZY WYPIERDZIELAJ PAN NA POZYCJĘ pakiet[2]
+
+        AFERA JEST info W MORDE JEZA USIĄDŹ NA KANAPIE("Od ", host, ":", port, " -> ", dane)
+        PANIE SENSACJA REWELACJA info
+
+        AFERA JEST odpowiedz W MORDE JEZA USIĄDŹ NA KANAPIE("ACK: ", dane)
+        W MORDE JEZA GNIAZDKO_WYSLIJ(gniazdko, host, port, odpowiedz)
+        O KURDE MAM POMYSŁA odebrane A PROSZĘ BARDZO odebrane BABKA DAWAJ RENTĘ 1 NO I GITARA
+    DO CHAŁUPY ALE JUŻ
+A ROBIĆ NI MA KOMU
+
+W MORDE JEZA GNIAZDKO_ZAMKNIJ(gniazdko)
+PANIE SENSACJA REWELACJA "Serwer zamknięty"
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
