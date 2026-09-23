@@ -112,9 +112,10 @@ ferdek -c examples/hello.ferdek -o hello.c
 
 The compiler (needs `cc` on your PATH) covers the core language: variables, arithmetic,
 strings, arrays (incl. `TABLICA 2D/3D`), functions (incl. variadic and function values),
-if/while/break/continue, exceptions, stdlib imports (SKRZYNKA, BABKA), and the KANAPA,
-WERSALKA and numeric-type builtins. Classes, structs, unions, pointers, files, memory,
-hash maps, networking and graphics are interpreter-only; the compiler says so with a
+if/while/for/break/continue, exceptions, imports (your files and stdlib: SKRZYNKA, BABKA),
+random numbers, and the KANAPA, WERSALKA, SZAFKA (maps) and numeric-type builtins.
+Classes, structs, unions, pointers, files, memory, networking and graphics are
+interpreter-only; the compiler says so with a
 clear error instead of producing a broken binary.
 
 ## Example Program
