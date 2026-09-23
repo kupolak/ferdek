@@ -204,6 +204,7 @@ rule token = parse
   | "ZRÓB UŁAMEK" { IDENTIFIER "ZRÓB UŁAMEK" }
   | "ZROB ULAMEK" { IDENTIFIER "ZROB ULAMEK" }
   | "CO TO ZA TYP" { IDENTIFIER "CO TO ZA TYP" }
+  | "KARTA LUBI DYM" { IDENTIFIER "KARTA LUBI DYM" }
 
   (* Separators for modules *)
   | '/' { SLASH }

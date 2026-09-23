@@ -71,6 +71,7 @@ let builtins = [
   ["ZRÓB DŁUGI"; "ZROB DLUGI"], ("b_zrob_dlugi", Some 1);
   ["ZRÓB UŁAMEK"; "ZROB ULAMEK"], ("b_zrob_ulamek", Some 1);
   ["CO TO ZA TYP"], ("b_co_to_za_typ", Some 1);
+  ["KARTA LUBI DYM"], ("b_karta_lubi_dym", None);
   ["TABLICA 2D"], ("b_tablica_2d", Some 2);
   ["TABLICA 3D"], ("b_tablica_3d", Some 3);
 ]
@@ -745,6 +746,19 @@ static FerdekValue b_co_to_za_typ(int argc, FerdekValue* argv) {
     return make_string("?");
 }
 
+/* Ten sam LCG co w interpreterze - ten sam ziarno daje ten sam ciąg */
+static long long ferdek_rng = -1;
+
+static FerdekValue b_karta_lubi_dym(int argc, FerdekValue* argv) {
+    if (argc == 1) { ferdek_rng = to_int(argv[0]) & 0x7FFFFFFF; return make_null(); }
+    if (argc != 2) ferdek_die("KARTA LUBI DYM expects 1 argument (seed) or 2 (min, max)");
+    long long lo = to_int(argv[0]), hi = to_int(argv[1]);
+    if (lo > hi) ferdek_die("KARTA LUBI DYM: min większe niż max");
+    if (ferdek_rng < 0) ferdek_rng = ((long long)time(NULL) * 1000 + clock()) & 0x7FFFFFFF;
+    ferdek_rng = (ferdek_rng * 1103515245 + 12345) & 0x7FFFFFFF;
+    return make_int(lo + ferdek_rng % (hi - lo + 1));
+}
+
 static FerdekValue zeros(long long n) {
     FerdekValue v = make_array(NULL, 0);
     v.value.array_val->data = malloc(sizeof(FerdekValue) * n);
@@ -841,6 +855,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
     "#include <stdbool.h>";
     "#include <stdarg.h>";
     "#include <setjmp.h>";
+    "#include <time.h>";
     "";
     runtime_library;
   ] @ globals @ [""] @ protos @ [""] @ functions @ [""] @ wrappers @ [

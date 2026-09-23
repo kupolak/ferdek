@@ -53,6 +53,9 @@ let loc_suffix () =
   | ("", line) -> Printf.sprintf " (linia %d)" line
   | (file, line) -> Printf.sprintf " (%s, linia %d)" file line
 
+(* Stan generatora liczb losowych; -1 = jeszcze nie zasiany (zasiewamy czasem) *)
+let rng_state = ref (-1)
+
 (* Runtime exceptions *)
 exception RuntimeError of string
 exception ReturnValue of value
@@ -1240,6 +1243,22 @@ and eval_function_call env name args =
        | _ -> raise (RuntimeError "ZRÓB UŁAMEK expects 1 argument"))
 
   (* CO TO ZA TYP(var) - Return type name *)
+  (* KARTA LUBI DYM(min, max) - losowa liczba; KARTA LUBI DYM(ziarno) - ustawia ziarno.
+     Własny LCG zamiast Random: ten sam ciąg co w skompilowanym C *)
+  | "KARTA LUBI DYM" ->
+      let rng_next () =
+        if !rng_state < 0 then rng_state := int_of_float (Unix.gettimeofday () *. 1000.) land 0x7FFFFFFF;
+        rng_state := (!rng_state * 1103515245 + 12345) land 0x7FFFFFFF;
+        !rng_state
+      in
+      (match List.map (eval_expr env) args with
+       | [seed] -> rng_state := to_int seed land 0x7FFFFFFF; VNull
+       | [lo; hi] ->
+           let lo = to_int lo and hi = to_int hi in
+           if lo > hi then raise (RuntimeError "KARTA LUBI DYM: min większe niż max");
+           VInt (lo + rng_next () mod (hi - lo + 1))
+       | _ -> raise (RuntimeError "KARTA LUBI DYM expects 1 argument (seed) or 2 (min, max)"))
+
   | "CO TO ZA TYP" ->
       (match args with
        | [arg] ->

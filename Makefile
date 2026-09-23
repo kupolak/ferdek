@@ -52,7 +52,7 @@ ALL_TESTS = $(STDLIB_TESTS) $(FEATURE_TESTS) $(EXAMPLE_TESTS)
 # Testy, które kompilator do C musi przejść z identycznym wyjściem
 COMPILED_TESTS = $(addprefix examples/,arrays2d bitwise bubble_sort enums fizzbuzz hello operations selection_sort simple_compile types variadic variadic_simple) \
 	$(addprefix tests/integration/features/,arrays conditional else_if exceptions exceptions_nested function_values functions imports logic preprocessor print scopes test_interpreter variables) \
-	$(addprefix tests/integration/stdlib/,test_dodaj_inline test_kanapa test_kanapa_brzegi test_simple_skrzynka test_skrzynka test_stdlib test_wersalka) \
+	$(addprefix tests/integration/stdlib/,test_dodaj_inline test_kanapa test_kanapa_brzegi test_losowanie test_simple_skrzynka test_skrzynka test_stdlib test_wersalka) \
 	stdlib/KLAMOTY/BABKA/przyklad_testow
 
 # Oczekiwane wyjście: tests/expected/<ścieżka>.out (brak pliku = sprawdzamy tylko kod wyjścia)
