@@ -123,6 +123,19 @@ let builtins = [
   ["SKOCZ"], ("b_skocz", None);
   ["POZYCJA"], ("b_pozycja", Some 1);
   ["POLAŁA SIĘ KREW"], ("b_polala_krew", None);
+  ["GNIAZDKO_OTWORZ"; "GNIAZDKO OTWORZ"], ("b_gniazdko_otworz", Some 1);
+  ["GNIAZDKO_WYSLIJ"; "GNIAZDKO WYSLIJ"], ("b_gniazdko_wyslij", Some 4);
+  ["GNIAZDKO_ODBIERZ"; "GNIAZDKO ODBIERZ"], ("b_gniazdko_odbierz", Some 2);
+  ["GNIAZDKO_ZAMKNIJ"; "GNIAZDKO ZAMKNIJ"], ("b_gniazdko_zamknij", Some 1);
+  (* Grafika X11: prefiks gfx_ - program, który go używa, dostaje kod X11 i -lX11 *)
+  ["OKNO_OTWORZ"; "OKNO OTWORZ"], ("gfx_okno_otworz", Some 3);
+  ["OKNO_ZAMKNIJ"; "OKNO ZAMKNIJ"], ("gfx_okno_zamknij", Some 0);
+  ["PALETA_USTAW"; "PALETA USTAW"], ("gfx_paleta_ustaw", Some 1);
+  ["PIKSEL_MALUJ"; "PIKSEL MALUJ"], ("gfx_piksel_maluj", Some 3);
+  ["EKRAN_ODŚWIEŹ"; "EKRAN_ODŚWIEŻ"; "EKRAN ODŚWIEŹ"; "EKRAN ODŚWIEŻ"; "EKRAN_ODSWIEZ"; "EKRAN ODSWIEZ"], ("gfx_ekran_odswiez", Some 0);
+  ["EKRAN_CZYŚĆ"; "EKRAN CZYŚĆ"; "EKRAN_CZYSĆ"; "EKRAN CZYSĆ"; "EKRAN_CZYSC"; "EKRAN CZYSC"], ("gfx_ekran_czysc", Some 1);
+  ["BUFOR_RAMKI_POBIERZ"; "BUFOR RAMKI POBIERZ"], ("gfx_bufor_pobierz", Some 2);
+  ["ZDARZENIE_CZEKAJ"; "ZDARZENIE CZEKAJ"], ("gfx_zdarzenie", Some 0);
   ["TRZEBA SPAĆ"], ("b_trzeba_spac", Some 1);
   ["JEST TRZECIA W NOCY"], ("b_jest_trzecia", Some 0);
   ["PIERWIASTEK ZE SKRZYNKI"], ("b_pierwiastek", Some 1);
@@ -370,7 +383,7 @@ and compile_stmt ctx indent stmt =
       Printf.sprintf "%s%s;" ind (compile_call ctx name args)
   | FunctionCallWithAssign (var, func, args) -> ind ^ assign ctx var (compile_call ctx func args)
   | Return e ->
-      if not ctx.in_function then unsupported "return poza funkcją";
+      if not ctx.in_function then ind ^ "ferdek_die(\"I JA INFORMUJĘ ŻE WYCHODZĘ poza funkcją\");" else
       let v = match e with None -> "make_null()" | Some e -> compile_expr ctx e in
       (* Wartość liczymy przed zdjęciem handlerów - może rzucić wyjątek *)
       Printf.sprintf "%s{ FerdekValue ret = %s; ferdek_handler = entry_handler; FERDEK_AT(entry_file, entry_line); return ret; }" ind v
@@ -389,6 +402,9 @@ and compile_stmt ctx indent stmt =
   | Break | Continue ->
       let kw = if stmt = Break then "break;" else "continue;" in
       (match ctx.loop_handlers with
+       | [] ->   (* jak w interpreterze: błąd wykonania, nie wyskok z funkcji *)
+           Printf.sprintf "%sferdek_die(\"%s poza pętlą\");" ind
+             (if stmt = Break then "A POCAŁUJCIE MNIE WSZYSCY W DUPĘ" else "AKUKARACZA")
        | h :: _ when h <> "" -> Printf.sprintf "%sferdek_handler = %s; %s" ind h kw
        | _ -> ind ^ kw)
 
@@ -1651,11 +1667,11 @@ static FerdekValue b_kopiuj_pamiec(int argc, FerdekValue* argv) {
 
 /* ---- TELEWIZOR (framebuffer w pamięci) i tablice wyszukiwania ---- */
 
-typedef struct { long long w, h; long long* px; bool alive; } Screen;
-static Screen* screens = NULL;
+typedef struct { long long w, h; long long* px; bool alive; } FerdekScreen;
+static FerdekScreen* screens = NULL;
 static long long screen_count = 0;
 
-static Screen* screen_arg(FerdekValue p, const char* not_ptr, const char* bad) {
+static FerdekScreen* screen_arg(FerdekValue p, const char* not_ptr, const char* bad) {
     if (p.type != TYPE_POINTER || p.value.ptr_val->type != TYPE_INT) ferdek_die("%s", not_ptr);
     long long id = p.value.ptr_val->value.int_val;
     if (id < 0 || id >= screen_count || !screens[id].alive) ferdek_die("%s", bad);
@@ -1665,8 +1681,8 @@ static Screen* screen_arg(FerdekValue p, const char* not_ptr, const char* bad) {
 static FerdekValue b_wlacz_tv(int argc, FerdekValue* argv) {
     long long w = to_int(argv[0]), h = to_int(argv[1]);
     if (w <= 0 || h <= 0) ferdek_die("WŁĄCZ TELEWIZOR: szerokość i wysokość muszą być dodatnie");
-    screens = realloc(screens, sizeof(Screen) * (screen_count + 1));
-    screens[screen_count] = (Screen){ w, h, calloc(w * h, sizeof(long long)), true };
+    screens = realloc(screens, sizeof(FerdekScreen) * (screen_count + 1));
+    screens[screen_count] = (FerdekScreen){ w, h, calloc(w * h, sizeof(long long)), true };
     return make_pointer(make_int(screen_count++));
 }
 
@@ -1678,7 +1694,7 @@ static FerdekValue b_wylacz_tv(int argc, FerdekValue* argv) {
 
 static FerdekValue b_zmien_kanal(int argc, FerdekValue* argv) {
     long long x = to_int(argv[1]), y = to_int(argv[2]), c = to_int(argv[3]);
-    Screen* s = screen_arg(argv[0], "ZMIEŃ KANAŁ: pierwszy argument musi być wskaźnikiem na ekran",
+    FerdekScreen* s = screen_arg(argv[0], "ZMIEŃ KANAŁ: pierwszy argument musi być wskaźnikiem na ekran",
                            "ZMIEŃ KANAŁ: nieprawidłowy ekran");
     if (x < 0 || x >= s->w || y < 0 || y >= s->h) ferdek_die("ZMIEŃ KANAŁ: piksel poza ekranem");
     s->px[y * s->w + x] = c;
@@ -1687,7 +1703,7 @@ static FerdekValue b_zmien_kanal(int argc, FerdekValue* argv) {
 
 static FerdekValue b_co_leci(int argc, FerdekValue* argv) {
     long long x = to_int(argv[1]), y = to_int(argv[2]);
-    Screen* s = screen_arg(argv[0], "CO LECI W TELEWIZORZE: pierwszy argument musi być wskaźnikiem na ekran",
+    FerdekScreen* s = screen_arg(argv[0], "CO LECI W TELEWIZORZE: pierwszy argument musi być wskaźnikiem na ekran",
                            "CO LECI W TELEWIZORZE: nieprawidłowy ekran");
     if (x < 0 || x >= s->w || y < 0 || y >= s->h) ferdek_die("CO LECI W TELEWIZORZE: piksel poza ekranem");
     return make_int(s->px[y * s->w + x]);
@@ -1841,6 +1857,76 @@ static FerdekValue b_polala_krew(int argc, FerdekValue* argv) {
     return make_null();
 }
 
+/* ---- UDP (GNIAZDKO_*), jak w interpreterze: nieblokujące, SO_REUSEADDR ---- */
+
+static FerdekValue b_gniazdko_otworz(int argc, FerdekValue* argv) {
+    long long port = to_int(argv[0]);
+    int one = 1;
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0) ferdek_die("GNIAZDKO_OTWORZ: socket: %s", strerror(errno));
+    if (fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK) < 0) ferdek_die("GNIAZDKO_OTWORZ: fcntl: %s", strerror(errno));
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof one) < 0) ferdek_die("GNIAZDKO_OTWORZ: setsockopt: %s", strerror(errno));
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof addr);
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_port = htons((unsigned short)port);
+    if (bind(fd, (struct sockaddr*)&addr, sizeof addr) < 0) ferdek_die("GNIAZDKO_OTWORZ: bind: %s", strerror(errno));
+    printf("Gniazdko UDP otwarte na porcie %lld\n", port);
+    fflush(stdout);
+    return make_int(fd);
+}
+
+static FerdekValue b_gniazdko_wyslij(int argc, FerdekValue* argv) {
+    int fd = (int)to_int(argv[0]);
+    char* host = to_str(argv[1]);
+    long long port = to_int(argv[2]);
+    FerdekValue d = argv[3];
+    char* data;
+    size_t len;
+    if (d.type == TYPE_STRING) { data = d.value.string_val; len = strlen(data); }
+    else if (d.type == TYPE_ARRAY) {
+        len = d.value.array_val->length;
+        data = malloc(len > 0 ? len : 1);
+        for (size_t i = 0; i < len; i++) data[i] = (char)(to_int(d.value.array_val->data[i]) & 0xFF);
+    } else { ferdek_die("GNIAZDKO_WYSLIJ: dane muszą być tekstem albo tablicą bajtów"); return make_null(); }
+    struct sockaddr_in addr;
+    memset(&addr, 0, sizeof addr);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons((unsigned short)port);
+    /* Unix.inet_addr_of_string rzuca Failure - interpreter wypisuje to jako poważną awarię */
+    if (inet_pton(AF_INET, host, &addr.sin_addr) != 1) ferdek_die("Poważna awaria: inet_addr_of_string");
+    ssize_t sent = sendto(fd, data, len, 0, (struct sockaddr*)&addr, sizeof addr);
+    if (sent < 0) ferdek_die("GNIAZDKO_WYSLIJ: sendto: %s", strerror(errno));
+    return make_int(sent);
+}
+
+/* 0 gdy nic nie przyszło, inaczej [dane, host, port] */
+static FerdekValue b_gniazdko_odbierz(int argc, FerdekValue* argv) {
+    int fd = (int)to_int(argv[0]);
+    long long size = to_int(argv[1]);
+    char* buf = malloc(size + 1);
+    struct sockaddr_in from;
+    socklen_t flen = sizeof from;
+    ssize_t n = recvfrom(fd, buf, size, 0, (struct sockaddr*)&from, &flen);
+    if (n < 0) {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) return make_int(0);
+        ferdek_die("GNIAZDKO_ODBIERZ: recvfrom: %s", strerror(errno));
+    }
+    if (n == 0) return make_int(0);
+    buf[n] = '\0';
+    char host[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &from.sin_addr, host, sizeof host);
+    return make_array((FerdekValue[]){ own_string(buf), make_string(host), make_int(ntohs(from.sin_port)) }, 3);
+}
+
+static FerdekValue b_gniazdko_zamknij(int argc, FerdekValue* argv) {
+    if (close((int)to_int(argv[0])) < 0) ferdek_die("GNIAZDKO_ZAMKNIJ: close: %s", strerror(errno));
+    printf("Gniazdko UDP zamknięte\n");
+    fflush(stdout);
+    return make_null();
+}
+
 static FerdekValue zeros(long long n) {
     FerdekValue v = make_array(NULL, 0);
     v.value.array_val->data = malloc(sizeof(FerdekValue) * n);
@@ -1886,6 +1972,41 @@ static FerdekValue read_value(void) {
     if (fgets(buffer, sizeof(buffer), stdin) == NULL) return make_null();
     buffer[strcspn(buffer, "\n")] = 0;
     return is_decimal(buffer) ? make_int(strtoll(buffer, NULL, 10)) : make_string(buffer);
+}
+|}
+
+(* Nakładki na graphics_x11.c (Graphics_source) - dołączane tylko do programów z grafiką *)
+let graphics_runtime = {|
+static FerdekValue gfx_okno_otworz(int argc, FerdekValue* argv) {
+    int r = ferdek_window_open((int)to_int(argv[0]), (int)to_int(argv[1]), to_str(argv[2]));
+    if (r == 0) ferdek_die("OKNO_OTWORZ: nie udało się otworzyć okna");
+    return make_int(r);
+}
+static FerdekValue gfx_okno_zamknij(int argc, FerdekValue* argv) { ferdek_window_close(); return make_null(); }
+static FerdekValue gfx_paleta_ustaw(int argc, FerdekValue* argv) {
+    if (argv[0].type != TYPE_ARRAY) ferdek_die("PALETA_USTAW: argument musi być tablicą");
+    FerdekArray* a = argv[0].value.array_val;
+    if (a->length != 768) ferdek_die("PALETA_USTAW: paleta musi mieć 768 bajtów (256 kolorów * RGB)");
+    unsigned char pal[768];
+    for (int i = 0; i < 768; i++) pal[i] = (unsigned char)(to_int(a->data[i]) & 0xFF);
+    ferdek_palette_set(pal);
+    return make_null();
+}
+static FerdekValue gfx_piksel_maluj(int argc, FerdekValue* argv) {
+    ferdek_pixel_draw((int)to_int(argv[0]), (int)to_int(argv[1]), (unsigned char)(to_int(argv[2]) & 0xFF));
+    return make_null();
+}
+static FerdekValue gfx_ekran_odswiez(int argc, FerdekValue* argv) { ferdek_screen_refresh(); return make_null(); }
+static FerdekValue gfx_ekran_czysc(int argc, FerdekValue* argv) {
+    ferdek_screen_clear((unsigned char)(to_int(argv[0]) & 0xFF));
+    return make_null();
+}
+static FerdekValue gfx_bufor_pobierz(int argc, FerdekValue* argv) {
+    return make_int(ferdek_framebuffer_get((int)to_int(argv[0]), (int)to_int(argv[1])));
+}
+static FerdekValue gfx_zdarzenie(int argc, FerdekValue* argv) {
+    ferdek_event_t e = ferdek_event_poll();
+    return make_array((FerdekValue[]){ make_int(e.type), make_int(e.key), make_int(e.x), make_int(e.y) }, 4);
 }
 |}
 
@@ -1947,6 +2068,10 @@ let compile_program ?(load_module = fun _ -> None) prog =
   let protos = Hashtbl.fold (fun _ f acc -> (fun_proto f ^ ";") :: (wrap_proto f ^ ";") :: acc) ctx.funcs [] |> dedup in
   let wrappers = Hashtbl.fold (fun _ f acc -> compile_wrapper f :: acc) ctx.funcs [] |> dedup in
 
+  let program_code = String.concat "\n" (functions @ method_code @ main_body @ constructors) in
+  let graphics =
+    if Str.string_match (Str.regexp ".*gfx_") (String.map (fun c -> if c = '\n' then ' ' else c) program_code) 0
+    then [Graphics_source.code; graphics_runtime] else [] in  (* code ma własne deklaracje - bez nagłówka *)
   String.concat "\n" ([
     "#define _POSIX_C_SOURCE 200809L  /* strdup, nanosleep, clock_gettime przy -std=c99 */";
     "#include <stdio.h>";
@@ -1962,9 +2087,13 @@ let compile_program ?(load_module = fun _ -> None) prog =
     "#include <dirent.h>";
     "#include <unistd.h>";
     "#include <sys/stat.h>";
+    "#include <sys/socket.h>";
+    "#include <netinet/in.h>";
+    "#include <arpa/inet.h>";
+    "#include <fcntl.h>";
     "";
     runtime_library;
-  ] @ globals @ [""] @ protos @ object_protos @ [""] @ functions @ method_code @ [""] @ wrappers
+  ] @ graphics @ globals @ [""] @ protos @ object_protos @ [""] @ functions @ method_code @ [""] @ wrappers
     @ method_wrappers @ [""] @ constructors @ [
     "";
     "int main(void) {";

@@ -122,13 +122,11 @@ Generate C source only (any `-o` ending in `.c`):
 ferdek -c examples/hello.ferdek -o hello.c
 ```
 
-The compiler (needs `cc` on your PATH) covers the core language: variables, arithmetic,
-strings, arrays (incl. `TABLICA 2D/3D`), functions (incl. variadic and function values),
-if/while/for/break/continue, exceptions, imports (your files and stdlib: SKRZYNKA, BABKA),
-random numbers, and the KANAPA, WERSALKA, SZAFKA (maps) and numeric-type builtins.
-Classes, structs, unions, pointers, files, memory, networking and graphics are
-interpreter-only; the compiler says so with a
-clear error instead of producing a broken binary.
+The compiler (needs `cc` on your PATH) handles the whole language: classes, structs, unions,
+pointers, files, memory, maps, UDP networking and X11 graphics included (graphics programs are
+linked with `-lX11`). Compiled programs print exactly what the interpreter prints, including
+error messages - `make test` and a fuzzer check this. The only things it still rejects are a
+class name used as a value and an object field used as a loop counter.
 
 ## Example Program
 

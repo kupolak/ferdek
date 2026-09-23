@@ -528,7 +528,11 @@ and apply_function name (fdecl : function_decl) closure_env arg_values =
       (try
         List.iter (eval_stmt func_env) fdecl.body;
         VNull (* No explicit return *)
-      with ReturnValue v -> v)
+      with
+      | ReturnValue v -> v
+      (* break/continue nie wyskakują z funkcji do pętli, która ją wywołała *)
+      | BreakLoop -> raise (RuntimeError "A POCAŁUJCIE MNIE WSZYSCY W DUPĘ poza pętlą")
+      | ContinueLoop -> raise (RuntimeError "AKUKARACZA poza pętlą"))
     in
     current_loc := caller_loc;
     result
@@ -2015,7 +2019,7 @@ let () =
               (* Bind to port *)
               let addr = Unix.ADDR_INET (Unix.inet_addr_any, port) in
               Unix.bind sockfd addr;
-              Printf.printf "UDP socket opened on port %d\n%!" port;
+              Printf.printf "Gniazdko UDP otwarte na porcie %d\n%!" port;
               VInt (Obj.magic sockfd : int)  (* Convert Unix.file_descr to int *)
             with Unix.Unix_error (err, fn, _) ->
               raise (RuntimeError (Printf.sprintf "GNIAZDKO_OTWORZ: %s: %s" fn (Unix.error_message err))))
@@ -2089,7 +2093,7 @@ let () =
            let sockfd = (Obj.magic (to_int (eval_expr env sockfd_arg)) : Unix.file_descr) in
            (try
               Unix.close sockfd;
-              Printf.printf "UDP socket closed\n%!";
+              Printf.printf "Gniazdko UDP zamknięte\n%!";
               VNull
             with Unix.Unix_error (err, fn, _) ->
               raise (RuntimeError (Printf.sprintf "GNIAZDKO_ZAMKNIJ: %s: %s" fn (Unix.error_message err))))
@@ -2219,6 +2223,9 @@ let eval_in env prog =
       Error (Printf.sprintf "%s%s" msg (loc_suffix ()))
   | ThrowException value ->
       Error (Printf.sprintf "Nikt nie złapał wyjątku: %s%s" (string_of_value value) (loc_suffix ()))
+  | ReturnValue _ -> Error ("I JA INFORMUJĘ ŻE WYCHODZĘ poza funkcją" ^ loc_suffix ())
+  | BreakLoop -> Error ("A POCAŁUJCIE MNIE WSZYSCY W DUPĘ poza pętlą" ^ loc_suffix ())
+  | ContinueLoop -> Error ("AKUKARACZA poza pętlą" ^ loc_suffix ())
   | Failure msg ->
       Error (Printf.sprintf "Poważna awaria: %s%s" msg (loc_suffix ()))
   | e ->

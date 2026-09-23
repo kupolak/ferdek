@@ -191,7 +191,14 @@ let write_file path content =
   close_out oc
 
 (* cc zamiast gcc: na macOS i Linuksie to domyślny kompilator C *)
-let cc c_file exe = Sys.command (Printf.sprintf "cc -std=c99 -o %s %s -lm" (Filename.quote exe) (Filename.quote c_file))
+let cc c_file exe =
+  (* Program z grafiką (Graphics_source w środku) potrzebuje X11: XQuartz, Homebrew albo systemowe *)
+  let code = In_channel.with_open_bin c_file In_channel.input_all in
+  let x11 =
+    try ignore (Str.search_forward (Str.regexp_string "X11/Xlib.h") code 0);
+        " -I/opt/X11/include -I/opt/homebrew/include -I/usr/local/include -L/opt/X11/lib -L/opt/homebrew/lib -L/usr/local/lib -lX11"
+    with Not_found -> "" in
+  Sys.command (Printf.sprintf "cc -std=c99 -o %s %s -lm%s" (Filename.quote exe) (Filename.quote c_file) x11)
 
 (* -c: plik .c albo (inne rozszerzenie) gotowa binarka *)
 let compile_file input_file output_file =
