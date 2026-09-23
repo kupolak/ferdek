@@ -1258,8 +1258,10 @@ static FerdekValue b_wersalka_ile(int argc, FerdekValue* argv) {
 /* Jak w interpreterze: zwraca nową tablicę, oryginał bez zmian */
 static FerdekValue b_wersalka_poloz(int argc, FerdekValue* argv) {
     FerdekArray* arr = list_arg(argv[0], "POŁÓŻ NA WERSALCE: pierwszy argument musi być tablicą");
-    FerdekValue out = make_array(arr->data, arr->length + 1);
-    out.value.array_val->data[arr->length] = argv[1];
+    FerdekValue out = make_array(arr->data, arr->length);
+    FerdekArray* o = out.value.array_val;
+    o->data = fx_realloc(o->data, sizeof(FerdekValue) * (arr->length + 1));
+    o->data[o->length++] = argv[1];
     return out;
 }
 
