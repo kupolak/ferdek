@@ -36,3 +36,7 @@ val set_module_loader : (string -> program option) -> unit
 
 (* Execute a program *)
 val eval_program : program -> (unit, string) result
+
+(* Sesja REPL: zmienne i funkcje przeżywają między kolejnymi wywołaniami eval_in *)
+val new_session : unit -> environment
+val eval_in : environment -> program -> (unit, string) result

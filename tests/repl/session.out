@@ -1,0 +1,11 @@
+Ferdek REPL - Gadka Szmatka v1.0
+Wpisz 'wypad' albo 'spadaj' aby iść na piwo (exit/quit)
+Instrukcje na kilka linii zbieram, aż będą kompletne. Pusta linia = porzuć.
+
+(Ferdek)>       ...> (Ferdek)> 5
+(Ferdek)>       ...>       ...>       ...>       ...> (Ferdek)> 10
+(Ferdek)> Błąd parsowania. Jak ten Walduś w szkole!
+(Ferdek)> Błąd: Runtime error: Undefined variable: niema
+(Ferdek)>       ...> Porzucam niedokończoną instrukcję.
+(Ferdek)> dalej dziala
+(Ferdek)> Trzeba kończyć, robota czeka... (na kanapie)

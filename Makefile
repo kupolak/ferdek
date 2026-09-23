@@ -93,9 +93,13 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit
+test: test-unit test-repl
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
+
+# Sesja REPL: stan między liniami, instrukcje wieloliniowe, błędy nie kończą sesji
+test-repl: build
+	@$(FERDEK) --repl < tests/repl/session.in 2>&1 | diff -u tests/repl/session.out - && echo "--- REPL: OK"
 
 test-compiled: build
 	$(call run_compiled,$(COMPILED_TESTS))
@@ -128,4 +132,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-compiled test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: all build clean distclean test test-unit test-repl test-compiled test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

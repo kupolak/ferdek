@@ -1984,8 +1984,10 @@ and eval_top_level_decl env = function
 (* ============ PROGRAM EXECUTION ============ *)
 
 (* Execute program *)
-let eval_program prog =
-  let env = global_env () in
+(* Sesja = środowisko globalne żyjące między kolejnymi programami (REPL) *)
+let new_session () = global_env ()
+
+let eval_in env prog =
   try
     List.iter (eval_top_level_decl env) prog.declarations;
     Ok ()
@@ -1998,3 +2000,5 @@ let eval_program prog =
       Error (Printf.sprintf "Fatal error: %s" msg)
   | e ->
       Error (Printf.sprintf "Unexpected error: %s" (Printexc.to_string e))
+
+let eval_program prog = eval_in (new_session ()) prog

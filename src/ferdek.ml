@@ -204,34 +204,45 @@ let quick_run input_file =
 (* REPL *)
 let repl () =
   Printf.printf "Ferdek REPL - Gadka Szmatka v1.0\n";
-  Printf.printf "Wpisz 'wypad' albo 'spadaj' aby iść na piwo (exit/quit)\n\n";
+  Printf.printf "Wpisz 'wypad' albo 'spadaj' aby iść na piwo (exit/quit)\n";
+  Printf.printf "Instrukcje na kilka linii zbieram, aż będą kompletne. Pusta linia = porzuć.\n\n";
+  let session = Interpreter.new_session () in
+  let program_end = "MOJA NOGA JUŻ TUTAJ NIE POSTANIE" in
 
-  let rec loop () =
-    Printf.printf "(Ferdek)> "; (* Zmieniony prompt *)
-    flush stdout;
-    try
-      let line = read_line () in
-      if line = "exit" || line = "quit" || line = "wypad" || line = "spadaj" then
-        Printf.printf "Trzeba kończyć, robota czeka... (na kanapie)\n"
-      else if String.trim line = "" then
-        loop ()
-      else begin
-        let code = "CO JEST KURDE\n" ^ line ^ "\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE" in
-        let lexbuf = Lexing.from_string code in
-        (try
-          let ast = Parser.program Lexer.token lexbuf in
-          (match Interpreter.eval_program ast with
-           | Ok () -> ()
-           | Error msg -> Printf.eprintf "Błąd: %s\n" msg)
-        with
-        | Lexer.LexError msg -> Printf.eprintf "Błąd leksera: Ktoś tu kłamie! %s\n" msg
-        | Parser.Error -> Printf.eprintf "Błąd parsowania. Jak ten Walduś w szkole!\n");
-        loop ()
-      end
-    with End_of_file ->
-      Printf.printf "\n"
+  (* Ok (Some ast) = gotowe, Ok None = instrukcja niekompletna, Error = błąd *)
+  let try_parse buf =
+    let code = "CO JEST KURDE\n" ^ buf ^ "\n" ^ program_end in
+    let lexbuf = Lexing.from_string code in
+    try Ok (Some (Parser.program Lexer.token lexbuf)) with
+    | Lexer.LexError msg -> Error ("Błąd leksera: Ktoś tu kłamie! " ^ msg)
+    | Parser.Error ->
+        (* Parser potknął się dopiero na doklejonym końcu programu = brakuje reszty instrukcji *)
+        if Lexing.lexeme lexbuf = program_end then Ok None
+        else Error "Błąd parsowania. Jak ten Walduś w szkole!"
   in
-  loop ()
+
+  let rec loop buf =
+    Printf.printf "%s" (if buf = "" then "(Ferdek)> " else "      ...> ");
+    flush stdout;
+    match read_line () with
+    | exception End_of_file -> Printf.printf "\n"
+    | line when buf = "" && List.mem (String.trim line) ["exit"; "quit"; "wypad"; "spadaj"] ->
+        Printf.printf "Trzeba kończyć, robota czeka... (na kanapie)\n"
+    | line when String.trim line = "" ->
+        if buf <> "" then Printf.eprintf "Porzucam niedokończoną instrukcję.\n%!";
+        loop ""
+    | line ->
+        let buf = if buf = "" then line else buf ^ "\n" ^ line in
+        (match try_parse buf with
+         | Ok None -> loop buf
+         | Ok (Some ast) ->
+             (match Interpreter.eval_in session ast with
+              | Ok () -> ()
+              | Error msg -> Printf.eprintf "Błąd: %s\n%!" msg);
+             loop ""
+         | Error msg -> Printf.eprintf "%s\n%!" msg; loop "")
+  in
+  loop ""
 
 (* Main *)
 let () =
