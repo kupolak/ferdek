@@ -24,6 +24,16 @@ Some examples:
 - `KRĘCI CEMENT BETONIARA i OD 1 DO 10 CO 2` ... `A ROBIĆ NI MA KOMU` - for loop
 - `KARTA LUBI DYM(1, 6)` - random number (`KARTA LUBI DYM(seed)` sets the seed)
 - `O KOGO MOJE PIĘKNE OCZY WIDZĄ moj_plik` - import `moj_plik.ferdek` next to your file (or a stdlib module)
+- `3.14` - numbers with a decimal point (`7 / 2` is still `3`, `7.0 / 2` is `3.5`; `ZRÓB DŁUGI(3.9)` truncates)
+- `[1, 2, 3]` - array literals work anywhere, e.g. as function arguments
+- `"Piwa: " BABKA DAWAJ RENTĘ 6` - `+` with text concatenates; arithmetic on non-numeric text is an error
+- `ZNAK Z KANAPY(s, i)`, `KANAPA DO GÓRY(s)`, `KANAPA W DÓŁ(s)` - character at position, upper/lower case (Polish letters too)
+
+Check a program without running it (unknown names, wrong argument counts):
+
+```bash
+ferdek --check program.ferdek
+```
 
 ## Installation
 

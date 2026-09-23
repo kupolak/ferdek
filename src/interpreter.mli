@@ -8,6 +8,7 @@ type value =
   | VByte of int                                     (* 8-bit unsigned (0-255) *)
   | VShort of int                                    (* 16-bit integer *)
   | VFixed of int                                    (* 32-bit fixed-point 16.16 *)
+  | VFloat of float                                  (* Liczba z przecinkiem *)
   | VString of string
   | VBool of bool
   | VNull

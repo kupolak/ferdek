@@ -80,7 +80,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
     | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
     | Parenthesized e -> expr sc e
     | ArrayLiteral es -> List.iter (expr sc) es
-    | IntLiteral _ | StringLiteral _ | BoolLiteral _ | NullLiteral -> ()
+    | IntLiteral _ | FloatLiteral _ | StringLiteral _ | BoolLiteral _ | NullLiteral -> ()
   and stmt sc = function
     | Located (file, line, s) -> loc := (file, line); stmt sc s
     | VarDecl (_, e) | Assign (_, e) | Print e | PrintInline e | Throw e -> expr sc e

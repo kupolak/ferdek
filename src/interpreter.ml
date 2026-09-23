@@ -21,6 +21,7 @@ type value =
   | VByte of int                                     (* 8-bit unsigned (0-255) *)
   | VShort of int                                    (* 16-bit integer *)
   | VFixed of int                                    (* 32-bit fixed-point 16.16 *)
+  | VFloat of float                                  (* Liczba z przecinkiem *)
   | VString of string
   | VBool of bool
   | VNull
@@ -158,7 +159,13 @@ let define_var env name value =
 (* ============ VALUE OPERATIONS ============ *)
 
 (* Convert value to string *)
+(* Liczba z przecinkiem jako tekst - ten sam format co runtime C (%.15g, "2.0" zamiast "2") *)
+let string_of_float_ferdek f =
+  let s = Printf.sprintf "%.15g" f in
+  if String.exists (fun c -> c = '.' || c = 'e' || c = 'n') s then s else s ^ ".0"
+
 let rec string_of_value = function
+  | VFloat f -> string_of_float_ferdek f
   | VInt n -> string_of_int n
   | VByte n -> string_of_int n
   | VShort n -> string_of_int n
@@ -202,6 +209,7 @@ let to_bool = function
   | VShort _ -> true
   | VFixed 0 -> false
   | VFixed _ -> true
+  | VFloat f -> f <> 0.0
   | VString "" -> false
   | VString _ -> true
   | VNull -> false
@@ -234,7 +242,11 @@ let to_int = function
        | Some n -> n
        | None -> raise (RuntimeError (Printf.sprintf "Tekst \"%s\" to nie liczba" s)))
   | VNull -> 0
+  | VFloat _ -> raise (RuntimeError "Liczba z przecinkiem tam, gdzie trzeba całkowitej (użyj ZRÓB DŁUGI)")
   | _ -> raise (RuntimeError "Cannot convert to integer")
+
+let is_float = function VFloat _ -> true | _ -> false
+let to_float = function VFloat f -> f | v -> float_of_int (to_int v)
 
 (* Convert value to string for concatenation *)
 let to_string = function
@@ -242,6 +254,7 @@ let to_string = function
   | VByte n -> string_of_int n
   | VShort n -> string_of_int n
   | VFixed n -> string_of_int n  (* Show raw fixed value *)
+  | VFloat f -> string_of_float_ferdek f
   | VString s -> s
   | VBool true -> "true"
   | VBool false -> "false"
@@ -255,6 +268,15 @@ let eval_arith_op op v1 v2 =
   match op, v1, v2 with
   (* + z tekstem po którejkolwiek stronie skleja *)
   | Plus, VString _, _ | Plus, _, VString _ -> VString (to_string v1 ^ to_string v2)
+  (* Przecinek po którejkolwiek stronie = wynik z przecinkiem *)
+  | _ when is_float v1 || is_float v2 ->
+      let a = to_float v1 and b = to_float v2 in
+      VFloat (match op with
+        | Plus -> a +. b
+        | Minus -> a -. b
+        | Multiply -> a *. b
+        | Divide -> if b = 0.0 then raise (RuntimeError "Division by zero") else a /. b
+        | Modulo -> if b = 0.0 then raise (RuntimeError "Modulo by zero") else Float.rem a b)
   | _ ->
   let n1 = to_int v1 in
   let n2 = to_int v2 in
@@ -276,6 +298,8 @@ let eval_comparison_op op v1 v2 =
      > / < to błąd - chyba że tekst jest liczbą ("5") *)
   let c = match v1, v2 with
     | VString a, VString b -> compare a b
+    | _ when is_numeric v1 && is_numeric v2 && (is_float v1 || is_float v2) ->
+        compare (to_float v1) (to_float v2)
     | _ when is_numeric v1 && is_numeric v2 -> compare (to_int v1) (to_int v2)
     | _ when op = Equal || op = NotEqual -> 1
     | _ -> raise (RuntimeError "Nie można porównać tekstu z liczbą")
@@ -312,6 +336,7 @@ let eval_bitwise_op op v1 v2 =
 (* Evaluate expression *)
 let rec eval_expr env = function
   | IntLiteral n -> VInt n
+  | FloatLiteral f -> VFloat f
   | StringLiteral s -> VString s
   | BoolLiteral b -> VBool b
   | NullLiteral -> VNull
@@ -343,9 +368,9 @@ let rec eval_expr env = function
       VArray (Array.of_list (List.map (eval_expr env) es))
   | ToFixed e ->
       (* Convert integer to fixed-point 16.16 format *)
-      let v = eval_expr env e in
-      let n = to_int v in
-      VInt (n lsl 16)
+      (match eval_expr env e with
+       | VFloat f -> VInt (int_of_float (f *. 65536.))
+       | v -> VInt (to_int v lsl 16))
   | FromFixed e ->
       (* Convert from fixed-point 16.16 format to integer *)
       let v = eval_expr env e in
@@ -1279,8 +1304,10 @@ and eval_function_call env name args =
   | "ZRÓB DŁUGI" | "ZROB DLUGI" ->
       (match args with
        | [arg] ->
-           let value = to_int (eval_expr env arg) in
-           VInt value
+           (* Jawne obcięcie liczby z przecinkiem *)
+           (match eval_expr env arg with
+            | VFloat f -> VInt (int_of_float f)
+            | v -> VInt (to_int v))
        | _ -> raise (RuntimeError "ZRÓB DŁUGI expects 1 argument"))
 
   (* ZRÓB UŁAMEK(expr) - Cast to fixed-point (same as ZAMIEŃ NA FIXED) *)
@@ -1317,6 +1344,7 @@ and eval_function_call env name args =
              | VShort _ -> "KRÓTKI"
              | VInt _ -> "DŁUGI"
              | VFixed _ -> "UŁAMEK"
+             | VFloat _ -> "PRZECINEK"
              | VString _ -> "TEKST"
              | VBool _ -> "PRAWDA/FAŁSZ"
              | VNull -> "NIC"

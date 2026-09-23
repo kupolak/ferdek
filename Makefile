@@ -51,7 +51,7 @@ ALL_TESTS = $(STDLIB_TESTS) $(FEATURE_TESTS) $(EXAMPLE_TESTS)
 
 # Testy, które kompilator do C musi przejść z identycznym wyjściem
 COMPILED_TESTS = $(addprefix examples/,arrays2d bitwise bubble_sort enums fizzbuzz hello operations selection_sort simple_compile types variadic variadic_simple) \
-	$(addprefix tests/integration/features/,array_literals arrays conditional else_if exceptions exceptions_nested for_loop function_values functions imports logic preprocessor print scopes test_interpreter types_strict variables) \
+	$(addprefix tests/integration/features/,array_literals arrays conditional else_if exceptions exceptions_nested floats for_loop function_values functions imports logic preprocessor print scopes test_interpreter types_strict variables) \
 	$(addprefix tests/integration/stdlib/,test_bez_ogonkow test_dodaj_inline test_kanapa test_kanapa_brzegi test_kanapa_litery test_losowanie test_simple_skrzynka test_skrzynka test_stdlib test_szafka test_szafka_pelna test_wersalka) \
 	stdlib/KLAMOTY/BABKA/przyklad_testow
 

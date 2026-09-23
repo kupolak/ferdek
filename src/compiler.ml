@@ -156,6 +156,7 @@ let argv_c c_args = if c_args = [] then "(FerdekValue[]){make_null()}" else
 let rec compile_expr ctx expr =
   match expr with
   | IntLiteral n -> Printf.sprintf "make_int(%dLL)" n
+  | FloatLiteral f -> Printf.sprintf "make_float(%.17g)" f
   | StringLiteral s -> Printf.sprintf "make_string(%s)" (c_string_literal s)
   | BoolLiteral b -> Printf.sprintf "make_bool(%s)" (if b then "true" else "false")
   | NullLiteral -> "make_null()"
@@ -181,7 +182,7 @@ let rec compile_expr ctx expr =
   | ArrayLiteral es ->
       Printf.sprintf "make_array((FerdekValue[]){%s}, %d)"
         (String.concat ", " (List.map (compile_expr ctx) es)) (List.length es)
-  | ToFixed e -> Printf.sprintf "make_int(to_int(%s) << 16)" (compile_expr ctx e)
+  | ToFixed e -> Printf.sprintf "to_fixed(%s)" (compile_expr ctx e)
   | FromFixed e -> Printf.sprintf "make_int(to_int(%s) >> 16)" (compile_expr ctx e)
   | ArrayAccess (arr, idx) ->
       Printf.sprintf "array_get(%s, to_int(%s))" (compile_expr ctx arr) (compile_expr ctx idx)
@@ -389,7 +390,8 @@ typedef enum {
     TYPE_SHORT,
     TYPE_FIXED,
     TYPE_FUNCTION,
-    TYPE_MAP
+    TYPE_MAP,
+    TYPE_FLOAT
 } ValueType;
 
 typedef struct FerdekValue FerdekValue;
@@ -401,6 +403,7 @@ struct FerdekValue {
     ValueType type;
     union {
         long long int_val;
+        double float_val;
         char* string_val;
         bool bool_val;
         FerdekArray* array_val;   /* wskaźnik: kopia wartości współdzieli tablicę, jak w interpreterze */
@@ -433,6 +436,7 @@ static void ferdek_die(const char* fmt, ...) {
 }
 
 static FerdekValue make_int(long long n) { FerdekValue v; v.type = TYPE_INT; v.value.int_val = n; return v; }
+static FerdekValue make_float(double f) { FerdekValue v; v.type = TYPE_FLOAT; v.value.float_val = f; return v; }
 static FerdekValue make_bool(bool b) { FerdekValue v; v.type = TYPE_BOOL; v.value.bool_val = b; return v; }
 static FerdekValue make_null(void) { FerdekValue v; v.type = TYPE_NULL; return v; }
 
@@ -462,6 +466,9 @@ static bool is_decimal(const char* s) {
 
 static bool is_numeric(FerdekValue v) { return v.type != TYPE_STRING || is_decimal(v.value.string_val); }
 
+static long long to_int(FerdekValue v);
+static double to_float(FerdekValue v) { return v.type == TYPE_FLOAT ? v.value.float_val : (double)to_int(v); }
+
 static long long to_int(FerdekValue v) {
     switch (v.type) {
         case TYPE_INT: case TYPE_BYTE: case TYPE_SHORT: case TYPE_FIXED: return v.value.int_val;
@@ -471,6 +478,7 @@ static long long to_int(FerdekValue v) {
             if (!is_decimal(v.value.string_val)) ferdek_die("Tekst \"%s\" to nie liczba", v.value.string_val);
             return strtoll(v.value.string_val, NULL, 10);
         case TYPE_NULL: return 0;
+        case TYPE_FLOAT: ferdek_die("Liczba z przecinkiem tam, gdzie trzeba całkowitej (użyj ZRÓB DŁUGI)"); return 0;
         default: ferdek_die("Cannot convert to integer"); return 0;
     }
 }
@@ -480,6 +488,7 @@ static bool to_bool(FerdekValue v) {
         case TYPE_INT: case TYPE_BYTE: case TYPE_SHORT: case TYPE_FIXED: return v.value.int_val != 0;
         case TYPE_BOOL: return v.value.bool_val;
         case TYPE_STRING: return v.value.string_val[0] != '\0';
+        case TYPE_FLOAT: return v.value.float_val != 0.0;
         case TYPE_NULL: return false;
         default: return true;
     }
@@ -521,6 +530,11 @@ static char* to_str(FerdekValue v) {
             snprintf(num, sizeof num, "%lld", v.value.int_val);
             return strdup(num);
         case TYPE_STRING: return strdup(v.value.string_val);
+        case TYPE_FLOAT:
+            /* jak string_of_float_ferdek: %.15g i ".0" dla całych */
+            snprintf(num, sizeof num - 2, "%.15g", v.value.float_val);
+            if (!strpbrk(num, ".en")) strcat(num, ".0");
+            return strdup(num);
         case TYPE_BOOL: return strdup(v.value.bool_val ? "true" : "false");
         case TYPE_NULL: return strdup("null");
         case TYPE_MAP: {
@@ -578,18 +592,36 @@ static FerdekValue op_add(FerdekValue a, FerdekValue b) {
         v.value.string_val = buf.s;
         return v;
     }
+    if (a.type == TYPE_FLOAT || b.type == TYPE_FLOAT) return make_float(to_float(a) + to_float(b));
     return make_int(to_int(a) + to_int(b));
 }
-static FerdekValue op_sub(FerdekValue a, FerdekValue b) { return make_int(to_int(a) - to_int(b)); }
-static FerdekValue op_mul(FerdekValue a, FerdekValue b) { return make_int(to_int(a) * to_int(b)); }
+#define ANY_FLOAT(a, b) ((a).type == TYPE_FLOAT || (b).type == TYPE_FLOAT)
+
+static FerdekValue op_sub(FerdekValue a, FerdekValue b) {
+    return ANY_FLOAT(a, b) ? make_float(to_float(a) - to_float(b)) : make_int(to_int(a) - to_int(b));
+}
+
+static FerdekValue op_mul(FerdekValue a, FerdekValue b) {
+    return ANY_FLOAT(a, b) ? make_float(to_float(a) * to_float(b)) : make_int(to_int(a) * to_int(b));
+}
 
 static FerdekValue op_div(FerdekValue a, FerdekValue b) {
+    if (ANY_FLOAT(a, b)) {
+        double d = to_float(b);
+        if (d == 0.0) ferdek_die("Division by zero");
+        return make_float(to_float(a) / d);
+    }
     long long d = to_int(b);
     if (d == 0) ferdek_die("Division by zero");
     return make_int(to_int(a) / d);
 }
 
 static FerdekValue op_mod(FerdekValue a, FerdekValue b) {
+    if (ANY_FLOAT(a, b)) {
+        double d = to_float(b);
+        if (d == 0.0) ferdek_die("Modulo by zero");
+        return make_float(fmod(to_float(a), d));
+    }
     long long d = to_int(b);
     if (d == 0) ferdek_die("Modulo by zero");
     return make_int(to_int(a) % d);
@@ -604,6 +636,9 @@ static FerdekValue compare_op(FerdekValue a, FerdekValue b, int op) {
     if (a.type == TYPE_STRING && b.type == TYPE_STRING) {
         c = strcmp(a.value.string_val, b.value.string_val);
         c = (c > 0) - (c < 0);
+    } else if (is_numeric(a) && is_numeric(b) && ANY_FLOAT(a, b)) {
+        double x = to_float(a), y = to_float(b);
+        c = (x > y) - (x < y);
     } else if (is_numeric(a) && is_numeric(b)) {
         long long x = to_int(a), y = to_int(b);
         c = (x > y) - (x < y);
@@ -864,7 +899,14 @@ static FerdekValue b_wersalka_czy_lezy(int argc, FerdekValue* argv) {
 }
 
 static FerdekValue b_zrob_bajcik(int argc, FerdekValue* argv) { return make_typed(TYPE_BYTE, to_int(argv[0]) & 0xFF); }
-static FerdekValue b_zrob_dlugi(int argc, FerdekValue* argv) { return make_int(to_int(argv[0])); }
+/* Jawne obcięcie liczby z przecinkiem - jak int_of_float */
+static FerdekValue b_zrob_dlugi(int argc, FerdekValue* argv) {
+    return argv[0].type == TYPE_FLOAT ? make_int((long long)argv[0].value.float_val) : make_int(to_int(argv[0]));
+}
+
+static FerdekValue to_fixed(FerdekValue v) {
+    return v.type == TYPE_FLOAT ? make_int((long long)(v.value.float_val * 65536.0)) : make_int(to_int(v) << 16);
+}
 static FerdekValue b_zrob_ulamek(int argc, FerdekValue* argv) { return make_typed(TYPE_FIXED, to_int(argv[0]) * 65536); }
 
 static FerdekValue b_zrob_krotki(int argc, FerdekValue* argv) {
@@ -884,6 +926,7 @@ static FerdekValue b_co_to_za_typ(int argc, FerdekValue* argv) {
         case TYPE_ARRAY: return make_string("TABLICA");
         case TYPE_FUNCTION: return make_string("FUNKCJA");
         case TYPE_MAP: return make_string("SZAFKA");
+        case TYPE_FLOAT: return make_string("PRZECINEK");
     }
     return make_string("?");
 }
@@ -1072,6 +1115,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
     "#include <setjmp.h>";
     "#include <time.h>";
     "#include <ctype.h>";
+    "#include <math.h>";
     "";
     runtime_library;
   ] @ globals @ [""] @ protos @ [""] @ functions @ [""] @ wrappers @ [

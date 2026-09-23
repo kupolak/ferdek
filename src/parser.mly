@@ -46,6 +46,7 @@ open Ast
 %token LBRACKET RBRACKET
 %token <string> IDENTIFIER
 %token <int> INTEGER
+%token <float> FLOAT
 %token <string> STRING
 %token EOF
 
@@ -385,6 +386,7 @@ term:
 
 factor:
   | n=INTEGER { IntLiteral n }
+  | f=FLOAT { FloatLiteral f }
   | s=STRING { StringLiteral s }
   | TRUE { BoolLiteral true }
   | FALSE { BoolLiteral false }

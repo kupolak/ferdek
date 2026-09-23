@@ -36,6 +36,7 @@ type bitwise_op =
 (* Expression - basic computational unit *)
 type expr =
   | IntLiteral of int                                    (* Integer literal *)
+  | FloatLiteral of float                                (* Liczba z przecinkiem: 3.14 *)
   | StringLiteral of string                              (* String literal *)
   | BoolLiteral of bool                                  (* Boolean literal: true (A ŻEBYŚ PAN WIEDZIAŁ), false (GÓWNO PRAWDA) *)
   | NullLiteral                                          (* Null value (W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM) *)
@@ -187,6 +188,7 @@ let string_of_bitwise_op = function
 (* Convert expression to string (simplified) *)
 let rec string_of_expr = function
   | IntLiteral n -> string_of_int n
+  | FloatLiteral f -> Printf.sprintf "%.15g" f
   | StringLiteral s -> "\"" ^ s ^ "\""
   | BoolLiteral true -> "true"
   | BoolLiteral false -> "false"

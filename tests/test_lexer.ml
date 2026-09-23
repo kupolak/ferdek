@@ -89,6 +89,7 @@ let string_of_token = function
   | RBRACKET -> "RBRACKET"
   | IDENTIFIER s -> sprintf "IDENTIFIER(%s)" s
   | INTEGER n -> sprintf "INTEGER(%d)" n
+  | FLOAT f -> sprintf "FLOAT(%g)" f
   | STRING s -> sprintf "STRING(\"%s\")" s
   | ELLIPSIS -> "ELLIPSIS"
   | EOF -> "EOF"

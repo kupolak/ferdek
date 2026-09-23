@@ -36,6 +36,7 @@ type bitwise_op =
 (* Expression - basic computational unit *)
 type expr =
   | IntLiteral of int
+  | FloatLiteral of float                                (* Liczba z przecinkiem: 3.14 *)
   | StringLiteral of string
   | BoolLiteral of bool
   | NullLiteral

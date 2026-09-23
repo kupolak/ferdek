@@ -191,7 +191,7 @@ let write_file path content =
   close_out oc
 
 (* cc zamiast gcc: na macOS i Linuksie to domyślny kompilator C *)
-let cc c_file exe = Sys.command (Printf.sprintf "cc -std=c99 -o %s %s" (Filename.quote exe) (Filename.quote c_file))
+let cc c_file exe = Sys.command (Printf.sprintf "cc -std=c99 -o %s %s -lm" (Filename.quote exe) (Filename.quote c_file))
 
 (* -c: plik .c albo (inne rozszerzenie) gotowa binarka *)
 let compile_file input_file output_file =

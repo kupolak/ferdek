@@ -324,6 +324,8 @@ rule token = parse
 
   (* Literals *)
   | '"' { read_string (Buffer.create 16) lexbuf }
+  | (digit+ '.' digit+) as f { FLOAT (float_of_string f) }
+  | '-' ((digit+ '.' digit+) as f) { FLOAT (-. (float_of_string f)) }
   | digit+ as num { INTEGER (int_of_string num) }
   (* ponytail: minus tylko jako literał ujemny; odejmowanie to PASZOŁ WON *)
   | '-' (digit+ as num) { INTEGER (- (int_of_string num)) }
