@@ -68,6 +68,8 @@ rule token = parse
   (* Keywords - CONDITIONALS AND LOOPS *)
   | "NO JAK NIE JAK TAK" { IF }
   | "A DUPA TAM" { ELSE }
+  | "AAA TO ZMIENIA POSTAĆ RZECZY" { ELSE_IF }
+  | "AAA TO ZMIENIA POSTAC RZECZY" { ELSE_IF }
   | "DO CHAŁUPY ALE JUŻ" { END_IF }
   | "DO CHALUPY ALE JUZ" { END_IF }
   | "CHLUŚNIEM BO UŚNIEM" { WHILE }

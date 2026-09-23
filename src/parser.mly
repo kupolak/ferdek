@@ -7,7 +7,7 @@ open Ast
 %token VAR_DECL VAR_INIT
 %token PRINT PRINT_INLINE PRINT_NEWLINE READ
 %token ASSIGN_START ASSIGN_OP ASSIGN_END
-%token IF ELSE END_IF
+%token IF ELSE ELSE_IF END_IF
 %token WHILE END_WHILE
 %token FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END ELLIPSIS
 %token FUNC_CALL FUNC_CALL_ASSIGN RETURN
@@ -160,10 +160,16 @@ array_access_expr:
   ;
 
 if_stmt:
-  | IF cond=expression then_block=list(statement) END_IF
-    { If (cond, then_block, None) }
-  | IF cond=expression then_block=list(statement) ELSE else_block=list(statement) END_IF
-    { If (cond, then_block, Some else_block) }
+  | IF cond=expression then_block=list(statement) rest=if_rest
+    { If (cond, then_block, rest) }
+  ;
+
+(* AAA TO ZMIENIA POSTAĆ RZECZY = else if: zagnieżdżony If w gałęzi else, z własną linią *)
+if_rest:
+  | END_IF { None }
+  | ELSE else_block=list(statement) END_IF { Some else_block }
+  | ELSE_IF cond=expression block=list(statement) rest=if_rest
+    { Some [Located ($startpos.Lexing.pos_fname, $startpos.Lexing.pos_lnum, If (cond, block, rest))] }
   ;
 
 while_stmt:

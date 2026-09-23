@@ -13,6 +13,7 @@ let string_of_token = function
   | PRINT_INLINE -> "PRINT_INLINE"
   | PRINT_NEWLINE -> "PRINT_NEWLINE"
   | NOT -> "NOT"
+  | ELSE_IF -> "ELSE_IF"
   | GREATER_EQUAL -> "GREATER_EQUAL"
   | READ -> "READ"
   | ASSIGN_START -> "ASSIGN_START"
