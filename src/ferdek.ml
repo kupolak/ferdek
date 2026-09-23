@@ -213,6 +213,8 @@ let repl () =
   let try_parse buf =
     let code = "CO JEST KURDE\n" ^ buf ^ "\n" ^ program_end in
     let lexbuf = Lexing.from_string code in
+    (* Linia z CO JEST KURDE ma numer 0 - pierwsza linia użytkownika to 1 *)
+    Lexing.set_position lexbuf { lexbuf.Lexing.lex_curr_p with Lexing.pos_lnum = 0 };
     try Ok (Some (Parser.program Lexer.token lexbuf)) with
     | Lexer.LexError msg -> Error ("Błąd leksera: Ktoś tu kłamie! " ^ msg)
     | Parser.Error ->

@@ -77,6 +77,7 @@ type stmt =
   | Throw of expr                                        (* Throw exception (O KARWASZ TWARZ) *)
   | Break                                                (* Break statement (A POCAŁUJCIE MNIE WSZYSCY W DUPĘ) *)
   | Continue                                             (* Continue statement (AKUKARACZA) *)
+  | Located of string * int * stmt                       (* Plik i linia instrukcji - do komunikatów błędów *)
 
 (* ============ HIGH-LEVEL DECLARATIONS ============ *)
 
@@ -265,6 +266,8 @@ let rec string_of_stmt indent = function
       indent ^ "break"
   | Continue ->
       indent ^ "continue"
+  | Located (_, _, s) ->
+      string_of_stmt indent s
 
 (* Convert function declaration to string *)
 let string_of_function_decl indent fdecl =

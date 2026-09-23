@@ -77,6 +77,7 @@ type stmt =
   | Throw of expr
   | Break
   | Continue
+  | Located of string * int * stmt  (* plik, linia *)
 
 (* ============ HIGH-LEVEL DECLARATIONS ============ *)
 

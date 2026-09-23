@@ -44,6 +44,15 @@ and environment = {
   parent: environment option;
 }
 
+(* Plik i linia wykonywanej instrukcji - doklejane do komunikatu błędu *)
+let current_loc = ref ("", 0)
+
+let loc_suffix () =
+  match !current_loc with
+  | (_, 0) -> ""
+  | ("", line) -> Printf.sprintf " (linia %d)" line
+  | (file, line) -> Printf.sprintf " (%s, linia %d)" file line
+
 (* Runtime exceptions *)
 exception RuntimeError of string
 exception ReturnValue of value
@@ -1710,11 +1719,16 @@ and eval_function_call env name args =
                 fdecl.params arg_values;
             end;
 
-            (* Execute function body *)
-            (try
-              List.iter (eval_stmt func_env) fdecl.body;
-              VNull (* No explicit return *)
-            with ReturnValue v -> v)
+            (* Execute function body; po powrocie pozycja wraca do instrukcji wołającej *)
+            let caller_loc = !current_loc in
+            let result =
+              (try
+                List.iter (eval_stmt func_env) fdecl.body;
+                VNull (* No explicit return *)
+              with ReturnValue v -> v)
+            in
+            current_loc := caller_loc;
+            result
         | _ -> raise (RuntimeError (Printf.sprintf "%s is not a function" name))
       with RuntimeError _ as e -> raise e
 
@@ -1917,6 +1931,10 @@ and eval_stmt env = function
       let value = eval_expr env expr in
       raise (ThrowException value)
 
+  | Located (file, line, s) ->
+      current_loc := (file, line);
+      eval_stmt env s
+
   | Break -> raise BreakLoop
 
   | Continue -> raise ContinueLoop
@@ -1988,17 +2006,18 @@ and eval_top_level_decl env = function
 let new_session () = global_env ()
 
 let eval_in env prog =
+  current_loc := ("", 0);
   try
     List.iter (eval_top_level_decl env) prog.declarations;
     Ok ()
   with
   | RuntimeError msg ->
-      Error (Printf.sprintf "Runtime error: %s" msg)
+      Error (Printf.sprintf "Runtime error: %s%s" msg (loc_suffix ()))
   | ThrowException value ->
-      Error (Printf.sprintf "Uncaught exception: %s" (string_of_value value))
+      Error (Printf.sprintf "Uncaught exception: %s%s" (string_of_value value) (loc_suffix ()))
   | Failure msg ->
-      Error (Printf.sprintf "Fatal error: %s" msg)
+      Error (Printf.sprintf "Fatal error: %s%s" msg (loc_suffix ()))
   | e ->
-      Error (Printf.sprintf "Unexpected error: %s" (Printexc.to_string e))
+      Error (Printf.sprintf "Unexpected error: %s%s" (Printexc.to_string e) (loc_suffix ()))
 
 let eval_program prog = eval_in (new_session ()) prog

@@ -6,7 +6,16 @@ open Ast
 
 exception Compile_error of string
 
-let error msg = raise (Compile_error msg)
+(* Pozycja kompilowanej instrukcji - doklejana do komunikatu *)
+let cur_loc = ref ("", 0)
+
+let error msg =
+  let suffix = match !cur_loc with
+    | (_, 0) -> ""
+    | ("", l) -> Printf.sprintf " (linia %d)" l
+    | (f, l) -> Printf.sprintf " (%s, linia %d)" f l
+  in
+  raise (Compile_error (msg ^ suffix))
 let unsupported what =
   error (Printf.sprintf "Kompilator nie obsługuje: %s. Odpal to interpreterem (ferdek plik.ferdek)." what)
 
@@ -34,6 +43,7 @@ let rec stmt_names (decl, assigned) = function
   | If (_, a, b) -> block_names (block_names (decl, assigned) a) (Option.value b ~default:[])
   | While (_, b) -> block_names (decl, assigned) b
   | Try (a, v, b) -> block_names (block_names (v :: decl, assigned) a) b
+  | Located (_, _, s) -> stmt_names (decl, assigned) s
   | _ -> (decl, assigned)
 and block_names acc stmts = List.fold_left stmt_names acc stmts
 
@@ -87,6 +97,7 @@ let rec has_try stmts = List.exists (function
   | Try _ -> true
   | If (_, a, b) -> has_try a || has_try (Option.value b ~default:[])
   | While (_, b) -> has_try b
+  | Located (_, _, s) -> has_try [s]
   | _ -> false) stmts
 
 let is_var ctx name = List.mem name ctx.locals || Hashtbl.mem ctx.globals name
@@ -243,7 +254,7 @@ let rec compile_stmt ctx indent stmt =
       if not ctx.in_function then unsupported "return poza funkcją";
       let v = match e with None -> "make_null()" | Some e -> compile_expr ctx e in
       (* Wartość liczymy przed zdjęciem handlerów - może rzucić wyjątek *)
-      Printf.sprintf "%s{ FerdekValue ret = %s; ferdek_handler = entry_handler; return ret; }" ind v
+      Printf.sprintf "%s{ FerdekValue ret = %s; ferdek_handler = entry_handler; FERDEK_AT(entry_file, entry_line); return ret; }" ind v
   | Try (try_stmts, var, catch_stmts) ->
       let h = fresh ctx "handler" in
       Printf.sprintf "%s{\n%s    Handler %s;\n%s    %s.prev = ferdek_handler;\n%s    ferdek_handler = &%s;\n%s    if (setjmp(%s.buf) == 0) {\n%s\n%s        ferdek_handler = %s.prev;\n%s    } else {\n%s        ferdek_handler = %s.prev;\n%s        %s = ferdek_exception;\n%s\n%s    }\n%s}"
@@ -253,6 +264,9 @@ let rec compile_stmt ctx indent stmt =
         (String.concat "\n" (List.map (compile_stmt ctx (indent + 2)) catch_stmts))
         ind ind
   | Throw e -> Printf.sprintf "%sferdek_throw(%s);" ind (compile_expr ctx e)
+  | Located (file, line, s) ->
+      cur_loc := (file, line);
+      Printf.sprintf "%sFERDEK_AT(%s, %d);\n%s" ind (c_string_literal file) line (compile_stmt ctx indent s)
   | Break | Continue ->
       let kw = if stmt = Break then "break;" else "continue;" in
       (match ctx.loop_handlers with
@@ -280,12 +294,14 @@ let compile_function ctx (f : function_decl) =
      ponytail: parametry nie są volatile - przypisanie do parametru w try i odczyt w catch to UB *)
   let qual = if has_try f.body then "volatile " else "" in
   let decls = "    Handler* entry_handler = ferdek_handler;"
+    :: "    const char* entry_file = ferdek_file; int entry_line = ferdek_line;"
     :: List.map (fun n -> Printf.sprintf "    %sFerdekValue %s = make_null();" qual (var_c n)) locals in
   let body = List.map (compile_stmt ctx 1) f.body in
   ctx.locals <- [];
   ctx.in_function <- false;
   String.concat "\n" ([Printf.sprintf "%s {" (fun_proto f)] @ decls @ body
-                      @ ["    ferdek_handler = entry_handler;"; "    return make_null();"; "}"])
+                      @ ["    ferdek_handler = entry_handler;"; "    FERDEK_AT(entry_file, entry_line);";
+                         "    return make_null();"; "}"])
 
 
 (* Wrapper (argc, argv) dla funkcji jako wartości; arność sprawdza call_value *)
@@ -302,6 +318,8 @@ let compile_wrapper (f : function_decl) =
 (* ============ TOP-LEVEL ============ *)
 
 let compile_top_level ctx decl =
+  (* Deklaracje (klasy, struktury...) nie mają pozycji - lepiej żadna niż cudza *)
+  (match decl with Statement _ -> () | _ -> cur_loc := ("", 0));
   match decl with
   | Statement stmt -> compile_stmt ctx 1 stmt
   | FunctionDecl _ -> ""
@@ -351,6 +369,17 @@ struct FerdekValue {
     } value;
 };
 
+/* Plik i linia wykonywanej instrukcji - jak w interpreterze */
+static const char* ferdek_file = "";
+static int ferdek_line = 0;
+#define FERDEK_AT(f, l) (ferdek_file = (f), ferdek_line = (l))
+
+static void print_loc(void) {
+    if (ferdek_line == 0) return;
+    if (ferdek_file[0]) fprintf(stderr, " (%s, linia %d)", ferdek_file, ferdek_line);
+    else fprintf(stderr, " (linia %d)", ferdek_line);
+}
+
 static void ferdek_die(const char* fmt, ...) {
     va_list ap;
     fflush(stdout);
@@ -358,6 +387,7 @@ static void ferdek_die(const char* fmt, ...) {
     va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);
+    print_loc();
     fprintf(stderr, "\n");
     exit(1);
 }
@@ -530,7 +560,9 @@ static void ferdek_throw(FerdekValue v) {
     if (ferdek_handler == NULL) {
         char* s = to_str(v);
         fflush(stdout);
-        fprintf(stderr, "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Uncaught exception: %s\n", s);
+        fprintf(stderr, "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Uncaught exception: %s", s);
+        print_loc();
+        fprintf(stderr, "\n");
         exit(1);
     }
     ferdek_exception = v;
@@ -772,6 +804,7 @@ let expand_imports load_module decls =
   expand decls
 
 let compile_program ?(load_module = fun _ -> None) prog =
+  cur_loc := ("", 0);
   let prog = { declarations = expand_imports load_module prog.declarations } in
   let ctx = { funcs = Hashtbl.create 16; globals = Hashtbl.create 64; locals = [];
               in_function = false; loop_handlers = []; counter = 0 } in

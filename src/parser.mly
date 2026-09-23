@@ -101,7 +101,13 @@ import_path:
 
 /* ============ STATEMENTS ============ */
 
+(* Każda instrukcja pamięta plik i linię - do komunikatów błędów wykonania *)
 statement:
+  | s=statement_kind
+    { Located ($startpos.Lexing.pos_fname, $startpos.Lexing.pos_lnum, s) }
+  ;
+
+statement_kind:
   | v=var_decl { v }
   | a=array_decl { a }
   | p=print_stmt { p }

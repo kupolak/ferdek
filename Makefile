@@ -93,9 +93,20 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl
+test: test-unit test-repl test-errors
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
+
+# Programy, które MUSZĄ paść z konkretnym komunikatem i pozycją - w interpreterze i po kompilacji
+test-errors: build
+	@fail=0; for t in $(basename $(wildcard tests/errors/*.ferdek)); do \
+	  for mode in "" "-r"; do \
+	    printf -- "--- błąd %s %s: " "$$mode" $$t; \
+	    if $(FERDEK) $$mode $$t.ferdek > _build/ferdek_err.out 2>&1; then echo "FAIL (nie padło)"; fail=$$((fail+1)); \
+	    elif ! diff -u $$t.out _build/ferdek_err.out; then echo "FAIL (inny komunikat)"; fail=$$((fail+1)); \
+	    else echo OK; fi; \
+	  done; \
+	done; [ $$fail -eq 0 ] || { echo "Padło testów błędów: $$fail"; exit 1; }
 
 # Sesja REPL: stan między liniami, instrukcje wieloliniowe, błędy nie kończą sesji
 test-repl: build
@@ -132,4 +143,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-repl test-compiled test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: all build clean distclean test test-unit test-repl test-errors test-compiled test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

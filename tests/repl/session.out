@@ -5,7 +5,7 @@ Instrukcje na kilka linii zbieram, aż będą kompletne. Pusta linia = porzuć.
 (Ferdek)>       ...> (Ferdek)> 5
 (Ferdek)>       ...>       ...>       ...>       ...> (Ferdek)> 10
 (Ferdek)> Błąd parsowania. Jak ten Walduś w szkole!
-(Ferdek)> Błąd: Runtime error: Undefined variable: niema
+(Ferdek)> Błąd: Runtime error: Undefined variable: niema (linia 1)
 (Ferdek)>       ...> Porzucam niedokończoną instrukcję.
 (Ferdek)> dalej dziala
 (Ferdek)> Trzeba kończyć, robota czeka... (na kanapie)
