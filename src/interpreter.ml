@@ -1958,13 +1958,19 @@ let set_module_loader loader =
   module_loader := loader
 
 (* Import a module *)
+(* Każdy moduł wykonujemy raz na sesję - jak kompilator, który wkleja go raz *)
+let imported_modules : (string, unit) Hashtbl.t = Hashtbl.create 8
+
 let rec import_module env module_name =
+  if Hashtbl.mem imported_modules module_name then () else begin
+  Hashtbl.add imported_modules module_name ();
   match !module_loader module_name with
   | Some module_ast ->
       (* Execute module in current environment *)
       List.iter (eval_top_level_decl env) module_ast.declarations
   | None ->
       raise (RuntimeError (Printf.sprintf "Nie ma takiego modułu: %s" module_name))
+  end
 
 (* ============ TOP-LEVEL DECLARATIONS ============ *)
 
@@ -2012,7 +2018,9 @@ and eval_top_level_decl env = function
 
 (* Execute program *)
 (* Sesja = środowisko globalne żyjące między kolejnymi programami (REPL) *)
-let new_session () = global_env ()
+let new_session () =
+  Hashtbl.reset imported_modules;
+  global_env ()
 
 let eval_in env prog =
   current_loc := ("", 0);

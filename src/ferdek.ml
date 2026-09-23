@@ -38,7 +38,8 @@ let find_stdlib_dir () =
   let rec find_first = function
     | [] -> None
     | dir :: rest ->
-        if Sys.file_exists dir && Sys.is_directory dir then
+        (* Samo "stdlib" nie wystarczy - np. tests/integration/stdlib to katalog testów *)
+        if Sys.file_exists (Filename.concat dir "KLAMOTY") then
           Some dir
         else
           find_first rest
@@ -71,6 +72,16 @@ let print_version () =
   Printf.printf "Ferdek - Język Prawdziwych Polaków v1.0\n";
   Printf.printf "Nie ma pracy dla ludzi z naszym wykształceniem! / Walduś, to jest język!\n"
 
+(* Import lokalny: jeśli obok pliku leży <nazwa>.ferdek, import dostaje ścieżkę do niego.
+   Dzięki temu zagnieżdżone importy liczą się od pliku, który importuje. *)
+let resolve_local_imports filename (prog : Ast.program) =
+  let dir = Filename.dirname filename in
+  { Ast.declarations = List.map (function
+      | Ast.Import name ->
+          let path = Filename.concat dir (name ^ ".ferdek") in
+          if Sys.file_exists path then Ast.Import path else Ast.Import name
+      | d -> d) prog.declarations }
+
 (* Parse a file *)
 let parse_file filename =
   try
@@ -84,7 +95,7 @@ let parse_file filename =
       lexbuf.Lexing.lex_curr_p with
       Lexing.pos_fname = filename
     };
-    (try Ok (Parser.program Lexer.token lexbuf)
+    (try Ok (resolve_local_imports filename (Parser.program Lexer.token lexbuf))
      with Parser.Error ->
        let p = lexbuf.Lexing.lex_start_p in
        Error (Printf.sprintf "Błąd Parsowania! Walduś, coś tu jest pokręcone! W %s, linia %d, kolumna %d, przy '%s'"
@@ -110,6 +121,10 @@ let load_stdlib_module module_name =
     end else
       None
   in
+  (* Ścieżka do pliku użytkownika (z resolve_local_imports) ma pierwszeństwo przed stdlib *)
+  if Filename.check_suffix module_name ".ferdek" && Sys.file_exists module_name then
+    try_load_from_path module_name
+  else
   match find_stdlib_dir () with
   | Some stdlib_dir ->
       (* First, check if it's a direct module name like "BABKA" - look in KLAMOTY/<name>/<name>.ferdek *)

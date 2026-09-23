@@ -92,6 +92,13 @@ else
 fi
 
 echo -e "${GREEN}✓ Zainstalowano: $INSTALL_DIR/ferdek${NC}"
+
+# Stdlib (KLAMOTY) tam, gdzie szuka jej ferdek - bez tego zostaje stara kopia albo żadna
+STDLIB_DIR="$HOME/.ferdek/stdlib"
+mkdir -p "$STDLIB_DIR"
+rm -rf "$STDLIB_DIR/KLAMOTY"
+cp -r stdlib/KLAMOTY "$STDLIB_DIR/"
+echo -e "${GREEN}✓ Stdlib: $STDLIB_DIR${NC}"
 echo ""
 
 # ---------------------------------------------------------
