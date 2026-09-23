@@ -532,6 +532,23 @@ let compile_top_level ctx decl =
 (* ============ RUNTIME LIBRARY ============ *)
 
 let runtime_library = {|/* Ferdek Runtime Library */
+
+/* Pamięć: z -DFERDEK_GC (ferdek dodaje go, gdy znajdzie bdw-gc) zwalnia ją odśmiecacz Boehma;
+   bez niego zwykły malloc i nic nie jest zwalniane - wystarcza krótkim programom */
+#ifdef FERDEK_GC
+#include <gc.h>
+#define fx_malloc(n) GC_MALLOC(n)
+#define fx_calloc(n, s) GC_MALLOC((n) * (s))   /* GC_MALLOC zeruje pamięć */
+#define fx_realloc(p, n) GC_REALLOC(p, n)
+#define fx_free(p) GC_FREE(p)
+#define fx_strdup(s) GC_STRDUP(s)
+#else
+#define fx_malloc malloc
+#define fx_calloc calloc
+#define fx_realloc realloc
+#define fx_free free
+#define fx_strdup strdup
+#endif
 /* Nie każdy program używa każdej funkcji runtime'u */
 #pragma GCC diagnostic ignored "-Wunused-function"
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
@@ -608,7 +625,7 @@ static FerdekValue make_null(void) { FerdekValue v; v.type = TYPE_NULL; return v
 static FerdekValue make_string(const char* s) {
     FerdekValue v;
     v.type = TYPE_STRING;
-    v.value.string_val = strdup(s);
+    v.value.string_val = fx_strdup(s);
     return v;
 }
 
@@ -623,8 +640,8 @@ static FerdekValue make_lit(const char* s) {
 static FerdekValue make_array(FerdekValue* data, int length) {
     FerdekValue v;
     v.type = TYPE_ARRAY;
-    v.value.array_val = malloc(sizeof(FerdekArray));
-    v.value.array_val->data = malloc(sizeof(FerdekValue) * (length > 0 ? length : 1));
+    v.value.array_val = fx_malloc(sizeof(FerdekArray));
+    v.value.array_val->data = fx_malloc(sizeof(FerdekValue) * (length > 0 ? length : 1));
     if (length > 0) memcpy(v.value.array_val->data, data, sizeof(FerdekValue) * length);
     v.value.array_val->length = length;
     return v;
@@ -674,7 +691,7 @@ static void buf_add(StrBuf* b, const char* t) {
     size_t n = strlen(t);
     if (b->len + n + 1 > b->cap) {
         b->cap = (b->len + n + 1) * 2;
-        b->s = realloc(b->s, b->cap);
+        b->s = fx_realloc(b->s, b->cap);
     }
     memcpy(b->s + b->len, t, n + 1);
     b->len += n;
@@ -689,7 +706,7 @@ static int cmp_key_ptr(const void* a, const void* b) { return strcmp(*(char* con
 
 /* Klucze posortowane - jak w interpreterze; zwraca nową tablicę wskaźników */
 static char** map_sorted_keys(FerdekMap* m) {
-    char** keys = malloc(sizeof(char*) * (m->len > 0 ? m->len : 1));
+    char** keys = fx_malloc(sizeof(char*) * (m->len > 0 ? m->len : 1));
     memcpy(keys, m->keys, sizeof(char*) * m->len);
     qsort(keys, m->len, sizeof(char*), cmp_key_ptr);
     return keys;
@@ -701,15 +718,15 @@ static char* to_str(FerdekValue v) {
     switch (v.type) {
         case TYPE_INT: case TYPE_BYTE: case TYPE_SHORT: case TYPE_FIXED:
             snprintf(num, sizeof num, "%lld", v.value.int_val);
-            return strdup(num);
-        case TYPE_STRING: return strdup(v.value.string_val);
+            return fx_strdup(num);
+        case TYPE_STRING: return fx_strdup(v.value.string_val);
         case TYPE_FLOAT:
             /* jak string_of_float_ferdek: %.15g i ".0" dla całych */
             snprintf(num, sizeof num - 2, "%.15g", v.value.float_val);
             if (!strpbrk(num, ".en")) strcat(num, ".0");
-            return strdup(num);
-        case TYPE_BOOL: return strdup(v.value.bool_val ? "true" : "false");
-        case TYPE_NULL: return strdup("null");
+            return fx_strdup(num);
+        case TYPE_BOOL: return fx_strdup(v.value.bool_val ? "true" : "false");
+        case TYPE_NULL: return fx_strdup("null");
         case TYPE_MAP: {
             FerdekMap* m = v.value.map_val;
             char** keys = map_sorted_keys(m);
@@ -721,21 +738,21 @@ static char* to_str(FerdekValue v) {
                 buf_add(&b, keys[i]);
                 buf_add(&b, ": ");
                 buf_add(&b, item);
-                free(item);
+                fx_free(item);
             }
             buf_add(&b, "}");
-            free(keys);
+            fx_free(keys);
             return b.s;
         }
-        case TYPE_OBJECT: return strdup("<object>");
-        case TYPE_FILE: return strdup("<file handle>");
+        case TYPE_OBJECT: return fx_strdup("<object>");
+        case TYPE_FILE: return fx_strdup("<file handle>");
         case TYPE_POINTER: {
             StrBuf b = {0};
             char* inner = to_str(*v.value.ptr_val);
             buf_add(&b, "<pointer to ");
             buf_add(&b, inner);
             buf_add(&b, ">");
-            free(inner);
+            fx_free(inner);
             return b.s;
         }
         case TYPE_FUNCTION: {
@@ -752,13 +769,13 @@ static char* to_str(FerdekValue v) {
                 char* item = to_str(v.value.array_val->data[i]);
                 if (i > 0) buf_add(&b, ", ");
                 buf_add(&b, item);
-                free(item);
+                fx_free(item);
             }
             buf_add(&b, "]");
             return b.s;
         }
     }
-    return strdup("?");
+    return fx_strdup("?");
 }
 
 /* Tekstowa postać bez alokacji dla tekstu i liczb całkowitych; inne typy przez to_str (*owned do zwolnienia) */
@@ -782,11 +799,11 @@ static FerdekValue op_add(FerdekValue a, FerdekValue b) {
         const char* x = str_view(a, na, sizeof na, &oa);
         const char* y = str_view(b, nb, sizeof nb, &ob);
         size_t lx = strlen(x), ly = strlen(y);
-        char* s = malloc(lx + ly + 1);
+        char* s = fx_malloc(lx + ly + 1);
         memcpy(s, x, lx);
         memcpy(s + lx, y, ly + 1);
-        free(oa);
-        free(ob);
+        fx_free(oa);
+        fx_free(ob);
         FerdekValue v;
         v.type = TYPE_STRING;
         v.value.string_val = s;
@@ -908,17 +925,17 @@ static void map_put(FerdekMap* m, const char* key, FerdekValue v) {
     if (i >= 0) { m->vals[i] = v; return; }
     if (m->len == m->cap) {
         m->cap = m->cap ? m->cap * 2 : 8;
-        m->keys = realloc(m->keys, sizeof(char*) * m->cap);
-        m->vals = realloc(m->vals, sizeof(FerdekValue) * m->cap);
+        m->keys = fx_realloc(m->keys, sizeof(char*) * m->cap);
+        m->vals = fx_realloc(m->vals, sizeof(FerdekValue) * m->cap);
     }
-    m->keys[m->len] = strdup(key);
+    m->keys[m->len] = fx_strdup(key);
     m->vals[m->len++] = v;
 }
 
 static FerdekValue make_object(void) {
     FerdekValue v;
     v.type = TYPE_OBJECT;
-    v.value.map_val = calloc(1, sizeof(FerdekMap));
+    v.value.map_val = fx_calloc(1, sizeof(FerdekMap));
     return v;
 }
 
@@ -935,7 +952,7 @@ static void field_set(FerdekMap* self, const char* name, FerdekValue v) { map_pu
 static char* field_key(FerdekValue key) {
     char num[32];
     if (key.type == TYPE_STRING) return key.value.string_val;
-    if (key.type == TYPE_INT) { snprintf(num, sizeof num, "%lld", key.value.int_val); return strdup(num); }
+    if (key.type == TYPE_INT) { snprintf(num, sizeof num, "%lld", key.value.int_val); return fx_strdup(num); }
     ferdek_die("Nazwa pola obiektu musi być tekstem, a jest: %s", to_str(key));
     return NULL;
 }
@@ -975,7 +992,7 @@ static void index_set(FerdekValue c, FerdekValue key, FerdekValue v) {
 static FerdekValue make_pointer(FerdekValue target) {
     FerdekValue v;
     v.type = TYPE_POINTER;
-    v.value.ptr_val = malloc(sizeof(FerdekValue));
+    v.value.ptr_val = fx_malloc(sizeof(FerdekValue));
     *v.value.ptr_val = target;
     return v;
 }
@@ -1045,7 +1062,7 @@ static FerdekValue b_kanapa_usiadz(int argc, FerdekValue* argv) {
     for (int i = 0; i < argc; i++) {
         char* s = to_str(argv[i]);
         buf_add(&b, s);
-        free(s);
+        fx_free(s);
     }
     return own_string(b.s);
 }
@@ -1061,10 +1078,10 @@ static int utf8_char_len(const char* s) {
 /* Liczba znaków; offsets (jeśli podane) dostaje bajtowy początek każdego znaku + koniec */
 static long long utf8_index(const char* s, long long** offsets) {
     long long n = 0, cap = 16;
-    long long* off = offsets ? malloc(sizeof(long long) * cap) : NULL;
+    long long* off = offsets ? fx_malloc(sizeof(long long) * cap) : NULL;
     const char* p = s;
     while (*p) {
-        if (off) { if (n + 1 >= cap) { cap *= 2; off = realloc(off, sizeof(long long) * cap); } off[n] = p - s; }
+        if (off) { if (n + 1 >= cap) { cap *= 2; off = fx_realloc(off, sizeof(long long) * cap); } off[n] = p - s; }
         p += utf8_char_len(p);
         n++;
     }
@@ -1078,7 +1095,7 @@ static FerdekValue b_kanapa_rozciagnij(int argc, FerdekValue* argv) {
     long long chars = utf8_index(s, NULL);
     if (chars >= target) return own_string(s);
     size_t len = strlen(s);
-    s = realloc(s, len + (target - chars) + 1);
+    s = fx_realloc(s, len + (target - chars) + 1);
     memset(s + len, ' ', target - chars);
     s[len + (target - chars)] = '\0';
     return own_string(s);
@@ -1104,7 +1121,7 @@ static FerdekValue b_kanapa_przesun(int argc, FerdekValue* argv) {
     for (;;) {
         char* hit = seplen ? strstr(p, sep) : NULL;
         if (hit) *hit = '\0';
-        arr->data = realloc(arr->data, sizeof(FerdekValue) * (arr->length + 1));
+        arr->data = fx_realloc(arr->data, sizeof(FerdekValue) * (arr->length + 1));
         arr->data[arr->length++] = make_string(p);
         if (!hit) break;
         p = hit + seplen;
@@ -1122,7 +1139,7 @@ static FerdekValue b_kanapa_poskladaj(int argc, FerdekValue* argv) {
         char* item = to_str(arr->data[i]);
         if (i > 0) buf_add(&b, sep);
         buf_add(&b, item);
-        free(item);
+        fx_free(item);
     }
     return own_string(b.s);
 }
@@ -1162,7 +1179,7 @@ static FerdekValue b_kanapa_ile(int argc, FerdekValue* argv) {
     char num[32];
     char* owned;
     FerdekValue n = make_int(utf8_index(str_view(argv[0], num, sizeof num, &owned), NULL));
-    free(owned);
+    fx_free(owned);
     return n;
 }
 
@@ -1269,9 +1286,9 @@ static FerdekValue b_wersalka_posklada(int argc, FerdekValue* argv) {
     FerdekArray* arr = list_arg(argv[0], "POSKŁADAJ WERSALKĘ: pierwszy argument musi być tablicą");
     sort_fn = argc == 2 ? function_arg("POSKŁADAJ WERSALKĘ", argv[1]) : make_null();
     FerdekValue out = make_array(arr->data, arr->length);
-    FerdekValue* tmp = malloc(sizeof(FerdekValue) * (arr->length > 0 ? arr->length : 1));
+    FerdekValue* tmp = fx_malloc(sizeof(FerdekValue) * (arr->length > 0 ? arr->length : 1));
     merge_sort(out.value.array_val->data, tmp, arr->length);
-    free(tmp);
+    fx_free(tmp);
     return out;
 }
 
@@ -1295,7 +1312,7 @@ static FerdekValue b_wersalka_przefiltruj(int argc, FerdekValue* argv) {
     FerdekArray* arr = list_arg(argv[0], "PRZEFILTRUJ WERSALKĘ: pierwszy argument musi być tablicą");
     FerdekValue f = function_arg("PRZEFILTRUJ WERSALKĘ", argv[1]);
     FerdekValue out = make_array(NULL, 0);
-    out.value.array_val->data = malloc(sizeof(FerdekValue) * (arr->length > 0 ? arr->length : 1));
+    out.value.array_val->data = fx_malloc(sizeof(FerdekValue) * (arr->length > 0 ? arr->length : 1));
     for (int i = 0; i < arr->length; i++)
         if (to_bool(call_value(f, f.value.fn_val.name, 1, &arr->data[i])))
             out.value.array_val->data[out.value.array_val->length++] = arr->data[i];
@@ -1361,7 +1378,7 @@ static FerdekMap* map_arg(FerdekValue v, const char* msg) {
 static FerdekValue b_szafka_otworz(int argc, FerdekValue* argv) {
     FerdekValue v;
     v.type = TYPE_MAP;
-    v.value.map_val = calloc(1, sizeof(FerdekMap));
+    v.value.map_val = fx_calloc(1, sizeof(FerdekMap));
     return v;
 }
 
@@ -1369,11 +1386,11 @@ static FerdekValue b_szafka_wloz(int argc, FerdekValue* argv) {
     FerdekMap* m = map_arg(argv[0], "WŁÓŻ DO SZAFKI: pierwszy argument musi być szafką (mapą)");
     char* key = to_str(argv[1]);
     int i = map_find(m, key);
-    if (i >= 0) { m->vals[i] = argv[2]; free(key); return make_null(); }
+    if (i >= 0) { m->vals[i] = argv[2]; fx_free(key); return make_null(); }
     if (m->len == m->cap) {
         m->cap = m->cap ? m->cap * 2 : 8;
-        m->keys = realloc(m->keys, sizeof(char*) * m->cap);
-        m->vals = realloc(m->vals, sizeof(FerdekValue) * m->cap);
+        m->keys = fx_realloc(m->keys, sizeof(char*) * m->cap);
+        m->vals = fx_realloc(m->vals, sizeof(FerdekValue) * m->cap);
     }
     m->keys[m->len] = key;
     m->vals[m->len++] = argv[2];
@@ -1384,7 +1401,7 @@ static FerdekValue b_szafka_wyjmij(int argc, FerdekValue* argv) {
     FerdekMap* m = map_arg(argv[0], "WYJMIJ Z SZAFKI: pierwszy argument musi być szafką (mapą)");
     char* key = to_str(argv[1]);
     int i = map_find(m, key);
-    free(key);
+    fx_free(key);
     return i >= 0 ? m->vals[i] : make_null();
 }
 
@@ -1392,9 +1409,9 @@ static FerdekValue b_szafka_wyrzuc(int argc, FerdekValue* argv) {
     FerdekMap* m = map_arg(argv[0], "WYRZUĆ ZE SZAFKI: pierwszy argument musi być szafką (mapą)");
     char* key = to_str(argv[1]);
     int i = map_find(m, key);
-    free(key);
+    fx_free(key);
     if (i >= 0) {
-        free(m->keys[i]);
+        fx_free(m->keys[i]);
         m->keys[i] = m->keys[m->len - 1];   /* kolejność w środku bez znaczenia - wypisujemy posortowane */
         m->vals[i] = m->vals[m->len - 1];
         m->len--;
@@ -1406,7 +1423,7 @@ static FerdekValue b_szafka_czy_w(int argc, FerdekValue* argv) {
     FerdekMap* m = map_arg(argv[0], "CZY W SZAFCE: pierwszy argument musi być szafką (mapą)");
     char* key = to_str(argv[1]);
     bool found = map_find(m, key) >= 0;
-    free(key);
+    fx_free(key);
     return make_bool(found);
 }
 
@@ -1414,10 +1431,10 @@ static FerdekValue b_szafka_szufladki(int argc, FerdekValue* argv) {
     FerdekMap* m = map_arg(argv[0], "WSZYSTKIE SZUFLADKI: argument musi być szafką (mapą)");
     char** keys = map_sorted_keys(m);
     FerdekValue out = make_array(NULL, 0);
-    out.value.array_val->data = malloc(sizeof(FerdekValue) * (m->len > 0 ? m->len : 1));
+    out.value.array_val->data = fx_malloc(sizeof(FerdekValue) * (m->len > 0 ? m->len : 1));
     for (int i = 0; i < m->len; i++) out.value.array_val->data[i] = make_string(keys[i]);
     out.value.array_val->length = m->len;
-    free(keys);
+    fx_free(keys);
     return out;
 }
 
@@ -1503,10 +1520,10 @@ static FerdekValue b_wypompuj(int argc, FerdekValue* argv) {
     ssize_t n;
     while ((n = getline(&line, &cap, argv[0].value.file_val.f)) != -1) {
         if (n > 0 && line[n - 1] == '\n') line[n - 1] = '\0';
-        arr->data = realloc(arr->data, sizeof(FerdekValue) * (arr->length + 1));
+        arr->data = fx_realloc(arr->data, sizeof(FerdekValue) * (arr->length + 1));
         arr->data[arr->length++] = make_string(line);
     }
-    free(line);
+    free(line);   /* bufor z getline - systemowy malloc */
     return out;
 }
 
@@ -1534,7 +1551,7 @@ static FerdekValue b_co_w_kiblu(int argc, FerdekValue* argv) {
     struct dirent* e;
     while ((e = readdir(d)) != NULL) {
         if (strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0) continue;
-        arr->data = realloc(arr->data, sizeof(FerdekValue) * (arr->length + 1));
+        arr->data = fx_realloc(arr->data, sizeof(FerdekValue) * (arr->length + 1));
         arr->data[arr->length++] = make_string(e->d_name);
     }
     closedir(d);
@@ -1565,10 +1582,10 @@ static void wykop(const char* path) {
             struct dirent* e;
             while ((e = readdir(d)) != NULL) {
                 if (strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0) continue;
-                char* full = malloc(strlen(path) + strlen(e->d_name) + 2);
+                char* full = fx_malloc(strlen(path) + strlen(e->d_name) + 2);
                 sprintf(full, "%s/%s", path, e->d_name);
                 wykop(full);
-                free(full);
+                fx_free(full);
             }
             closedir(d);
         }
@@ -1626,11 +1643,11 @@ static ZoneBlock* block_arg(FerdekValue p, const char* not_ptr, const char* bad_
 static FerdekValue b_daj_hajs(int argc, FerdekValue* argv) {
     long long size = to_int(argv[0]), tag = to_int(argv[1]);
     if (size <= 0) ferdek_die("DAJ MI HAJS: rozmiar musi być dodatni");
-    zone = realloc(zone, sizeof(ZoneBlock) * (zone_count + 1));
+    zone = fx_realloc(zone, sizeof(ZoneBlock) * (zone_count + 1));
     ZoneBlock* b = &zone[zone_count];
     b->size = size;
     b->tag = int_to_tag(tag);
-    b->data = malloc(sizeof(FerdekValue) * size);
+    b->data = fx_malloc(sizeof(FerdekValue) * size);
     for (long long i = 0; i < size; i++) b->data[i] = make_null();
     b->alive = true;
     zone_allocated += size;
@@ -1739,8 +1756,8 @@ static FerdekScreen* screen_arg(FerdekValue p, const char* not_ptr, const char* 
 static FerdekValue b_wlacz_tv(int argc, FerdekValue* argv) {
     long long w = to_int(argv[0]), h = to_int(argv[1]);
     if (w <= 0 || h <= 0) ferdek_die("WŁĄCZ TELEWIZOR: szerokość i wysokość muszą być dodatnie");
-    screens = realloc(screens, sizeof(FerdekScreen) * (screen_count + 1));
-    screens[screen_count] = (FerdekScreen){ w, h, calloc(w * h, sizeof(long long)), true };
+    screens = fx_realloc(screens, sizeof(FerdekScreen) * (screen_count + 1));
+    screens[screen_count] = (FerdekScreen){ w, h, fx_calloc(w * h, sizeof(long long)), true };
     return make_pointer(make_int(screen_count++));
 }
 
@@ -1781,8 +1798,8 @@ static Lookup* lookup_arg(FerdekValue p, const char* not_ptr, const char* bad) {
 static FerdekValue b_stworz_tabele(int argc, FerdekValue* argv) {
     long long size = to_int(argv[0]);
     if (size <= 0) ferdek_die("STWÓRZ TABELĘ: rozmiar musi być dodatni");
-    lookups = realloc(lookups, sizeof(Lookup) * (lookup_count + 1));
-    lookups[lookup_count] = (Lookup){ size, calloc(size, sizeof(long long)) };
+    lookups = fx_realloc(lookups, sizeof(Lookup) * (lookup_count + 1));
+    lookups[lookup_count] = (Lookup){ size, fx_calloc(size, sizeof(long long)) };
     return make_pointer(make_int(lookup_count++));
 }
 
@@ -1831,13 +1848,13 @@ static FerdekValue b_czytaj(int argc, FerdekValue* argv) {
         long long size = to_int(argv[1]);
         if (argv[0].type != TYPE_FILE || !argv[0].value.file_val.input)
             ferdek_die("CZYTAJ GAZETĘ: pierwszy argument musi być uchwytem pliku do odczytu");
-        unsigned char* buf = malloc(size > 0 ? size : 1);
+        unsigned char* buf = fx_malloc(size > 0 ? size : 1);
         size_t n = fread(buf, 1, size, argv[0].value.file_val.f);
         FerdekValue out = make_array(NULL, 0);
-        out.value.array_val->data = malloc(sizeof(FerdekValue) * (n > 0 ? n : 1));
+        out.value.array_val->data = fx_malloc(sizeof(FerdekValue) * (n > 0 ? n : 1));
         for (size_t i = 0; i < n; i++) out.value.array_val->data[i] = make_typed(TYPE_BYTE, buf[i]);
         out.value.array_val->length = (int)n;
-        free(buf);
+        fx_free(buf);
         return out;
     }
     if (argc == 1) {
@@ -1899,7 +1916,7 @@ static FerdekValue b_polala_krew(int argc, FerdekValue* argv) {
             if ((spec == 'd' || spec == 'i') && next < argc) {
                 snprintf(num, sizeof num, "%lld", to_int(argv[next++])); buf_add(&b, num); p += 2; continue;
             }
-            if (spec == 's' && next < argc) { char* s = to_str(argv[next++]); buf_add(&b, s); free(s); p += 2; continue; }
+            if (spec == 's' && next < argc) { char* s = to_str(argv[next++]); buf_add(&b, s); fx_free(s); p += 2; continue; }
             if (spec == '%') { buf_add(&b, "%"); p += 2; continue; }
             if (next >= argc) { buf_add(&b, "%"); p += 1; continue; }   /* brak argumentów: zostaw samo % */
             char keep[3] = { '%', spec, '\0' };
@@ -1945,7 +1962,7 @@ static FerdekValue b_gniazdko_wyslij(int argc, FerdekValue* argv) {
     if (d.type == TYPE_STRING) { data = d.value.string_val; len = strlen(data); }
     else if (d.type == TYPE_ARRAY) {
         len = d.value.array_val->length;
-        data = malloc(len > 0 ? len : 1);
+        data = fx_malloc(len > 0 ? len : 1);
         for (size_t i = 0; i < len; i++) data[i] = (char)(to_int(d.value.array_val->data[i]) & 0xFF);
     } else { ferdek_die("GNIAZDKO_WYSLIJ: dane muszą być tekstem albo tablicą bajtów"); return make_null(); }
     struct sockaddr_in addr;
@@ -1963,7 +1980,7 @@ static FerdekValue b_gniazdko_wyslij(int argc, FerdekValue* argv) {
 static FerdekValue b_gniazdko_odbierz(int argc, FerdekValue* argv) {
     int fd = (int)to_int(argv[0]);
     long long size = to_int(argv[1]);
-    char* buf = malloc(size + 1);
+    char* buf = fx_malloc(size + 1);
     struct sockaddr_in from;
     socklen_t flen = sizeof from;
     ssize_t n = recvfrom(fd, buf, size, 0, (struct sockaddr*)&from, &flen);
@@ -1987,7 +2004,7 @@ static FerdekValue b_gniazdko_zamknij(int argc, FerdekValue* argv) {
 
 static FerdekValue zeros(long long n) {
     FerdekValue v = make_array(NULL, 0);
-    v.value.array_val->data = malloc(sizeof(FerdekValue) * n);
+    v.value.array_val->data = fx_malloc(sizeof(FerdekValue) * n);
     for (long long i = 0; i < n; i++) v.value.array_val->data[i] = make_int(0);
     v.value.array_val->length = (int)n;
     return v;
@@ -2016,13 +2033,13 @@ static FerdekValue b_tablica_3d(int argc, FerdekValue* argv) {
 static void print_value(FerdekValue v) {
     char* s = to_str(v);
     puts(s);
-    free(s);
+    fx_free(s);
 }
 
 static void print_inline(FerdekValue v) {
     char* s = to_str(v);
     fputs(s, stdout);
-    free(s);
+    fx_free(s);
 }
 
 static FerdekValue read_value(void) {
@@ -2155,6 +2172,9 @@ let compile_program ?(load_module = fun _ -> None) prog =
     @ method_wrappers @ [""] @ constructors @ [
     "";
     "int main(void) {";
+    "#ifdef FERDEK_GC";
+    "    GC_INIT();";
+    "#endif";
     "    clock_gettime(CLOCK_MONOTONIC, &program_start);";
   ] @ main_body @ [
     "    return 0;";

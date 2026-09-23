@@ -14,13 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Grafika (X11) jest częścią biblioteki, więc potrzebne są nagłówki i libX11
+      # Grafika (X11) jest częścią biblioteki, więc potrzebne są nagłówki i libX11;
+      # bdw-gc / libgc-dev - odśmiecacz dla skompilowanych programów (opcjonalny, ale testujemy z nim)
       - name: X11 (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libx11-dev
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev libgc-dev
       - name: X11 (macOS)
         if: runner.os == 'macOS'
-        run: brew install libx11
+        run: brew install libx11 bdw-gc
 
       - uses: ocaml/setup-ocaml@v3
         with:

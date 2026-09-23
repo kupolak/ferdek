@@ -141,6 +141,11 @@ linked with `-lX11`). Compiled programs print exactly what the interpreter print
 error messages - `make test` and a fuzzer check this. The only things it still rejects are a
 class name used as a value and an object field used as a loop counter.
 
+Compiled programs are optimized (`-O2`, 7-23x faster than the interpreter on `make bench`). If the
+Boehm garbage collector is installed (`brew install bdw-gc`, `apt install libgc-dev`), `ferdek -c`
+uses it automatically, so long-running programs keep a small memory footprint; without it memory
+is never freed, which is fine for short programs.
+
 ## Example Program
 
 ```ferdek

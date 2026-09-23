@@ -257,7 +257,14 @@ let cc c_file exe =
     try ignore (Str.search_forward (Str.regexp_string "X11/Xlib.h") code 0);
         " -I/opt/X11/include -I/opt/homebrew/include -I/usr/local/include -L/opt/X11/lib -L/opt/homebrew/lib -L/usr/local/lib -lX11"
     with Not_found -> "" in
-  Sys.command (Printf.sprintf "cc -std=c99 -O2 -o %s %s -lm%s" (Filename.quote exe) (Filename.quote c_file) x11)
+  (* Odśmiecacz Boehma, jeśli jest w systemie (Homebrew, /usr/local, pakiet libgc-dev) *)
+  let gc =
+    List.find_map (fun (inc, lib) ->
+      if Sys.file_exists (Filename.concat inc "gc.h")
+      then Some (Printf.sprintf " -DFERDEK_GC -I%s -L%s -lgc" inc lib) else None)
+      ["/opt/homebrew/include", "/opt/homebrew/lib"; "/usr/local/include", "/usr/local/lib"; "/usr/include", "/usr/lib"]
+    |> Option.value ~default:"" in
+  Sys.command (Printf.sprintf "cc -std=c99 -O2 -o %s %s -lm%s%s" (Filename.quote exe) (Filename.quote c_file) x11 gc)
 
 (* -c: plik .c albo (inne rozszerzenie) gotowa binarka *)
 let compile_file input_file output_file =
