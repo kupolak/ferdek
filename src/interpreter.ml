@@ -293,17 +293,19 @@ let eval_arith_op op v1 v2 =
   )
 
 (* Evaluate comparison operator *)
+(* Porównanie trójwartościowe (<0, 0, >0). Stringi jako tekst. Tekst z liczbą: przy
+   równości po prostu różne, przy porządku błąd - chyba że tekst jest liczbą ("5") *)
+let compare_values ?(equality = false) v1 v2 =
+  match v1, v2 with
+  | VString a, VString b -> compare a b
+  | _ when is_numeric v1 && is_numeric v2 && (is_float v1 || is_float v2) ->
+      compare (to_float v1) (to_float v2)
+  | _ when is_numeric v1 && is_numeric v2 -> compare (to_int v1) (to_int v2)
+  | _ when equality -> 1
+  | _ -> raise (RuntimeError "Nie można porównać tekstu z liczbą")
+
 let eval_comparison_op op v1 v2 =
-  (* Stringi porównujemy jako tekst. Tekst z liczbą: == / != to po prostu różne,
-     > / < to błąd - chyba że tekst jest liczbą ("5") *)
-  let c = match v1, v2 with
-    | VString a, VString b -> compare a b
-    | _ when is_numeric v1 && is_numeric v2 && (is_float v1 || is_float v2) ->
-        compare (to_float v1) (to_float v2)
-    | _ when is_numeric v1 && is_numeric v2 -> compare (to_int v1) (to_int v2)
-    | _ when op = Equal || op = NotEqual -> 1
-    | _ -> raise (RuntimeError "Nie można porównać tekstu z liczbą")
-  in
+  let c = compare_values ~equality:(op = Equal || op = NotEqual) v1 v2 in
   VBool (match op with
     | Equal -> c = 0
     | NotEqual -> c <> 0
@@ -474,63 +476,59 @@ and eval_function_call env name args =
        | _ -> ());
       impl env args
   | None ->
-      (* Try to find user-defined function *)
-      try
-        let func = get_var env name in
-        match func with
-        | VFunction (fdecl, closure_env) ->
-            (* Create new environment for function execution *)
-            let func_env = create_env (Some closure_env) in
+      (* Funkcja użytkownika (także trzymana w zmiennej) *)
+      (match get_var env name with
+       | VFunction (fdecl, closure_env) ->
+           apply_function name fdecl closure_env (List.map (eval_expr env) args)
+       | _ -> raise (RuntimeError (Printf.sprintf "%s to nie funkcja" name)))
 
-            (* Evaluate arguments *)
-            let arg_values = List.map (eval_expr env) args in
+(* Wywołanie funkcji użytkownika z gotowymi wartościami argumentów (też z builtinów, np. sortowania) *)
+and apply_function name (fdecl : function_decl) closure_env arg_values =
+    let func_env = create_env (Some closure_env) in
+    (* Bind parameters *)
+    let num_params = List.length fdecl.params in
+    let num_args = List.length arg_values in
 
-            (* Bind parameters *)
-            let num_params = List.length fdecl.params in
-            let num_args = List.length arg_values in
+    if fdecl.is_variadic then begin
+      (* Variadic function - must have at least as many args as fixed params *)
+      if num_args < num_params then
+        raise (RuntimeError (Printf.sprintf "Funkcja %s oczekuje co najmniej %s, podano %d"
+                              name (Errors.argumentow num_params) num_args));
 
-            if fdecl.is_variadic then begin
-              (* Variadic function - must have at least as many args as fixed params *)
-              if num_args < num_params then
-                raise (RuntimeError (Printf.sprintf "Funkcja %s oczekuje co najmniej %s, podano %d"
-                                      name (Errors.argumentow num_params) num_args));
+      (* Bind fixed parameters *)
+      let fixed_args, var_args =
+        let rec split n lst =
+          if n = 0 then ([], lst)
+          else match lst with
+            | [] -> ([], [])
+            | x::xs -> let (a, b) = split (n-1) xs in (x::a, b)
+        in split num_params arg_values
+      in
+      List.iter2 (fun param value -> define_var func_env param value)
+        fdecl.params fixed_args;
 
-              (* Bind fixed parameters *)
-              let fixed_args, var_args =
-                let rec split n lst =
-                  if n = 0 then ([], lst)
-                  else match lst with
-                    | [] -> ([], [])
-                    | x::xs -> let (a, b) = split (n-1) xs in (x::a, b)
-                in split num_params arg_values
-              in
-              List.iter2 (fun param value -> define_var func_env param value)
-                fdecl.params fixed_args;
+      (* Store variadic args as varargs array *)
+      define_var func_env "varargs" (VArray (Array.of_list var_args));
+    end else begin
+      (* Non-variadic function - exact match required *)
+      if num_params <> num_args then
+        raise (RuntimeError (Printf.sprintf "Funkcja %s oczekuje %s, podano %d"
+                              name (Errors.argumentow num_params) num_args));
 
-              (* Store variadic args as varargs array *)
-              define_var func_env "varargs" (VArray (Array.of_list var_args));
-            end else begin
-              (* Non-variadic function - exact match required *)
-              if num_params <> num_args then
-                raise (RuntimeError (Printf.sprintf "Funkcja %s oczekuje %s, podano %d"
-                                      name (Errors.argumentow num_params) num_args));
+      List.iter2 (fun param value -> define_var func_env param value)
+        fdecl.params arg_values;
+    end;
 
-              List.iter2 (fun param value -> define_var func_env param value)
-                fdecl.params arg_values;
-            end;
-
-            (* Execute function body; po powrocie pozycja wraca do instrukcji wołającej *)
-            let caller_loc = !current_loc in
-            let result =
-              (try
-                List.iter (eval_stmt func_env) fdecl.body;
-                VNull (* No explicit return *)
-              with ReturnValue v -> v)
-            in
-            current_loc := caller_loc;
-            result
-        | _ -> raise (RuntimeError (Printf.sprintf "%s to nie funkcja" name))
-      with RuntimeError _ as e -> raise e
+    (* Execute function body; po powrocie pozycja wraca do instrukcji wołającej *)
+    let caller_loc = !current_loc in
+    let result =
+      (try
+        List.iter (eval_stmt func_env) fdecl.body;
+        VNull (* No explicit return *)
+      with ReturnValue v -> v)
+    in
+    current_loc := caller_loc;
+    result
 
 (* Evaluate object creation *)
 and eval_new_object env class_name args =
@@ -777,6 +775,11 @@ let set_module_loader loader =
 let imported_modules : (string, unit) Hashtbl.t = Hashtbl.create 8
 
 (* ============ BUILTINS ============ *)
+
+(* Funkcja przekazana builtinowi (np. do sortowania) jako OCamlowa funkcja na wartościach *)
+let function_arg builtin = function
+  | VFunction (fdecl, closure_env) -> apply_function fdecl.name fdecl closure_env
+  | _ -> raise (RuntimeError (builtin ^ ": drugi argument musi być funkcją"))
 
 (* Wbudowane funkcje: nazwy (z wariantami), liczba argumentów (None = dowolna), implementacja.
    Liczbę argumentów sprawdza eval_function_call; z tej tabeli czyta też ferdek --check. *)
@@ -2088,6 +2091,36 @@ let () =
             with Unix.Unix_error (err, fn, _) ->
               raise (RuntimeError (Printf.sprintf "GNIAZDKO_ZAMKNIJ: %s: %s" fn (Unix.error_message err))))
        | _ -> raise (RuntimeError "GNIAZDKO_ZAMKNIJ oczekuje 1 argumentu (sockfd)")));
+
+  (* WERSALKA: sortowanie, odwracanie, map, filter - zawsze nowa tablica *)
+  ["POSKŁADAJ WERSALKĘ"], None, (fun env args ->
+      let arr, cmp = match List.map (eval_expr env) args with
+        | [VArray a] -> a, (fun x y -> compare_values x y)
+        | [VArray a; f] ->
+            let f = function_arg "POSKŁADAJ WERSALKĘ" f in
+            a, (fun x y -> let r = f [x; y] in compare (to_float r) 0.0)
+        | [_] | [_; _] -> raise (RuntimeError "POSKŁADAJ WERSALKĘ: pierwszy argument musi być tablicą")
+        | _ -> raise (RuntimeError "POSKŁADAJ WERSALKĘ oczekuje 1 albo 2 argumentów")
+      in
+      (* stable_sort = merge sort, jak w runtime C - przy remisach ta sama kolejność *)
+      VArray (Array.of_list (List.stable_sort cmp (Array.to_list arr))));
+
+  ["ODWRÓĆ WERSALKĘ"], Some 1, (fun env args ->
+      match eval_expr env (List.hd args) with
+      | VArray a -> VArray (Builtins_list.wersalka_odwroc a)
+      | _ -> raise (RuntimeError "ODWRÓĆ WERSALKĘ: argument musi być tablicą"));
+
+  ["PRZERABIAJ WERSALKĘ"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a; f] -> let f = function_arg "PRZERABIAJ WERSALKĘ" f in VArray (Array.map (fun x -> f [x]) a)
+      | _ -> raise (RuntimeError "PRZERABIAJ WERSALKĘ: pierwszy argument musi być tablicą"));
+
+  ["PRZEFILTRUJ WERSALKĘ"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a; f] ->
+          let f = function_arg "PRZEFILTRUJ WERSALKĘ" f in
+          VArray (Array.of_list (List.filter (fun x -> to_bool (f [x])) (Array.to_list a)))
+      | _ -> raise (RuntimeError "PRZEFILTRUJ WERSALKĘ: pierwszy argument musi być tablicą"));
   ]
 
 

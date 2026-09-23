@@ -70,6 +70,10 @@ let builtins = [
   ["POŁÓŻ NA WERSALCE"], ("b_wersalka_poloz", Some 2);
   ["ZDEJMIJ Z WERSALKI"], ("b_wersalka_zdejmij", Some 1);
   ["CZY LEŻY NA WERSALCE"], ("b_wersalka_czy_lezy", Some 2);
+  ["POSKŁADAJ WERSALKĘ"], ("b_wersalka_posklada", None);
+  ["ODWRÓĆ WERSALKĘ"], ("b_wersalka_odwroc", Some 1);
+  ["PRZERABIAJ WERSALKĘ"], ("b_wersalka_przerabiaj", Some 2);
+  ["PRZEFILTRUJ WERSALKĘ"], ("b_wersalka_przefiltruj", Some 2);
   ["ZRÓB BAJCIK"; "ZROB BAJCIK"], ("b_zrob_bajcik", Some 1);
   ["ZRÓB KRÓTKI"; "ZROB KROTKI"], ("b_zrob_krotki", Some 1);
   ["ZRÓB DŁUGI"; "ZROB DLUGI"], ("b_zrob_dlugi", Some 1);
@@ -631,23 +635,27 @@ static FerdekValue op_mod(FerdekValue a, FerdekValue b) {
    przy ==/!= jest różny, przy >/< to błąd (chyba że tekst jest liczbą) */
 enum { CMP_EQ, CMP_NE, CMP_GT, CMP_LT, CMP_GE };
 
-static FerdekValue compare_op(FerdekValue a, FerdekValue b, int op) {
-    int c;
+/* Trójwartościowe porównanie - jak compare_values w interpreterze */
+static int compare3(FerdekValue a, FerdekValue b, bool equality) {
     if (a.type == TYPE_STRING && b.type == TYPE_STRING) {
-        c = strcmp(a.value.string_val, b.value.string_val);
-        c = (c > 0) - (c < 0);
-    } else if (is_numeric(a) && is_numeric(b) && ANY_FLOAT(a, b)) {
-        double x = to_float(a), y = to_float(b);
-        c = (x > y) - (x < y);
-    } else if (is_numeric(a) && is_numeric(b)) {
-        long long x = to_int(a), y = to_int(b);
-        c = (x > y) - (x < y);
-    } else if (op == CMP_EQ || op == CMP_NE) {
-        c = 1;
-    } else {
-        ferdek_die("Nie można porównać tekstu z liczbą");
-        c = 0;
+        int c = strcmp(a.value.string_val, b.value.string_val);
+        return (c > 0) - (c < 0);
     }
+    if (is_numeric(a) && is_numeric(b) && ANY_FLOAT(a, b)) {
+        double x = to_float(a), y = to_float(b);
+        return (x > y) - (x < y);
+    }
+    if (is_numeric(a) && is_numeric(b)) {
+        long long x = to_int(a), y = to_int(b);
+        return (x > y) - (x < y);
+    }
+    if (equality) return 1;
+    ferdek_die("Nie można porównać tekstu z liczbą");
+    return 0;
+}
+
+static FerdekValue compare_op(FerdekValue a, FerdekValue b, int op) {
+    int c = compare3(a, b, op == CMP_EQ || op == CMP_NE);
     switch (op) {
         case CMP_EQ: return make_bool(c == 0);
         case CMP_NE: return make_bool(c != 0);
@@ -899,6 +907,72 @@ static FerdekValue b_wersalka_czy_lezy(int argc, FerdekValue* argv) {
             return make_bool(true);
     }
     return make_bool(false);
+}
+
+/* Funkcja przekazana builtinowi - jak function_arg w interpreterze */
+static FerdekValue function_arg(const char* builtin, FerdekValue f) {
+    if (f.type != TYPE_FUNCTION) ferdek_die("%s: drugi argument musi być funkcją", builtin);
+    return f;
+}
+
+static FerdekValue sort_fn;   /* komparator użytkownika albo TYPE_NULL = domyślne porównanie */
+
+static int sort_cmp(FerdekValue x, FerdekValue y) {
+    if (sort_fn.type == TYPE_NULL) return compare3(x, y, false);
+    FerdekValue args[2] = { x, y };
+    double r = to_float(call_value(sort_fn, sort_fn.value.fn_val.name, 2, args));
+    return (r > 0) - (r < 0);
+}
+
+/* Stabilny merge sort - jak List.stable_sort, więc remisy zostają w tej samej kolejności */
+static void merge_sort(FerdekValue* a, FerdekValue* tmp, int n) {
+    if (n < 2) return;
+    int m = n / 2;
+    merge_sort(a, tmp, m);
+    merge_sort(a + m, tmp, n - m);
+    int i = 0, j = m, k = 0;
+    while (i < m && j < n) tmp[k++] = sort_cmp(a[j], a[i]) < 0 ? a[j++] : a[i++];
+    while (i < m) tmp[k++] = a[i++];
+    while (j < n) tmp[k++] = a[j++];
+    memcpy(a, tmp, sizeof(FerdekValue) * n);
+}
+
+static FerdekValue b_wersalka_posklada(int argc, FerdekValue* argv) {
+    if (argc != 1 && argc != 2) ferdek_die("POSKŁADAJ WERSALKĘ oczekuje 1 albo 2 argumentów");
+    FerdekArray* arr = list_arg(argv[0], "POSKŁADAJ WERSALKĘ: pierwszy argument musi być tablicą");
+    sort_fn = argc == 2 ? function_arg("POSKŁADAJ WERSALKĘ", argv[1]) : make_null();
+    FerdekValue out = make_array(arr->data, arr->length);
+    FerdekValue* tmp = malloc(sizeof(FerdekValue) * (arr->length > 0 ? arr->length : 1));
+    merge_sort(out.value.array_val->data, tmp, arr->length);
+    free(tmp);
+    return out;
+}
+
+static FerdekValue b_wersalka_odwroc(int argc, FerdekValue* argv) {
+    FerdekArray* arr = list_arg(argv[0], "ODWRÓĆ WERSALKĘ: argument musi być tablicą");
+    FerdekValue out = make_array(arr->data, arr->length);
+    for (int i = 0; i < arr->length; i++) out.value.array_val->data[i] = arr->data[arr->length - 1 - i];
+    return out;
+}
+
+static FerdekValue b_wersalka_przerabiaj(int argc, FerdekValue* argv) {
+    FerdekArray* arr = list_arg(argv[0], "PRZERABIAJ WERSALKĘ: pierwszy argument musi być tablicą");
+    FerdekValue f = function_arg("PRZERABIAJ WERSALKĘ", argv[1]);
+    FerdekValue out = make_array(arr->data, arr->length);
+    for (int i = 0; i < arr->length; i++)
+        out.value.array_val->data[i] = call_value(f, f.value.fn_val.name, 1, &arr->data[i]);
+    return out;
+}
+
+static FerdekValue b_wersalka_przefiltruj(int argc, FerdekValue* argv) {
+    FerdekArray* arr = list_arg(argv[0], "PRZEFILTRUJ WERSALKĘ: pierwszy argument musi być tablicą");
+    FerdekValue f = function_arg("PRZEFILTRUJ WERSALKĘ", argv[1]);
+    FerdekValue out = make_array(NULL, 0);
+    out.value.array_val->data = malloc(sizeof(FerdekValue) * (arr->length > 0 ? arr->length : 1));
+    for (int i = 0; i < arr->length; i++)
+        if (to_bool(call_value(f, f.value.fn_val.name, 1, &arr->data[i])))
+            out.value.array_val->data[out.value.array_val->length++] = arr->data[i];
+    return out;
 }
 
 static FerdekValue b_zrob_bajcik(int argc, FerdekValue* argv) { return make_typed(TYPE_BYTE, to_int(argv[0]) & 0xFF); }
