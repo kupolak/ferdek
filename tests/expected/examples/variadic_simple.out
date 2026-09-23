@@ -1,0 +1,14 @@
+=== Test Funkcji Wariadycznych===
+
+Test 1: Sumowanie
+suma(5) = 
+5
+suma(5, 10) = 
+15
+suma(1, 2, 3, 4, 5) = 
+15
+suma(10, 20, 30, 40, 50, 60) = 
+210
+
+=== Funkcje wariadyczne dzialaja! ===
+Program zakończony pomyślnie. Piwo dla Pana!

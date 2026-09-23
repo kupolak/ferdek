@@ -1,0 +1,36 @@
+=== Test Unii ===
+
+Test 1: Podstawowa definicja unii
+Unia ActionFunction zdefiniowana!
+
+Test 2: Tworzenie instancji unii
+Utworzono instancję unii ActionFunction
+W unii tylko pierwsze pole (acp1) jest zainicjalizowane wartością 1
+
+Test 3: Unia z różnymi typami danych
+Utworzono unię MixedData
+Wszystkie pola dzielą tę samą przestrzeń pamięci!
+
+Test 4: System flag obiektu (DOOM-style)
+System flag utworzony!
+
+Test 5: Unia do zarządzania różnymi typami zasobów
+Zasób utworzony!
+Może przechowywać różne typy wskaźników w tej samej pamięci
+
+Test 6: Unia dla liczb fixed-point i całkowitych
+NumberUnion utworzona!
+Pozwala na efektywne przełączanie między fixed i int
+
+Test 7: Unia + operacje bitowe
+Kolor RGBA: 
+16711680
+ (0xFF0000 = czerwony w RGB)
+
+=== Wszystkie testy unii zakończone! ===
+
+Unie w Ferdeku działają jak w C i DOOM:
+- Wszystkie pola dzielą tę samą przestrzeń pamięci
+- Tylko pierwsze pole jest inicjalizowane
+- Idealne do oszczędzania pamięci i wielotypowych danych
+Program zakończony pomyślnie. Piwo dla Pana!

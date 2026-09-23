@@ -1,0 +1,27 @@
+=== Test Wskaźników (PALCEM POKAZUJĘ) ===
+
+Test 1: Podstawowe wskaźniki
+Oryginalna wartość:
+42
+Wartość przez wskaźnik:
+42
+
+Test 2: Operator adresu
+Adres Ferdka:
+<pointer to 100>
+
+Test 3: Wskaźniki do struktur
+Punkt utworzony
+10
+
+Test 4: Lista dwukierunkowa
+Wezly utworzone!
+
+Test 5: Arytmetyka wskaźnikowa
+Pozycja początkowa:
+100
+Nowa pozycja (5 kroków dalej):
+105
+
+=== Test zakończony! ===
+Program zakończony pomyślnie. Piwo dla Pana!

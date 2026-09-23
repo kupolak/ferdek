@@ -1,0 +1,33 @@
+CO JEST KURDE
+
+#define JEST_PIWO
+#define ILE 6
+
+RYM CYM CYM Zagnieżdżony #ifdef w nieaktywnym bloku nie może się włączyć
+#ifdef NIE_MA_TAKIEGO
+#ifdef JEST_PIWO
+O KARWASZ TWARZ "zagniezdzony ifdef wlaczyl sie w nieaktywnym bloku"
+#else
+O KARWASZ TWARZ "else w nieaktywnym bloku sie wlaczyl"
+#endif
+#endif
+
+#ifdef NIE_MA_TAKIEGO
+O KARWASZ TWARZ "ifdef niezdefiniowanego symbolu"
+#else
+PANIE SENSACJA REWELACJA "else OK"
+#endif
+
+RYM CYM CYM Makra nie są rozwijane w stringach, ale są w kodzie
+CYCU PRZYNIEŚ NO napis
+TO NIE SĄ TANIE RZECZY "ILE"
+NO JAK NIE JAK TAK napis PAN TU NIE MIESZKASZ "ILE"
+    O KARWASZ TWARZ "makro rozwiniete w stringu"
+DO CHAŁUPY ALE JUŻ
+NO JAK NIE JAK TAK ILE PAN TU NIE MIESZKASZ 6
+    O KARWASZ TWARZ "makro nie rozwiniete w kodzie"
+DO CHAŁUPY ALE JUŻ
+
+PANIE SENSACJA REWELACJA "Preprocesor OK"
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

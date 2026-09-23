@@ -1,0 +1,82 @@
+=== Test Enumeracji (DOOM-style) ===
+
+Test 1: Poziomy trudności (skill_t)
+Zdefiniowano enum PoziomTrudnosci
+
+DZIECIUCH = 
+0
+LATWIZNA = 
+1
+NORMALNIE = 
+2
+CIEZKO = 
+3
+KOSZMAR = 
+4
+
+Test 2: Zmienne z wartościami enum
+Aktualny poziom trudności: 
+2
+ (NORMALNIE)
+
+Test 3: Stan gry (gamestate_t) z jawnymi wartościami
+Zdefiniowano enum StanGry
+GS_POZIOM = 
+0
+GS_INTERMISSION = 
+1
+GS_FINALE = 
+2
+GS_DEMOSCREEN = 
+3
+
+Test 4: Moby flags (mieszane wartości)
+Zdefiniowano enum MobjFlags
+MF_SPECIAL = 
+0
+MF_SOLID = 
+1
+MF_SHOOTABLE = 
+4
+MF_NOSECTOR = 
+5
+MF_DROPOFF = 
+32
+MF_PICKUP = 
+33
+MF_SLIDE = 
+35
+
+Test 5: Użycie wartości enum
+Wybrana trudność: 
+4
+ (KOSZMAR = 4)
+
+Test 6: Stan gry
+Aktualny stan gry: 
+1
+ (GS_INTERMISSION = 1)
+
+Test 7: Wybór broni (weapontype_t)
+Dostępne bronie:
+Pięść (wp_fist) = 
+0
+Pistolet (wp_pistol) = 
+1
+Shotgun (wp_shotgun) = 
+2
+BFG (wp_bfg) = 
+6
+Liczba broni (NUMWEAPONS) = 
+9
+
+Test 8: Typy kart dostępu (card_t)
+Niebieska karta = 
+0
+Czerwona czaszka = 
+5
+Liczba typów kart = 
+6
+
+=== Enumeracje działają jak w DOOM! ===
+Program zakończony pomyślnie. Piwo dla Pana!

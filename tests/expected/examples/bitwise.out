@@ -1,0 +1,61 @@
+=== Test Operacji Bitowych (Bitwise Operations) ===
+
+Test 1: Podstawowe operacje bitowe
+12 & 10 = 
+8
+ (oczekiwane: 8)
+12 | 10 = 
+14
+ (oczekiwane: 14)
+12 ^ 10 = 
+6
+ (oczekiwane: 6)
+
+Test 2: Przesunięcia bitowe
+5 << 2 = 
+20
+ (oczekiwane: 20)
+80 >> 3 = 
+10
+ (oczekiwane: 10)
+
+Test 3: Negacja bitowa (NA OPAK)
+~5 = 
+-6
+ (oczekiwane: -6 w two's complement)
+
+Test 4: Fixed-point arithmetic (format 16.16)
+42 w fixed-point 16.16 = 
+2752512
+ (oczekiwane: 2752512 = 42 * 65536)
+Z powrotem do int: 
+42
+ (oczekiwane: 42)
+
+Test 5: Flagi bitowe (DOOM-style)
+Flagi obiektu (SOLID | SHOOTABLE) = 
+3
+ (oczekiwane: 3)
+Po dodaniu NOGRAVITY: 
+7
+ (oczekiwane: 7)
+Czy ma flagę SOLID? 
+1
+ (oczekiwane: 1 = true)
+Czy ma flagę SHADOW? 
+0
+ (oczekiwane: 0 = false)
+Po usunięciu SHOOTABLE: 
+5
+ (oczekiwane: 5 = SOLID | NOGRAVITY)
+
+Test 6: Maskowanie bitowe
+175 & 15 = 
+15
+ (oczekiwane: 15)
+Górne 4 bity z 175 = 
+10
+ (oczekiwane: 10)
+
+=== Wszystkie testy zakończone! ===
+Program zakończony pomyślnie. Piwo dla Pana!

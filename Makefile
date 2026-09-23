@@ -40,16 +40,24 @@ distclean: clean
 
 FERDEK = _build/default/src/ferdek.exe
 
-STDLIB_TESTS = $(addprefix tests/integration/stdlib/,test_stdlib test_kanapa test_klatka test_szafka test_wersalka test_kibel) stdlib/KLAMOTY/BABKA/przyklad_testow
-FEATURE_TESTS = $(addprefix tests/integration/features/,variables arrays conditional functions objects)
-# ponytail: graphics_demo pominięte - wymaga X11/XQuartz
-EXAMPLE_TESTS = $(addprefix examples/,hello fizzbuzz variadic_simple)
+# ponytail: test_klatka pominięty - wymaga internetu (make test-network)
+STDLIB_TESTS = $(filter-out %test_klatka,$(basename $(wildcard tests/integration/stdlib/*.ferdek))) stdlib/KLAMOTY/BABKA/przyklad_testow
+FEATURE_TESTS = $(basename $(wildcard tests/integration/features/*.ferdek))
+# Pominięte: graphics_* (X11), udp_* (porty sieciowe)
+EXAMPLE_TESTS = $(addprefix examples/,advanced_features arrays2d bitwise bubble_sort classes enums \
+	fizzbuzz function_pointers hello io macros_demo makra_ferdek memory operations pointers \
+	selection_sort simple_compile structs types unions variadic variadic_simple)
+ALL_TESTS = $(STDLIB_TESTS) $(FEATURE_TESTS) $(EXAMPLE_TESTS)
 
+# Oczekiwane wyjście: tests/expected/<ścieżka>.out (brak pliku = sprawdzamy tylko kod wyjścia)
 # Uruchamia pliki .ferdek, zlicza porażki, kończy się błędem jeśli któryś padł
 run_ferdek = @fail=0; for t in $(1); do \
-	  printf -- "--- %s: " $$t; \
-	  if $(FERDEK) $$t.ferdek > _build/ferdek_test.log 2>&1; then echo OK; \
-	  else echo FAIL; tail -3 _build/ferdek_test.log; fail=$$((fail+1)); fi; \
+	  printf -- "--- %s: " $$t; exp=tests/expected/$$t.out; \
+	  if ! $(FERDEK) $$t.ferdek > _build/ferdek_test.log 2>&1 < /dev/null; then \
+	    echo FAIL; tail -3 _build/ferdek_test.log; fail=$$((fail+1)); \
+	  elif [ -f $$exp ] && ! diff -u $$exp _build/ferdek_test.log > _build/ferdek_test.diff; then \
+	    echo "FAIL (inne wyjście)"; head -20 _build/ferdek_test.diff; fail=$$((fail+1)); \
+	  else echo OK; fi; \
 	done; [ $$fail -eq 0 ] || { echo "Padło testów: $$fail"; exit 1; }
 
 # Testy jednostkowe
@@ -67,7 +75,18 @@ test-examples: build
 
 # Wszystkie testy
 test: test-unit
-	$(call run_ferdek,$(STDLIB_TESTS) $(FEATURE_TESTS) $(EXAMPLE_TESTS))
+	$(call run_ferdek,$(ALL_TESTS))
+
+test-network: build
+	$(call run_ferdek,tests/integration/stdlib/test_klatka)
+
+# Nadpisuje oczekiwane wyjścia bieżącymi - przejrzyj git diff przed commitem!
+# ponytail: macros_demo/makra_ferdek bez .out - wyjście zależy od platformy
+update-expected: build
+	@for t in $(filter-out %macros_demo %makra_ferdek,$(ALL_TESTS)); do \
+	  mkdir -p tests/expected/$$(dirname $$t); \
+	  $(FERDEK) $$t.ferdek > tests/expected/$$t.out 2>&1 < /dev/null; \
+	done
 
 test-all: test
 
@@ -86,4 +105,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: all build clean distclean test test-unit test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

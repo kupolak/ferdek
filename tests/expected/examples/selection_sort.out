@@ -1,0 +1,6 @@
+=== Sortowanie przez Wybór ===
+Tablica przed sortowaniem:
+[64, 25, 12, 22, 11, 90, 34]
+Tablica po sortowaniu:
+[11, 12, 22, 25, 34, 64, 90]
+Program zakończony pomyślnie. Piwo dla Pana!

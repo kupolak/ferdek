@@ -1,0 +1,13 @@
+=== Test dziedziczenia klas (RENTA BABKI) ===
+--- Tworzenie Osoby ---
+Imię Osoby: 
+Nieznany
+--- Tworzenie Kiepskiego ---
+Imię Kiepskiego (odziedziczone): 
+Nieznany
+Piwo Kiepskiego (własne pole): 
+6
+Po ustawieniu imienia: 
+Ferdynand Kiepski
+=== Test OK ===
+Program zakończony pomyślnie. Piwo dla Pana!

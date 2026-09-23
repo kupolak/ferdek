@@ -1,0 +1,58 @@
+=== Test Niskopoziomowego I/O (DOOM-style) ===
+
+Test 1: Tworzenie pliku binarnego
+Zapisano nagłówek IWAD
+Zapisano liczbę lumps: 3
+Zapisano offset directory: 100
+Zapisano dane lumpa
+Plik zamknięty
+
+Test 2: Odczyt pliku binarnego
+Nagłówek (4 bajty):
+73
+87
+65
+68
+
+Następne 4 bajty (numlumps):
+3
+0
+0
+0
+
+Test 3: Pozycjonowanie (lseek)
+Aktualna pozycja: 
+8
+Po SKOCZ(0): pozycja = 
+0
+Po SKOCZ(100): pozycja = 
+100
+Po SKOCZ(50, backward): pozycja = 
+50
+Po SKOCZ(70, forward): pozycja = 
+70
+
+Test 4: DOOM palette (256 kolorów x RGB)
+Zapisano paletę kolorów
+Odczyt palety:
+Kolor 0 (czarny): R=
+0
+ G=
+0
+ B=
+0
+Kolor 1 (czerwony): R=
+255
+ G=
+0
+ B=
+0
+Kolor 3 (niebieski): R=
+0
+ G=
+0
+ B=
+255
+
+=== Niskopoziomowe I/O działa jak w DOOM! ===
+Program zakończony pomyślnie. Piwo dla Pana!

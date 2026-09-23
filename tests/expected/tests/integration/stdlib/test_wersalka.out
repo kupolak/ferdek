@@ -1,0 +1,11 @@
+=== Test WERSALKA ===
+Długość listy:
+4
+Po dodaniu 50, długość:
+5
+Czy 30 w liście:
+true
+Czy 99 w liście:
+false
+=== Test OK ===
+Program zakończony pomyślnie. Piwo dla Pana!

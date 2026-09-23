@@ -1,0 +1,66 @@
+=== Test Zarządzania Pamięcią (DOOM-style Zone Allocator) ===
+
+Test 1: Podstawowa alokacja pamięci
+Zaalokowano blok pamięci o rozmiarze 10
+Rozmiar bloku: 
+10
+
+Test 2: Zapisywanie i odczytywanie danych
+Zapisano: 42, 100, 255
+Odczytano: 
+42
+, 
+100
+, 
+255
+
+Test 3: Różne tagi pamięci
+Zaalokowano blok TRWAŁY (TAG=1)
+Zaalokowano blok POZIOM (TAG=50)
+Zaalokowano blok ŚMIECIOWY (TAG=100)
+
+Test 4: Statystyki (ILE KASY LECI)
+Zaalokowano: 
+135
+ bajtów
+Aktualnie: 
+135
+ bajtów
+Bloków: 
+4
+
+Test 5: ODDAJ WSZYSTKO
+Zwolniono blok1
+Zwolniono: 
+10
+ bajtów
+
+Test 6: Zwalnianie przez tagi (50-100)
+Zwolniono bloków: 
+2
+Pozostało bloków: 
+1
+ (tylko TAG_TRWALE=1)
+
+Test 7: DOOM - tekstury poziomu
+Zaalokowano 2 tekstury po 4096 bajtów
+Zapisano piksele do texture1
+Zwolniono bloków poziomu: 
+2
+
+Test 8: Finalne statystyki
+=== FINALNE STATYSTYKI ===
+Całkowita alokacja: 
+8327
+ bajtów
+Zwolniono: 
+8322
+ bajtów
+Aktualne: 
+5
+ bajtów
+Bloków: 
+1
+
+=== Zarządzanie pamięcią działa jak w DOOM! ===
+Program zakończony pomyślnie. Piwo dla Pana!

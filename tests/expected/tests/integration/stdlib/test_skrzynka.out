@@ -1,0 +1,20 @@
+=== Test ILE W SKRZYNCE (PI) ===
+3
+=== Test POLICZ SKRZYNKI (abs) ===
+5
+7
+=== Test ZAOKRĄGLIJ DO SKRZYNKI (round) ===
+3
+=== Test OTWÓRZ SKRZYNKĘ (power) ===
+25
+27
+=== Test PODZIEL SKRZYNKI (integer div) ===
+3
+=== Test RESZTA ZE SKRZYNKI (modulo) ===
+2
+=== Test LOSUJ ZE SKRZYNKI (random) ===
+1
+=== Test funkcji pomocniczych ===
+15
+28
+Program zakończony pomyślnie. Piwo dla Pana!

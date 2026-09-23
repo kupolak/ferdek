@@ -1,0 +1,68 @@
+=== Test Funkcji Wariadycznych ===
+
+Test 1: Sumowanie zmiennej liczby argumentów
+Suma(5) = 
+5
+Suma(5, 10) = 
+15
+Suma(5, 10, 15) = 
+30
+Suma(1, 2, 3, 4, 5) = 
+15
+
+Test 2: Funkcja formatująca z wieloma argumentami
+[
+PLAYER
+] 
+Health:
+ 
+100
+ 
+Armor:
+ 
+50
+ 
+
+[
+WEAPON
+] 
+BFG
+ 
+Ammo:
+ 
+40
+ 
+
+[
+ENEMY
+] 
+Cyberdemon
+ 
+HP:
+ 
+4000
+ 
+
+
+Test 3: Znajdź minimum z wielu liczb
+Min(42) = 
+42
+Min(10, 5, 8) = 
+5
+Min(100, 50, 25, 75, 10, 60) = 
+10
+
+Test 4: Zlicz lumpy w WAD
+WAD: 
+DOOM.WAD
+ - Lumps: 
+9
+
+WAD: 
+DOOM2.WAD
+ - Lumps: 
+3
+
+
+=== Funkcje wariadyczne działają jak w DOOM! ===
+Program zakończony pomyślnie. Piwo dla Pana!

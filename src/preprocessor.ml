@@ -13,12 +13,16 @@ type conditional_state =
 
 let macros : (string, macro) Hashtbl.t = Hashtbl.create 100
 
-(* Built-in platform macros *)
+(* Built-in platform macros - definiujemy tylko te, które pasują (#ifdef sprawdza istnienie) *)
 let () =
-  Hashtbl.add macros "LINUX" { name = "LINUX"; params = None; body = if Sys.os_type = "Unix" then "1" else "0" };
-  Hashtbl.add macros "UNIX" { name = "UNIX"; params = None; body = if Sys.os_type = "Unix" then "1" else "0" };
-  Hashtbl.add macros "WINDOWS" { name = "WINDOWS"; params = None; body = if Sys.os_type = "Win32" || Sys.os_type = "Cygwin" then "1" else "0" };
-  Hashtbl.add macros "MACOS" { name = "MACOS"; params = None; body = if Sys.os_type = "Unix" && Sys.file_exists "/Applications" then "1" else "0" }
+  let def name = Hashtbl.replace macros name { name; params = None; body = "1" } in
+  if Sys.os_type = "Win32" || Sys.os_type = "Cygwin" then def "WINDOWS";
+  if Sys.os_type = "Unix" then begin
+    def "UNIX";
+    (* ponytail: wykrywanie po systemie plików; uname gdy dojdą BSD itp. *)
+    if Sys.file_exists "/System/Library/CoreServices" then def "MACOS"
+    else if Sys.file_exists "/proc/version" then def "LINUX"
+  end
 
 (* Tokenize macro replacement (simple whitespace split) *)
 let tokenize s =
@@ -44,6 +48,14 @@ let expand_macro name args =
       match macro.params with
       | None -> macro.body (* Simple macro *)
       | Some params -> replace_params params args macro.body
+
+(* Blok wewnątrz nieaktywnego bloku jest zawsze pomijany (Done - #else go nie włączy) *)
+let parent_inactive = function
+  | [] | Active :: _ -> false
+  | _ -> true
+
+(* Literały stringowe "..." (z escape'ami) - makr w nich nie rozwijamy *)
+let string_literal = Str.regexp "\"\\([^\"\\\\]\\|\\\\.\\)*\""
 
 (* Process a single line *)
 let process_line line cond_stack =
@@ -84,14 +96,14 @@ let process_line line cond_stack =
     | "ifdef" :: name :: _
     | "JEŚLI" :: "JEST" :: name :: _
     | "JESLI" :: "JEST" :: name :: _ ->
-        let state = if Hashtbl.mem macros name then Active else Inactive in
+        let state = if parent_inactive cond_stack then Done else if Hashtbl.mem macros name then Active else Inactive in
         (None, state :: cond_stack)
 
     (* #ifndef NAME or #JEŚLI NIE MA NAME *)
     | "ifndef" :: name :: _
     | "JEŚLI" :: "NIE" :: "MA" :: name :: _
     | "JESLI" :: "NIE" :: "MA" :: name :: _ ->
-        let state = if not (Hashtbl.mem macros name) then Active else Inactive in
+        let state = if parent_inactive cond_stack then Done else if not (Hashtbl.mem macros name) then Active else Inactive in
         (None, state :: cond_stack)
 
     (* #else or #A MOŻE TAK *)
@@ -121,7 +133,7 @@ let process_line line cond_stack =
   (* Not a directive - check if we should process this line *)
   else if cond_stack = [] || List.hd cond_stack = Active then
     (* Expand macros in the line *)
-    let expanded = Hashtbl.fold (fun name macro acc ->
+    let expand_code code = Hashtbl.fold (fun name macro acc ->
       match macro.params with
       | None ->
           (* Simple text replacement *)
@@ -130,7 +142,10 @@ let process_line line cond_stack =
       | Some _ ->
           (* Function-like macros would need proper parsing - skip for now *)
           acc
-    ) macros line in
+    ) macros code in
+    let expanded = Str.full_split string_literal line
+      |> List.map (function Str.Delim lit -> lit | Str.Text code -> expand_code code)
+      |> String.concat "" in
     (Some expanded, cond_stack)
   else
     (* Skipping this line due to conditional *)

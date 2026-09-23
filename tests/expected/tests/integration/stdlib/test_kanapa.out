@@ -1,0 +1,19 @@
+=== Test funkcji KANAPA (Ferdek style) ===
+
+USIĄDŹ NA KANAPIE: 
+Czesc Ferdek!
+ILE MIEJSCA NA KANAPIE('Ferdek'): 
+6
+POTNIJ KANAPĘ('Ferdek', 0, 4): 
+Ferd
+WYTRZEP KANAPĘ('  spacje  '): '
+spacje
+'
+ZAMIEŃ NA KANAPIE: 
+Ferdek pije piwo
+ROZCIĄGNIJ KANAPĘ('test', 10): '
+test      
+'
+
+=== Wszystkie testy KANAPA zakonczone! ===
+Program zakończony pomyślnie. Piwo dla Pana!

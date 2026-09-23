@@ -1,0 +1,13 @@
+=== Test KIBEL ===
+Utworzono katalog:
+true
+Czy to katalog:
+true
+Utworzono plik
+Plik istnieje:
+true
+Pliki w katalogu:
+[test.txt]
+Usunięto katalog
+=== Test OK ===
+Program zakończony pomyślnie. Piwo dla Pana!
