@@ -105,7 +105,12 @@ class Gen:
     def lam(self, d):
         self.vars["int"].append("x")
         body = self.expr("int", d)
+        # Z ciałem z instrukcjami; przypisania do globalnych tworzą w lambdzie lokalne
+        block = self.stmts(1, 2, "    ") if self.r.random() < 0.3 else None
         self.vars["int"].remove("x")
+        if block is not None:
+            return ("JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ\n"
+                    + "\n".join(block) + f"\n    I JA INFORMUJĘ ŻE WYCHODZĘ {body}\nDO WIDZENIA PANU")
         return f"JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) {body}"
 
     # ---- instrukcje ----

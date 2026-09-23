@@ -131,7 +131,7 @@ SECTIONS = [
         "I JA INFORMUJĘ ŻE WYCHODZĘ": "return",
         "W MORDĘ JEŻA": "Wywołanie funkcji: W MORDĘ JEŻA f(1, 2)",
         "AFERA JEST": "Wynik funkcji do zmiennej: AFERA JEST x W MORDĘ JEŻA f()",
-        "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ": "Funkcja bez nazwy (lambda): JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2. Zmienne lokalne łapie przez wartość w chwili utworzenia",
+        "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ": "Funkcja bez nazwy (lambda): JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2, albo z instrukcjami: (x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ ... DO WIDZENIA PANU. Zmienne lokalne łapie jako kopie z chwili utworzenia (każde wywołanie zaczyna od nich), globalne są wspólne",
     }),
     ("Typy złożone", {
         "ALE JAJA": "Definicja klasy",

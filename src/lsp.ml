@@ -83,13 +83,16 @@ let analyze text =
     | END_ENUM, _ -> enum := false
     | IDENTIFIER name, _ when !enum -> declare (block ()) name i
     | LAMBDA, _ ->
-        let s = new_scope (Some cur) in
         let j = ref (i + 1) in
-        while !j < n && toks.(!j).t <> RPAREN do
-          (match toks.(!j).t with IDENTIFIER p -> declare s p !j | _ -> ());
-          incr j
+        while !j < n && toks.(!j).t <> RPAREN do incr j done;
+        (* Z ciałem z instrukcjami (NO DOBRZE ... DO WIDZENIA PANU) lambda jest blokiem jak funkcja *)
+        let block_body = !j + 1 < n && toks.(!j + 1).t = FUNC_RETURNS in
+        let s = new_scope (Some cur) in
+        for k = i + 1 to min !j (n - 1) do
+          toks.(k).scope <- s;
+          (match toks.(k).t with IDENTIFIER p -> declare s p k | _ -> ())
         done;
-        lambdas := s :: !lambdas
+        if block_body then blocks := s :: !blocks else lambdas := s :: !lambdas
     | _ -> ()
   done;
   (* Przypisanie do nieznanej nazwy tworzy zmienną w bieżącej funkcji (albo globalną).

@@ -46,6 +46,10 @@ let format source =
          | STRING _ -> for l = first + 1 to min last n do raw.(l) <- true done
          | _ -> ())) toks;
       let depth = ref 0 in
+      (* Poprzedni token w całym pliku: NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ po ")" to ciało lambdy -
+         otwiera blok; po nazwie funkcji to tylko część nagłówka *)
+      let prev = ref Parser.EOF in
+      let lambda_body t p = t = Parser.FUNC_RETURNS && p = Parser.RPAREN in
       let blank_run = ref 0 in
       let out = Buffer.create (String.length source) in
       for i = 1 to n do
@@ -58,12 +62,17 @@ let format source =
         end else begin
           blank_run := 0;
           let toks = List.rev per_line.(i) in
-          let first_back = match toks with t :: _ -> closes t || at_opener_level t | [] -> false in
+          let first_back = match toks with
+            | t :: _ -> closes t || (at_opener_level t && not (lambda_body t !prev))
+            | [] -> false in
           let level = if is_directive line then 0 else max 0 (!depth - (if first_back then 1 else 0)) in
           Buffer.add_string out (String.make (4 * level) ' ');
           Buffer.add_string out trimmed;
           Buffer.add_char out '\n';
-          List.iter (fun t -> if opens t then incr depth else if closes t then depth := max 0 (!depth - 1)) toks
+          List.iter (fun t ->
+            if opens t || lambda_body t !prev then incr depth
+            else if closes t then depth := max 0 (!depth - 1);
+            prev := t) toks
         end
       done;
       (* Bez pustych linii na końcu; dokładnie jeden znak końca linii *)

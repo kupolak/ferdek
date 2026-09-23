@@ -133,14 +133,14 @@ let rec eval_expr env = function
       let rec root e = match e.parent with Some p -> root p | None -> e in
       let global = root env in
       let captured = create_env (Some global) in
+      Hashtbl.replace captured.vars lambda_marker VNull;
       let rec capture e n =
         if e != global then
           match Hashtbl.find_opt e.vars n with
           | Some v -> Hashtbl.replace captured.vars n v
           | None -> Option.iter (fun p -> capture p n) e.parent in
-      List.iter (capture env) (List.filter (fun n -> not (List.mem n params)) (expr_names body));
-      VFunction ({ name = "anonimowa"; params; is_variadic = false; has_return = true;
-                   body = [Return (Some body)] }, captured)
+      List.iter (capture env) (expr_names (Lambda (params, body)));
+      VFunction ({ name = "anonimowa"; params; is_variadic = false; has_return = true; body }, captured)
 
 (* Evaluate function call *)
 and eval_function_call env name args =
@@ -160,7 +160,12 @@ and eval_function_call env name args =
 
 (* Wywołanie funkcji użytkownika z gotowymi wartościami argumentów (też z builtinów, np. sortowania) *)
 and apply_function name (fdecl : function_decl) closure_env arg_values =
-    let func_env = create_env (Some closure_env) in
+    (* Lambda: złapane zmienne kopiujemy do środowiska wywołania, a jego rodzicem jest globalne -
+       każde wywołanie zaczyna od tych samych kopii, przypisanie do globalnej działa jak w funkcji *)
+    let func_env = match closure_env.parent with
+      | Some global when Hashtbl.mem closure_env.vars lambda_marker ->
+          { vars = Hashtbl.copy closure_env.vars; parent = Some global }
+      | _ -> create_env (Some closure_env) in
     (* Bind parameters *)
     let num_params = List.length fdecl.params in
     let num_args = List.length arg_values in

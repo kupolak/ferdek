@@ -27,6 +27,10 @@ CYCU PRZYNIEŚ NO g
 TO NIE SĄ TANIE RZECZY JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2
 PANIE SENSACJA REWELACJA W MORDĘ JEŻA f(x, 2)
 PANIE SENSACJA REWELACJA W MORDĘ JEŻA ILE MIEJSCA NA KANAPIE("a")
+CYCU PRZYNIEŚ NO h
+TO NIE SĄ TANIE RZECZY JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(licz) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+    I JA INFORMUJĘ ŻE WYCHODZĘ licz BABKA DAWAJ RENTĘ x
+DO WIDZENIA PANU
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 """
 
@@ -97,7 +101,11 @@ x_decl = find(1, "x")
 d = send("textDocument/definition", at(find(19, "x")))["result"]
 check("definicja globalnego x", spots([d]), [x_decl])
 check("użycia globalnego x", spots(send("textDocument/references", at(x_decl))["result"]),
-      sorted([x_decl, find(14, "x"), find(19, "x")]))
+      sorted([x_decl, find(14, "x"), find(19, "x"), find(23, "x")]))
+
+# Lambda z blokiem: parametr widać w kolejnych liniach ciała
+check("parametr lambdy z blokiem", spots([send("textDocument/definition", at(find(23, "licz")))["result"]]),
+      [find(22, "licz")])
 
 # Parametr x funkcji f przesłania globalne
 check("definicja parametru x", spots([send("textDocument/definition", at(find(7, "x")))["result"]]), [find(5, "x")])

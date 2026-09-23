@@ -232,6 +232,10 @@ let function_value ctx name =
 let argv_c c_args = if c_args = [] then "(FerdekValue[]){make_null()}" else
   Printf.sprintf "(FerdekValue[]){%s}" (String.concat ", " c_args)
 
+(* Kod C lambdy: ctx, nazwa, parametry, złapane nazwy, ciało. Ustawiane niżej, przy compile_body *)
+let compile_lambda : (codegen_context -> string -> string list -> string list -> stmt list -> string) ref =
+  ref (fun _ _ _ _ _ -> "")
+
 let rec compile_expr ctx expr =
   match expr with
   | IntLiteral n -> Printf.sprintf "make_int(%dLL)" n
@@ -285,23 +289,19 @@ let rec compile_expr ctx expr =
   | FunctionRef name when is_function_name ctx name -> function_value ctx name
   | FunctionRef name -> error (Printf.sprintf "Nieznana funkcja: %s" name)
   | Lambda (params, body) ->
-      (* Osobna funkcja C; złapane zmienne lokalne i pola obiektu (kopie wartości) idą przez self *)
-      let caps = expr_names body
-                 |> List.filter (fun n -> not (List.mem n params) && (List.mem n ctx.locals || is_member ctx n))
+      (* Osobna funkcja C; złapane zmienne lokalne i pola obiektu (kopie wartości z chwili
+         utworzenia) siedzą w self; każde wywołanie zaczyna od tych kopii *)
+      let caps = expr_names (Lambda (params, body))
+                 |> List.filter (fun n -> List.mem n ctx.locals || is_member ctx n)
                  |> List.sort_uniq compare in
       let cap_values = List.map (fun n -> compile_expr ctx (Identifier n)) caps in
       let name = fresh ctx "lambda_" in
       let saved = (ctx.locals, ctx.members, ctx.in_function, ctx.loop_handlers) in
-      ctx.locals <- params @ caps; ctx.members <- []; ctx.in_function <- true; ctx.loop_handlers <- [];
-      let code = compile_expr ctx body in
+      ctx.loop_handlers <- [];
+      let code = !compile_lambda ctx name params caps body in
       let (l, m, f, h) = saved in
       ctx.locals <- l; ctx.members <- m; ctx.in_function <- f; ctx.loop_handlers <- h;
-      let bind src i n = Printf.sprintf "    FerdekValue %s = %s[%d];" (var_c n) src i in
-      ctx.lambdas <- String.concat "\n" (
-          [Printf.sprintf "static FerdekValue %s(void* self, int argc, FerdekValue* argv) {" name]
-          @ (if caps = [] then [] else ["    FerdekValue* caps = self;"])
-          @ List.mapi (bind "caps") caps @ List.mapi (bind "argv") params
-          @ [Printf.sprintf "    return %s;" code; "}"]) :: ctx.lambdas;
+      ctx.lambdas <- code :: ctx.lambdas;
       Printf.sprintf "make_method(%s, \"anonimowa\", %d, false, %s)" name (List.length params)
         (if caps = [] then "NULL"
          else Printf.sprintf "copy_values(%d, %s)" (List.length caps) (argv_c cap_values))
@@ -483,6 +483,22 @@ let compile_body ctx ~proto ~members (f : function_decl) =
 
 
 let compile_function ctx (f : function_decl) = compile_body ctx ~proto:(fun_proto f) ~members:[] f
+
+(* Lambda: ciało jak funkcja, której złapane zmienne są dodatkowymi parametrami (każde wywołanie
+   dostaje świeże kopie z self), do tego wrapper (self, argc, argv) dla call_value *)
+let () = compile_lambda := fun ctx name params caps body ->
+  let f = { name; params = params @ caps; is_variadic = false; has_return = true; body } in
+  let proto = Printf.sprintf "static FerdekValue %s_body(%s)" name
+      (if f.params = [] then "void"
+       else String.concat ", " (List.map (fun p -> "FerdekValue " ^ var_c p) f.params)) in
+  let code = compile_body ctx ~proto ~members:[] f in
+  String.concat "\n" [
+    code;
+    Printf.sprintf "static FerdekValue %s(void* self, int argc, FerdekValue* argv) {" name;
+    Printf.sprintf "    return %s_body(%s);" name
+      (String.concat ", " (List.init (List.length params) (Printf.sprintf "argv[%d]")
+                           @ List.init (List.length caps) (Printf.sprintf "((FerdekValue*)self)[%d]")));
+    "}"]
 
 (* Metoda: jak funkcja, z obiektem (self) jako pierwszym parametrem *)
 let method_proto cls (m : function_decl) =

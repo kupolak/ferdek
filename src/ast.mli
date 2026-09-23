@@ -61,12 +61,12 @@ type expr =
   | ToFixed of expr
   | FromFixed of expr
   | Parenthesized of expr
-  | Lambda of string list * expr
+  | Lambda of string list * stmt list   (* ciało z wyrażeniem = [Return (Some e)] *)
 
 (* ============ STATEMENTS ============ *)
 
 (* Statement type *)
-type stmt =
+and stmt =
   | VarDecl of string * expr
   | ArrayDecl of string * expr list
   | Print of expr
@@ -166,8 +166,12 @@ val string_of_bitwise_op : bitwise_op -> string
 (* Convert expression to string *)
 val string_of_expr : expr -> string
 
-(* Nazwy zmiennych i funkcji użyte w wyrażeniu (bez parametrów lambd) *)
+(* Nazwy zmiennych i funkcji użyte w wyrażeniu/instrukcji (bez własnych nazw lambd) *)
 val expr_names : expr -> string list
+val stmt_names : stmt -> string list
+
+(* Zmienne deklarowane w bloku: CYCU PRZYNIEŚ NO, tablice, zmienna z HELENA MAM ZAWAŁ *)
+val block_decls : stmt list -> string list
 
 (* Convert statement to string *)
 val string_of_stmt : string -> stmt -> string

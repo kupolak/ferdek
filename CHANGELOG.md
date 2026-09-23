@@ -22,8 +22,10 @@
 - Map literals: `OTWÓRZ SZAFKĘ("a", 1, "b", 2)` creates a map filled with key/value pairs.
 - Loop over elements: `KRĘCI CEMENT BETONIARA x Z kolekcja` ... `A ROBIĆ NI MA KOMU` - array
   elements, map keys (sorted) or characters of a text. `Z` is now a keyword.
-- Anonymous functions: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2`. Local variables
-  (and object fields in methods) are captured by value when the function is created; globals stay live.
+- Anonymous functions: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2`, or with statements:
+  `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ` ... `DO WIDZENIA PANU`.
+  Local variables (and object fields in methods) are captured as copies when the function is
+  created, and every call starts from those copies; globals are shared, like in named functions.
 - Import your own files (relative to the importing file); every module runs once.
 - New builtins: random numbers (`KARTA LUBI DYM`), time (`TRZEBA SPAĆ`, `JEST TRZECIA W NOCY`),
   math (`PIERWIASTEK/SINUS/COSINUS ZE SKRZYNKI`, real PI and rounding in SKRZYNKA), lists

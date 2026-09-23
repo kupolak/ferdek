@@ -61,12 +61,12 @@ type expr =
   | ToFixed of expr                                      (* Convert to fixed-point 16.16 (ZAMIEŃ NA FIXED) *)
   | FromFixed of expr                                    (* Convert from fixed-point 16.16 (WYJMIJ Z FIXED) *)
   | Parenthesized of expr                                (* Parenthesized expression *)
-  | Lambda of string list * expr                         (* JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x + 1 *)
+  | Lambda of string list * stmt list                    (* JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x + 1  albo  (x) NO DOBRZE ... DO WIDZENIA PANU *)
 
 (* ============ STATEMENTS ============ *)
 
 (* Statement type *)
-type stmt =
+and stmt =
   | VarDecl of string * expr                             (* Variable declaration (CYCU PRZYNIEŚ NO ... TO NIE SĄ TANIE RZECZY) *)
   | ArrayDecl of string * expr list                      (* Array declaration (PANIE TO JEST PRYWATNA PUBLICZNA TABLICA) *)
   | Print of expr                                        (* Print statement (PANIE SENSACJA REWELACJA) *)
@@ -237,23 +237,10 @@ let rec string_of_expr = function
   | Parenthesized e ->
       "(" ^ string_of_expr e ^ ")"
   | Lambda (params, body) ->
-      "fun(" ^ String.concat ", " params ^ ") -> " ^ string_of_expr body
+      "fun(" ^ String.concat ", " params ^ ") {\n"
+      ^ String.concat "\n" (List.map (string_of_stmt "  ") body) ^ "\n}"
 
-(* Nazwy, do których sięga wyrażenie (zmienne i funkcje), bez parametrów zagnieżdżonych lambd *)
-let rec expr_names = function
-  | Identifier n | FunctionRef n | AddressOf n -> [n]
-  | FunctionCall (n, args) -> n :: List.concat_map expr_names args
-  | NewObject (_, args) | ArrayLiteral args -> List.concat_map expr_names args
-  | BinaryOp (a, _, b) | ComparisonOp (a, _, b) | LogicalOp (a, _, b) | BitwiseOp (a, _, b)
-  | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> expr_names a @ expr_names b
-  | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
-  | Parenthesized e -> expr_names e
-  | Lambda (params, body) -> List.filter (fun n -> not (List.mem n params)) (expr_names body)
-  | IntLiteral _ | FloatLiteral _ | StringLiteral _ | BoolLiteral _ | NullLiteral
-  | NewStruct _ | NewUnion _ -> []
-
-(* Convert statement to string (simplified) *)
-let rec string_of_stmt indent = function
+and string_of_stmt indent = function
   | VarDecl (name, expr) ->
       indent ^ "var " ^ name ^ " = " ^ string_of_expr expr
   | ArrayDecl (name, exprs) ->
@@ -308,6 +295,51 @@ let rec string_of_stmt indent = function
       string_of_stmt indent s
 
 (* Convert function declaration to string *)
+(* Nazwy, do których sięgają wyrażenia i instrukcje (zmienne, funkcje, cele przypisań),
+   bez parametrów i zmiennych zadeklarowanych wewnątrz zagnieżdżonych lambd *)
+let rec expr_names = function
+  | Identifier n | FunctionRef n | AddressOf n -> [n]
+  | FunctionCall (n, args) -> n :: List.concat_map expr_names args
+  | NewObject (_, args) | ArrayLiteral args -> List.concat_map expr_names args
+  | BinaryOp (a, _, b) | ComparisonOp (a, _, b) | LogicalOp (a, _, b) | BitwiseOp (a, _, b)
+  | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> expr_names a @ expr_names b
+  | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
+  | Parenthesized e -> expr_names e
+  | Lambda (params, body) ->
+      let own = params @ block_decls body in
+      List.filter (fun n -> not (List.mem n own)) (List.concat_map stmt_names body)
+  | IntLiteral _ | FloatLiteral _ | StringLiteral _ | BoolLiteral _ | NullLiteral
+  | NewStruct _ | NewUnion _ -> []
+
+and stmt_names = function
+  | VarDecl (n, e) | Assign (n, e) -> n :: expr_names e
+  | ArrayDecl (n, es) -> n :: List.concat_map expr_names es
+  | Print e | PrintInline e | Throw e -> expr_names e
+  | Read n -> [n]
+  | ArrayAssign (a, v) -> expr_names a @ expr_names v
+  | If (c, a, b) -> expr_names c @ List.concat_map stmt_names (a @ Option.value b ~default:[])
+  | While (c, b) -> expr_names c @ List.concat_map stmt_names b
+  | For (v, a, b, k, body) ->
+      v :: expr_names a @ expr_names b @ (match k with Some k -> expr_names k | None -> [])
+      @ List.concat_map stmt_names body
+  | ForEach (v, c, b) -> v :: expr_names c @ List.concat_map stmt_names b
+  | FunctionCallStmt (n, args) -> n :: List.concat_map expr_names args
+  | FunctionCallWithAssign (v, n, args) -> v :: n :: List.concat_map expr_names args
+  | Return e -> (match e with Some e -> expr_names e | None -> [])
+  | Try (a, v, b) -> v :: List.concat_map stmt_names (a @ b)
+  | Located (_, _, s) -> stmt_names s
+  | Break | Continue -> []
+
+(* Zmienne deklarowane w bloku (CYCU PRZYNIEŚ NO, tablica, zmienna z HELENA MAM ZAWAŁ) - świeże przy
+   każdym wywołaniu, więc lambda ich nie łapie *)
+and block_decls stmts = List.concat_map (function
+  | VarDecl (n, _) | ArrayDecl (n, _) -> [n]
+  | Located (_, _, s) -> block_decls [s]
+  | If (_, a, b) -> block_decls (a @ Option.value b ~default:[])
+  | While (_, b) | For (_, _, _, _, b) | ForEach (_, _, b) -> block_decls b
+  | Try (a, v, b) -> v :: block_decls (a @ b)
+  | _ -> []) stmts
+
 let string_of_function_decl indent fdecl =
   let params_str = String.concat ", " fdecl.params in
   let body_str = String.concat "\n" (List.map (string_of_stmt (indent ^ "  ")) fdecl.body) in

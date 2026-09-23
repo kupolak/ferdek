@@ -322,6 +322,9 @@ expression:
   | e=logical_expr { e }
   (* Ciało lambdy sięga tak daleko, jak się da - jak fun w OCamlu *)
   | LAMBDA LPAREN ps=separated_list(COMMA, IDENTIFIER) RPAREN body=expression
+    { Lambda (ps, [Return (Some body)]) }
+  (* Ciało z instrukcjami: jak w deklaracji funkcji, NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ ... DO WIDZENIA PANU *)
+  | LAMBDA LPAREN ps=separated_list(COMMA, IDENTIFIER) RPAREN FUNC_RETURNS body=list(statement) FUNC_END
     { Lambda (ps, body) }
   ;
 

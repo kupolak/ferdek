@@ -66,6 +66,9 @@ let create_env parent =
 let global_env () =
   create_env None
 
+(* Klucz, po którym apply_function poznaje złapane zmienne lambdy (nazwa zmiennej tak wyglądać nie może) *)
+let lambda_marker = "(lambda)"
+
 (* Get variable from environment *)
 let rec get_var env name =
   try
