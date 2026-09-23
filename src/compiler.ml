@@ -24,6 +24,7 @@ let mangle prefix name =
 
 let var_c = mangle "v_"
 let fun_c = mangle "f_"
+let wrap_c = mangle "w_"   (* wrapper (argc, argv) - funkcja jako wartość *)
 
 (* Zmienne zadeklarowane (VarDecl/ArrayDecl/catch) i przypisane w bloku.
    Ferdek nie ma zasięgu blokowego: zmienna z pętli żyje w całej funkcji. *)
@@ -90,6 +91,11 @@ let rec has_try stmts = List.exists (function
 
 let is_var ctx name = List.mem name ctx.locals || Hashtbl.mem ctx.globals name
 
+(* Zmienna lokalna przesłania funkcję; funkcja wygrywa z globalną o tej samej nazwie *)
+let is_function_name ctx name =
+  Hashtbl.mem ctx.funcs name && not (List.mem name ctx.locals)
+
+
 let comparison_c = function
   | Equal -> "==" | NotEqual -> "!=" | Greater -> ">" | Less -> "<"
 
@@ -115,15 +121,25 @@ let c_string_literal s =
   Buffer.add_char buf '"';
   Buffer.contents buf
 
+let function_value ctx name =
+  let f = Hashtbl.find ctx.funcs name in
+  Printf.sprintf "make_function(%s, %s, %d, %s)" (wrap_c name) (c_string_literal name)
+    (List.length f.params) (if f.is_variadic then "true" else "false")
+
+(* Tablica argumentów dla wywołań (argc, argv) *)
+let argv_c c_args = if c_args = [] then "(FerdekValue[]){make_null()}" else
+  Printf.sprintf "(FerdekValue[]){%s}" (String.concat ", " c_args)
+
 let rec compile_expr ctx expr =
   match expr with
   | IntLiteral n -> Printf.sprintf "make_int(%dLL)" n
   | StringLiteral s -> Printf.sprintf "make_string(%s)" (c_string_literal s)
   | BoolLiteral b -> Printf.sprintf "make_bool(%s)" (if b then "true" else "false")
   | NullLiteral -> "make_null()"
+  | Identifier name | Reference (Identifier name) when is_function_name ctx name ->
+      function_value ctx name
   | Identifier name ->
       if is_var ctx name then var_c name
-      else if Hashtbl.mem ctx.funcs name then unsupported "funkcje jako wartości (wskaźniki do funkcji)"
       else error (Printf.sprintf "Nieznana zmienna: %s" name)
   | BinaryOp (e1, op, e2) ->
       Printf.sprintf "%s(%s, %s)" (arith_c op) (compile_expr ctx e1) (compile_expr ctx e2)
@@ -147,7 +163,8 @@ let rec compile_expr ctx expr =
   | NewStruct _ -> unsupported "struktury (ZMONTUJ MEBEL)"
   | NewUnion _ -> unsupported "unie (WEJDŹ DO UNII)"
   | Reference _ | Dereference _ | AddressOf _ | PointerArithmetic _ -> unsupported "wskaźniki"
-  | FunctionRef _ -> unsupported "funkcje jako wartości (wskaźniki do funkcji)"
+  | FunctionRef name when is_function_name ctx name -> function_value ctx name
+  | FunctionRef name -> error (Printf.sprintf "Nieznana funkcja: %s" name)
 
 and compile_call ctx name args =
   let c_args = List.map (compile_expr ctx) args in
@@ -158,17 +175,28 @@ and compile_call ctx name args =
        | Some n when n <> List.length args ->
            error (Printf.sprintf "%s oczekuje %d argumentów, podano %d" name n (List.length args))
        | _ -> ());
-      let argv = if c_args = [] then "make_null()" else String.concat ", " c_args in
-      Printf.sprintf "%s(%d, (FerdekValue[]){%s})" c_name (List.length args) argv
-  | None, Some f ->
-      if f.is_variadic then unsupported "funkcje wariadyczne";
-      if List.length args <> List.length f.params then
-        error (Printf.sprintf "Funkcja %s oczekuje %d argumentów, podano %d"
-                 name (List.length f.params) (List.length args));
-      Printf.sprintf "%s(%s)" (fun_c name) (String.concat ", " c_args)
-  | None, None ->
-      if is_var ctx name then unsupported "wywołania funkcji ze zmiennej (wskaźniki do funkcji)"
-      else error (Printf.sprintf "Nieznana funkcja: %s (albo wbudowana, której kompilator nie zna)" name)
+      Printf.sprintf "%s(%d, %s)" c_name (List.length args) (argv_c c_args)
+  | None, Some f when is_function_name ctx name ->
+      let n = List.length f.params in
+      let given = List.length args in
+      if f.is_variadic then begin
+        if given < n then
+          error (Printf.sprintf "Funkcja %s oczekuje co najmniej %d argumentów, podano %d" name n given);
+        let fixed = List.filteri (fun i _ -> i < n) c_args in
+        let rest = List.filteri (fun i _ -> i >= n) c_args in
+        Printf.sprintf "%s(%s)" (fun_c name)
+          (String.concat ", " (fixed @ [Printf.sprintf "make_array(%s, %d)" (argv_c rest) (List.length rest)]))
+      end else begin
+        if given <> n then
+          error (Printf.sprintf "Funkcja %s oczekuje %d argumentów, podano %d" name n given);
+        Printf.sprintf "%s(%s)" (fun_c name) (String.concat ", " c_args)
+      end
+  | None, _ when is_var ctx name ->
+      (* Wywołanie funkcji trzymanej w zmiennej - sprawdzenie typu i arności w runtime *)
+      Printf.sprintf "call_value(%s, %s, %d, %s)" (var_c name) (c_string_literal name)
+        (List.length args) (argv_c c_args)
+  | None, _ ->
+      error (Printf.sprintf "Nieznana funkcja: %s (albo wbudowana, której kompilator nie zna)" name)
 
 let rec compile_stmt ctx indent stmt =
   let ind = String.make (indent * 4) ' ' in
@@ -233,8 +261,10 @@ let rec compile_stmt ctx indent stmt =
 
 (* ============ FUNCTIONS ============ *)
 
+let all_params (f : function_decl) = f.params @ (if f.is_variadic then ["varargs"] else [])
+
 let fun_proto (f : function_decl) =
-  let params = List.map (fun p -> "FerdekValue " ^ var_c p) f.params in
+  let params = List.map (fun p -> "FerdekValue " ^ var_c p) (all_params f) in
   Printf.sprintf "FerdekValue %s(%s)" (fun_c f.name)
     (if params = [] then "void" else String.concat ", " params)
 
@@ -243,8 +273,8 @@ let compile_function ctx (f : function_decl) =
   (* Przypisanie do istniejącej zmiennej globalnej zmienia globalną (jak set_var w interpreterze) *)
   let assigned_locals = List.filter (fun n -> not (Hashtbl.mem ctx.globals n)) assigned in
   let locals = dedup (decl @ assigned_locals)
-               |> List.filter (fun n -> not (List.mem n f.params)) in
-  ctx.locals <- f.params @ locals;
+               |> List.filter (fun n -> not (List.mem n (all_params f))) in
+  ctx.locals <- all_params f @ locals;
   ctx.in_function <- true;
   (* setjmp: lokalne zmieniane w try muszą być volatile, inaczej po longjmp mają śmieci.
      ponytail: parametry nie są volatile - przypisanie do parametru w try i odczyt w catch to UB *)
@@ -257,6 +287,17 @@ let compile_function ctx (f : function_decl) =
   String.concat "\n" ([Printf.sprintf "%s {" (fun_proto f)] @ decls @ body
                       @ ["    ferdek_handler = entry_handler;"; "    return make_null();"; "}"])
 
+
+(* Wrapper (argc, argv) dla funkcji jako wartości; arność sprawdza call_value *)
+let wrap_proto (f : function_decl) =
+  Printf.sprintf "static FerdekValue %s(int argc, FerdekValue* argv)" (wrap_c f.name)
+
+let compile_wrapper (f : function_decl) =
+  let n = List.length f.params in
+  let args = List.init n (Printf.sprintf "argv[%d]")
+             @ (if f.is_variadic then [Printf.sprintf "make_array(argv + %d, argc - %d)" n n] else []) in
+  String.concat "\n" [wrap_proto f ^ " {";
+                      Printf.sprintf "    return %s(%s);" (fun_c f.name) (String.concat ", " args); "}"]
 
 (* ============ TOP-LEVEL ============ *)
 
@@ -292,7 +333,8 @@ typedef enum {
     TYPE_ARRAY,
     TYPE_BYTE,       /* ZRÓB BAJCIK/KRÓTKI/UŁAMEK - liczby z własnym typem dla CO TO ZA TYP */
     TYPE_SHORT,
-    TYPE_FIXED
+    TYPE_FIXED,
+    TYPE_FUNCTION
 } ValueType;
 
 typedef struct FerdekValue FerdekValue;
@@ -305,6 +347,7 @@ struct FerdekValue {
         char* string_val;
         bool bool_val;
         FerdekArray* array_val;   /* wskaźnik: kopia wartości współdzieli tablicę, jak w interpreterze */
+        struct { FerdekValue (*call)(int, FerdekValue*); const char* name; int arity; bool variadic; } fn_val;
     } value;
 };
 
@@ -388,6 +431,13 @@ static char* to_str(FerdekValue v) {
         case TYPE_STRING: return strdup(v.value.string_val);
         case TYPE_BOOL: return strdup(v.value.bool_val ? "true" : "false");
         case TYPE_NULL: return strdup("null");
+        case TYPE_FUNCTION: {
+            StrBuf b = {0};
+            buf_add(&b, "<function ");
+            buf_add(&b, v.value.fn_val.name);
+            buf_add(&b, ">");
+            return b.s;
+        }
         case TYPE_ARRAY: {
             StrBuf b = {0};
             buf_add(&b, "[");
@@ -434,6 +484,26 @@ static int compare_values(FerdekValue a, FerdekValue b) {
 static FerdekValue logic_and(FerdekValue a, FerdekValue b) { return make_bool(to_bool(a) && to_bool(b)); }
 static FerdekValue logic_or(FerdekValue a, FerdekValue b) { return make_bool(to_bool(a) || to_bool(b)); }
 
+static FerdekValue make_function(FerdekValue (*call)(int, FerdekValue*), const char* name, int arity, bool variadic) {
+    FerdekValue v;
+    v.type = TYPE_FUNCTION;
+    v.value.fn_val.call = call;
+    v.value.fn_val.name = name;
+    v.value.fn_val.arity = arity;
+    v.value.fn_val.variadic = variadic;
+    return v;
+}
+
+/* name = nazwa użyta w wywołaniu (jak w komunikatach interpretera) */
+static FerdekValue call_value(FerdekValue f, const char* name, int argc, FerdekValue* argv) {
+    if (f.type != TYPE_FUNCTION) ferdek_die("%s is not a function", name);
+    if (f.value.fn_val.variadic && argc < f.value.fn_val.arity)
+        ferdek_die("Function %s expects at least %d arguments, got %d", name, f.value.fn_val.arity, argc);
+    if (!f.value.fn_val.variadic && argc != f.value.fn_val.arity)
+        ferdek_die("Function %s expects %d arguments, got %d", name, f.value.fn_val.arity, argc);
+    return f.value.fn_val.call(argc, argv);
+}
+
 static FerdekArray* as_array(FerdekValue a) {
     if (a.type != TYPE_ARRAY) ferdek_die("Not an array");
     return a.value.array_val;
@@ -441,7 +511,7 @@ static FerdekArray* as_array(FerdekValue a) {
 
 static FerdekValue array_get(FerdekValue a, long long i) {
     FerdekArray* arr = as_array(a);
-    if (i < 0 || i >= arr->length) ferdek_die("Array index out of bounds: %lld", i);
+    if (i < 0 || i >= arr->length) ferdek_die("Array index out of bounds");
     return arr->data[i];
 }
 
@@ -636,6 +706,7 @@ static FerdekValue b_co_to_za_typ(int argc, FerdekValue* argv) {
         case TYPE_BOOL: return make_string("PRAWDA/FAŁSZ");
         case TYPE_NULL: return make_string("NIC");
         case TYPE_ARRAY: return make_string("TABLICA");
+        case TYPE_FUNCTION: return make_string("FUNKCJA");
     }
     return make_string("?");
 }
@@ -719,7 +790,8 @@ let compile_program ?(load_module = fun _ -> None) prog =
                   |> List.filter (fun s -> s <> "") in
   let globals = Hashtbl.fold (fun n () acc -> n :: acc) ctx.globals [] |> dedup
                 |> List.map (fun n -> Printf.sprintf "static FerdekValue %s;" (var_c n)) in
-  let protos = Hashtbl.fold (fun _ f acc -> (fun_proto f ^ ";") :: acc) ctx.funcs [] |> dedup in
+  let protos = Hashtbl.fold (fun _ f acc -> (fun_proto f ^ ";") :: (wrap_proto f ^ ";") :: acc) ctx.funcs [] |> dedup in
+  let wrappers = Hashtbl.fold (fun _ f acc -> compile_wrapper f :: acc) ctx.funcs [] |> dedup in
 
   String.concat "\n" ([
     "#include <stdio.h>";
@@ -730,7 +802,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
     "#include <setjmp.h>";
     "";
     runtime_library;
-  ] @ globals @ [""] @ protos @ [""] @ functions @ [
+  ] @ globals @ [""] @ protos @ [""] @ functions @ [""] @ wrappers @ [
     "";
     "int main(void) {";
   ] @ main_body @ [
