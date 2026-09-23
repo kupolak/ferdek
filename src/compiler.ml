@@ -233,7 +233,7 @@ let rec compile_expr ctx expr =
   match expr with
   | IntLiteral n -> Printf.sprintf "make_int(%dLL)" n
   | FloatLiteral f -> Printf.sprintf "make_float(%.17g)" f
-  | StringLiteral s -> Printf.sprintf "make_string(%s)" (c_string_literal s)
+  | StringLiteral s -> Printf.sprintf "make_lit(%s)" (c_string_literal s)
   | BoolLiteral b -> Printf.sprintf "make_bool(%s)" (if b then "true" else "false")
   | NullLiteral -> "make_null()"
   | Identifier name when is_member ctx name -> Printf.sprintf "field_get(self, %s)" (c_string_literal name)
@@ -612,6 +612,14 @@ static FerdekValue make_string(const char* s) {
     return v;
 }
 
+/* Literał tekstowy bez kopiowania - teksty w runtime nigdy nie są zmieniane w miejscu */
+static FerdekValue make_lit(const char* s) {
+    FerdekValue v;
+    v.type = TYPE_STRING;
+    v.value.string_val = (char*)s;
+    return v;
+}
+
 static FerdekValue make_array(FerdekValue* data, int length) {
     FerdekValue v;
     v.type = TYPE_ARRAY;
@@ -753,19 +761,33 @@ static char* to_str(FerdekValue v) {
     return strdup("?");
 }
 
+/* Tekstowa postać bez alokacji dla tekstu i liczb całkowitych; inne typy przez to_str (*owned do zwolnienia) */
+static const char* str_view(FerdekValue v, char* num, size_t n, char** owned) {
+    *owned = NULL;
+    if (v.type == TYPE_STRING) return v.value.string_val;
+    if (v.type == TYPE_INT || v.type == TYPE_BYTE || v.type == TYPE_SHORT || v.type == TYPE_FIXED) {
+        snprintf(num, n, "%lld", v.value.int_val);
+        return num;
+    }
+    return *owned = to_str(v);
+}
+
 /* + z tekstem po którejkolwiek stronie skleja - jak w interpreterze */
 static FerdekValue op_add(FerdekValue a, FerdekValue b) {
     if (a.type == TYPE_STRING || b.type == TYPE_STRING) {
-        StrBuf buf = {0};
-        char* x = to_str(a);
-        char* y = to_str(b);
-        buf_add(&buf, x);
-        buf_add(&buf, y);
-        free(x);
-        free(y);
+        char na[32], nb[32];
+        char *oa, *ob;
+        const char* x = str_view(a, na, sizeof na, &oa);
+        const char* y = str_view(b, nb, sizeof nb, &ob);
+        size_t lx = strlen(x), ly = strlen(y);
+        char* s = malloc(lx + ly + 1);
+        memcpy(s, x, lx);
+        memcpy(s + lx, y, ly + 1);
+        free(oa);
+        free(ob);
         FerdekValue v;
         v.type = TYPE_STRING;
-        v.value.string_val = buf.s;
+        v.value.string_val = s;
         return v;
     }
     if (a.type == TYPE_FLOAT || b.type == TYPE_FLOAT) return make_float(to_float(a) + to_float(b));
@@ -1127,9 +1149,10 @@ static FerdekValue b_kanapa_zamien(int argc, FerdekValue* argv) {
 }
 
 static FerdekValue b_kanapa_ile(int argc, FerdekValue* argv) {
-    char* s = to_str(argv[0]);
-    FerdekValue n = make_int(utf8_index(s, NULL));
-    free(s);
+    char num[32];
+    char* owned;
+    FerdekValue n = make_int(utf8_index(str_view(argv[0], num, sizeof num, &owned), NULL));
+    free(owned);
     return n;
 }
 
