@@ -19,32 +19,32 @@ AFERA JEST suma W MORDĘ JEŻA DODAJ(5, 3)
 PANIE SENSACJA REWELACJA suma  RYM CYM CYM 8
 ```
 
-#### Funkcje Stringowe (wbudowane)
+#### Moduł KANAPA (stringi, wbudowane)
 Dostępne globalnie bez importu:
-- `KONKATENUJ(str1, str2, ...)` - łączenie stringów
-- `DLUGOSC(str)` - długość stringa
-- `SUBSTRING(str, start, len)` - podciąg
-- `UPPERCASE(str)` - wielkie litery
-- `LOWERCASE(str)` - małe litery
-- `TRIM(str)` - usuwanie białych znaków
-- `REPLACE(str, old, new)` - zamiana tekstu
+- `USIĄDŹ NA KANAPIE(str1, str2, ...)` - łączenie stringów
+- `ILE MIEJSCA NA KANAPIE(str)` - długość stringa
+- `POTNIJ KANAPĘ(str, start, koniec)` - podciąg
+- `ROZCIĄGNIJ KANAPĘ(str, dlugosc)` - dopełnienie do długości
+- `PRZESUŃ NA KANAPIE(str, sep)` - split
+- `POSKŁADAJ KANAPĘ(tablica, sep)` - join
+- `WYTRZEP KANAPĘ(str)` - usuwanie białych znaków
+- `ZAMIEŃ NA KANAPIE(str, stary, nowy)` - zamiana tekstu
 
 Przykład:
 ```ferdek
-AFERA JEST tekst W MORDĘ JEŻA KONKATENUJ("Ferdek ", "ma ", "piwo")
-AFERA JEST wielkie W MORDĘ JEŻA UPPERCASE(tekst)
-PANIE SENSACJA REWELACJA wielkie  RYM CYM CYM "FERDEK MA PIWO"
+AFERA JEST tekst W MORDĘ JEŻA USIĄDŹ NA KANAPIE("Ferdek ", "ma ", "piwo")
+PANIE SENSACJA REWELACJA tekst  RYM CYM CYM "Ferdek ma piwo"
 ```
+
+#### Pozostałe moduły (wbudowane)
+KIBEL (pliki), WERSALKA (listy), SZAFKA (mapy), KLATKA (sieć) - pełna lista
+nazw w `src/ferdek_stdlib.ml`.
 
 ### 📝 PLANOWANE (TODO)
 
 Moduły, które są opisane w dokumentacji ale jeszcze nie zaimplementowane:
 - LODÓWKA - zmienne, stałe
 - TELEWIZOR - dodatkowe operacje I/O
-- KIBEL - operacje na plikach
-- WERSALKA - listy i kolekcje
-- SZAFKA - słowniki/mapy
-- KLATKA - networking
 
 ## Jak używać
 

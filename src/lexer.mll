@@ -305,6 +305,8 @@ rule token = parse
   (* Literals *)
   | '"' { read_string (Buffer.create 16) lexbuf }
   | digit+ as num { INTEGER (int_of_string num) }
+  (* ponytail: minus tylko jako literał ujemny; odejmowanie to PASZOŁ WON *)
+  | '-' (digit+ as num) { INTEGER (- (int_of_string num)) }
 
   (* Identifiers *)
   | letter identifier_char* as id { IDENTIFIER id }
