@@ -117,7 +117,7 @@ let is_function_name ctx name =
 
 
 let comparison_c = function
-  | Equal -> "==" | NotEqual -> "!=" | Greater -> ">" | Less -> "<" | GreaterEqual -> ">="
+  | Equal -> "CMP_EQ" | NotEqual -> "CMP_NE" | Greater -> "CMP_GT" | Less -> "CMP_LT" | GreaterEqual -> "CMP_GE"
 
 let arith_c = function
   | Plus -> "op_add" | Minus -> "op_sub" | Multiply -> "op_mul"
@@ -164,7 +164,7 @@ let rec compile_expr ctx expr =
   | BinaryOp (e1, op, e2) ->
       Printf.sprintf "%s(%s, %s)" (arith_c op) (compile_expr ctx e1) (compile_expr ctx e2)
   | ComparisonOp (e1, op, e2) ->
-      Printf.sprintf "make_bool(compare_values(%s, %s) %s 0)"
+      Printf.sprintf "compare_op(%s, %s, %s)"
         (compile_expr ctx e1) (compile_expr ctx e2) (comparison_c op)
   | LogicalOp (e1, op, e2) ->
       Printf.sprintf "%s(%s, %s)" (match op with And -> "logic_and" | Or -> "logic_or")
@@ -446,16 +446,23 @@ static FerdekValue make_array(FerdekValue* data, int length) {
     return v;
 }
 
+static bool is_decimal(const char* s) {
+    if (*s == '-') s++;
+    if (!*s) return false;
+    for (; *s; s++) if (*s < '0' || *s > '9') return false;
+    return true;
+}
+
+static bool is_numeric(FerdekValue v) { return v.type != TYPE_STRING || is_decimal(v.value.string_val); }
+
 static long long to_int(FerdekValue v) {
     switch (v.type) {
         case TYPE_INT: case TYPE_BYTE: case TYPE_SHORT: case TYPE_FIXED: return v.value.int_val;
         case TYPE_BOOL: return v.value.bool_val ? 1 : 0;
-        case TYPE_STRING: {
-            /* jak int_of_string w interpreterze: cały string musi być liczbą, inaczej 0 */
-            char* end;
-            long long n = strtoll(v.value.string_val, &end, 10);
-            return (*v.value.string_val && !*end) ? n : 0;
-        }
+        case TYPE_STRING:
+            /* tylko zapis dziesiętny - jak decimal_of_string w interpreterze */
+            if (!is_decimal(v.value.string_val)) ferdek_die("Tekst \"%s\" to nie liczba", v.value.string_val);
+            return strtoll(v.value.string_val, NULL, 10);
         case TYPE_NULL: return 0;
         default: ferdek_die("Cannot convert to integer"); return 0;
     }
@@ -549,7 +556,23 @@ static char* to_str(FerdekValue v) {
     return strdup("?");
 }
 
-static FerdekValue op_add(FerdekValue a, FerdekValue b) { return make_int(to_int(a) + to_int(b)); }
+/* + z tekstem po którejkolwiek stronie skleja - jak w interpreterze */
+static FerdekValue op_add(FerdekValue a, FerdekValue b) {
+    if (a.type == TYPE_STRING || b.type == TYPE_STRING) {
+        StrBuf buf = {0};
+        char* x = to_str(a);
+        char* y = to_str(b);
+        buf_add(&buf, x);
+        buf_add(&buf, y);
+        free(x);
+        free(y);
+        FerdekValue v;
+        v.type = TYPE_STRING;
+        v.value.string_val = buf.s;
+        return v;
+    }
+    return make_int(to_int(a) + to_int(b));
+}
 static FerdekValue op_sub(FerdekValue a, FerdekValue b) { return make_int(to_int(a) - to_int(b)); }
 static FerdekValue op_mul(FerdekValue a, FerdekValue b) { return make_int(to_int(a) * to_int(b)); }
 
@@ -565,14 +588,31 @@ static FerdekValue op_mod(FerdekValue a, FerdekValue b) {
     return make_int(to_int(a) % d);
 }
 
-/* Stringi porównujemy jako tekst, resztę jako liczby (jak interpreter) */
-static int compare_values(FerdekValue a, FerdekValue b) {
+/* Jak w interpreterze: tekst z tekstem porównujemy jako tekst; tekst z liczbą
+   przy ==/!= jest różny, przy >/< to błąd (chyba że tekst jest liczbą) */
+enum { CMP_EQ, CMP_NE, CMP_GT, CMP_LT, CMP_GE };
+
+static FerdekValue compare_op(FerdekValue a, FerdekValue b, int op) {
+    int c;
     if (a.type == TYPE_STRING && b.type == TYPE_STRING) {
-        int c = strcmp(a.value.string_val, b.value.string_val);
-        return (c > 0) - (c < 0);
+        c = strcmp(a.value.string_val, b.value.string_val);
+        c = (c > 0) - (c < 0);
+    } else if (is_numeric(a) && is_numeric(b)) {
+        long long x = to_int(a), y = to_int(b);
+        c = (x > y) - (x < y);
+    } else if (op == CMP_EQ || op == CMP_NE) {
+        c = 1;
+    } else {
+        ferdek_die("Nie można porównać tekstu z liczbą");
+        c = 0;
     }
-    long long x = to_int(a), y = to_int(b);
-    return (x > y) - (x < y);
+    switch (op) {
+        case CMP_EQ: return make_bool(c == 0);
+        case CMP_NE: return make_bool(c != 0);
+        case CMP_GT: return make_bool(c > 0);
+        case CMP_LT: return make_bool(c < 0);
+        default: return make_bool(c >= 0);
+    }
 }
 
 /* Interpreter liczy obie strony (bez short-circuit) - funkcja robi to samo */
@@ -940,8 +980,7 @@ static FerdekValue read_value(void) {
     char buffer[1024];
     if (fgets(buffer, sizeof(buffer), stdin) == NULL) return make_null();
     buffer[strcspn(buffer, "\n")] = 0;
-    FerdekValue s = make_string(buffer);
-    return (to_int(s) != 0 || strcmp(buffer, "0") == 0) ? make_int(to_int(s)) : s;
+    return is_decimal(buffer) ? make_int(strtoll(buffer, NULL, 10)) : make_string(buffer);
 }
 |}
 

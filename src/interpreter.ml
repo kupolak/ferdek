@@ -208,6 +208,20 @@ let to_bool = function
   | _ -> true
 
 (* Convert value to integer *)
+(* Tekst jako liczba: tylko zapis dziesiętny ("-12"), jak w runtime C.
+   int_of_string przyjąłby też 0x1F, 0b101, 1_000 - a C nie. *)
+let decimal_of_string s =
+  let n = String.length s in
+  let start = if n > 0 && s.[0] = '-' then 1 else 0 in
+  if n = start then None
+  else if String.for_all (fun c -> c >= '0' && c <= '9') (String.sub s start (n - start))
+  then int_of_string_opt s
+  else None
+
+let is_numeric = function
+  | VString s -> decimal_of_string s <> None
+  | _ -> true
+
 let to_int = function
   | VInt n -> n
   | VByte n -> n
@@ -215,7 +229,10 @@ let to_int = function
   | VFixed n -> n  (* Return raw fixed-point value *)
   | VBool true -> 1
   | VBool false -> 0
-  | VString s -> (try int_of_string s with _ -> 0)
+  | VString s ->
+      (match decimal_of_string s with
+       | Some n -> n
+       | None -> raise (RuntimeError (Printf.sprintf "Tekst \"%s\" to nie liczba" s)))
   | VNull -> 0
   | _ -> raise (RuntimeError "Cannot convert to integer")
 
@@ -235,6 +252,10 @@ let to_string = function
 
 (* Evaluate arithmetic operator *)
 let eval_arith_op op v1 v2 =
+  match op, v1, v2 with
+  (* + z tekstem po którejkolwiek stronie skleja *)
+  | Plus, VString _, _ | Plus, _, VString _ -> VString (to_string v1 ^ to_string v2)
+  | _ ->
   let n1 = to_int v1 in
   let n2 = to_int v2 in
   VInt (match op with
@@ -251,10 +272,13 @@ let eval_arith_op op v1 v2 =
 
 (* Evaluate comparison operator *)
 let eval_comparison_op op v1 v2 =
-  (* Stringi porównujemy jako tekst - to_int zamieniłby "x" i "y" na 0 *)
+  (* Stringi porównujemy jako tekst. Tekst z liczbą: == / != to po prostu różne,
+     > / < to błąd - chyba że tekst jest liczbą ("5") *)
   let c = match v1, v2 with
     | VString a, VString b -> compare a b
-    | _ -> compare (to_int v1) (to_int v2)
+    | _ when is_numeric v1 && is_numeric v2 -> compare (to_int v1) (to_int v2)
+    | _ when op = Equal || op = NotEqual -> 1
+    | _ -> raise (RuntimeError "Nie można porównać tekstu z liczbą")
   in
   VBool (match op with
     | Equal -> c = 0
@@ -1878,7 +1902,7 @@ and eval_stmt env = function
 
   | Read name ->
       let line = read_line () in
-      let value = try VInt (int_of_string line) with _ -> VString line in
+      let value = match decimal_of_string line with Some n -> VInt n | None -> VString line in
       set_var env name value
 
   | Assign (name, expr) ->
