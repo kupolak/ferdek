@@ -211,9 +211,12 @@ ws = os.path.realpath(tempfile.mkdtemp())
 FILES = {
     "lib.ferdek": "CO JEST KURDE\nALE WIE PAN JA ZASADNICZO dodaj\nNO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ\n"
                   "NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO x\n    I JA INFORMUJĘ ŻE WYCHODZĘ x BABKA DAWAJ RENTĘ 1\n"
-                  "DO WIDZENIA PANU\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n",
+                  "DO WIDZENIA PANU\nO KOGO MOJE PIĘKNE OCZY WIDZĄ deep\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n",
+    "deep.ferdek": "CO JEST KURDE\nALE WIE PAN JA ZASADNICZO glebiej\nNO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ\n"
+                   "    I JA INFORMUJĘ ŻE WYCHODZĘ 7\nDO WIDZENIA PANU\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n",
     "main.ferdek": "CO JEST KURDE\nO KOGO MOJE PIĘKNE OCZY WIDZĄ lib\n"
-                   "PANIE SENSACJA REWELACJA W MORDĘ JEŻA dodaj(1)\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n",
+                   "PANIE SENSACJA REWELACJA W MORDĘ JEŻA dodaj(1)\n"
+                   "PANIE SENSACJA REWELACJA W MORDĘ JEŻA glebiej()\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n",
     "alt.ferdek": "CO JEST KURDE\nO KOGO MOJE PIĘKNE OCZY WIDZĄ lib JAKO l\n"
                   "PANIE SENSACJA REWELACJA W MORDĘ JEŻA l.dodaj(2)\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n",
 }
@@ -241,6 +244,12 @@ check("zmiana nazwy w wielu plikach", sorted((os.path.basename(u[7:]), len(e)) f
 alt_edit = [e for u, es in ch.items() if u.endswith("alt.ferdek") for e in es][0]
 check("alias zostaje", (alt_edit["range"]["start"]["character"], alt_edit["range"]["end"]["character"]),
       (alt_col, alt_col + len("dodaj")))
+# Dwa poziomy importów: main -> lib -> deep
+gcol = FILES["main.ferdek"].split("\n")[3].index("glebiej")
+d = send("textDocument/definition", at((3, gcol), MAIN))["result"]
+check("definicja przez dwa importy", (d["uri"].endswith("/deep.ferdek"), d["range"]["start"]["line"]), (True, 1))
+refs = send("textDocument/references", at((3, gcol), MAIN))["result"]
+check("użycia przez dwa importy", [f for f, _, _ in by_file(refs)], ["deep.ferdek", "main.ferdek"])
 send("shutdown", None)
 send("exit", None, request=False)
 proc.wait(timeout=5)

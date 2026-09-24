@@ -226,19 +226,28 @@ let module_file ~find_module dir path =
   if Sys.file_exists local then Some local else find_module path
 
 (* Nazwa z importu: l.nazwa (import JAKO l) albo nazwa z modułu zaimportowanego zwyczajnie.
-   Wynik: plik modułu, jego tekst, tokeny i indeks deklaracji. ponytail: jeden poziom importów *)
+   Wynik: plik modułu, jego tekst, tokeny i indeks deklaracji. Gdy moduł sam jej nie deklaruje,
+   szukamy w modułach, które on importuje (import wkleja moduł w całości) - bez pętli. *)
 let module_decl ~find_module dir toks name =
-  let candidates = match String.index_opt name '.' with
-    | Some k ->
-        let alias = String.sub name 0 k and rest = String.sub name (k + 1) (String.length name - k - 1) in
-        List.filter_map (fun (p, a) -> if a = Some alias then Some (p, rest) else None) (imports toks)
-    | None -> List.filter_map (fun (p, a) -> if a = None then Some (p, name) else None) (imports toks) in
-  List.find_map (fun (p, n) ->
-    Option.bind (module_file ~find_module dir p) (fun f ->
-      Option.bind (read_file f) (fun text ->
-        let mtoks = analyze text in
-        Option.bind (root_scope mtoks) (fun g ->
-          Option.map (fun i -> (f, text, mtoks, i)) (Hashtbl.find_opt g.decls n))))) candidates
+  let seen = Hashtbl.create 8 in
+  let rec search dir toks name =
+    let candidates = match String.index_opt name '.' with
+      | Some k ->
+          let alias = String.sub name 0 k and rest = String.sub name (k + 1) (String.length name - k - 1) in
+          List.filter_map (fun (p, a) -> if a = Some alias then Some (p, rest) else None) (imports toks)
+      | None -> List.filter_map (fun (p, a) -> if a = None then Some (p, name) else None) (imports toks) in
+    List.find_map (fun (p, n) ->
+      Option.bind (module_file ~find_module dir p) (fun f ->
+        let key = (try Unix.realpath f with Unix.Unix_error _ -> f) ^ "\000" ^ n in
+        if Hashtbl.mem seen key then None else begin
+          Hashtbl.add seen key ();
+          Option.bind (read_file f) (fun text ->
+            let mtoks = analyze text in
+            match Option.bind (root_scope mtoks) (fun g -> Hashtbl.find_opt g.decls n) with
+            | Some i -> Some (f, text, mtoks, i)
+            | None -> search (Filename.dirname f) mtoks n)
+        end)) candidates in
+  search dir toks name
 
 (* Nazwy z modułów zaimportowanych z aliasem, do uzupełniania: (alias.nazwa, tokeny, indeks) *)
 let module_names ~find_module dir toks =
@@ -285,6 +294,28 @@ let global_symbol ~find_module file toks lines line ch =
              (module_decl ~find_module (Filename.dirname file) toks name))
   | _ -> None
 
+(* Czy import pliku f daje nazwę n z pliku m: f to m albo f sam jej nie deklaruje i dostaje ją
+   ze swoich zwykłych importów (dowolnie głęboko, bez pętli) *)
+let provides ~find_module f n m =
+  let seen = Hashtbl.create 8 in
+  let rec go f =
+    let cf = canonical f in
+    if cf = m then true
+    else if Hashtbl.mem seen cf then false
+    else begin
+      Hashtbl.add seen cf ();
+      match read_file f with
+      | None -> false
+      | Some text ->
+          let toks = analyze text in
+          let declares = match root_scope toks with Some g -> Hashtbl.mem g.decls n | None -> false in
+          not declares && List.exists (fun (p, a) ->
+            a = None && match module_file ~find_module (Filename.dirname f) p with
+              | Some f' -> go f'
+              | None -> false) (imports toks)
+    end in
+  go f
+
 (* Wystąpienia symbolu (m, n) w pliku: token i ile bajtów z przodu pominąć (alias "l.") *)
 let uses_in ~find_module file toks (m, n) =
   let own =
@@ -295,7 +326,7 @@ let uses_in ~find_module file toks (m, n) =
       | _ -> None) in
   let imported = List.concat_map (fun (p, alias) ->
     match module_file ~find_module (Filename.dirname file) p with
-    | Some f when canonical f = m ->
+    | Some f when provides ~find_module f n m ->
         let want, skip = match alias with Some a -> a ^ "." ^ n, String.length a + 1 | None -> n, 0 in
         Array.to_list toks |> List.filter_map (fun tk -> match tk.t with
           | IDENTIFIER x when x = want && resolve tk.scope x = None -> Some (tk, skip)
