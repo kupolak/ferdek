@@ -1,5 +1,6 @@
 (* ferdek --lsp: serwer Language Server Protocol na stdin/stdout.
-   Umie: idź do definicji, znajdź użycia, zmień nazwę - w obrębie jednego pliku.
+   Umie: idź do definicji, znajdź użycia, zmień nazwę. Nazwy globalne modułu (i nazwy z importu
+   w programie) szuka też w innych plikach .ferdek katalogu roboczego, które ten moduł importują.
    Zasięgi liczymy z tokenów leksera (bez AST, bo AST nie ma pozycji):
    globalny, klasa (pola i metody), funkcja (parametry i lokalne, jak w kompilatorze -
    cała funkcja, niezależnie od miejsca deklaracji) i lambda. *)
@@ -253,6 +254,72 @@ let module_names ~find_module dir toks =
              | Some g -> Hashtbl.fold (fun n i acc -> (a ^ "." ^ n, mtoks, i) :: acc) g.decls [])
     | _ -> []) (imports toks)
 
+(* ---- wiele plików: globalne nazwy modułu w plikach, które go importują ---- *)
+
+let canonical f = try Unix.realpath f with Unix.Unix_error _ -> f
+
+(* Pliki .ferdek w katalogu roboczym (rekursywnie, bez katalogów ukrytych i _build) *)
+let workspace_files root =
+  let rec walk dir acc =
+    match Sys.readdir dir with
+    | exception Sys_error _ -> acc
+    | names ->
+        Array.fold_left (fun acc n ->
+          let p = Filename.concat dir n in
+          if n = "" || n.[0] = '.' || n = "_build" || n = "node_modules" then acc
+          else if Sys.is_directory p then walk p acc
+          else if Filename.check_suffix n ".ferdek" then p :: acc
+          else acc) acc names in
+  walk root []
+
+(* Symbol globalny pod kursorem: (plik z deklaracją, nazwa w tym pliku). None dla nazw lokalnych
+   (w funkcji, klasie, lambdzie) - te zostają w swoim pliku *)
+let global_symbol ~find_module file toks lines line ch =
+  match token_at toks lines line ch with
+  | Some ({ t = IDENTIFIER name; _ } as tk) ->
+      (match resolve tk.scope name with
+       | Some (s, _) -> if s.parent = None then Some (canonical file, name) else None
+       | None ->
+           Option.map (fun (f, _, mtoks, i) ->
+             (canonical f, match mtoks.(i).t with IDENTIFIER n -> n | _ -> name))
+             (module_decl ~find_module (Filename.dirname file) toks name))
+  | _ -> None
+
+(* Wystąpienia symbolu (m, n) w pliku: token i ile bajtów z przodu pominąć (alias "l.") *)
+let uses_in ~find_module file toks (m, n) =
+  let own =
+    if canonical file <> m then []
+    else Array.to_list toks |> List.filter_map (fun tk -> match tk.t with
+      | IDENTIFIER x when x = n ->
+          (match resolve tk.scope x with Some (s, _) when s.parent = None -> Some (tk, 0) | _ -> None)
+      | _ -> None) in
+  let imported = List.concat_map (fun (p, alias) ->
+    match module_file ~find_module (Filename.dirname file) p with
+    | Some f when canonical f = m ->
+        let want, skip = match alias with Some a -> a ^ "." ^ n, String.length a + 1 | None -> n, 0 in
+        Array.to_list toks |> List.filter_map (fun tk -> match tk.t with
+          | IDENTIFIER x when x = want && resolve tk.scope x = None -> Some (tk, skip)
+          | _ -> None)
+    | _ -> []) (imports toks) in
+  own @ imported
+
+let contains s sub =
+  let n = String.length sub and m = String.length s in
+  let rec go i = i + n <= m && (String.sub s i n = sub || go (i + 1)) in
+  go 0
+
+(* Wszystkie wystąpienia w plikach: (plik, linie, [(token, pominięte bajty)]) *)
+let uses_everywhere ~find_module ~text_of files sym =
+  let _, n = sym in
+  List.filter_map (fun f ->
+    match text_of f with
+    | Some text when contains text n ->   (* szybki odsiew przed lekserem *)
+        let toks = analyze text in
+        (match uses_in ~find_module f toks sym with
+         | [] -> None
+         | us -> Some (f, Array.of_list (String.split_on_char '\n' text), us))
+    | _ -> None) (List.sort_uniq compare files)
+
 (* ---- URI <-> ścieżka ---- *)
 
 let path_of_uri uri =
@@ -421,7 +488,26 @@ let run ~diagnose ~find_module () =
   set_binary_mode_in stdin true;
   set_binary_mode_out stdout true;
   let docs : (string, string) Hashtbl.t = Hashtbl.create 8 in
+  let root = ref None in   (* katalog roboczy z initialize; bez niego szukamy tylko w otwartych plikach *)
   let open Yojson.Safe.Util in
+  (* Tekst pliku: z edytora, jeśli otwarty (może być niezapisany), inaczej z dysku *)
+  let text_of f =
+    let cf = canonical f in
+    match Hashtbl.fold (fun uri t acc ->
+      if acc = None && canonical (path_of_uri uri) = cf then Some t else acc) docs None with
+    | Some t -> Some t
+    | None -> read_file f in
+  (* Pliki do przeszukania: katalog roboczy, otwarte dokumenty, plik bieżący i plik deklaracji *)
+  let search_files file (m, _) =
+    (match !root with Some r -> workspace_files r | None -> [])
+    @ Hashtbl.fold (fun uri _ acc -> path_of_uri uri :: acc) docs [] @ [file; m] in
+  let in_root f = match !root with
+    | Some r -> let r = canonical r ^ "/" in String.length f > String.length r && String.sub f 0 (String.length r) = r
+    | None -> Hashtbl.fold (fun uri _ acc -> acc || canonical (path_of_uri uri) = f) docs false in
+  (* plik bieżący pod swoim URI z edytora (może nie istnieć na dysku) *)
+  let uri_for uri f = if canonical f = canonical (path_of_uri uri) then uri else uri_of_path f in
+  (* token przesunięty o pominięte bajty (alias "l." przed nazwą) *)
+  let shifted (tk, skip) = { tk with col = tk.col + skip; len = tk.len - skip } in
   let rec loop shutdown =
     match read_message () with
     | None -> if shutdown then 0 else 1
@@ -445,6 +531,9 @@ let run ~diagnose ~find_module () =
         let markdown s = `Assoc ["contents", `Assoc ["kind", `String "markdown"; "value", `String s]] in
         (try match meth with
           | "initialize" ->
+              (match params |> member "rootUri" with
+               | `String u -> root := Some (path_of_uri u)
+               | _ -> (match params |> member "rootPath" with `String p -> root := Some p | _ -> ()));
               reply id (`Assoc [
                 "capabilities", `Assoc [
                   "textDocumentSync", `Int 1;   (* pełny tekst przy każdej zmianie *)
@@ -505,17 +594,33 @@ let run ~diagnose ~find_module () =
               reply id (completion ~find_module (dir_of uri) toks lines line ch)
           | "textDocument/references" ->
               let uri, lines, toks, line, ch = at_cursor () in
-              reply id (match binding_at toks lines line ch with
-                | Some b -> `List (List.map (loc uri lines) (occurrences toks b))
-                | None -> `List [])
+              let file = path_of_uri uri in
+              reply id (match global_symbol ~find_module file toks lines line ch with
+                | Some sym ->
+                    `List (List.concat_map (fun (f, flines, us) ->
+                      List.map (fun u -> loc (uri_for uri f) flines (shifted u)) us)
+                      (uses_everywhere ~find_module ~text_of (search_files file sym) sym))
+                | None ->
+                    match binding_at toks lines line ch with
+                    | Some b -> `List (List.map (loc uri lines) (occurrences toks b))
+                    | None -> `List [])
           | "textDocument/rename" ->
               let uri, lines, toks, line, ch = at_cursor () in
+              let file = path_of_uri uri in
               let new_name = params |> member "newName" |> to_string in
-              (match binding_at toks lines line ch with
-               | None -> fail id (-32602) "Tu nie ma nazwy zdefiniowanej w tym pliku (wbudowanej nie zmienisz)"
-               | Some _ when not (valid_name new_name) ->
+              (match binding_at toks lines line ch, global_symbol ~find_module file toks lines line ch with
+               | None, None -> fail id (-32602) "Tu nie ma nazwy zdefiniowanej w programie (wbudowanej nie zmienisz)"
+               | _ when not (valid_name new_name) ->
                    fail id (-32602) (Printf.sprintf "'%s' to nie jest dobra nazwa" new_name)
-               | Some b ->
+               | _, Some (m, _) when not (in_root m) ->
+                   fail id (-32602) (Printf.sprintf "%s jest poza katalogiem roboczym - tam nazwy nie zmieniam" m)
+               | _, Some sym ->
+                   let changes = List.map (fun (f, flines, us) ->
+                     uri_for uri f, `List (List.map (fun u ->
+                       `Assoc ["range", range flines (shifted u); "newText", `String new_name]) us))
+                     (uses_everywhere ~find_module ~text_of (search_files file sym) sym) in
+                   reply id (`Assoc ["changes", `Assoc changes])
+               | Some b, None ->
                    let edits = List.map (fun tk ->
                      `Assoc ["range", range lines tk; "newText", `String new_name]) (occurrences toks b) in
                    reply id (`Assoc ["changes", `Assoc [uri, `List edits]]))

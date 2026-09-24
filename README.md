@@ -70,7 +70,7 @@ Debug step by step: `ferdek --debug program.ferdek` - `k` step, `n` next line, `
 for breakpoints and stepping (F5 on a `.ferdek` file).
 
 Editors: `ferdek --lsp` is a Language Server (stdin/stdout): errors as you type, hover docs,
-completion, go to definition (also into imported modules), find references and rename. Point any LSP client at it, e.g. in Neovim:
+completion, go to definition (also into imported modules), find references and rename (across the files that import a module). Point any LSP client at it, e.g. in Neovim:
 
 ```lua
 vim.lsp.start({ name = "ferdek", cmd = { "ferdek", "--lsp" } })

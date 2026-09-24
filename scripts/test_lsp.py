@@ -205,6 +205,46 @@ send("shutdown", None)
 send("exit", None, request=False)
 check("kod wyjścia", proc.wait(timeout=5), 0)
 
+# Wiele plików: moduł i dwa programy, które go importują (zwyczajnie i JAKO l)
+import tempfile
+ws = os.path.realpath(tempfile.mkdtemp())
+FILES = {
+    "lib.ferdek": "CO JEST KURDE\nALE WIE PAN JA ZASADNICZO dodaj\nNO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ\n"
+                  "NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO x\n    I JA INFORMUJĘ ŻE WYCHODZĘ x BABKA DAWAJ RENTĘ 1\n"
+                  "DO WIDZENIA PANU\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n",
+    "main.ferdek": "CO JEST KURDE\nO KOGO MOJE PIĘKNE OCZY WIDZĄ lib\n"
+                   "PANIE SENSACJA REWELACJA W MORDĘ JEŻA dodaj(1)\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n",
+    "alt.ferdek": "CO JEST KURDE\nO KOGO MOJE PIĘKNE OCZY WIDZĄ lib JAKO l\n"
+                  "PANIE SENSACJA REWELACJA W MORDĘ JEŻA l.dodaj(2)\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n",
+}
+for name, text in FILES.items():
+    with open(os.path.join(ws, name), "w", encoding="utf-8") as f:
+        f.write(text)
+proc = subprocess.Popen([FERDEK, "--lsp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+send("initialize", {"capabilities": {}, "rootUri": "file://" + ws})
+MAIN = "file://" + ws + "/main.ferdek"
+send("textDocument/didOpen", {"textDocument": {"uri": MAIN, "text": FILES["main.ferdek"]}}, request=False)
+col = FILES["main.ferdek"].split("\n")[2].index("dodaj")
+
+
+def by_file(locs):
+    return sorted((os.path.basename(l["uri"][7:]), l["range"]["start"]["line"], l["range"]["start"]["character"]) for l in locs)
+
+
+refs = send("textDocument/references", at((2, col), MAIN))["result"]
+alt_col = FILES["alt.ferdek"].split("\n")[2].index("l.dodaj") + 2
+check("użycia w wielu plikach", by_file(refs),
+      [("alt.ferdek", 2, alt_col), ("lib.ferdek", 1, len("ALE WIE PAN JA ZASADNICZO ")), ("main.ferdek", 2, col)])
+ch = send("textDocument/rename", dict(at((2, col), MAIN), newName="dolicz"))["result"]["changes"]
+check("zmiana nazwy w wielu plikach", sorted((os.path.basename(u[7:]), len(e)) for u, e in ch.items()),
+      [("alt.ferdek", 1), ("lib.ferdek", 1), ("main.ferdek", 1)])
+alt_edit = [e for u, es in ch.items() if u.endswith("alt.ferdek") for e in es][0]
+check("alias zostaje", (alt_edit["range"]["start"]["character"], alt_edit["range"]["end"]["character"]),
+      (alt_col, alt_col + len("dodaj")))
+send("shutdown", None)
+send("exit", None, request=False)
+proc.wait(timeout=5)
+
 if failures:
     sys.exit(1)
 print("--- lsp: OK")
