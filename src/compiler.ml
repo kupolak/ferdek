@@ -189,6 +189,7 @@ type codegen_context = {
   int_globals: (string, unit) Hashtbl.t;
   int_locals: (string, string list) Hashtbl.t; (* funkcja -> jej zmienne i parametry long long *)
   mutable floats: string list;                (* zmienne double widoczne w bieżącym miejscu *)
+  mutable fn_has_try: bool;                   (* bieżąca funkcja ma try - tylko wtedy pilnuje handlera *)
   float_globals: (string, unit) Hashtbl.t;
   float_locals: (string, string list) Hashtbl.t;
 }
@@ -601,12 +602,12 @@ let rec compile_expr ctx expr =
                  |> List.sort_uniq compare in
       let cap_values = List.map (fun n -> compile_expr ctx (Identifier n)) caps in
       let name = fresh ctx "lambda_" in
-      let saved = (ctx.locals, ctx.members, ctx.in_function, ctx.loop_handlers, ctx.ints, ctx.ret_int, ctx.floats) in
+      let saved = (ctx.locals, ctx.members, ctx.in_function, ctx.loop_handlers, ctx.ints, ctx.ret_int, ctx.floats, ctx.fn_has_try) in
       ctx.loop_handlers <- [];
       let code = !compile_lambda ctx name params caps body in
-      let (l, m, f, h, i, r, fl) = saved in
+      let (l, m, f, h, i, r, fl, t) = saved in
       ctx.locals <- l; ctx.members <- m; ctx.in_function <- f; ctx.loop_handlers <- h;
-      ctx.ints <- i; ctx.ret_int <- r; ctx.floats <- fl;
+      ctx.ints <- i; ctx.ret_int <- r; ctx.floats <- fl; ctx.fn_has_try <- t;
       ctx.lambdas <- code :: ctx.lambdas;
       Printf.sprintf "make_method(%s, \"anonimowa\", %d, false, %s)" name (List.length params)
         (if caps = [] then "NULL"
@@ -829,10 +830,11 @@ and compile_stmt ctx indent stmt =
         | None -> "FerdekValue", "make_null()"
         | Some e -> "FerdekValue", compile_expr ctx e in
       (* Wartość liczymy przed zdjęciem handlerów - może rzucić wyjątek *)
-      Printf.sprintf "%s{ %s ret = %s; ferdek_handler = entry_handler; ferdek_depth = entry_depth; FERDEK_AT(entry_file, entry_line); return ret; }" ind ty v
+      Printf.sprintf "%s{ %s ret = %s; %sferdek_top = frame.prev; FERDEK_AT(frame.file, frame.line); return ret; }" ind ty v
+        (if ctx.fn_has_try then "ferdek_handler = entry_handler; " else "")
   | Try (try_stmts, var, catch_stmts) ->
       let h = fresh ctx "handler" in
-      Printf.sprintf "%s{\n%s    Handler %s;\n%s    %s.prev = ferdek_handler; %s.depth = ferdek_depth;\n%s    ferdek_handler = &%s;\n%s    if (setjmp(%s.buf) == 0) {\n%s\n%s        ferdek_handler = %s.prev;\n%s    } else {\n%s        ferdek_handler = %s.prev; ferdek_depth = %s.depth;\n%s        %s = ferdek_exception;\n%s\n%s    }\n%s}"
+      Printf.sprintf "%s{\n%s    Handler %s;\n%s    %s.prev = ferdek_handler; %s.top = ferdek_top;\n%s    ferdek_handler = &%s;\n%s    if (setjmp(%s.buf) == 0) {\n%s\n%s        ferdek_handler = %s.prev;\n%s    } else {\n%s        ferdek_handler = %s.prev; ferdek_top = %s.top;\n%s        %s = ferdek_exception;\n%s\n%s    }\n%s}"
         ind ind h ind h h ind h ind h
         (String.concat "\n" (List.map (compile_stmt ctx (indent + 2)) try_stmts))
         ind h ind ind h h ind (var_c var)
@@ -883,9 +885,10 @@ let compile_body ?(own_ints = []) ?(own_floats = []) ?(ret_int = false) ?display
   (* setjmp: lokalne zmieniane w try muszą być volatile, inaczej po longjmp mają śmieci.
      ponytail: parametry nie są volatile - przypisanie do parametru w try i odczyt w catch to UB *)
   let qual = if has_try f.body then "volatile " else "" in
-  let decls = "    Handler* entry_handler = ferdek_handler;"
-    :: "    const char* entry_file = ferdek_file; int entry_line = ferdek_line;"
-    :: Printf.sprintf "    int entry_depth = ferdek_depth; FERDEK_ENTER(%s);"
+  (* Bez try funkcja nie zmienia handlera (wołane funkcje przywracają swój) - nie trzeba go pilnować *)
+  ctx.fn_has_try <- has_try f.body;
+  let decls = (if ctx.fn_has_try then "    Handler* entry_handler = ferdek_handler;" else "")
+    :: Printf.sprintf "    Frame frame = { %s, ferdek_file, ferdek_line, ferdek_top }; ferdek_top = &frame;"
          (c_string_literal (Option.value display ~default:f.name))
     :: List.map (fun n ->
          if List.mem n own_ints then Printf.sprintf "    %slong long %s = 0;" qual (var_c n)
@@ -899,7 +902,7 @@ let compile_body ?(own_ints = []) ?(own_floats = []) ?(ret_int = false) ?display
   ctx.floats <- global_floats ctx;
   ctx.ret_int <- false;
   String.concat "\n" ([Printf.sprintf "%s {" proto] @ decls @ body
-                      @ ["    ferdek_handler = entry_handler;"; "    ferdek_depth = entry_depth;"; "    FERDEK_AT(entry_file, entry_line);";
+                      @ [(if ctx.fn_has_try then "    ferdek_handler = entry_handler;" else ""); "    ferdek_top = frame.prev;"; "    FERDEK_AT(frame.file, frame.line);";
                          if ret_int then "    return 0;" else "    return make_null();"; "}"])
 
 
@@ -1087,29 +1090,22 @@ static void print_loc(void) {
     else fprintf(stderr, " (linia %d)", ferdek_line);
 }
 
-/* Ścieżka wywołań: funkcja i miejsce wywołania. Pierścień - przy głębokiej rekurencji
-   i tak pokazujemy tylko najgłębsze ramki. */
-typedef struct { const char* name; const char* file; int line; } Frame;
-static Frame ferdek_frames[256];
-static int ferdek_depth = 0;
-#define FERDEK_ENTER(n) (ferdek_frames[ferdek_depth & 255] = (Frame){(n), ferdek_file, ferdek_line}, ferdek_depth++)
+/* Ścieżka wywołań: każda funkcja ma na stosie C ramkę (nazwa, miejsce wywołania, poprzednia).
+   Ramka zastępuje też zapamiętanie pozycji wołającego - przy powrocie wracamy do frame.file/line. */
+typedef struct Frame { const char* name; const char* file; int line; struct Frame* prev; } Frame;
+static Frame* ferdek_top = NULL;
 
 /* Linia z błędem (wbudowane źródła) i ścieżka wywołań - ten sam tekst co Sources.context */
 static const char* source_line(const char* file, int line);
 static void print_context(void) {
     const char* l = source_line(ferdek_file, ferdek_line);
     if (l) fprintf(stderr, "%5d | %s\n", ferdek_line, l);
-    /* powtórzenia z rekurencji zwijamy: "(12 razy)"; ramki starsze niż pierścień liczymy jako ukryte */
-    int low = ferdek_depth > 256 ? ferdek_depth - 256 : 0;   /* starsze ramki są nadpisane - tylko je liczymy */
-    int d = ferdek_depth - 1, shown = 0, hidden = low;
-    while (d >= low) {
+    /* powtórzenia z rekurencji zwijamy: "(12 razy)" */
+    int shown = 0, hidden = 0;
+    for (Frame* f = ferdek_top; f; ) {
         int k = 1;
-        Frame* f = &ferdek_frames[d & 255];
-        while (d - k >= low) {
-            Frame* g = &ferdek_frames[(d - k) & 255];
-            if (g->line != f->line || strcmp(g->name, f->name) != 0 || strcmp(g->file, f->file) != 0) break;
-            k++;
-        }
+        Frame* g = f->prev;
+        while (g && g->line == f->line && strcmp(g->name, f->name) == 0 && strcmp(g->file, f->file) == 0) { k++; g = g->prev; }
         if (shown < 8) {
             if (f->file[0] && strcmp(f->file, ferdek_file) != 0) fprintf(stderr, "  w funkcji %s, wywołanej w %s, linia %d", f->name, f->file, f->line);
             else fprintf(stderr, "  w funkcji %s, wywołanej w linii %d", f->name, f->line);
@@ -1117,13 +1113,13 @@ static void print_context(void) {
             fprintf(stderr, "\n");
             shown++;
         } else hidden += k;
-        d -= k;
+        f = g;
     }
     if (hidden > 0) fprintf(stderr, "  ... i jeszcze %d\n", hidden);
 }
 
 /* Wyjątki: stos handlerów na setjmp/longjmp */
-typedef struct Handler { jmp_buf buf; struct Handler* prev; int depth; } Handler;
+typedef struct Handler { jmp_buf buf; struct Handler* prev; Frame* top; } Handler;
 static Handler* ferdek_handler = NULL;
 static FerdekValue ferdek_exception;
 static FerdekValue make_string(const char* s);
@@ -3054,7 +3050,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
               classes = Hashtbl.create 8; records = Hashtbl.create 8; members = []; lambdas = [];
               ints = []; ret_int = false; sigs = Hashtbl.create 8; int_globals = Hashtbl.create 32;
               int_locals = Hashtbl.create 16; floats = []; float_globals = Hashtbl.create 16;
-              float_locals = Hashtbl.create 16 } in
+              float_locals = Hashtbl.create 16; fn_has_try = false } in
   List.iter (function
     | FunctionDecl f -> Hashtbl.replace ctx.funcs f.name f
     | ClassDecl c -> Hashtbl.replace ctx.classes c.name c

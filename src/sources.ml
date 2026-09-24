@@ -46,10 +46,7 @@ let context (file, n) frames =
         (match groups rest with
          | (y, k) :: tl when y = x -> (x, k + 1) :: tl
          | g -> (x, 1) :: g) in
-  (* jak pierścień w C: pamiętamy 256 najgłębszych ramek, starsze tylko liczymy *)
-  let window = 256 in
-  let older = max 0 (List.length frames - window) in
-  let gs = groups (List.filteri (fun i _ -> i < window) frames) in
+  let gs = groups frames in
   List.iteri (fun i ((name, (f, l)), k) ->
     if i < max_frames then begin
       (* ten sam plik co błąd - wystarczy numer linii *)
@@ -58,6 +55,6 @@ let context (file, n) frames =
       if k > 1 then Printf.bprintf b " (%d razy)" k;
       Buffer.add_char b '\n'
     end) gs;
-  let hidden = older + List.fold_left (fun acc (_, k) -> acc + k) 0 (List.filteri (fun i _ -> i >= max_frames) gs) in
+  let hidden = List.fold_left (fun acc (_, k) -> acc + k) 0 (List.filteri (fun i _ -> i >= max_frames) gs) in
   if hidden > 0 then Printf.bprintf b "  ... i jeszcze %d\n" hidden;
   Buffer.contents b
