@@ -144,6 +144,9 @@ let loc_suffix () =
   | ("", line) -> Printf.sprintf " (linia %d)" line
   | (file, line) -> Printf.sprintf " (%s, linia %d)" file line
 
+(* Argumenty programu (po nazwie pliku w wywołaniu ferdek) - dla CO PAN PRZYNIÓSŁ *)
+let program_args : string list ref = ref []
+
 (* Chwila startu programu - dla JEST TRZECIA W NOCY *)
 let program_start = Unix.gettimeofday ()
 

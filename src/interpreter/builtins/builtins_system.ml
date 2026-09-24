@@ -4,6 +4,23 @@ open Value
 open Builtins_common
 
 let register () = add [
+  (* CO PAN PRZYNIÓSŁ() - argumenty programu jako tablica tekstów *)
+  ["CO PAN PRZYNIÓSŁ"], Some 0, (fun _ _ ->
+      VArray (Array.of_list (List.map (fun a -> VString a) !program_args)));
+
+  (* CO MÓWI SĄSIAD(nazwa) - zmienna środowiska albo nic *)
+  ["CO MÓWI SĄSIAD"], Some 1, (fun env args ->
+      match Sys.getenv_opt (to_string (eval_expr env (List.hd args))) with
+      | Some v -> VString v
+      | None -> VNull);
+
+  (* ZAMYKAM INTERES(kod) - koniec programu z kodem wyjścia, od razu (bez sprzątania, jak exit w C) *)
+  ["ZAMYKAM INTERES"], Some 1, (fun env args ->
+      let code = to_int (eval_expr env (List.hd args)) in
+      if code < 0 || code > 255 then raise (RuntimeError "ZAMYKAM INTERES: kod wyjścia musi być od 0 do 255");
+      flush stdout; flush stderr;
+      exit code);
+
   (* SYSTEM(komenda) - wykonuje komendę systemową i zwraca output *)
   (* OPAKUJ W GAZETĘ(tekst) - bezpieczne cytowanie argumentu dla powłoki (do SYSTEM) *)
   ["OPAKUJ W GAZETĘ"], Some 1, (fun env args ->

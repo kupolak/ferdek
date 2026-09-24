@@ -91,7 +91,7 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime
+test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime test-args
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
 
@@ -179,6 +179,14 @@ test-tutorial: build
 	python3 scripts/test_tutorial.py $(FERDEK)
 
 # Serwer LSP: definicje, użycia, zmiana nazwy
+# Argumenty programu, zmienne środowiska i kod wyjścia - interpreter i skompilowany C
+test-args: build
+	@for mode in "" "-r"; do \
+	  out=$$(FERDEK_SASIAD=Paździochowie $(FERDEK) $$mode tests/program/argumenty.ferdek piwo "dwa słowa" 3); rc=$$?; \
+	  exp=$$(printf '[piwo, dwa słowa, 3]\n3\nPaździochowie\nnull'); \
+	  if [ "$$out" != "$$exp" ] || [ $$rc -ne 3 ]; then echo "FAIL test-args $$mode (kod $$rc):"; echo "$$out"; exit 1; fi; \
+	done; echo "--- argumenty programu: OK"
+
 test-lsp: build
 	python3 scripts/test_lsp.py $(FERDEK)
 
@@ -219,4 +227,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: playground all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: playground all build clean distclean test test-args test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

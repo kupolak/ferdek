@@ -110,6 +110,9 @@ let builtins = [
   ["PRZENIEŚ KIBEL"], ("b_przenies_kibel", Some 2);
   ["WYKOP WSZYSTKIE KIBLE"], ("b_wykop_kible", Some 1);
   ["SYSTEM"], ("b_system", Some 1);
+  ["CO PAN PRZYNIÓSŁ"], ("b_co_pan_przyniosl", Some 0);
+  ["CO MÓWI SĄSIAD"], ("b_co_mowi_sasiad", Some 1);
+  ["ZAMYKAM INTERES"], ("b_zamykam_interes", Some 1);
   ["OPAKUJ W GAZETĘ"], ("b_opakuj", Some 1);
   ["DAJ MI HAJS"], ("b_daj_hajs", Some 2);
   ["ODDAJ WSZYSTKO"], ("b_oddaj_wszystko", Some 1);
@@ -982,10 +985,11 @@ let compile_program ?(load_module = fun _ -> None) prog =
   ] @ graphics @ sources @ globals @ [""] @ protos @ object_protos @ [""] @ List.rev ctx.lambdas @ [""] @ functions @ method_code @ [""] @ wrappers
     @ method_wrappers @ [""] @ constructors @ [
     "";
-    "int main(void) {";
+    "int main(int argc, char** argv) {";
     "#ifdef FERDEK_GC";
     "    GC_INIT();";
     "#endif";
+    "    ferdek_argc = argc; ferdek_argv = argv;";
     "    clock_gettime(CLOCK_MONOTONIC, &program_start);";
   ] @ main_body @ [
     "    return 0;";

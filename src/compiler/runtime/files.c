@@ -138,6 +138,29 @@ static FerdekValue b_system(int argc, FerdekValue* argv) {
     return own_string(b.s);
 }
 
+/* Argumenty programu (main je ustawia), zmienne środowiska, kod wyjścia - jak w interpreterze */
+static int ferdek_argc = 0;
+static char** ferdek_argv = NULL;
+
+static FerdekValue b_co_pan_przyniosl(int argc, FerdekValue* argv) {
+    int n = ferdek_argc > 1 ? ferdek_argc - 1 : 0;
+    FerdekValue* items = fx_malloc(sizeof(FerdekValue) * (n > 0 ? n : 1));
+    for (int i = 0; i < n; i++) items[i] = make_string(ferdek_argv[i + 1]);
+    return make_array(items, n);
+}
+
+static FerdekValue b_co_mowi_sasiad(int argc, FerdekValue* argv) {
+    const char* v = getenv(to_str(argv[0]));
+    return v ? make_string(v) : make_null();
+}
+
+static FerdekValue b_zamykam_interes(int argc, FerdekValue* argv) {
+    long long code = to_int(argv[0]);
+    if (code < 0 || code > 255) ferdek_die("ZAMYKAM INTERES: kod wyjścia musi być od 0 do 255");
+    fflush(stdout); fflush(stderr);
+    exit((int)code);
+}
+
 /* Jak Filename.quote: '...' z ' zamienionym na '\'' */
 static FerdekValue b_opakuj(int argc, FerdekValue* argv) {
     char* s = to_str(argv[0]);

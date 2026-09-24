@@ -21,6 +21,8 @@ let entries = [
   "CO", "CO", "Krok pętli for (domyślnie 1, ujemny liczy w dół)", false;
   "CO JEST KURDE", "CO JEST KURDE", "Początek programu", false;
   "CO LECI W TELEWIZORZE", "CO LECI W TELEWIZORZE(ekran, x, y)", "Odczytaj piksel", true;
+  "CO MÓWI SĄSIAD", "CO MÓWI SĄSIAD(nazwa)", "Zmienna środowiska (tekst) albo null, gdy jej nie ma", true;
+  "CO PAN PRZYNIÓSŁ", "CO PAN PRZYNIÓSŁ()", "Argumenty programu (ferdek program.ferdek a b) jako tablica tekstów", true;
   "CO TAM JEST", "CO TAM JEST", "Wartość spod wskaźnika", false;
   "CO TAM U PANA SŁYCHAĆ", "CO TAM U PANA SŁYCHAĆ", "Wczytaj linię z wejścia do zmiennej", false;
   "CO TO JE", "CO TO JE", "Wybór wariantu: CO TO JE x / JAK JE 1, 2 / A JAK NIC Z TEGO / KONIEC GADANIA", false;
@@ -201,6 +203,7 @@ let entries = [
   "ZAMIEŃ NA FIXED", "ZAMIEŃ NA FIXED", "Liczba na fixed-point 16.16", false;
   "ZAMIEŃ NA KANAPIE", "ZAMIEŃ NA KANAPIE(tekst, stary, nowy)", "Zamień wszystkie wystąpienia", true;
   "ZAMKNIJ KIBEL", "ZAMKNIJ KIBEL(uchwyt)", "Zamknij plik", true;
+  "ZAMYKAM INTERES", "ZAMYKAM INTERES(kod)", "Zakończ program od razu z kodem wyjścia 0-255 (bez sprzątania, jak exit)", true;
   "ZAOKRĄGLIJ DO SKRZYNKI", "ZAOKRĄGLIJ DO SKRZYNKI(liczba)", "SKRZYNKA: zaokrąglenie do liczby całkowitej (połówki od zera)", true;
   "ZAPAKUJ DO SŁOIKA", "ZAPAKUJ DO SŁOIKA(wartość)", "JSON: szafki, tablice, liczby, teksty, prawda/fałsz jako tekst JSON (klucze posortowane)", true;
   "ZAPISZ DO BLOKU", "ZAPISZ DO BLOKU(blok, indeks, wartość)", "Zapisz w bloku", true;

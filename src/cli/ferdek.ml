@@ -350,7 +350,8 @@ let quick_run input_file =
       let temp_exe = Filename.temp_file "ferdek_" "" in
       write_file temp_c c_code;
       let rc =
-        if cc temp_c temp_exe = 0 then Sys.command (Filename.quote temp_exe)
+        if cc temp_c temp_exe = 0 then
+          Sys.command (String.concat " " (List.map Filename.quote (temp_exe :: !Value.program_args)))
         else (Printf.eprintf "Błąd kompilacji. Nawet szybki szlag się nie udał...\n"; 1)
       in
       (try Sys.remove temp_c with _ -> ());
@@ -416,7 +417,11 @@ let () =
   let rec parse_args i mode output_file input_file =
     if i >= argc then
       (mode, output_file, input_file)
-    else
+    else if input_file <> None && (mode = `Interpret || mode = `QuickRun) then begin
+      (* wszystko po pliku programu to jego argumenty (CO PAN PRZYNIÓSŁ) *)
+      Value.program_args := Array.to_list (Array.sub Sys.argv i (argc - i));
+      (mode, output_file, input_file)
+    end else
       match Sys.argv.(i) with
       | "-h" | "--help" -> 
           print_help ();
