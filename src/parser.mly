@@ -7,7 +7,7 @@ open Ast
 %token VAR_DECL VAR_INIT
 %token PRINT PRINT_INLINE PRINT_NEWLINE READ
 %token ASSIGN_START ASSIGN_OP ASSIGN_END
-%token IF ELSE ELSE_IF END_IF
+%token IF ELSE ELSE_IF END_IF SWITCH CASE DEFAULT END_SWITCH
 %token WHILE END_WHILE FOR FOR_FROM FOR_TO FOR_STEP FOR_IN
 %token FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END ELLIPSIS
 %token FUNC_CALL FUNC_CALL_ASSIGN RETURN LAMBDA
@@ -116,6 +116,7 @@ statement_kind:
   | r=read_stmt { r }
   | a=assign_stmt { a }
   | i=if_stmt { i }
+  | s=switch_stmt { s }
   | w=while_stmt { w }
   | f=func_call_stmt { f }
   | f=func_call_with_assign { f }
@@ -172,6 +173,32 @@ if_rest:
   | ELSE else_block=list(statement) END_IF { Some else_block }
   | ELSE_IF cond=expression block=list(statement) rest=if_rest
     { Some [Located ($startpos.Lexing.pos_fname, $startpos.Lexing.pos_lnum, If (cond, block, rest))] }
+  ;
+
+(* CO TO JE x / JAK JE a, b / A JAK NIC Z TEGO / KONIEC GADANIA - zamieniane od razu na łańcuch if:
+   wartość raz do zmiennej pomocniczej, przypadek = równość z którąkolwiek z wartości.
+   Interpreter i kompilator dostają ten sam kod. ponytail: zmienna pomocnicza nazwana od numeru
+   linii - dwa CO TO JE w jednej linii by się pogryzły *)
+switch_stmt:
+  | SWITCH e=expression cases=list(switch_case) default=option(switch_default) END_SWITCH
+    { let file = $startpos.Lexing.pos_fname in
+      let tmp = Printf.sprintf "(co to je %d)" $startpos.Lexing.pos_lnum in
+      let test vals =
+        let eq v = ComparisonOp (Identifier tmp, Equal, v) in
+        List.fold_left (fun acc v -> LogicalOp (acc, Or, eq v)) (eq (List.hd vals)) (List.tl vals) in
+      let rec chain = function
+        | [] -> default
+        | (vals, body, line) :: rest -> Some [Located (file, line, If (test vals, body, chain rest))] in
+      If (BoolLiteral true, VarDecl (tmp, e) :: Option.value (chain cases) ~default:[], None) }
+  ;
+
+switch_case:
+  | CASE vals=separated_nonempty_list(COMMA, expression) body=list(statement)
+    { (vals, body, $startpos.Lexing.pos_lnum) }
+  ;
+
+switch_default:
+  | DEFAULT body=list(statement) { body }
   ;
 
 while_stmt:

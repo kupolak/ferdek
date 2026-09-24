@@ -3,6 +3,7 @@
 (* słowo, tekst do wstawienia (z sygnaturą), opis, czy funkcja wbudowana *)
 let entries = [
   "A DUPA TAM", "A DUPA TAM", "else", false;
+  "A JAK NIC Z TEGO", "A JAK NIC Z TEGO", "Gdy żaden przypadek CO TO JE nie pasuje", false;
   "A POCAŁUJCIE MNIE WSZYSCY W DUPĘ", "A POCAŁUJCIE MNIE WSZYSCY W DUPĘ", "break", false;
   "A PROSZĘ BARDZO", "A PROSZĘ BARDZO", "Nowa wartość w przypisaniu", false;
   "A ROBIĆ NI MA KOMU", "A ROBIĆ NI MA KOMU", "Koniec pętli", false;
@@ -22,6 +23,7 @@ let entries = [
   "CO LECI W TELEWIZORZE", "CO LECI W TELEWIZORZE(ekran, x, y)", "Odczytaj piksel", true;
   "CO TAM JEST", "CO TAM JEST", "Wartość spod wskaźnika", false;
   "CO TAM U PANA SŁYCHAĆ", "CO TAM U PANA SŁYCHAĆ", "Wczytaj linię z wejścia do zmiennej", false;
+  "CO TO JE", "CO TO JE", "Wybór wariantu: CO TO JE x / JAK JE 1, 2 / A JAK NIC Z TEGO / KONIEC GADANIA", false;
   "CO TO ZA TYP", "CO TO ZA TYP(x)", "Nazwa typu wartości", true;
   "CO W KIBLU", "CO W KIBLU(ścieżka)", "Pliki w katalogu", true;
   "COKOLWIEK MOŻE BYĆ", "COKOLWIEK MOŻE BYĆ", "| (bitowe)", false;
@@ -62,6 +64,7 @@ let entries = [
   "ILE W SZAFCE", "ILE W SZAFCE(mapa)", "Liczba kluczy", true;
   "JA JESTEM PONAD TO", "JA JESTEM PONAD TO", ">=", false;
   "JA TU RZĄDZĘ", "JA TU RZĄDZĘ(wynik)", "BABKA: asercja wyniku operacji", true;
+  "JAK JE", "JAK JE", "Przypadek w CO TO JE - jedna albo kilka wartości po przecinku", false;
   "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ", "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ", "Funkcja bez nazwy (lambda): JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2, albo z instrukcjami: (x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ ... DO WIDZENIA PANU. Zmienne lokalne łapie jako kopie z chwili utworzenia (każde wywołanie zaczyna od nich), globalne są wspólne", false;
   "JAKI DZIŚ DZIEŃ", "JAKI DZIŚ DZIEŃ()", "Dzisiejsza data jako tekst RRRR-MM-DD", true;
   "JAKO", "JAKO", "Import z przestrzenią nazw: O KOGO MOJE PIĘKNE OCZY WIDZĄ matma JAKO m, potem m.dodaj(1, 2), m.PI", false;
@@ -71,6 +74,7 @@ let entries = [
   "KANAPA W DÓŁ", "KANAPA W DÓŁ(tekst)", "Małe litery (także polskie)", true;
   "KARTA LUBI DYM", "KARTA LUBI DYM(min, max)", "Losowa liczba z zakresu; KARTA LUBI DYM(ziarno) ustawia ziarno", true;
   "KOMORNICZY WINDYKACJA", "KOMORNICZY WINDYKACJA(tag_od, tag_do)", "Zwolnij bloki o tagach z zakresu", true;
+  "KONIEC GADANIA", "KONIEC GADANIA", "Koniec CO TO JE", false;
   "KONIEC LISTY", "KONIEC LISTY", "Koniec enuma", false;
   "KONIEC MEBLA", "KONIEC MEBLA", "Koniec struktury", false;
   "KONIEC UNII EUROPEJSKIEJ", "KONIEC UNII EUROPEJSKIEJ", "Koniec unii", false;

@@ -143,7 +143,7 @@ class Gen:
 
     def stmt(self, d, ind):
         t = self.pick(["int", "float", "str", "arr"])
-        kinds = ["print", "print", "print", "assign", "assign", "map"] + (["if", "for", "while", "try"] if d < 2 else [])
+        kinds = ["print", "print", "print", "assign", "assign", "map"] + (["if", "for", "while", "try", "switch"] if d < 2 else [])
         k = self.pick(kinds)
         if k == "print":
             return [f"{ind}PANIE SENSACJA REWELACJA {self.expr(self.pick(['int', 'float', 'str', 'arr', 'bool']), 0)}"]
@@ -158,6 +158,14 @@ class Gen:
                 [f"{ind}O KURDE MAM POMYSŁA kasa0[\"stan\"] A PROSZĘ BARDZO {self.expr('int', 1)} NO I GITARA"]
                 if self.has_class else [f"{ind}PANIE SENSACJA REWELACJA m0"],
             ])
+        if k == "switch":
+            out = [f"{ind}CO TO JE {self.expr('int', 1)}"]
+            for _ in range(self.r.randint(1, 3)):
+                vals = ", ".join(str(self.r.randint(-5, 5)) for _ in range(self.r.randint(1, 2)))
+                out += [f"{ind}    JAK JE {vals}"] + self.stmts(1, d + 1, ind + "        ")
+            if self.r.random() < 0.5:
+                out += [f"{ind}    A JAK NIC Z TEGO"] + self.stmts(1, d + 1, ind + "        ")
+            return out + [f"{ind}KONIEC GADANIA"]
         if k == "if":
             out = [f"{ind}NO JAK NIE JAK TAK {self.expr('bool', 0)}"] + self.stmts(2, d + 1, ind + "    ")
             if self.r.random() < 0.5:

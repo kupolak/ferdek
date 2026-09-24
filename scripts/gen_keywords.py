@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # Token z leksera -> zakres kolorowania
 SCOPES = {
-    "keyword.control.ferdek": """IF ELSE ELSE_IF END_IF WHILE END_WHILE FOR FOR_FROM FOR_TO FOR_STEP FOR_IN
+    "keyword.control.ferdek": """IF ELSE ELSE_IF END_IF SWITCH CASE DEFAULT END_SWITCH WHILE END_WHILE FOR FOR_FROM FOR_TO FOR_STEP FOR_IN
         TRY CATCH THROW BREAK CONTINUE RETURN PROGRAM_START PROGRAM_END""",
     "storage.type.ferdek": """VAR_DECL VAR_INIT ARRAY_DECL FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END
         CLASS EXTENDS STRUCT END_STRUCT UNION END_UNION ENUM END_ENUM IMPORT IMPORT_AS""",
@@ -118,6 +118,10 @@ SECTIONS = [
         "OD": "Początek zakresu pętli for",
         "DO": "Koniec zakresu pętli for (włącznie)",
         "CO": "Krok pętli for (domyślnie 1, ujemny liczy w dół)",
+        "CO TO JE": "Wybór wariantu: CO TO JE x / JAK JE 1, 2 / A JAK NIC Z TEGO / KONIEC GADANIA",
+        "JAK JE": "Przypadek w CO TO JE - jedna albo kilka wartości po przecinku",
+        "A JAK NIC Z TEGO": "Gdy żaden przypadek CO TO JE nie pasuje",
+        "KONIEC GADANIA": "Koniec CO TO JE",
         "Z": "Pętla po elementach: KRĘCI CEMENT BETONIARA x Z kolekcja - tablica (elementy), szafka (klucze, posortowane) albo tekst (znaki)",
         "A ROBIĆ NI MA KOMU": "Koniec pętli",
         "A POCAŁUJCIE MNIE WSZYSCY W DUPĘ": "break",

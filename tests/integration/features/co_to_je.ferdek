@@ -1,0 +1,53 @@
+CO JEST KURDE
+
+RYM CYM CYM Wybór wariantu: CO TO JE / JAK JE / A JAK NIC Z TEGO / KONIEC GADANIA
+ALE WIE PAN JA ZASADNICZO co_na_obiad
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO dzien
+    CO TO JE dzien
+        JAK JE "sobota", "niedziela"
+            I JA INFORMUJĘ ŻE WYCHODZĘ "schabowy"
+        JAK JE "piątek"
+            I JA INFORMUJĘ ŻE WYCHODZĘ "ryba"
+        A JAK NIC Z TEGO
+            I JA INFORMUJĘ ŻE WYCHODZĘ "zupa z torebki"
+    KONIEC GADANIA
+DO WIDZENIA PANU
+
+KRĘCI CEMENT BETONIARA d Z ["poniedziałek", "piątek", "niedziela"]
+    PANIE SENSACJA REWELACJA d BABKA DAWAJ RENTĘ ": " BABKA DAWAJ RENTĘ W MORDĘ JEŻA co_na_obiad(d)
+A ROBIĆ NI MA KOMU
+
+RYM CYM CYM Liczby, zagnieżdżenie, bez A JAK NIC Z TEGO, i przerwanie pętli z wnętrza
+KRĘCI CEMENT BETONIARA i OD 1 DO 10
+    CO TO JE i PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ 3
+        JAK JE 0
+            CO TO JE i
+                JAK JE 9
+                    PANIE SENSACJA REWELACJA "dziewięć - koniec"
+                    A POCAŁUJCIE MNIE WSZYSCY W DUPĘ
+            KONIEC GADANIA
+            PANIE SENSACJA REWELACJA i BABKA DAWAJ RENTĘ " dzieli się przez 3"
+        JAK JE 1
+            AKUKARACZA
+    KONIEC GADANIA
+    PANIE SENSACJA REWELACJA i BABKA DAWAJ RENTĘ " - dalej po CO TO JE"
+A ROBIĆ NI MA KOMU
+
+RYM CYM CYM Wartość liczona raz, nawet gdy nic nie pasuje
+CYCU PRZYNIEŚ NO licznik
+TO NIE SĄ TANIE RZECZY 0
+ALE WIE PAN JA ZASADNICZO nastepny
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+    O KURDE MAM POMYSŁA licznik A PROSZĘ BARDZO licznik BABKA DAWAJ RENTĘ 1 NO I GITARA
+    I JA INFORMUJĘ ŻE WYCHODZĘ licznik
+DO WIDZENIA PANU
+CO TO JE W MORDĘ JEŻA nastepny()
+    JAK JE 5
+        PANIE SENSACJA REWELACJA "pięć"
+    JAK JE 6, 7
+        PANIE SENSACJA REWELACJA "sześć albo siedem"
+KONIEC GADANIA
+PANIE SENSACJA REWELACJA "licznik: " BABKA DAWAJ RENTĘ licznik
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

@@ -5,16 +5,19 @@
 open Parser
 
 let opens = function
-  | IF | WHILE | FOR | FUNC_DECL | CLASS | STRUCT | UNION | ENUM | TRY -> true
+  | IF | WHILE | FOR | FUNC_DECL | CLASS | STRUCT | UNION | ENUM | TRY | SWITCH -> true
   | _ -> false
 
 let closes = function
-  | END_IF | END_WHILE | FUNC_END | END_STRUCT | END_UNION | END_ENUM -> true
+  | END_IF | END_WHILE | FUNC_END | END_STRUCT | END_UNION | END_ENUM | END_SWITCH -> true
   | _ -> false
+
+(* CO TO JE: przypadki o poziom głębiej, ich treść o dwa - blok liczy się podwójnie *)
+let weight = function SWITCH | END_SWITCH -> 2 | _ -> 1
 
 (* Linia na poziomie otwierającego bloku, bez zmiany głębokości: else, catch, nagłówek funkcji *)
 let at_opener_level = function
-  | ELSE | ELSE_IF | CATCH | FUNC_RETURNS | FUNC_PARAMS -> true
+  | ELSE | ELSE_IF | CATCH | FUNC_RETURNS | FUNC_PARAMS | CASE | DEFAULT -> true
   | _ -> false
 
 (* Tokeny z numerami linii początku i końca; None, gdy lekser się wyłoży (wtedy nie formatujemy) *)
@@ -62,16 +65,17 @@ let format source =
         end else begin
           blank_run := 0;
           let toks = List.rev per_line.(i) in
-          let first_back = match toks with
-            | t :: _ -> closes t || (at_opener_level t && not (lambda_body t !prev))
-            | [] -> false in
-          let level = if is_directive line then 0 else max 0 (!depth - (if first_back then 1 else 0)) in
+          let back = match toks with
+            | t :: _ when closes t -> weight t
+            | t :: _ when at_opener_level t && not (lambda_body t !prev) -> 1
+            | _ -> 0 in
+          let level = if is_directive line then 0 else max 0 (!depth - back) in
           Buffer.add_string out (String.make (4 * level) ' ');
           Buffer.add_string out trimmed;
           Buffer.add_char out '\n';
           List.iter (fun t ->
-            if opens t || lambda_body t !prev then incr depth
-            else if closes t then depth := max 0 (!depth - 1);
+            if opens t || lambda_body t !prev then depth := !depth + weight t
+            else if closes t then depth := max 0 (!depth - weight t);
             prev := t) toks
         end
       done;
