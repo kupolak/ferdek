@@ -43,7 +43,11 @@
   memory, maps, UDP and X11 graphics. Compiled programs print exactly what the interpreter prints,
   error messages included (checked by tests and a fuzzer).
 - Compiled programs are optimized (`-O2`, fast paths for integers, string literals without copying):
-  7-23x faster than the interpreter on `make bench` (was 2-4x).
+  8-43x faster than the interpreter on `make bench` (was 2-4x).
+- Variables that always hold whole numbers compile to plain C `long long`, and so do the parameters
+  and results of functions only ever called with numbers: fib(35) 0.15 s -> 0.03 s, a divisor-sum
+  loop 0.44 s -> 0.04 s. Everything else stays as before, so results do not change.
+- C compiler warnings about the generated code are no longer shown.
 - With the Boehm GC installed, compiled programs free memory (a 2M-iteration text loop: 3 MB instead
   of 32 MB and growing).
 

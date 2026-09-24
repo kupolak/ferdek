@@ -158,6 +158,12 @@ type codegen_context = {
   records: (string, (string * expr) list) Hashtbl.t;  (* struktury i unie: pola do zainicjowania *)
   mutable members: string list;               (* Pola i metody obiektu w kompilowanej metodzie *)
   mutable lambdas: string list;               (* Kod funkcji z lambd, od ostatniej *)
+  (* Liczby całkowite bez opakowania (infer_ints) *)
+  mutable ints: string list;                  (* zmienne long long widoczne w bieżącym miejscu *)
+  mutable ret_int: bool;                      (* bieżąca funkcja zwraca long long *)
+  sigs: (string, bool list * bool) Hashtbl.t; (* funkcje z parametrami/wynikiem long long *)
+  int_globals: (string, unit) Hashtbl.t;
+  int_locals: (string, string list) Hashtbl.t; (* funkcja -> jej zmienne i parametry long long *)
 }
 
 let fresh ctx prefix =
@@ -221,12 +227,211 @@ let function_value ctx name =
 let argv_c c_args = if c_args = [] then "(FerdekValue[]){make_null()}" else
   Printf.sprintf "(FerdekValue[]){%s}" (String.concat ", " c_args)
 
+(* ============ LICZBY CAŁKOWITE BEZ OPAKOWANIA ============ *)
+(* Zmienne, które zawsze trzymają liczbę całkowitą, są w C zwykłym long long, a działania na nich
+   zwykłymi działaniami C (bez op_add i sprawdzania typów). Funkcja wywoływana tylko wprost (nigdy
+   jako wartość) dostaje parametry i wynik long long, gdy wszystkie wywołania podają liczby, a każda
+   ścieżka zwraca liczbę. Reszta zostaje FerdekValue - wynik jest ten sam, tylko szybciej. *)
+
+type tenv = { ivar : string -> bool; ifun : string -> (bool list * bool) option }
+
+let rec is_int env = function
+  | IntLiteral _ | BitwiseOp _ | BitwiseNot _ -> true   (* bitowe zawsze dają make_int(to_int ...) *)
+  | Identifier n -> env.ivar n
+  | Parenthesized e -> is_int env e
+  | BinaryOp (a, _, b) -> is_int env a && is_int env b
+  | FunctionCall (f, _) -> (match env.ifun f with Some (_, r) -> r | None -> false)
+  | _ -> false
+
+(* Podwyrażenia (bez wnętrza lambd - to osobne funkcje) *)
+let subexprs = function
+  | FunctionCall (_, es) | NewObject (_, es) | ArrayLiteral es -> es
+  | BinaryOp (a, _, b) | ComparisonOp (a, _, b) | LogicalOp (a, _, b) | BitwiseOp (a, _, b)
+  | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> [a; b]
+  | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
+  | Parenthesized e -> [e]
+  | _ -> []
+
+let rec all_exprs e = e :: List.concat_map all_exprs (subexprs e)
+
+(* Wyrażenia instrukcji razem z zagnieżdżonymi instrukcjami *)
+let rec stmt_exprs = function
+  | VarDecl (_, e) | Assign (_, e) | Print e | PrintInline e | Throw e -> [e]
+  | ArrayDecl (_, es) -> es
+  | ArrayAssign (a, v) -> [a; v]
+  | If (c, a, b) -> c :: List.concat_map stmt_exprs (a @ Option.value b ~default:[])
+  | While (c, b) -> c :: List.concat_map stmt_exprs b
+  | For (_, a, b, k, body) -> a :: b :: Option.to_list k @ List.concat_map stmt_exprs body
+  | ForEach (_, c, b) -> c :: List.concat_map stmt_exprs b
+  | FunctionCallStmt (n, args) | FunctionCallWithAssign (_, n, args) -> [FunctionCall (n, args)]
+  | Return e -> Option.to_list e
+  | Try (a, _, b) -> List.concat_map stmt_exprs (a @ b)
+  | Located (_, _, s) -> stmt_exprs s
+  | Read _ | Break | Continue -> []
+
+let block_exprs stmts = List.concat_map all_exprs (List.concat_map stmt_exprs stmts)
+
+(* Lambdy (parametry, ciało) z wyrażeń, także zagnieżdżone *)
+let rec lambdas_of es =
+  List.concat_map (function
+    | Lambda (ps, b) -> (ps, b) :: lambdas_of (block_exprs b)
+    | _ -> []) (List.concat_map all_exprs es)
+
+(* Przypisania w bloku (bez lambd): nazwa i wyrażenie; None - coś, co nie musi być liczbą *)
+let rec assigns acc = function
+  | VarDecl (n, e) | Assign (n, e) -> (n, Some e) :: acc
+  | FunctionCallWithAssign (n, f, args) -> (n, Some (FunctionCall (f, args))) :: acc
+  | For (v, _, _, _, b) -> List.fold_left assigns ((v, Some (IntLiteral 0)) :: acc) b
+  | Read n | ArrayDecl (n, _) -> (n, None) :: acc
+  | ForEach (v, _, b) -> List.fold_left assigns ((v, None) :: acc) b
+  | Try (a, v, b) -> List.fold_left assigns ((v, None) :: acc) (a @ b)
+  | If (_, a, b) -> List.fold_left assigns acc (a @ Option.value b ~default:[])
+  | While (_, b) -> List.fold_left assigns acc b
+  | Located (_, _, s) -> assigns acc s
+  | _ -> acc
+
+(* Każda ścieżka kończy się I JA INFORMUJĘ ŻE WYCHODZĘ z wartością (albo rzuceniem wyjątku) *)
+let rec returns_value stmts = match List.rev stmts with
+  | s :: _ -> ends_with_return s
+  | [] -> false
+and ends_with_return = function
+  | Return (Some _) | Throw _ -> true
+  | Located (_, _, s) -> ends_with_return s
+  | If (_, a, Some b) -> returns_value a && returns_value b
+  | _ -> false
+
+let rec returns_in stmts = List.concat_map (function
+  | Return e -> [e]
+  | If (_, a, b) -> returns_in (a @ Option.value b ~default:[])
+  | While (_, b) | For (_, _, _, _, b) | ForEach (_, _, b) -> returns_in b
+  | Try (a, _, b) -> returns_in (a @ b)
+  | Located (_, _, s) -> returns_in [s]
+  | _ -> []) stmts
+
+let all_params (f : function_decl) = f.params @ (if f.is_variadic then ["varargs"] else [])
+
+(* Zmienne funkcji tak jak w compile_body: parametry, zadeklarowane i przypisane nie-globalne *)
+let function_scope ctx (f : function_decl) =
+  let decl, assigned = targets_block ([], []) f.body in
+  all_params f @ decl @ List.filter (fun n -> not (Hashtbl.mem ctx.globals n)) assigned
+
+(* Punkt stały po całym programie: zaczynamy od "wszystko jest liczbą" i odrzucamy, co się nie zgadza *)
+let infer_ints ctx decls =
+  let funcs = List.filter_map (function FunctionDecl f -> Some f | _ -> None) decls in
+  let top = List.filter_map (function Statement s -> Some s | _ -> None) decls in
+  let classes = Hashtbl.fold (fun _ c acc -> c :: acc) ctx.classes [] in
+  let methods = List.concat_map (fun (c : class_decl) -> c.methods) classes in
+  let field_exprs = List.concat_map (fun (c : class_decl) -> List.map snd c.fields) classes
+                    @ Hashtbl.fold (fun _ fs acc -> List.map snd fs @ acc) ctx.records [] in
+  let bodies = top :: List.map (fun (f : function_decl) -> f.body) (funcs @ methods) in
+  let lambdas = lambdas_of (List.concat_map block_exprs bodies @ field_exprs) in
+  let everywhere = List.concat_map block_exprs (bodies @ List.map snd lambdas)
+                   @ List.concat_map all_exprs field_exprs in
+  (* Funkcję wolno wyspecjalizować, gdy nikt jej nie używa jako wartości i nic jej nie przesłania *)
+  let shadow = Hashtbl.copy ctx.globals in
+  let add n = Hashtbl.replace shadow n () in
+  List.iter (fun (f : function_decl) -> List.iter add (all_params f)) (funcs @ methods);
+  List.iter (fun (ps, _) -> List.iter add ps) lambdas;
+  List.iter (fun b -> let d, a = targets_block ([], []) b in List.iter add (d @ a)) (bodies @ List.map snd lambdas);
+  List.iter (fun (c : class_decl) ->
+    List.iter (fun (n, _) -> add n) c.fields;
+    List.iter (fun (m : function_decl) -> add m.name) c.methods) classes;
+  let as_value = Hashtbl.create 16 in
+  List.iter (function
+    | Identifier n | FunctionRef n | AddressOf n -> Hashtbl.replace as_value n ()
+    | _ -> ()) everywhere;
+  let eligible (f : function_decl) =
+    not f.is_variadic && find_builtin f.name = None
+    && not (Hashtbl.mem as_value f.name) && not (Hashtbl.mem shadow f.name) in
+  (* Stan: kandydaci na long long *)
+  let g = Hashtbl.copy ctx.globals in
+  (* Lambda może przypisać do globalnej - takiej nie ruszamy *)
+  List.iter (fun (_, b) -> let d, a = targets_block ([], []) b in List.iter (Hashtbl.remove g) (d @ a)) lambdas;
+  let locals = Hashtbl.create 16 and params = Hashtbl.create 16 and rets = Hashtbl.create 16 in
+  List.iter (fun (f : function_decl) ->
+    Hashtbl.replace locals f.name
+      (ref (List.filter (fun n -> not (List.mem n (all_params f))) (function_scope ctx f)));
+    if eligible f then begin
+      Hashtbl.replace params f.name (Array.make (List.length f.params) true);
+      Hashtbl.replace rets f.name (ref (returns_value f.body))
+    end) funcs;
+  let ifun n = match Hashtbl.find_opt params n with
+    | Some ps -> Some (Array.to_list ps, !(Hashtbl.find rets n))
+    | None -> None in
+  let env_main = { ivar = Hashtbl.mem g; ifun } in
+  let env_other = { ivar = (fun _ -> false); ifun } in   (* metody, lambdy, pola: ostrożnie *)
+  let env_f (f : function_decl) =
+    let sc = function_scope ctx f and li = Hashtbl.find locals f.name in
+    let ps = Hashtbl.find_opt params f.name in
+    { ifun; ivar = fun n ->
+        if List.mem n sc then
+          List.mem n !li
+          || (match ps with
+              | Some ps -> List.exists Fun.id (List.mapi (fun i p -> p = n && ps.(i)) f.params)
+              | None -> false)
+        else Hashtbl.mem g n } in
+  let changed = ref true in
+  let ok env = function Some e -> is_int env e | None -> false in
+  while !changed do
+    changed := false;
+    let drop_g n = if Hashtbl.mem g n then (Hashtbl.remove g n; changed := true) in
+    List.iter (fun (n, rhs) -> if not (ok env_main rhs) then drop_g n) (List.fold_left assigns [] top);
+    List.iter (fun (f : function_decl) ->
+      let env = env_f f and sc = function_scope ctx f and li = Hashtbl.find locals f.name in
+      List.iter (fun (n, rhs) ->
+        if not (ok env rhs) then begin
+          if not (List.mem n sc) then drop_g n
+          else if List.mem n !li then (li := List.filter (( <> ) n) !li; changed := true)
+          else match Hashtbl.find_opt params f.name with
+            | Some ps -> List.iteri (fun i p -> if p = n && ps.(i) then (ps.(i) <- false; changed := true)) f.params
+            | None -> ()
+        end) (List.fold_left assigns [] f.body);
+      match Hashtbl.find_opt rets f.name with
+      | Some r when !r && List.exists (fun e -> not (ok env e)) (returns_in f.body) -> r := false; changed := true
+      | _ -> ()) funcs;
+    (* Wywołania: parametr zostaje liczbą, gdy każde wywołanie podaje w tym miejscu liczbę *)
+    let calls env es = List.iter (function
+      | FunctionCall (n, args) ->
+          (match Hashtbl.find_opt params n with
+           | Some ps ->
+               let given = Array.of_list args in
+               Array.iteri (fun i p ->
+                 if p && (Array.length given <> Array.length ps || not (is_int env given.(i))) then
+                   (ps.(i) <- false; changed := true)) ps
+           | None -> ())
+      | _ -> ()) es in
+    calls env_main (block_exprs top);
+    List.iter (fun (f : function_decl) -> calls (env_f f) (block_exprs f.body)) funcs;
+    List.iter (fun (m : function_decl) -> calls env_other (block_exprs m.body)) methods;
+    List.iter (fun (_, b) -> calls env_other (block_exprs b)) lambdas;
+    calls env_other (List.concat_map all_exprs field_exprs)
+  done;
+  Hashtbl.iter (fun n () -> Hashtbl.replace ctx.int_globals n ()) g;
+  List.iter (fun (f : function_decl) ->
+    let ps = match Hashtbl.find_opt params f.name with
+      | Some ps -> List.filteri (fun i _ -> ps.(i)) f.params | None -> [] in
+    Hashtbl.replace ctx.int_locals f.name (!(Hashtbl.find locals f.name) @ ps);
+    match ifun f.name with
+    | Some (ps, r) when r || List.exists Fun.id ps -> Hashtbl.replace ctx.sigs f.name (ps, r)
+    | _ -> ()) funcs
+
+let global_ints ctx = Hashtbl.fold (fun n () acc -> n :: acc) ctx.int_globals []
+
+let tenv ctx = {
+  ivar = (fun n -> List.mem n ctx.ints && not (is_function_name ctx n));
+  ifun = (fun n -> if is_function_name ctx n && find_builtin n = None then Hashtbl.find_opt ctx.sigs n else None);
+}
+
 (* Kod C lambdy: ctx, nazwa, parametry, złapane nazwy, ciało. Ustawiane niżej, przy compile_body *)
 let compile_lambda : (codegen_context -> string -> string list -> string list -> stmt list -> string) ref =
   ref (fun _ _ _ _ _ -> "")
 
 let rec compile_expr ctx expr =
   match expr with
+  | (Identifier _ | BinaryOp _ | FunctionCall _ | Parenthesized _) when is_int (tenv ctx) expr ->
+      Printf.sprintf "make_int(%s)" (compile_int ctx expr)
+  | ComparisonOp (a, _, b) when is_int (tenv ctx) a && is_int (tenv ctx) b ->
+      Printf.sprintf "make_bool(%s)" (compile_cond ctx expr)
   | IntLiteral n -> Printf.sprintf "make_int(%dLL)" n
   | FloatLiteral f -> Printf.sprintf "make_float(%.17g)" f
   | StringLiteral s -> Printf.sprintf "make_lit(%s)" (c_string_literal s)
@@ -285,17 +490,62 @@ let rec compile_expr ctx expr =
                  |> List.sort_uniq compare in
       let cap_values = List.map (fun n -> compile_expr ctx (Identifier n)) caps in
       let name = fresh ctx "lambda_" in
-      let saved = (ctx.locals, ctx.members, ctx.in_function, ctx.loop_handlers) in
+      let saved = (ctx.locals, ctx.members, ctx.in_function, ctx.loop_handlers, ctx.ints, ctx.ret_int) in
       ctx.loop_handlers <- [];
       let code = !compile_lambda ctx name params caps body in
-      let (l, m, f, h) = saved in
+      let (l, m, f, h, i, r) = saved in
       ctx.locals <- l; ctx.members <- m; ctx.in_function <- f; ctx.loop_handlers <- h;
+      ctx.ints <- i; ctx.ret_int <- r;
       ctx.lambdas <- code :: ctx.lambdas;
       Printf.sprintf "make_method(%s, \"anonimowa\", %d, false, %s)" name (List.length params)
         (if caps = [] then "NULL"
          else Printf.sprintf "copy_values(%d, %s)" (List.length caps) (argv_c cap_values))
 
+(* Wyrażenie, o którym is_int wie, że jest liczbą -> wyrażenie C typu long long *)
+and compile_int ctx e =
+  let env = tenv ctx in
+  let arg a = if is_int env a then compile_int ctx a else Printf.sprintf "to_int(%s)" (compile_expr ctx a) in
+  match e with
+  | IntLiteral n -> Printf.sprintf "%dLL" n
+  | Identifier n when env.ivar n -> var_c n
+  | Parenthesized e -> Printf.sprintf "(%s)" (compile_int ctx e)
+  | BinaryOp (a, op, b) when is_int env e ->
+      let a = compile_int ctx a and b = compile_int ctx b in
+      (match op with
+       | Plus -> Printf.sprintf "(%s + %s)" a b
+       | Minus -> Printf.sprintf "(%s - %s)" a b
+       | Multiply -> Printf.sprintf "(%s * %s)" a b
+       | Divide -> Printf.sprintf "int_div(%s, %s)" a b
+       | Modulo -> Printf.sprintf "int_mod(%s, %s)" a b)
+  | BitwiseOp (a, op, b) -> Printf.sprintf "(%s %s %s)" (arg a) (bitwise_c op) (arg b)
+  | BitwiseNot a -> Printf.sprintf "(~%s)" (arg a)
+  | FunctionCall (f, args) when is_int env e -> specialized_call ctx f args
+  | e -> Printf.sprintf "to_int(%s)" (compile_expr ctx e)
+
+(* Warunek w if/while: porównanie liczb wprost w C, reszta przez to_bool *)
+and compile_cond ctx e =
+  let env = tenv ctx in
+  match e with
+  | ComparisonOp (a, op, b) when is_int env a && is_int env b ->
+      let c = match op with Equal -> "==" | NotEqual -> "!=" | Greater -> ">" | Less -> "<" | GreaterEqual -> ">=" in
+      Printf.sprintf "%s %s %s" (compile_int ctx a) c (compile_int ctx b)
+  | Parenthesized e -> compile_cond ctx e
+  | e -> Printf.sprintf "to_bool(%s)" (compile_expr ctx e)
+
+(* Wywołanie funkcji wyspecjalizowanej: argumenty long long tam, gdzie trzeba; wynik surowy *)
+and specialized_call ctx name args =
+  let ps, _ = Hashtbl.find ctx.sigs name in
+  if List.length ps <> List.length args then
+    error (Printf.sprintf "Funkcja %s oczekuje %s, podano %d" name (Errors.argumentow (List.length ps)) (List.length args));
+  Printf.sprintf "%s(%s)" (fun_c name)
+    (String.concat ", " (List.map2 (fun is_i a -> if is_i then compile_int ctx a else compile_expr ctx a) ps args))
+
 and compile_call ctx name args =
+  match (tenv ctx).ifun name with
+  | Some (_, r) -> let call = specialized_call ctx name args in if r then Printf.sprintf "make_int(%s)" call else call
+  | None -> compile_call_generic ctx name args
+
+and compile_call_generic ctx name args =
   let c_args = List.map (compile_expr ctx) args in
   (* Builtiny mają pierwszeństwo przed funkcjami użytkownika - jak w interpreterze *)
   match find_builtin name, Hashtbl.find_opt ctx.funcs name with
@@ -323,7 +573,7 @@ and compile_call ctx name args =
   | None, _ when List.mem name ctx.locals || (Hashtbl.mem ctx.globals name && not (is_member ctx name)
                                                && not (Hashtbl.mem ctx.funcs name)) ->
       (* Wywołanie funkcji trzymanej w zmiennej - sprawdzenie typu i arności w runtime *)
-      Printf.sprintf "call_value(%s, %s, %d, %s)" (var_c name) (c_string_literal name)
+      Printf.sprintf "call_value(%s, %s, %d, %s)" (compile_expr ctx (Identifier name)) (c_string_literal name)
         (List.length args) (argv_c c_args)
   | None, _ when is_member ctx name ->
       (* Metoda (albo pole z funkcją) bieżącego obiektu *)
@@ -335,6 +585,7 @@ and compile_call ctx name args =
 (* Przypisanie: zmienna lokalna/globalna albo - w metodzie - pole obiektu *)
 let assign ctx name value =
   if is_member ctx name then Printf.sprintf "field_set(self, %s, %s);" (c_string_literal name) value
+  else if List.mem name ctx.ints then Printf.sprintf "%s = to_int(%s);" (var_c name) value
   else Printf.sprintf "%s = %s;" (var_c name) value
 
 (* Ciało pętli; gdy w środku jest try, break/continue muszą zdjąć handlery założone w pętli *)
@@ -351,6 +602,8 @@ and compile_stmt ctx indent stmt =
   let ind = String.make (indent * 4) ' ' in
   let block stmts = String.concat "\n" (List.map (compile_stmt ctx (indent + 1)) stmts) in
   match stmt with
+  | VarDecl (name, e) | Assign (name, e) when List.mem name ctx.ints && not (is_member ctx name) ->
+      Printf.sprintf "%s%s = %s;" ind (var_c name) (compile_int ctx e)
   | VarDecl (name, e) | Assign (name, e) -> ind ^ assign ctx name (compile_expr ctx e)
   | ArrayDecl (name, []) ->
       Printf.sprintf "%s%s = make_array(NULL, 0);" ind (var_c name)
@@ -369,26 +622,33 @@ and compile_stmt ctx indent stmt =
         | None -> ""
         | Some stmts -> Printf.sprintf " else {\n%s\n%s}" (block stmts) ind
       in
-      Printf.sprintf "%sif (to_bool(%s)) {\n%s\n%s}%s" ind (compile_expr ctx cond) (block then_stmts) ind else_code
+      Printf.sprintf "%sif (%s) {\n%s\n%s}%s" ind (compile_cond ctx cond) (block then_stmts) ind else_code
   | While (cond, body) ->
       let setup, body_code = loop_body ctx indent body in
-      Printf.sprintf "%s{\n%s%swhile (to_bool(%s)) {\n%s\n%s}\n%s}"
-        ind setup ind (compile_expr ctx cond) body_code ind ind
+      Printf.sprintf "%s{\n%s%swhile (%s) {\n%s\n%s}\n%s}"
+        ind setup ind (compile_cond ctx cond) body_code ind ind
   | For (var, from_e, to_e, step_e, body) ->
       (* Kolejność jak w interpreterze: od, do, krok; C-owe for robi krok także po continue *)
       let n = fresh ctx "" in
       if is_member ctx var then unsupported "pole obiektu jako licznik pętli";
       let v = var_c var in
-      let step = match step_e with None -> "1" | Some e -> Printf.sprintf "to_int(%s)" (compile_expr ctx e) in
+      let int_of e = if is_int (tenv ctx) e then compile_int ctx e else Printf.sprintf "to_int(%s)" (compile_expr ctx e) in
+      let step = match step_e with None -> "1" | Some e -> int_of e in
       let setup, body_code = loop_body ctx indent body in
+      let loop =
+        if List.mem var ctx.ints then
+          Printf.sprintf "%sfor (%s = for_start%s; for_step%s > 0 ? %s <= for_stop%s : %s >= for_stop%s; %s += for_step%s) {"
+            ind v n n v n v n v n
+        else
+          Printf.sprintf "%sfor (%s = make_int(for_start%s); for_step%s > 0 ? to_int(%s) <= for_stop%s : to_int(%s) >= for_stop%s; %s = make_int(to_int(%s) + for_step%s)) {"
+            ind v n n v n v n v v n in
       String.concat "\n" [
         ind ^ "{";
-        Printf.sprintf "%s    long long for_start%s = to_int(%s);" ind n (compile_expr ctx from_e);
-        Printf.sprintf "%s    long long for_stop%s = to_int(%s);" ind n (compile_expr ctx to_e);
+        Printf.sprintf "%s    long long for_start%s = %s;" ind n (int_of from_e);
+        Printf.sprintf "%s    long long for_stop%s = %s;" ind n (int_of to_e);
         Printf.sprintf "%s    long long for_step%s = %s;" ind n step;
         Printf.sprintf "%s    if (for_step%s == 0) ferdek_die(\"KRĘCI CEMENT BETONIARA: krok nie może być zerem\");" ind n;
-        setup ^ Printf.sprintf "%sfor (%s = make_int(for_start%s); for_step%s > 0 ? to_int(%s) <= for_stop%s : to_int(%s) >= for_stop%s; %s = make_int(to_int(%s) + for_step%s)) {"
-          ind v n n v n v n v v n;
+        setup ^ loop;
         body_code;
         ind ^ "}";
         ind ^ "}" ]
@@ -406,12 +666,17 @@ and compile_stmt ctx indent stmt =
         ind ^ "}" ]
   | FunctionCallStmt (name, args) ->
       Printf.sprintf "%s%s;" ind (compile_call ctx name args)
+  | FunctionCallWithAssign (var, func, args) when List.mem var ctx.ints && is_int (tenv ctx) (FunctionCall (func, args)) ->
+      Printf.sprintf "%s%s = %s;" ind (var_c var) (compile_int ctx (FunctionCall (func, args)))
   | FunctionCallWithAssign (var, func, args) -> ind ^ assign ctx var (compile_call ctx func args)
   | Return e ->
       if not ctx.in_function then ind ^ "ferdek_fatal(\"I JA INFORMUJĘ ŻE WYCHODZĘ poza funkcją\");" else
-      let v = match e with None -> "make_null()" | Some e -> compile_expr ctx e in
+      let ty, v = match e with
+        | Some e when ctx.ret_int -> "long long", compile_int ctx e
+        | None -> "FerdekValue", "make_null()"
+        | Some e -> "FerdekValue", compile_expr ctx e in
       (* Wartość liczymy przed zdjęciem handlerów - może rzucić wyjątek *)
-      Printf.sprintf "%s{ FerdekValue ret = %s; ferdek_handler = entry_handler; FERDEK_AT(entry_file, entry_line); return ret; }" ind v
+      Printf.sprintf "%s{ %s ret = %s; ferdek_handler = entry_handler; FERDEK_AT(entry_file, entry_line); return ret; }" ind ty v
   | Try (try_stmts, var, catch_stmts) ->
       let h = fresh ctx "handler" in
       Printf.sprintf "%s{\n%s    Handler %s;\n%s    %s.prev = ferdek_handler;\n%s    ferdek_handler = &%s;\n%s    if (setjmp(%s.buf) == 0) {\n%s\n%s        ferdek_handler = %s.prev;\n%s    } else {\n%s        ferdek_handler = %s.prev;\n%s        %s = ferdek_exception;\n%s\n%s    }\n%s}"
@@ -435,15 +700,17 @@ and compile_stmt ctx indent stmt =
 
 (* ============ FUNCTIONS ============ *)
 
-let all_params (f : function_decl) = f.params @ (if f.is_variadic then ["varargs"] else [])
-
-let fun_proto (f : function_decl) =
-  let params = List.map (fun p -> "FerdekValue " ^ var_c p) (all_params f) in
-  Printf.sprintf "FerdekValue %s(%s)" (fun_c f.name)
+(* Funkcja wyspecjalizowana: parametry i wynik long long tam, gdzie infer_ints na to pozwolił *)
+let fun_proto ctx (f : function_decl) =
+  let ps, r = match Hashtbl.find_opt ctx.sigs f.name with
+    | Some (ps, r) -> ps, r | None -> List.map (fun _ -> false) (all_params f), false in
+  let params = List.map2 (fun p is_i -> (if is_i then "long long " else "FerdekValue ") ^ var_c p)
+      (all_params f) (ps @ List.init (List.length (all_params f) - List.length ps) (fun _ -> false)) in
+  Printf.sprintf "%s %s(%s)" (if r then "long long" else "FerdekValue") (fun_c f.name)
     (if params = [] then "void" else String.concat ", " params)
 
 (* Ciało funkcji albo metody. members <> [] = metoda: nazwy pól i metod obiektu (self) *)
-let compile_body ctx ~proto ~members (f : function_decl) =
+let compile_body ?(own_ints = []) ?(ret_int = false) ctx ~proto ~members (f : function_decl) =
   let decl, assigned = block_names ([], []) f.body in
   (* Funkcja: przypisanie do istniejącej globalnej zmienia globalną (set_var w interpreterze).
      Metoda: przypisanie do czegoś, co nie jest polem, tworzy lokalną - set_var sprawdza
@@ -456,22 +723,32 @@ let compile_body ctx ~proto ~members (f : function_decl) =
   ctx.locals <- all_params f @ locals;
   ctx.members <- members;
   ctx.in_function <- true;
+  (* long long: własne zmienne funkcji i globalne, których nic tu nie przesłania *)
+  ctx.ints <- own_ints @ List.filter (fun n -> not (List.mem n ctx.locals || List.mem n members)) (global_ints ctx);
+  ctx.ret_int <- ret_int;
   (* setjmp: lokalne zmieniane w try muszą być volatile, inaczej po longjmp mają śmieci.
      ponytail: parametry nie są volatile - przypisanie do parametru w try i odczyt w catch to UB *)
   let qual = if has_try f.body then "volatile " else "" in
   let decls = "    Handler* entry_handler = ferdek_handler;"
     :: "    const char* entry_file = ferdek_file; int entry_line = ferdek_line;"
-    :: List.map (fun n -> Printf.sprintf "    %sFerdekValue %s = make_null();" qual (var_c n)) locals in
+    :: List.map (fun n ->
+         if List.mem n own_ints then Printf.sprintf "    %slong long %s = 0;" qual (var_c n)
+         else Printf.sprintf "    %sFerdekValue %s = make_null();" qual (var_c n)) locals in
   let body = List.map (compile_stmt ctx 1) f.body in
   ctx.locals <- [];
   ctx.members <- [];
   ctx.in_function <- false;
+  ctx.ints <- global_ints ctx;
+  ctx.ret_int <- false;
   String.concat "\n" ([Printf.sprintf "%s {" proto] @ decls @ body
                       @ ["    ferdek_handler = entry_handler;"; "    FERDEK_AT(entry_file, entry_line);";
-                         "    return make_null();"; "}"])
+                         if ret_int then "    return 0;" else "    return make_null();"; "}"])
 
 
-let compile_function ctx (f : function_decl) = compile_body ctx ~proto:(fun_proto f) ~members:[] f
+let compile_function ctx (f : function_decl) =
+  compile_body ctx ~proto:(fun_proto ctx f) ~members:[] f
+    ~own_ints:(Option.value (Hashtbl.find_opt ctx.int_locals f.name) ~default:[])
+    ~ret_int:(match Hashtbl.find_opt ctx.sigs f.name with Some (_, r) -> r | None -> false)
 
 (* Lambda: ciało jak funkcja, której złapane zmienne są dodatkowymi parametrami (każde wywołanie
    dostaje świeże kopie z self), do tego wrapper (self, argc, argv) dla call_value *)
@@ -513,9 +790,14 @@ let wrap_args (f : function_decl) =
 let wrap_proto (f : function_decl) =
   Printf.sprintf "static FerdekValue %s(void* self, int argc, FerdekValue* argv)" (wrap_c f.name)
 
-let compile_wrapper (f : function_decl) =
+let compile_wrapper ctx (f : function_decl) =
+  let args, box = match Hashtbl.find_opt ctx.sigs f.name with
+    | Some (ps, r) ->
+        List.map2 (fun is_i a -> if is_i then Printf.sprintf "to_int(%s)" a else a) ps (wrap_args f),
+        (fun c -> if r then Printf.sprintf "make_int(%s)" c else c)
+    | None -> wrap_args f, Fun.id in
   String.concat "\n" [wrap_proto f ^ " {";
-                      Printf.sprintf "    return %s(%s);" (fun_c f.name) (String.concat ", " (wrap_args f)); "}"]
+                      Printf.sprintf "    return %s;" (box (Printf.sprintf "%s(%s)" (fun_c f.name) (String.concat ", " args))); "}"]
 
 let method_wrap_proto cls (m : function_decl) =
   Printf.sprintf "static FerdekValue %s(void* self, int argc, FerdekValue* argv)" (method_wrap_c cls m.name)
@@ -565,7 +847,7 @@ let compile_top_level ctx decl =
       (* Jak w interpreterze: wartości enuma to zwykłe stałe, numerowane od poprzedniej + 1 *)
       let _, lines = List.fold_left (fun (next, acc) (name, v) ->
         let v = Option.value v ~default:next in
-        (v + 1, Printf.sprintf "    %s = make_int(%dLL);" (var_c name) v :: acc)) (0, []) e.values in
+        (v + 1, ("    " ^ assign ctx name (Printf.sprintf "make_int(%dLL)" v)) :: acc)) (0, []) e.values in
       String.concat "\n" (List.rev lines)
   | Import _ | ImportAs _ -> ""  (* rozwinięte wcześniej przez expand_imports *)
   | ClassDecl _ | StructDecl _ | UnionDecl _ -> ""  (* konstruktory generuje compile_program *)
@@ -902,6 +1184,16 @@ static FerdekValue op_div(FerdekValue a, FerdekValue b) {
     long long d = to_int(b);
     if (d == 0) ferdek_die("Dzielenie przez zero");
     return make_int(to_int(a) / d);
+}
+
+/* Dzielenie liczb całkowitych bez opakowania - te same komunikaty co op_div/op_mod */
+static inline long long int_div(long long a, long long b) {
+    if (b == 0) ferdek_die("Dzielenie przez zero");
+    return a / b;
+}
+static inline long long int_mod(long long a, long long b) {
+    if (b == 0) ferdek_die("Reszta z dzielenia przez zero");
+    return a % b;
 }
 
 static FerdekValue op_mod(FerdekValue a, FerdekValue b) {
@@ -2223,7 +2515,9 @@ let compile_program ?(load_module = fun _ -> None) prog =
   let prog = { declarations = expand_imports load_module prog.declarations } in
   let ctx = { funcs = Hashtbl.create 16; globals = Hashtbl.create 64; locals = [];
               in_function = false; loop_handlers = []; counter = 0;
-              classes = Hashtbl.create 8; records = Hashtbl.create 8; members = []; lambdas = [] } in
+              classes = Hashtbl.create 8; records = Hashtbl.create 8; members = []; lambdas = [];
+              ints = []; ret_int = false; sigs = Hashtbl.create 8; int_globals = Hashtbl.create 32;
+              int_locals = Hashtbl.create 16 } in
   List.iter (function
     | FunctionDecl f -> Hashtbl.replace ctx.funcs f.name f
     | ClassDecl c -> Hashtbl.replace ctx.classes c.name c
@@ -2235,6 +2529,8 @@ let compile_program ?(load_module = fun _ -> None) prog =
         let decl, assigned = stmt_names ([], []) s in
         List.iter (fun n -> Hashtbl.replace ctx.globals n ()) (decl @ assigned)
     | _ -> ()) prog.declarations;
+  infer_ints ctx prog.declarations;
+  ctx.ints <- global_ints ctx;
 
   let functions = List.filter_map (function
     | FunctionDecl f -> Some (compile_function ctx f)
@@ -2255,9 +2551,11 @@ let compile_program ?(load_module = fun _ -> None) prog =
   let main_body = List.map (compile_top_level ctx) prog.declarations
                   |> List.filter (fun s -> s <> "") in
   let globals = Hashtbl.fold (fun n () acc -> n :: acc) ctx.globals [] |> dedup
-                |> List.map (fun n -> Printf.sprintf "static FerdekValue %s;" (var_c n)) in
-  let protos = Hashtbl.fold (fun _ f acc -> (fun_proto f ^ ";") :: (wrap_proto f ^ ";") :: acc) ctx.funcs [] |> dedup in
-  let wrappers = Hashtbl.fold (fun _ f acc -> compile_wrapper f :: acc) ctx.funcs [] |> dedup in
+                |> List.map (fun n ->
+                     if Hashtbl.mem ctx.int_globals n then Printf.sprintf "static long long %s = 0;" (var_c n)
+                     else Printf.sprintf "static FerdekValue %s;" (var_c n)) in
+  let protos = Hashtbl.fold (fun _ f acc -> (fun_proto ctx f ^ ";") :: (wrap_proto f ^ ";") :: acc) ctx.funcs [] |> dedup in
+  let wrappers = Hashtbl.fold (fun _ f acc -> compile_wrapper ctx f :: acc) ctx.funcs [] |> dedup in
 
   let program_code = String.concat "\n" (functions @ method_code @ main_body @ constructors) in
   let graphics =
