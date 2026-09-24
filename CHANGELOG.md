@@ -92,13 +92,15 @@
 - With the Boehm GC installed, compiled programs free memory (a 2M-iteration text loop: 3 MB instead
   of 32 MB and growing). It is found through `pkg-config bdw-gc` too; `ferdek -c` warns when it is
   missing.
+- Numbers turn into text without `snprintf` (a concatenation loop: 0.10 s -> 0.04 s).
 - Maps with more than 8 keys (and objects with many fields) use a hash index: 20 000 keys inserted,
   read and half removed in 0.02 s instead of 1.2 s.
 
 ### Interpreter
-- About 2-4x faster (`make bench`: loops 1.24 s -> 0.27 s, fib 0.40 s -> 0.16 s): the program is
-  compiled once to OCaml closures, a function's variables live in slots, global variables are read
-  through a cached table cell, and names hash without polymorphic compare. Results and error
+- About 3-5x faster (`make bench`: loops 1.24 s -> 0.24 s, fib 0.40 s -> 0.09 s, objects 0.30 s ->
+  0.06 s, text 0.24 s -> 0.07 s): the program is compiled once to OCaml closures, a function's
+  variables live in slots, variables and object fields are read through a cached table cell, the
+  current line is kept as an int, and numbers turn into text without C printf. Results and error
   messages are unchanged (checked against the previous interpreter on all tests and fuzzed programs).
 
 ### Tools
