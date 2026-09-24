@@ -408,7 +408,7 @@ and compile_stmt ctx indent stmt =
       Printf.sprintf "%s%s;" ind (compile_call ctx name args)
   | FunctionCallWithAssign (var, func, args) -> ind ^ assign ctx var (compile_call ctx func args)
   | Return e ->
-      if not ctx.in_function then ind ^ "ferdek_die(\"I JA INFORMUJĘ ŻE WYCHODZĘ poza funkcją\");" else
+      if not ctx.in_function then ind ^ "ferdek_fatal(\"I JA INFORMUJĘ ŻE WYCHODZĘ poza funkcją\");" else
       let v = match e with None -> "make_null()" | Some e -> compile_expr ctx e in
       (* Wartość liczymy przed zdjęciem handlerów - może rzucić wyjątek *)
       Printf.sprintf "%s{ FerdekValue ret = %s; ferdek_handler = entry_handler; FERDEK_AT(entry_file, entry_line); return ret; }" ind v
@@ -428,7 +428,7 @@ and compile_stmt ctx indent stmt =
       let kw = if stmt = Break then "break;" else "continue;" in
       (match ctx.loop_handlers with
        | [] ->   (* jak w interpreterze: błąd wykonania, nie wyskok z funkcji *)
-           Printf.sprintf "%sferdek_die(\"%s poza pętlą\");" ind
+           Printf.sprintf "%sferdek_fatal(\"%s poza pętlą\");" ind
              (if stmt = Break then "A POCAŁUJCIE MNIE WSZYSCY W DUPĘ" else "AKUKARACZA")
        | h :: _ when h <> "" -> Printf.sprintf "%sferdek_handler = %s; %s" ind h kw
        | _ -> ind ^ kw)
@@ -646,8 +646,36 @@ static void print_loc(void) {
     else fprintf(stderr, " (linia %d)", ferdek_line);
 }
 
+/* Wyjątki: stos handlerów na setjmp/longjmp */
+typedef struct Handler { jmp_buf buf; struct Handler* prev; } Handler;
+static Handler* ferdek_handler = NULL;
+static FerdekValue ferdek_exception;
+static FerdekValue make_string(const char* s);
+
+/* Błąd, którego HELENA MAM ZAWAŁ nie łapie (break/return poza pętlą/funkcją - jak w interpreterze) */
+static void ferdek_fatal(const char* fmt, ...) {
+    va_list ap;
+    fflush(stdout);
+    fprintf(stderr, "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: ");
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    print_loc();
+    fprintf(stderr, "\n");
+    exit(1);
+}
+
+/* Błąd wykonania: w bloku HELENA MUSZĘ CI COŚ POWIEDZIEĆ trafia do HELENA MAM ZAWAŁ jako tekst */
 static void ferdek_die(const char* fmt, ...) {
     va_list ap;
+    if (ferdek_handler != NULL) {
+        char msg[1024];
+        va_start(ap, fmt);
+        vsnprintf(msg, sizeof msg, fmt, ap);
+        va_end(ap);
+        ferdek_exception = make_string(msg);
+        longjmp(ferdek_handler->buf, 1);
+    }
     fflush(stdout);
     fprintf(stderr, "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: ");
     va_start(ap, fmt);
@@ -1074,11 +1102,6 @@ static void array_set(FerdekValue a, long long i, FerdekValue v) {
     if (i < 0 || i >= arr->length) ferdek_die("Indeks poza zakresem: %lld", i);
     arr->data[i] = v;
 }
-
-/* Wyjątki: stos handlerów na setjmp/longjmp */
-typedef struct Handler { jmp_buf buf; struct Handler* prev; } Handler;
-static Handler* ferdek_handler = NULL;
-static FerdekValue ferdek_exception;
 
 static void ferdek_throw(FerdekValue v) {
     if (ferdek_handler == NULL) {

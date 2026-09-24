@@ -8,6 +8,9 @@
 - No silent conversions: `+` with text concatenates, other arithmetic on non-numeric text is an
   error (it used to be 0). Only decimal text (`"12"`) counts as a number.
 - Importing a module that does not exist is an error (it was a warning).
+- Runtime errors (division by zero, index out of range, ...) inside `HELENA MUSZĘ CI COŚ POWIEDZIEĆ`
+  are caught by `HELENA MAM ZAWAŁ`, which gets the error message as text. Before, they always
+  stopped the program. Break/return outside a loop/function still stop it.
 - `OD`, `DO`, `CO` are keywords (for loops) and cannot be variable names.
 - Maps print, and `WSZYSTKIE SZUFLADKI` returns, keys in sorted order.
 - KANAPA counts characters, not bytes (`"żółw"` has length 4).

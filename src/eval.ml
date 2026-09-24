@@ -442,12 +442,15 @@ and eval_stmt env = function
       raise (ReturnValue value)
 
   | Try (try_stmts, catch_var, catch_stmts) ->
-      (try
-        List.iter (eval_stmt env) try_stmts
-      with ThrowException value ->
+      let catch value =
         let catch_env = create_env (Some env) in
         define_var catch_env catch_var value;
-        List.iter (eval_stmt catch_env) catch_stmts)
+        List.iter (eval_stmt catch_env) catch_stmts in
+      (try
+        List.iter (eval_stmt env) try_stmts
+      with
+      | ThrowException value -> catch value
+      | RuntimeError msg -> catch (VString msg))   (* błąd wykonania też - jako tekst komunikatu *)
 
   | Throw expr ->
       let value = eval_expr env expr in

@@ -60,7 +60,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `A POCAŁUJCIE MNIE WSZYSCY W DUPĘ` | break |
 | `AKUKARACZA` | continue |
 | `HELENA MUSZĘ CI COŚ POWIEDZIEĆ` | try |
-| `HELENA MAM ZAWAŁ` | catch (zmienna z wyjątkiem); blok kończy DO CHAŁUPY ALE JUŻ |
+| `HELENA MAM ZAWAŁ` | catch (zmienna z wyjątkiem albo tekstem błędu wykonania, np. "Dzielenie przez zero"); blok kończy DO CHAŁUPY ALE JUŻ |
 | `O KARWASZ TWARZ` | Rzuć wyjątek |
 
 ## Funkcje
