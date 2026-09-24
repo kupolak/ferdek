@@ -91,7 +91,7 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug
+test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
 
@@ -157,6 +157,10 @@ test-errors: build
 test-repl: build
 	@$(FERDEK) --repl < tests/repl/session.in 2>&1 | diff -u tests/repl/session.out - && echo "--- REPL: OK"
 
+# Debugger dla edytorów (DAP): punkt zatrzymania, stos, zmienne, krok, wyjście programu
+test-dap: build
+	python3 scripts/test_dap.py $(FERDEK)
+
 # Debugger: zapisana sesja poleceń (krok, wejście do funkcji, zmienne, punkt zatrzymania...)
 test-debug: build
 	@$(FERDEK) --debug tests/debug/program.ferdek < tests/debug/session.in 2>&1 | diff -u tests/debug/session.out - && echo "--- debugger: OK"
@@ -209,4 +213,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: playground all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: playground all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

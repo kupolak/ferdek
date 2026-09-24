@@ -92,6 +92,8 @@
 
 ### Tools
 - `ferdek nowy nazwa`: a new project - program, a module, a BABKA test and a README.
+- `ferdek --dap`: the debugger for editors (Debug Adapter Protocol) - breakpoints, stepping, call
+  stack, variables and hover evaluation in VS Code; program output shows in the debug console.
 - `ferdek --debug program.ferdek`: step through a program (step, next, step out), breakpoints,
   evaluate expressions, list variables and the call path.
 - Tutorial `docs/SAMOUCZEK.md` ("Ferdek w 15 minut"): every program in it is run in both modes by
