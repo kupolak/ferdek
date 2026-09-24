@@ -27,6 +27,15 @@
   `m.PI`. The module's top-level names get the `m.` prefix, so they cannot clash with yours;
   the plain import works as before. `JAKO` is now a keyword.
   Multi-word names work after the dot too: `s.OTWÓRZ SKRZYNKĘ(2, 10)`.
+- Programs get their arguments (`CO PAN PRZYNIÓSŁ()`, `ferdek program.ferdek a b`), environment
+  variables (`CO MÓWI SĄSIAD(nazwa)`) and can exit with a code (`ZAMYKAM INTERES(kod)`).
+- Input: `NASTĘPNA LINIJKA()` (a line, or null at the end - for loops) and `CAŁE WEJŚCIE()`.
+  `CO TAM U PANA SŁYCHAĆ` gives null at the end of input in both modes, and compiled programs read
+  lines of any length.
+- Math without import: `POTĘGA`, `TANGENS`, `LOGARYTM`, `PODŁOGA`, `SUFIT`, `MODUŁ ZE SKRZYNKI`.
+- Patterns in text: `CZY KANAPA PASUJE`, `ZNAJDŹ NA KANAPIE`, `ZNAJDŹ WSZYSTKO NA KANAPIE`,
+  `PODMIEŃ NA KANAPIE` with `.` `[a-z]` `[^...]` `\d` `\w` `\s` `*` `+` `?` `^` `$` on characters
+  (Polish letters count as one), the same in both modes and checked against Python `re`.
 - Standard library, built in (no import), same in both modes:
   - arrays: `WYTNIJ Z WERSALKI`, `GDZIE LEŻY NA WERSALCE`, `ZESTAW WERSALKI`, `ZSUMUJ WERSALKĘ`,
     `NAJMNIEJSZY/NAJWIĘKSZY NA WERSALCE`, `ZWIŃ WERSALKĘ` (reduce), `BEZ POWTÓREK`, `ZRÓB KOLEJKĘ`,
