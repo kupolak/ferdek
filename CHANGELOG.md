@@ -90,25 +90,38 @@
   the interpreter (C leaves the order open; with gcc a function changing a variable used in the
   same expression could give a different result).
 - With the Boehm GC installed, compiled programs free memory (a 2M-iteration text loop: 3 MB instead
-  of 32 MB and growing).
+  of 32 MB and growing). It is found through `pkg-config bdw-gc` too; `ferdek -c` warns when it is
+  missing.
+- Maps with more than 8 keys (and objects with many fields) use a hash index: 20 000 keys inserted,
+  read and half removed in 0.02 s instead of 1.2 s.
+
+### Interpreter
+- About 2-4x faster (`make bench`: loops 1.24 s -> 0.27 s, fib 0.40 s -> 0.16 s): the program is
+  compiled once to OCaml closures, a function's variables live in slots, global variables are read
+  through a cached table cell, and names hash without polymorphic compare. Results and error
+  messages are unchanged (checked against the previous interpreter on all tests and fuzzed programs).
 
 ### Tools
 - `ferdek nowy nazwa`: a new project - program, a module, a BABKA test and a README.
 - `ferdek --dap`: the debugger for editors (Debug Adapter Protocol) - breakpoints, stepping, call
   stack, variables and hover evaluation in VS Code; program output shows in the debug console.
+  Program input for `CO TAM U PANA SŁYCHAĆ` comes from `input` or `inputFile` in the launch
+  configuration.
 - `ferdek --debug program.ferdek`: step through a program (step, next, step out), breakpoints,
   evaluate expressions, list variables and the call path.
 - Tutorial `docs/SAMOUCZEK.md` ("Ferdek w 15 minut"): every program in it is run in both modes by
   `make test` and must print what the tutorial shows.
 - Browser playground (`make playground`): the interpreter as JavaScript in a Web Worker, with
-  examples, stdlib, program input and a formatter button.
+  examples, stdlib, program input and a formatter button, syntax highlighting (by the real lexer)
+  and share links (the program, compressed, after `#`).
 - `ferdek --check` (unknown names, wrong argument counts), `ferdek test` (runs `*_test.ferdek`),
   `ferdek --fmt` (indentation).
 - Errors report file and line; syntax errors say what was expected; all messages in Polish.
 - The language server warns about local variables that are never read.
 - `ferdek --lsp`: Language Server with errors as you type (syntax and `--check`), hover docs for
   keywords, builtins and your names, completion (multi-word keywords too), go to definition
-  (also into imported modules), find references and rename. Needs the `yojson` opam package.
+  (also into imported modules, any number of import levels deep), find references and rename -
+  across all files of the workspace that import the module. Needs the `yojson` opam package.
 - Lexer and preprocessor messages are in Polish too.
 - Errors show the program line they are about. Syntax errors point with `^` at the spot, and when a
   statement is cut short, at the end of that line instead of the start of the next one. Runtime
@@ -122,6 +135,9 @@
 - Full keyword reference in [docs/JEZYK.md](docs/JEZYK.md), generated from the lexer.
 
 ### Fixes
+- Compiled programs: a function parameter changed inside a try block and read in the catch block
+  could come back with its old value (setjmp/longjmp); parameters of functions with try are now
+  `volatile`, and the fuzzer generates such cases.
 - Security: KLATKA ran URLs/hosts as shell commands; arguments are now quoted.
 - String comparison treated any two texts as equal; object methods saw a stale copy of fields;
   the preprocessor defined every platform macro and expanded macros inside strings; about 30
