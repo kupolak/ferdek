@@ -24,7 +24,8 @@ class Gen:
         # i0/i1 to liczniki pętli: czytać wolno, przypisywać nie (inaczej pętla bez końca)
         self.vars = {"int": ["i0", "i1", "i2", "k0", "k1"], "float": ["f0"], "str": ["s0"], "arr": ["t0"]}
         self.assignable = {"int": ["i2"], "float": ["f0"], "str": ["s0"], "arr": ["t0"]}
-        self.funcs = []   # (nazwa, typ zwracany)
+        self.funcs = []   # (nazwa, typ zwracany: "int" albo "mixed" - raz liczba, raz tekst)
+        self.has_class = False
 
     def pick(self, xs):
         return self.r.choice(xs)
@@ -49,6 +50,9 @@ class Gen:
             f"W MORDĘ JEŻA ILE NA WERSALCE({self.expr('arr', d)})",
             f"W MORDĘ JEŻA ZRÓB DŁUGI({self.expr('float', d)})",
             *[f"W MORDĘ JEŻA {n}({self.expr('int', d)})" for n, rt in self.funcs if rt == "int"],
+            *[f"W MORDĘ JEŻA {n}({self.expr('float', d)})" for n, rt in self.funcs if rt == "int" and self.r.random() < 0.1],
+            *(["W MORDĘ JEŻA ile0()"] if self.has_class else []),
+            f'W MORDĘ JEŻA ILE W SZAFCE(W MORDĘ JEŻA OTWÓRZ SZAFKĘ("a", {self.expr("int", d)}, "b", 2))',
         ])
 
     def e_float(self, leaf, d):
@@ -75,6 +79,7 @@ class Gen:
             f"W MORDĘ JEŻA CO TO ZA TYP({self.expr(self.pick(['int', 'float', 'arr']), d)})",
             f"W MORDĘ JEŻA POTNIJ KANAPĘ({a}, {self.r.randint(0, 2)}, {self.r.randint(1, 4)})",
             f"W MORDĘ JEŻA ZNAK Z KANAPY({a}, {self.r.randint(0, 3)})",
+            *[f"W MORDĘ JEŻA {n}({self.expr('int', d)})" for n, rt in self.funcs if rt == "mixed"],
         ])
 
     def e_bool(self, leaf, d):
@@ -119,12 +124,21 @@ class Gen:
 
     def stmt(self, d, ind):
         t = self.pick(["int", "float", "str", "arr"])
-        kinds = ["print", "print", "print", "assign", "assign"] + (["if", "for", "while", "try"] if d < 2 else [])
+        kinds = ["print", "print", "print", "assign", "assign", "map"] + (["if", "for", "while", "try"] if d < 2 else [])
         k = self.pick(kinds)
         if k == "print":
             return [f"{ind}PANIE SENSACJA REWELACJA {self.expr(self.pick(['int', 'float', 'str', 'arr', 'bool']), 0)}"]
         if k == "assign":
             return [f"{ind}O KURDE MAM POMYSŁA {self.pick(self.assignable[t])} A PROSZĘ BARDZO {self.expr(t, 0)} NO I GITARA"]
+        if k == "map":
+            return self.pick([
+                [f"{ind}W MORDĘ JEŻA WŁÓŻ DO SZAFKI(m0, {self.expr('str', 1)}, {self.expr('int', 1)})"],
+                [f"{ind}KRĘCI CEMENT BETONIARA klucz{d} Z m0",
+                 f"{ind}    PANIE SENSACJA REWELACJA klucz{d} BABKA DAWAJ RENTĘ \"=\" BABKA DAWAJ RENTĘ W MORDĘ JEŻA WYJMIJ Z SZAFKI(m0, klucz{d})",
+                 f"{ind}A ROBIĆ NI MA KOMU"],
+                [f"{ind}O KURDE MAM POMYSŁA kasa0[\"stan\"] A PROSZĘ BARDZO {self.expr('int', 1)} NO I GITARA"]
+                if self.has_class else [f"{ind}PANIE SENSACJA REWELACJA m0"],
+            ])
         if k == "if":
             out = [f"{ind}NO JAK NIE JAK TAK {self.expr('bool', 0)}"] + self.stmts(2, d + 1, ind + "    ")
             if self.r.random() < 0.5:
@@ -159,6 +173,30 @@ class Gen:
         return ([f"{ind}HELENA MUSZĘ CI COŚ POWIEDZIEĆ"] + body
                 + [f"{ind}HELENA MAM ZAWAŁ blad", f"{ind}    PANIE SENSACJA REWELACJA blad", f"{ind}DO CHAŁUPY ALE JUŻ"])
 
+    # Funkcja z parametrem i0, zmienną lokalną a0, czasem pętlą i zmianą globalnej i2.
+    # "mixed" zwraca raz liczbę, raz tekst - kompilator nie może jej wtedy traktować jak liczby.
+    def function(self, name, kind):
+        # a0 dopiero po deklaracji: odczyt przed nią to błąd tylko w interpreterze (C daje 0)
+        body = [f"ALE WIE PAN JA ZASADNICZO {name}", "NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ",
+                "NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO i0",
+                "    CYCU PRZYNIEŚ NO a0", f"    TO NIE SĄ TANIE RZECZY {self.expr('int', 1)}"]
+        self.vars["int"].append("a0")
+        if self.r.random() < 0.5:
+            body += [f"    KRĘCI CEMENT BETONIARA q OD 1 DO {self.r.randint(0, 4)}",
+                     "        O KURDE MAM POMYSŁA a0 A PROSZĘ BARDZO a0 BABKA DAWAJ RENTĘ q NO I GITARA",
+                     "    A ROBIĆ NI MA KOMU"]
+        if self.r.random() < 0.3:
+            body.append(f"    O KURDE MAM POMYSŁA i2 A PROSZĘ BARDZO {self.expr('int', 2)} NO I GITARA")
+        other = self.expr("str", 1) if kind == "mixed" else self.expr("int", 1)
+        if self.r.random() < 0.6 or kind == "mixed":
+            body += [f"    NO JAK NIE JAK TAK {self.expr('bool', 1)}",
+                     f"        I JA INFORMUJĘ ŻE WYCHODZĘ {self.expr('int', 1)}",
+                     "    A DUPA TAM", f"        I JA INFORMUJĘ ŻE WYCHODZĘ {other}", "    DO CHAŁUPY ALE JUŻ"]
+        else:
+            body.append(f"    I JA INFORMUJĘ ŻE WYCHODZĘ {self.expr('int', 1)}")
+        self.vars["int"].remove("a0")
+        return body + ["DO WIDZENIA PANU"]
+
     def program(self):
         lines = ["CO JEST KURDE",
                  "CYCU PRZYNIEŚ NO i0", "TO NIE SĄ TANIE RZECZY 3",
@@ -169,13 +207,22 @@ class Gen:
                  "CYCU PRZYNIEŚ NO f0", "TO NIE SĄ TANIE RZECZY 1.5",
                  'CYCU PRZYNIEŚ NO s0', 'TO NIE SĄ TANIE RZECZY "Kiepski"',
                  "CYCU PRZYNIEŚ NO t0", "TO NIE SĄ TANIE RZECZY [3, 1, 2]"]
-        for k in range(self.r.randint(0, 2)):
+        lines += ['AFERA JEST m0 W MORDĘ JEŻA OTWÓRZ SZAFKĘ("piwo", 1, "wódka", 2)']
+        for k in range(self.r.randint(0, 3)):
             name = f"fun{k}"
-            body_expr = self.expr("int", 1)   # zanim funkcja trafi do self.funcs - brak rekurencji
-            lines += [f"ALE WIE PAN JA ZASADNICZO {name}", "NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ",
-                      "NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO i0",
-                      f"    I JA INFORMUJĘ ŻE WYCHODZĘ {body_expr}", "DO WIDZENIA PANU"]
-            self.funcs.append((name, "int"))
+            kind = self.pick(["int", "int", "mixed"])
+            lines += self.function(name, kind)   # zanim trafi do self.funcs - bez rekurencji
+            self.funcs.append((name, kind))
+        if self.r.random() < 0.5:
+            self.vars["int"].append("stan")
+            method = self.expr("int", 1)
+            self.vars["int"].remove("stan")
+            lines += ["ALE JAJA Kasa", "    CYCU PRZYNIEŚ NO stan", f"    TO NIE SĄ TANIE RZECZY {self.r.randint(-9, 9)}",
+                      "    ALE WIE PAN JA ZASADNICZO ile", "    NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ",
+                      f"        I JA INFORMUJĘ ŻE WYCHODZĘ {method}", "    DO WIDZENIA PANU", "DO WIDZENIA PANU",
+                      "CYCU PRZYNIEŚ NO kasa0", "TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Kasa",
+                      "CYCU PRZYNIEŚ NO ile0", 'TO NIE SĄ TANIE RZECZY WYPIERDZIELAJ PAN NA POZYCJĘ kasa0["ile"]']
+            self.has_class = True
         lines += self.stmts(self.r.randint(8, 16), 0, "")
         return "\n".join(lines + ["MOJA NOGA JUŻ TUTAJ NIE POSTANIE", ""])
 
