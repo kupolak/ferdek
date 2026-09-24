@@ -70,6 +70,7 @@ rule token = parse
   (* Keywords - CONDITIONALS AND LOOPS *)
   | "NO JAK NIE JAK TAK" { IF }
   | "CO TO JE" { SWITCH }
+  | "TO JE NA AMEN" { CONST }
   | "JAK JE" { CASE }
   | "A JAK NIC Z TEGO" { DEFAULT }
   | "KONIEC GADANIA" { END_SWITCH }

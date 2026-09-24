@@ -55,6 +55,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `OD` | Początek zakresu pętli for |
 | `DO` | Koniec zakresu pętli for (włącznie) |
 | `CO` | Krok pętli for (domyślnie 1, ujemny liczy w dół) |
+| `TO JE NA AMEN` | Stała: TO JE NA AMEN x / TO NIE SĄ TANIE RZECZY 5 - później nie wolno przypisać |
 | `CO TO JE` | Wybór wariantu: CO TO JE x / JAK JE 1, 2 / A JAK NIC Z TEGO / KONIEC GADANIA |
 | `JAK JE` | Przypadek w CO TO JE - jedna albo kilka wartości po przecinku |
 | `A JAK NIC Z TEGO` | Gdy żaden przypadek CO TO JE nie pasuje |

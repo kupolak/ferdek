@@ -14,3 +14,7 @@ val expand_imports : (string -> program option) -> top_level_decl list -> top_le
 
 (* load_module: jak w interpreterze, zwraca AST modułu do wklejenia w miejscu importu *)
 val compile_program : ?load_module:(string -> program option) -> program -> string
+
+(* Podwyrażenia (bez wnętrza lambd) i wyrażenia instrukcji z zagnieżdżonymi instrukcjami *)
+val subexprs : expr -> expr list
+val stmt_exprs : stmt -> expr list

@@ -76,7 +76,7 @@ let analyze text =
     | FUNC_END, _ -> if List.length !blocks > 1 then blocks := List.tl !blocks
     | FUNC_PARAMS, _ -> params := true
     | IDENTIFIER name, _ when !params -> declare (block ()) name i
-    | (VAR_DECL | ARRAY_DECL | FOR | CATCH), Some name when not !record -> declare (block ()) name (i + 1)
+    | (VAR_DECL | CONST | ARRAY_DECL | FOR | CATCH), Some name when not !record -> declare (block ()) name (i + 1)
     | (STRUCT | UNION), Some name -> declare (block ()) name (i + 1); record := true
     | (END_STRUCT | END_UNION), _ -> record := false
     | ENUM, Some name -> declare (block ()) name (i + 1); enum := true
@@ -185,6 +185,7 @@ let describe toks i name =
     | Some UNION -> "unia " ^ name
     | Some ENUM -> "lista " ^ name
     | Some ARRAY_DECL -> "tablica " ^ name
+    | Some CONST -> "stała " ^ name
     | Some FOR -> "zmienna pętli " ^ name
     | Some CATCH -> "złapany wyjątek " ^ name
     | Some (FUNC_PARAMS | COMMA | LPAREN) -> "parametr " ^ name

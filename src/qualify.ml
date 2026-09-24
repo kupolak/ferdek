@@ -53,6 +53,7 @@ let qualify alias (prog : program) =
     let e = e sh and bl = List.map (s sh) in
     match x with
     | VarDecl (n, v) -> VarDecl (r n, e v)
+    | ConstDecl (n, v) -> ConstDecl (r n, e v)
     | ArrayDecl (n, es) -> ArrayDecl (r n, List.map e es)
     | Print v -> Print (e v)
     | PrintInline v -> PrintInline (e v)

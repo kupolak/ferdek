@@ -68,6 +68,7 @@ type expr =
 (* Statement type *)
 and stmt =
   | VarDecl of string * expr                             (* Variable declaration (CYCU PRZYNIEŚ NO ... TO NIE SĄ TANIE RZECZY) *)
+  | ConstDecl of string * expr                           (* Stała (TO JE NA AMEN ... TO NIE SĄ TANIE RZECZY) *)
   | ArrayDecl of string * expr list                      (* Array declaration (PANIE TO JEST PRYWATNA PUBLICZNA TABLICA) *)
   | Print of expr                                        (* Print statement (PANIE SENSACJA REWELACJA) *)
   | PrintInline of expr                                  (* Print bez końca linii (JEDZIEM Z TYM ŚLEDZIEM) *)
@@ -242,6 +243,8 @@ let rec string_of_expr = function
       ^ String.concat "\n" (List.map (string_of_stmt "  ") body) ^ "\n}"
 
 and string_of_stmt indent = function
+  | ConstDecl (name, expr) ->
+      indent ^ "const " ^ name ^ " = " ^ string_of_expr expr
   | VarDecl (name, expr) ->
       indent ^ "var " ^ name ^ " = " ^ string_of_expr expr
   | ArrayDecl (name, exprs) ->
@@ -313,7 +316,7 @@ let rec expr_names = function
   | NewStruct _ | NewUnion _ -> []
 
 and stmt_names = function
-  | VarDecl (n, e) | Assign (n, e) -> n :: expr_names e
+  | VarDecl (n, e) | ConstDecl (n, e) | Assign (n, e) -> n :: expr_names e
   | ArrayDecl (n, es) -> n :: List.concat_map expr_names es
   | Print e | PrintInline e | Throw e -> expr_names e
   | Read n -> [n]
@@ -334,7 +337,7 @@ and stmt_names = function
 (* Zmienne deklarowane w bloku (CYCU PRZYNIEŚ NO, tablica, zmienna z HELENA MAM ZAWAŁ) - świeże przy
    każdym wywołaniu, więc lambda ich nie łapie *)
 and block_decls stmts = List.concat_map (function
-  | VarDecl (n, _) | ArrayDecl (n, _) -> [n]
+  | VarDecl (n, _) | ConstDecl (n, _) | ArrayDecl (n, _) -> [n]
   | Located (_, _, s) -> block_decls [s]
   | If (_, a, b) -> block_decls (a @ Option.value b ~default:[])
   | While (_, b) | For (_, _, _, _, b) | ForEach (_, _, b) -> block_decls b
@@ -344,7 +347,7 @@ and block_decls stmts = List.concat_map (function
 (* Zmienne zadeklarowane (VarDecl/ArrayDecl/catch) i przypisane w bloku.
    Ferdek nie ma zasięgu blokowego: zmienna z pętli żyje w całej funkcji. *)
 let rec targets_stmt (decl, assigned) = function
-  | VarDecl (n, _) | ArrayDecl (n, _) -> (n :: decl, assigned)
+  | VarDecl (n, _) | ConstDecl (n, _) | ArrayDecl (n, _) -> (n :: decl, assigned)
   | Read n | Assign (n, _) | FunctionCallWithAssign (n, _, _) -> (decl, n :: assigned)
   | If (_, a, b) -> targets_block (targets_block (decl, assigned) a) (Option.value b ~default:[])
   | While (_, b) -> targets_block (decl, assigned) b

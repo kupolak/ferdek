@@ -47,6 +47,7 @@
   source
   sources
   debugger
+  consts
   lsp
   builtins_string
   builtins_hashmap

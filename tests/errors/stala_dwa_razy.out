@@ -1,0 +1,3 @@
+A fe! A to nie tak! W tests/errors/stala_dwa_razy.ferdek, linia 4: Stała 'x' to TO JE NA AMEN - nie wolno jej zmieniać.
+    4 | TO JE NA AMEN x
+      | ^

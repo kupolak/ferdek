@@ -156,6 +156,7 @@ let entries = [
   "TAK BYĆ NIE BĘDZIE", "TAK BYĆ NIE BĘDZIE", "not", false;
   "TAK JEST I KROPKA", "TAK JEST I KROPKA(warunek)", "BABKA: asercja prawdy", true;
   "TEN SAM BAJZEL", "TEN SAM BAJZEL(a, b)", "BABKA: to samo", true;
+  "TO JE NA AMEN", "TO JE NA AMEN", "Stała: TO JE NA AMEN x / TO NIE SĄ TANIE RZECZY 5 - później nie wolno przypisać", false;
   "TO NIE SĄ TANIE RZECZY", "TO NIE SĄ TANIE RZECZY", "Wartość początkowa w deklaracji", false;
   "TO PANU SIĘ CHCE WTEDY KIEDY MNIE", "TO PANU SIĘ CHCE WTEDY KIEDY MNIE", "==", false;
   "TRZEBA SPAĆ", "TRZEBA SPAĆ(ms)", "Uśpij program na podaną liczbę milisekund", true;

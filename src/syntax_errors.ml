@@ -29,6 +29,7 @@ let keywords = [
   Parser.FOR_STEP, "CO";
   Parser.FOR_IN, "Z";
   Parser.SWITCH, "CO TO JE";
+  Parser.CONST, "TO JE NA AMEN";
   Parser.CASE, "JAK JE";
   Parser.DEFAULT, "A JAK NIC Z TEGO";
   Parser.END_SWITCH, "KONIEC GADANIA";
@@ -109,7 +110,7 @@ let is_noise = function
   | GREATER_EQUAL | AND | OR | BIT_AND | BIT_OR | BIT_XOR | BIT_SHIFT_LEFT | BIT_SHIFT_RIGHT
   | POINTER_STEP_FORWARD | POINTER_STEP_BACK
   | VAR_DECL | ARRAY_DECL | PRINT | PRINT_INLINE | PRINT_NEWLINE | READ | ASSIGN_START | IF
-  | WHILE | FOR | SWITCH | FUNC_CALL | FUNC_CALL_ASSIGN | RETURN | TRY | THROW | BREAK | CONTINUE
+  | WHILE | FOR | SWITCH | CONST | FUNC_CALL | FUNC_CALL_ASSIGN | RETURN | TRY | THROW | BREAK | CONTINUE
   | FUNC_DECL | CLASS | STRUCT | UNION | ENUM | IMPORT
   (* "koniec programu" pasuje po każdej instrukcji na górnym poziomie - nic nie mówi *)
   | PROGRAM_END | EOF -> true

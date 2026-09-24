@@ -323,7 +323,7 @@ and eval_new_union env union_name =
 
 (* Execute statement *)
 and eval_stmt env = function
-  | VarDecl (name, expr) ->
+  | VarDecl (name, expr) | ConstDecl (name, expr) ->
       let value = eval_expr env expr in
       define_var env name value
 

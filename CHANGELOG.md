@@ -36,6 +36,9 @@
   - maps: `WSZYSTKIE RZECZY`, `DOŁÓŻ SZAFKĘ`;
   - dates (text `RRRR-MM-DD`): `JAKI DZIŚ DZIEŃ`, `KTÓRA GODZINA`, `DZIEŃ TYGODNIA`, `DODAJ DNI`,
     `ILE DNI MIĘDZY`.
+- Choosing a variant: `CO TO JE x` / `JAK JE 1, 2` / `A JAK NIC Z TEGO` / `KONIEC GADANIA`.
+- Constants: `TO JE NA AMEN x` / `TO NIE SĄ TANIE RZECZY 5`. Changing one is reported before the
+  program runs (both modes, `--check`, the editor); a local variable in a function may reuse the name.
 - Loop over elements: `KRĘCI CEMENT BETONIARA x Z kolekcja` ... `A ROBIĆ NI MA KOMU` - array
   elements, map keys (sorted) or characters of a text. `Z` is now a keyword.
 - Anonymous functions: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2`, or with statements:

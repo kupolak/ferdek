@@ -70,7 +70,8 @@ let starts_statement line =
   | Parser.VAR_DECL | ARRAY_DECL | PRINT | PRINT_INLINE | PRINT_NEWLINE | READ | ASSIGN_START
   | IF | ELSE | ELSE_IF | END_IF | WHILE | END_WHILE | FOR | FUNC_CALL | FUNC_CALL_ASSIGN | RETURN
   | TRY | CATCH | THROW | BREAK | CONTINUE | FUNC_DECL | FUNC_END | CLASS | STRUCT | END_STRUCT
-  | UNION | END_UNION | ENUM | END_ENUM | IMPORT | PROGRAM_START | PROGRAM_END -> true
+  | UNION | END_UNION | ENUM | END_ENUM | IMPORT | PROGRAM_START | PROGRAM_END
+  | SWITCH | CASE | DEFAULT | END_SWITCH | CONST -> true
   | _ -> false
   | exception _ -> true
 
@@ -114,7 +115,19 @@ let parse_source ?(preprocessed = false) filename text =
   try
     let text = if preprocessed then text else Preprocessor.preprocess_string text in
     match parse_collecting filename text with
-    | Ok prog -> Ok (resolve_local_imports filename prog)
+    | Ok prog ->
+        (match Consts.check prog with
+         | [] -> Ok (resolve_local_imports filename prog)
+         | errs ->
+             let lines = Array.of_list (String.split_on_char '\n' text) in
+             (* znaczek pod początkiem instrukcji, nie pod wcięciem *)
+             let col l = if l < 1 || l > Array.length lines then 1 else
+               let t = lines.(l - 1) in
+               let k = ref 0 in
+               while !k < String.length t && (t.[!k] = ' ' || t.[!k] = '\t') do incr k done;
+               !k + 1 in
+             Error (List.sort compare errs |> List.map (fun (l, _, m) ->
+               (l, col l, Printf.sprintf "A to nie tak! W %s, linia %d: %s." filename l m))))
     | Error errs -> Error errs
   with
   | Lexer.LexError msg ->

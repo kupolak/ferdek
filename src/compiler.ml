@@ -302,7 +302,7 @@ let rec all_exprs e = e :: List.concat_map all_exprs (subexprs e)
 
 (* Wyrażenia instrukcji razem z zagnieżdżonymi instrukcjami *)
 let rec stmt_exprs = function
-  | VarDecl (_, e) | Assign (_, e) | Print e | PrintInline e | Throw e -> [e]
+  | VarDecl (_, e) | ConstDecl (_, e) | Assign (_, e) | Print e | PrintInline e | Throw e -> [e]
   | ArrayDecl (_, es) -> es
   | ArrayAssign (a, v) -> [a; v]
   | If (c, a, b) -> c :: List.concat_map stmt_exprs (a @ Option.value b ~default:[])
@@ -325,7 +325,7 @@ let rec lambdas_of es =
 
 (* Przypisania w bloku (bez lambd): nazwa i wyrażenie; None - coś, co nie musi być liczbą *)
 let rec assigns acc = function
-  | VarDecl (n, e) | Assign (n, e) -> (n, Some e) :: acc
+  | VarDecl (n, e) | ConstDecl (n, e) | Assign (n, e) -> (n, Some e) :: acc
   | FunctionCallWithAssign (n, f, args) -> (n, Some (FunctionCall (f, args))) :: acc
   | For (v, _, _, _, b) -> List.fold_left assigns ((v, Some (IntLiteral 0)) :: acc) b
   | Read n | ArrayDecl (n, _) -> (n, None) :: acc
@@ -749,6 +749,7 @@ and compile_stmt ctx indent stmt =
   let ind = String.make (indent * 4) ' ' in
   let block stmts = String.concat "\n" (List.map (compile_stmt ctx (indent + 1)) stmts) in
   match stmt with
+  | ConstDecl (name, e) -> compile_stmt ctx indent (VarDecl (name, e))
   | VarDecl (name, e) | Assign (name, e) when List.mem name ctx.ints && not (is_member ctx name) ->
       Printf.sprintf "%s%s = %s;" ind (var_c name) (compile_int ctx e)
   | VarDecl (name, e) | Assign (name, e) when List.mem name ctx.floats && not (is_member ctx name) ->

@@ -20,6 +20,7 @@ let string_of_token = function
   | FOR_STEP -> "FOR_STEP"
   | FOR_IN -> "FOR_IN"
   | SWITCH -> "SWITCH"
+  | CONST -> "CONST"
   | CASE -> "CASE"
   | DEFAULT -> "DEFAULT"
   | END_SWITCH -> "END_SWITCH"
