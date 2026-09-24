@@ -69,7 +69,11 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
              if f.is_variadic then
                (if given < n then
                   report (Printf.sprintf "%s oczekuje co najmniej %s, podano %d" name (Errors.argumentow n) given))
-             else check_arity name (Some n) given
+             else if f.defaults <> [] then begin
+               let lo = n - List.length f.defaults in
+               if given < lo || given > n then
+                 report (Printf.sprintf "%s oczekuje %s, podano %d" name (Errors.range_args lo n) given)
+             end else check_arity name (Some n) given
          | None, None -> report (Errors.unknown "funkcja" name (names sc @ builtin_names)))
     | NewObject (c, args) ->
         List.iter (expr sc) args;
@@ -106,6 +110,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
 
   let check_function extra (f : function_decl) =
     let sc = with_locals (extra @ f.params @ (if f.is_variadic then ["varargs"] else []) @ names_of f.body) in
+    List.iter (fun (_, d) -> expr sc d) f.defaults;
     block sc f.body
   in
   (* Metoda widzi pola i metody swojej klasy oraz przodków *)

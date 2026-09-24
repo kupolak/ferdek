@@ -3,6 +3,9 @@
 (* "1 argumentu", "2 argumentów" - dopełniacz po "oczekuje" *)
 let argumentow n = Printf.sprintf "%d %s" n (if n = 1 then "argumentu" else "argumentów")
 
+(* "od 1 do 2 argumentów" - funkcja z wartościami domyślnymi *)
+let range_args lo hi = Printf.sprintf "od %d do %s" lo (argumentow hi)
+
 let wrong_arg_count func_name expected got =
   Printf.sprintf "%s oczekuje %s, podano %d" func_name (argumentow expected) got
 

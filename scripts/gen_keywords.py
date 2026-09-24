@@ -97,7 +97,7 @@ SECTIONS = [
     }),
     ("Zmienne i wypisywanie", {
         "CYCU PRZYNIEŚ NO": "Deklaracja zmiennej: CYCU PRZYNIEŚ NO x / TO NIE SĄ TANIE RZECZY 5",
-        "TO NIE SĄ TANIE RZECZY": "Wartość początkowa w deklaracji",
+        "TO NIE SĄ TANIE RZECZY": "Wartość początkowa w deklaracji; w liście parametrów - wartość domyślna (ile TO NIE SĄ TANIE RZECZY 1)",
         "PANIE TO JEST PRYWATNA PUBLICZNA TABLICA": "Deklaracja tablicy",
         "O KURDE MAM POMYSŁA": "Przypisanie: O KURDE MAM POMYSŁA x A PROSZĘ BARDZO 5 NO I GITARA",
         "A PROSZĘ BARDZO": "Nowa wartość w przypisaniu",

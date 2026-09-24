@@ -100,6 +100,7 @@ type function_decl = {
   is_variadic: bool;
   has_return: bool;
   body: stmt list;
+  defaults: (string * expr) list;   (* wartości domyślne ostatnich parametrów (TO NIE SĄ TANIE RZECZY) *)
 }
 
 (* Class declaration *)

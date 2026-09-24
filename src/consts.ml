@@ -47,6 +47,13 @@ let check (prog : program) =
   and lambdas_in_stmt acc s = List.fold_left (fun acc e -> lambdas_in_expr e acc) acc (Compiler.stmt_exprs s) in
   let lambdas stmts = List.fold_left lambdas_in_stmt [] stmts in
   let fn ?(members = []) (f : function_decl) =
+    (* wartości domyślne tylko dla ostatnich parametrów i nie razem z ... *)
+    let rec trailing = function
+      | [] -> true
+      | p :: rest -> if List.mem_assoc p f.defaults then List.for_all (fun q -> List.mem_assoc q f.defaults) rest
+                     else trailing rest in
+    if f.defaults <> [] && (f.is_variadic || not (trailing f.params)) then
+      errors := (0, 1, Printf.sprintf "Funkcja %s: parametry z wartością domyślną muszą być na końcu (i bez ...)" f.name) :: !errors;
     body ~params:(f.params @ (if f.is_variadic then ["varargs"] else [])) ~members f.body;
     List.iter (fun (ps, b) -> body ~params:ps ~members:[] b) (lambdas f.body) in
   List.iter (fun (ps, b) -> body ~params:ps ~members:[] b) (lambdas top);

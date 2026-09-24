@@ -37,6 +37,8 @@
   - dates (text `RRRR-MM-DD`): `JAKI DZIŚ DZIEŃ`, `KTÓRA GODZINA`, `DZIEŃ TYGODNIA`, `DODAJ DNI`,
     `ILE DNI MIĘDZY`.
 - Choosing a variant: `CO TO JE x` / `JAK JE 1, 2` / `A JAK NIC Z TEGO` / `KONIEC GADANIA`.
+- Default parameter values: `NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO komu, ile TO NIE SĄ TANIE RZECZY 1`;
+  evaluated at the call, they can use earlier parameters.
 - Constants: `TO JE NA AMEN x` / `TO NIE SĄ TANIE RZECZY 5`. Changing one is reported before the
   program runs (both modes, `--check`, the editor); a local variable in a function may reuse the name.
 - Loop over elements: `KRĘCI CEMENT BETONIARA x Z kolekcja` ... `A ROBIĆ NI MA KOMU` - array

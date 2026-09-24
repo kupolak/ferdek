@@ -74,7 +74,8 @@ let qualify alias (prog : program) =
   in
   let params (f : function_decl) = f.params @ (if f.is_variadic then ["varargs"] else []) in
   let func extra (f : function_decl) =
-    { f with body = List.map (s (extra @ params f @ block_decls f.body)) f.body } in
+    let sh = extra @ params f @ block_decls f.body in
+    { f with body = List.map (s sh) f.body; defaults = List.map (fun (p, d) -> (p, e sh d)) f.defaults } in
   let class_members (c : class_decl) =
     let own (c : class_decl) = List.map fst c.fields @ List.map (fun (m : function_decl) -> m.name) c.methods in
     own c @ List.concat_map (function

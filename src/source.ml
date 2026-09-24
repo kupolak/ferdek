@@ -127,7 +127,8 @@ let parse_source ?(preprocessed = false) filename text =
                while !k < String.length t && (t.[!k] = ' ' || t.[!k] = '\t') do incr k done;
                !k + 1 in
              Error (List.sort compare errs |> List.map (fun (l, _, m) ->
-               (l, col l, Printf.sprintf "A to nie tak! W %s, linia %d: %s." filename l m))))
+               (l, col l, if l = 0 then Printf.sprintf "A to nie tak! W %s: %s." filename m
+                          else Printf.sprintf "A to nie tak! W %s, linia %d: %s." filename l m))))
     | Error errs -> Error errs
   with
   | Lexer.LexError msg ->

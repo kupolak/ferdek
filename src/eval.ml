@@ -140,7 +140,7 @@ let rec eval_expr env = function
           | Some v -> Hashtbl.replace captured.vars n v
           | None -> Option.iter (fun p -> capture p n) e.parent in
       List.iter (capture env) (expr_names (Lambda (params, body)));
-      VFunction ({ name = "anonimowa"; params; is_variadic = false; has_return = true; body }, captured)
+      VFunction ({ name = "anonimowa"; params; is_variadic = false; has_return = true; body; defaults = [] }, captured)
 
 (* Evaluate function call *)
 and eval_function_call env name args =
@@ -195,19 +195,23 @@ and apply_function name (fdecl : function_decl) closure_env arg_values =
       (* Store variadic args as varargs array *)
       define_var func_env "varargs" (VArray (Array.of_list var_args));
     end else begin
-      (* Non-variadic function - exact match required *)
-      if num_params <> num_args then
-        raise (RuntimeError (Printf.sprintf "Funkcja %s oczekuje %s, podano %d"
-                              name (Errors.argumentow num_params) num_args));
-
-      List.iter2 (fun param value -> define_var func_env param value)
-        fdecl.params arg_values;
+      (* Parametry z wartością domyślną można pominąć (tylko ostatnie) *)
+      let required = num_params - List.length fdecl.defaults in
+      if num_args < required || num_args > num_params then
+        raise (RuntimeError (Printf.sprintf "Funkcja %s oczekuje %s, podano %d" name
+                              (if required = num_params then Errors.argumentow num_params
+                               else Errors.range_args required num_params) num_args));
+      List.iteri (fun i value -> define_var func_env (List.nth fdecl.params i) value) arg_values;
     end;
 
     (* Execute function body; po powrocie pozycja wraca do instrukcji wołającej *)
     let caller_loc = !current_loc in
     let caller_stack = !call_stack in
     call_stack := (fdecl.name, caller_loc) :: caller_stack;
+    (* brakujące argumenty: wartości domyślne, liczone już w funkcji (widzą wcześniejsze parametry) *)
+    List.iteri (fun i p ->
+      if i >= num_args then define_var func_env p (eval_expr func_env (List.assoc p fdecl.defaults)))
+      fdecl.params;
     let result =
       (try
         List.iter (eval_stmt func_env) fdecl.body;

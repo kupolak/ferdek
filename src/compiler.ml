@@ -246,10 +246,16 @@ let c_string_literal s =
   Buffer.add_char buf '"';
   Buffer.contents buf
 
+(* Ile argumentów trzeba podać (bez parametrów z wartością domyślną) *)
+let required_args (f : function_decl) = List.length f.params - List.length f.defaults
+
+let with_required (f : function_decl) code =
+  if f.defaults = [] then code else Printf.sprintf "with_required(%s, %d)" code (required_args f)
+
 let function_value ctx name =
   let f = Hashtbl.find ctx.funcs name in
-  Printf.sprintf "make_function(%s, %s, %d, %s)" (wrap_c name) (c_string_literal name)
-    (List.length f.params) (if f.is_variadic then "true" else "false")
+  with_required f (Printf.sprintf "make_function(%s, %s, %d, %s)" (wrap_c name) (c_string_literal name)
+    (List.length f.params) (if f.is_variadic then "true" else "false"))
 
 (* Tablica argumentów dla wywołań (argc, argv) *)
 let argv_c c_args = if c_args = [] then "(FerdekValue[]){make_null()}" else
@@ -387,7 +393,7 @@ let infer_ints ctx decls =
     | Identifier n | FunctionRef n | AddressOf n -> Hashtbl.replace as_value n ()
     | _ -> ()) everywhere;
   let eligible (f : function_decl) =
-    not f.is_variadic && find_builtin f.name = None
+    not f.is_variadic && f.defaults = [] && find_builtin f.name = None
     && not (Hashtbl.mem as_value f.name) && not (Hashtbl.mem shadow f.name) in
   (* Stan: kandydaci na long long *)
   let g = Hashtbl.copy ctx.globals in
@@ -710,9 +716,14 @@ and call_with_args ctx name args c_args =
         Printf.sprintf "%s(%s)" (fun_c name)
           (String.concat ", " (fixed @ [Printf.sprintf "make_array(%s, %d)" (argv_c rest) (List.length rest)]))
       end else begin
-        if given <> n then
-          error (Printf.sprintf "Funkcja %s oczekuje %s, podano %d" name (Errors.argumentow n) given);
-        Printf.sprintf "%s(%s)" (fun_c name) (String.concat ", " c_args)
+        let lo = required_args f in
+        if given < lo || given > n then
+          error (Printf.sprintf "Funkcja %s oczekuje %s, podano %d" name
+                   (if lo = n then Errors.argumentow n else Errors.range_args lo n) given);
+        (* z wartościami domyślnymi: ile podano + puste miejsca na resztę (uzupełnia funkcja) *)
+        let args = if f.defaults = [] then c_args
+          else string_of_int given :: c_args @ List.init (n - given) (fun _ -> "make_null()") in
+        Printf.sprintf "%s(%s)" (fun_c name) (String.concat ", " args)
       end
   | None, _ when List.mem name ctx.locals || (Hashtbl.mem ctx.globals name && not (is_member ctx name)
                                                && not (Hashtbl.mem ctx.funcs name)) ->
@@ -862,6 +873,7 @@ let fun_proto ctx (f : function_decl) =
     | Some (ps, r) -> ps, r | None -> List.map (fun _ -> false) (all_params f), false in
   let params = List.map2 (fun p is_i -> (if is_i then "long long " else "FerdekValue ") ^ var_c p)
       (all_params f) (ps @ List.init (List.length (all_params f) - List.length ps) (fun _ -> false)) in
+  let params = if f.defaults = [] then params else "int argc" :: params in
   Printf.sprintf "%s %s(%s)" (if r then "long long" else "FerdekValue") (fun_c f.name)
     (if params = [] then "void" else String.concat ", " params)
 
@@ -895,7 +907,11 @@ let compile_body ?(own_ints = []) ?(own_floats = []) ?(ret_int = false) ?display
          if List.mem n own_ints then Printf.sprintf "    %slong long %s = 0;" qual (var_c n)
          else if List.mem n own_floats then Printf.sprintf "    %sdouble %s = 0.0;" qual (var_c n)
          else Printf.sprintf "    %sFerdekValue %s = make_null();" qual (var_c n)) locals in
-  let body = List.map (compile_stmt ctx 1) f.body in
+  (* brakujące argumenty: wartości domyślne, liczone w funkcji - jak w interpreterze *)
+  let fill = List.filter_map (fun (p, d) ->
+    let i = let rec idx k = function x :: r -> if x = p then k else idx (k + 1) r | [] -> 0 in idx 0 f.params in
+    Some (Printf.sprintf "    if (argc < %d) %s" (i + 1) (assign ctx p (compile_expr ctx d)))) f.defaults in
+  let body = fill @ List.map (compile_stmt ctx 1) f.body in
   ctx.locals <- [];
   ctx.members <- [];
   ctx.in_function <- false;
@@ -916,7 +932,7 @@ let compile_function ctx (f : function_decl) =
 (* Lambda: ciało jak funkcja, której złapane zmienne są dodatkowymi parametrami (każde wywołanie
    dostaje świeże kopie z self), do tego wrapper (self, argc, argv) dla call_value *)
 let () = compile_lambda := fun ctx name params caps body ->
-  let f = { name; params = params @ caps; is_variadic = false; has_return = true; body } in
+  let f = { name; params = params @ caps; is_variadic = false; has_return = true; body; defaults = [] } in
   let proto = Printf.sprintf "static FerdekValue %s_body(%s)" name
       (if f.params = [] then "void"
        else String.concat ", " (List.map (fun p -> "FerdekValue " ^ var_c p) f.params)) in
@@ -932,6 +948,7 @@ let () = compile_lambda := fun ctx name params caps body ->
 (* Metoda: jak funkcja, z obiektem (self) jako pierwszym parametrem *)
 let method_proto cls (m : function_decl) =
   let params = List.map (fun p -> "FerdekValue " ^ var_c p) (all_params m) in
+  let params = if m.defaults = [] then params else "int argc" :: params in
   Printf.sprintf "FerdekValue %s(%s)" (method_c cls m.name) (String.concat ", " ("FerdekMap* self" :: params))
 
 (* Pola i metody widoczne w metodach klasy: własne i bezpośredniego rodzica (tylko tyle kopiuje interpreter) *)
@@ -947,6 +964,10 @@ let compile_method ctx (c : class_decl) (m : function_decl) =
 (* Wrapper (self, argc, argv) dla funkcji i metod jako wartości; arność sprawdza call_value *)
 let wrap_args (f : function_decl) =
   let n = List.length f.params in
+  if f.defaults <> [] then
+    (* call_value sprawdził zakres; brakujące miejsca puste, funkcja wstawi wartości domyślne *)
+    "argc" :: List.init n (fun i -> Printf.sprintf "(argc > %d ? argv[%d] : make_null())" i i)
+  else
   List.init n (Printf.sprintf "argv[%d]")
   @ (if f.is_variadic then [Printf.sprintf "make_array(argv + %d, argc - %d)" n n] else [])
 
@@ -977,9 +998,10 @@ let compile_class_constructor ctx (c : class_decl) =
   let field (cls_fields : (string * expr) list) =
     List.map (fun (n, e) -> Printf.sprintf "    map_put(obj, %s, %s);" (c_string_literal n) (compile_expr ctx e)) cls_fields in
   let meths cls (ms : function_decl list) = List.map (fun (m : function_decl) ->
-    Printf.sprintf "    map_put(obj, %s, make_method(%s, %s, %d, %s, obj));" (c_string_literal m.name)
-      (method_wrap_c cls m.name) (c_string_literal m.name) (List.length m.params)
-      (if m.is_variadic then "true" else "false")) ms in
+    Printf.sprintf "    map_put(obj, %s, %s);" (c_string_literal m.name)
+      (with_required m (Printf.sprintf "make_method(%s, %s, %d, %s, obj)"
+        (method_wrap_c cls m.name) (c_string_literal m.name) (List.length m.params)
+        (if m.is_variadic then "true" else "false")))) ms in
   let parent = match c.parent_class with
     | None -> []
     | Some p ->
@@ -1073,7 +1095,7 @@ struct FerdekValue {
         bool bool_val;
         FerdekArray* array_val;   /* wskaźnik: kopia wartości współdzieli tablicę, jak w interpreterze */
         /* self: obiekt, z którym związana jest metoda (NULL dla zwykłej funkcji) */
-        struct { FerdekValue (*call)(void*, int, FerdekValue*); const char* name; int arity; bool variadic; void* self; } fn_val;
+        struct { FerdekValue (*call)(void*, int, FerdekValue*); const char* name; int arity; int required; bool variadic; void* self; } fn_val;
         FerdekValue* ptr_val;     /* wskaźnik: kopia wartości na stercie, jak ref w interpreterze */
         struct { FILE* f; bool input; } file_val;
         FerdekMap* map_val;       /* wskaźnik: kopia wartości współdzieli mapę, jak w interpreterze */
@@ -1501,6 +1523,7 @@ static FerdekValue make_method(FerdekValue (*call)(void*, int, FerdekValue*), co
     v.value.fn_val.call = call;
     v.value.fn_val.name = name;
     v.value.fn_val.arity = arity;
+    v.value.fn_val.required = arity;
     v.value.fn_val.variadic = variadic;
     v.value.fn_val.self = self;
     return v;
@@ -1513,6 +1536,9 @@ static void* copy_values(int n, FerdekValue* v) {
     return copy;
 }
 
+/* Funkcja z wartościami domyślnymi: można ją wołać z mniejszą liczbą argumentów */
+static FerdekValue with_required(FerdekValue f, int required) { f.value.fn_val.required = required; return f; }
+
 static FerdekValue make_function(FerdekValue (*call)(void*, int, FerdekValue*), const char* name, int arity, bool variadic) {
     return make_method(call, name, arity, variadic, NULL);
 }
@@ -1522,7 +1548,11 @@ static FerdekValue call_value(FerdekValue f, const char* name, int argc, FerdekV
     if (f.type != TYPE_FUNCTION) ferdek_die("%s to nie funkcja", name);
     if (f.value.fn_val.variadic && argc < f.value.fn_val.arity)
         ferdek_die("Funkcja %s oczekuje co najmniej %d %s, podano %d", name, f.value.fn_val.arity, ARGUMENTOW(f.value.fn_val.arity), argc);
-    if (!f.value.fn_val.variadic && argc != f.value.fn_val.arity)
+    if (!f.value.fn_val.variadic && f.value.fn_val.required != f.value.fn_val.arity
+        && (argc < f.value.fn_val.required || argc > f.value.fn_val.arity))
+        ferdek_die("Funkcja %s oczekuje od %d do %d %s, podano %d", name, f.value.fn_val.required,
+                   f.value.fn_val.arity, ARGUMENTOW(f.value.fn_val.arity), argc);
+    if (!f.value.fn_val.variadic && f.value.fn_val.required == f.value.fn_val.arity && argc != f.value.fn_val.arity)
         ferdek_die("Funkcja %s oczekuje %d %s, podano %d", name, f.value.fn_val.arity, ARGUMENTOW(f.value.fn_val.arity), argc);
     return f.value.fn_val.call(f.value.fn_val.self, argc, argv);
 }
