@@ -1,1 +1,2 @@
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: ZNAK Z KANAPY: indeks poza zakresem (tests/errors/znak_poza_zakresem.ferdek, linia 2)
+    2 | PANIE SENSACJA REWELACJA W MORDĘ JEŻA ZNAK Z KANAPY("abc", 3)

@@ -1,1 +1,2 @@
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: OTWÓRZ SZAFKĘ: potrzebne pary klucz, wartość (parzysta liczba argumentów) (tests/errors/szafka_nieparzysta.ferdek, linia 2)
+    2 | AFERA JEST s W MORDĘ JEŻA OTWÓRZ SZAFKĘ("a", 1, "b")

@@ -1,1 +1,2 @@
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Liczba z przecinkiem tam, gdzie trzeba całkowitej (użyj ZRÓB DŁUGI) (tests/errors/przecinek_jako_indeks.ferdek, linia 4)
+    4 | PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ t[1.0]

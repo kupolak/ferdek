@@ -55,6 +55,12 @@ exception ReturnValue of value
 exception BreakLoop
 exception ContinueLoop
 exception ThrowException of value
+(* Błąd, którego HELENA MAM ZAWAŁ nie łapie (break/continue poza pętlą w funkcji) - jak ferdek_fatal w C *)
+exception Fatal of string
+
+(* Ścieżka wywołań: (funkcja, miejsce wywołania), od najgłębszej. Przy błędzie zostaje taka, jaka
+   była w chwili błędu; HELENA MAM ZAWAŁ przywraca ją do stanu z wejścia do bloku. *)
+let call_stack : (string * (string * int)) list ref = ref []
 
 (* ============ ENVIRONMENT MANAGEMENT ============ *)
 

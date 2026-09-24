@@ -1,0 +1,4 @@
+Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Dzielenie przez zero (tests/errors/rekurencja_stos.ferdek, linia 6)
+    6 |         I JA INFORMUJĘ ŻE WYCHODZĘ 100 MUSZĘ DO SRACZA n
+  w funkcji odliczaj, wywołanej w linii 8 (11 razy)
+  w funkcji odliczaj, wywołanej w linii 10

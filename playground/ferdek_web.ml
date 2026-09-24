@@ -34,7 +34,7 @@ let run code input =
         | Ok () -> flush stdout; print_endline "Program zakończony pomyślnie. Piwo dla Pana!"; 0
         | Error msg ->
             flush stdout;
-            prerr_endline ("Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: " ^ msg); 1
+            prerr_string ("Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: " ^ msg ^ "\n" ^ Interpreter.error_context ()); 1
         | exception Stack_overflow ->
             flush stdout; prerr_endline "Błąd Wykonania: za głęboka rekurencja"; 1 in
   flush stdout; flush stderr;

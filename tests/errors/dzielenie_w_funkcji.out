@@ -1,2 +1,4 @@
 linia 9
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Dzielenie przez zero (tests/errors/dzielenie_w_funkcji.ferdek, linia 10)
+   10 |     PANIE SENSACJA REWELACJA 5 MUSZĘ DO SRACZA 0
+  w funkcji zepsuta, wywołanej w linii 13

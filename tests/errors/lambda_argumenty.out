@@ -1,1 +1,2 @@
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Funkcja f oczekuje 2 argumentów, podano 1 (tests/errors/lambda_argumenty.ferdek, linia 4)
+    4 | PANIE SENSACJA REWELACJA W MORDĘ JEŻA f(1)

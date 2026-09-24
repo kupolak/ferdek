@@ -1,2 +1,4 @@
 0
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Dzielenie przez zero (tests/errors/lambda_blad_w_ciele.ferdek, linia 6)
+    6 |     I JA INFORMUJĘ ŻE WYCHODZĘ y MUSZĘ DO SRACZA x
+  w funkcji anonimowa, wywołanej w linii 9

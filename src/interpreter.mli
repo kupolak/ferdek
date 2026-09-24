@@ -44,3 +44,6 @@ val eval_program : program -> (unit, string) result
 (* Sesja REPL: zmienne i funkcje przeżywają między kolejnymi wywołaniami eval_in *)
 val new_session : unit -> environment
 val eval_in : environment -> program -> (unit, string) result
+
+(* Po błędzie: linia programu z błędem i ścieżka wywołań (każda pozycja w osobnej linii) *)
+val error_context : unit -> string

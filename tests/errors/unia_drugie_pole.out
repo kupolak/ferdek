@@ -1,1 +1,2 @@
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Obiekt nie ma pola: tekst (tests/errors/unia_drugie_pole.ferdek, linia 11)
+   11 | PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ u["tekst"]

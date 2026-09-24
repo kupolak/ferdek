@@ -157,7 +157,7 @@ send("textDocument/didOpen", {"textDocument": {"uri": BAD, "text":
      "CO JEST KURDE\nCYCU PRZYNIEŚ NO a\nTO NIE SĄ TANIE RZECZY 1 BABKA DAWAJ RENTĘ\n"
      "PANIE SENSACJA REWELACJA a\nPANIE SENSACJA REWELACJA ( a\nPANIE SENSACJA REWELACJA 1\n"
      "MOJA NOGA JUŻ TUTAJ NIE POSTANIE\n"}}, request=False)
-check("błędy składni", [d["range"]["start"]["line"] for d in diagnostics(BAD)], [3, 5])
+check("błędy składni", [d["range"]["start"]["line"] for d in diagnostics(BAD)], [2, 4])
 send("textDocument/didChange", {"textDocument": {"uri": BAD}, "contentChanges": [{"text":
      "CO JEST KURDE\nPANIE SENSACJA REWELACJA nie_ma\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n"}]}, request=False)
 d = diagnostics(BAD)

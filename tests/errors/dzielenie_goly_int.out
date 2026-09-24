@@ -1,2 +1,4 @@
 2
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Dzielenie przez zero (tests/errors/dzielenie_goly_int.ferdek, linia 5)
+    5 |     I JA INFORMUJĘ ŻE WYCHODZĘ a MUSZĘ DO SRACZA b
+  w funkcji dziel, wywołanej w linii 8

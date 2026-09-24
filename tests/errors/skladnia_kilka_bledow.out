@@ -1,3 +1,9 @@
-A fe! Błąd Parsowania! Walduś, coś tu jest pokręcone! W tests/errors/skladnia_kilka_bledow.ferdek, linia 4, kolumna 1, przy 'PANIE SENSACJA REWELACJA'. Spodziewałem się wyrażenia (liczby, tekstu, nazwy...).
-A fe! Błąd Parsowania! Walduś, coś tu jest pokręcone! W tests/errors/skladnia_kilka_bledow.ferdek, linia 6, kolumna 1, przy 'CHLUŚNIEM BO UŚNIEM'. Spodziewałem się: ')'.
+A fe! Błąd Parsowania! Walduś, coś tu jest pokręcone! W tests/errors/skladnia_kilka_bledow.ferdek, linia 3, na końcu linii (dalej jest 'PANIE SENSACJA REWELACJA'). Spodziewałem się wyrażenia (liczby, tekstu, nazwy...).
+    3 | TO NIE SĄ TANIE RZECZY 1 BABKA DAWAJ RENTĘ
+      |                                           ^
+A fe! Błąd Parsowania! Walduś, coś tu jest pokręcone! W tests/errors/skladnia_kilka_bledow.ferdek, linia 5, na końcu linii (dalej jest 'CHLUŚNIEM BO UŚNIEM'). Spodziewałem się: ')'.
+    5 | PANIE SENSACJA REWELACJA ( a
+      |                             ^
 A fe! Błąd Parsowania! Walduś, coś tu jest pokręcone! W tests/errors/skladnia_kilka_bledow.ferdek, linia 7, kolumna 66, przy 'NO I GITARA'. Spodziewałem się wyrażenia (liczby, tekstu, nazwy...).
+    7 |     O KURDE MAM POMYSŁA a A PROSZĘ BARDZO a BABKA DAWAJ RENTĘ NO I GITARA
+      |                                                               ^

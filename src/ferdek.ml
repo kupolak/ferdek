@@ -81,11 +81,13 @@ let print_version () =
 
 (* Parse a file *)
 let parse_file filename =
+  (try Sources.register filename (In_channel.with_open_bin filename In_channel.input_all) with Sys_error _ -> ());
   match String.concat "\n" (Preprocessor.preprocess_file filename) with
   | text ->
       (match parse_source ~preprocessed:true filename text with
        | Ok prog -> Ok prog
-       | Error errs -> Error (String.concat "\nA fe! " (List.map (fun (_, _, m) -> m) errs)))
+       | Error errs ->
+           Error (String.concat "\nA fe! " (List.map (fun (l, c, m) -> m ^ Sources.caret filename l c) errs)))
   | exception Failure msg -> Error (Printf.sprintf "Błąd Preprocesora w %s: %s" filename msg)
   | exception Lexer.LexError msg ->
       Error (Printf.sprintf "Błąd Leksera! Ktoś tu namieszał w słowach! W %s: %s (Paździoch ukradł słowa)." filename msg)
@@ -139,7 +141,7 @@ let interpret_file filename =
            Printf.printf "Program zakończony pomyślnie. Piwo dla Pana!\n";
            0
        | Error msg ->
-           Printf.eprintf "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: %s\n" msg;
+           Printf.eprintf "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: %s\n%s" msg (Interpreter.error_context ());
            1)
   | Error msg ->
       Printf.eprintf "A fe! %s\n" msg;

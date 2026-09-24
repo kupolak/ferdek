@@ -202,6 +202,8 @@ and apply_function name (fdecl : function_decl) closure_env arg_values =
 
     (* Execute function body; po powrocie pozycja wraca do instrukcji wołającej *)
     let caller_loc = !current_loc in
+    let caller_stack = !call_stack in
+    call_stack := (fdecl.name, caller_loc) :: caller_stack;
     let result =
       (try
         List.iter (eval_stmt func_env) fdecl.body;
@@ -209,10 +211,11 @@ and apply_function name (fdecl : function_decl) closure_env arg_values =
       with
       | ReturnValue v -> v
       (* break/continue nie wyskakują z funkcji do pętli, która ją wywołała *)
-      | BreakLoop -> raise (RuntimeError "A POCAŁUJCIE MNIE WSZYSCY W DUPĘ poza pętlą")
-      | ContinueLoop -> raise (RuntimeError "AKUKARACZA poza pętlą"))
+      | BreakLoop -> raise (Fatal "A POCAŁUJCIE MNIE WSZYSCY W DUPĘ poza pętlą")
+      | ContinueLoop -> raise (Fatal "AKUKARACZA poza pętlą"))
     in
     current_loc := caller_loc;
+    call_stack := caller_stack;
     result
 
 (* Evaluate object creation *)
@@ -442,7 +445,9 @@ and eval_stmt env = function
       raise (ReturnValue value)
 
   | Try (try_stmts, catch_var, catch_stmts) ->
+      let entry_stack = !call_stack in
       let catch value =
+        call_stack := entry_stack;
         let catch_env = create_env (Some env) in
         define_var catch_env catch_var value;
         List.iter (eval_stmt catch_env) catch_stmts in

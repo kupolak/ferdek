@@ -676,13 +676,13 @@ and compile_stmt ctx indent stmt =
         | None -> "FerdekValue", "make_null()"
         | Some e -> "FerdekValue", compile_expr ctx e in
       (* Wartość liczymy przed zdjęciem handlerów - może rzucić wyjątek *)
-      Printf.sprintf "%s{ %s ret = %s; ferdek_handler = entry_handler; FERDEK_AT(entry_file, entry_line); return ret; }" ind ty v
+      Printf.sprintf "%s{ %s ret = %s; ferdek_handler = entry_handler; ferdek_depth = entry_depth; FERDEK_AT(entry_file, entry_line); return ret; }" ind ty v
   | Try (try_stmts, var, catch_stmts) ->
       let h = fresh ctx "handler" in
-      Printf.sprintf "%s{\n%s    Handler %s;\n%s    %s.prev = ferdek_handler;\n%s    ferdek_handler = &%s;\n%s    if (setjmp(%s.buf) == 0) {\n%s\n%s        ferdek_handler = %s.prev;\n%s    } else {\n%s        ferdek_handler = %s.prev;\n%s        %s = ferdek_exception;\n%s\n%s    }\n%s}"
-        ind ind h ind h ind h ind h
+      Printf.sprintf "%s{\n%s    Handler %s;\n%s    %s.prev = ferdek_handler; %s.depth = ferdek_depth;\n%s    ferdek_handler = &%s;\n%s    if (setjmp(%s.buf) == 0) {\n%s\n%s        ferdek_handler = %s.prev;\n%s    } else {\n%s        ferdek_handler = %s.prev; ferdek_depth = %s.depth;\n%s        %s = ferdek_exception;\n%s\n%s    }\n%s}"
+        ind ind h ind h h ind h ind h
         (String.concat "\n" (List.map (compile_stmt ctx (indent + 2)) try_stmts))
-        ind h ind ind h ind (var_c var)
+        ind h ind ind h h ind (var_c var)
         (String.concat "\n" (List.map (compile_stmt ctx (indent + 2)) catch_stmts))
         ind ind
   | Throw e -> Printf.sprintf "%sferdek_throw(%s);" ind (compile_expr ctx e)
@@ -710,7 +710,7 @@ let fun_proto ctx (f : function_decl) =
     (if params = [] then "void" else String.concat ", " params)
 
 (* Ciało funkcji albo metody. members <> [] = metoda: nazwy pól i metod obiektu (self) *)
-let compile_body ?(own_ints = []) ?(ret_int = false) ctx ~proto ~members (f : function_decl) =
+let compile_body ?(own_ints = []) ?(ret_int = false) ?display ctx ~proto ~members (f : function_decl) =
   let decl, assigned = block_names ([], []) f.body in
   (* Funkcja: przypisanie do istniejącej globalnej zmienia globalną (set_var w interpreterze).
      Metoda: przypisanie do czegoś, co nie jest polem, tworzy lokalną - set_var sprawdza
@@ -731,6 +731,8 @@ let compile_body ?(own_ints = []) ?(ret_int = false) ctx ~proto ~members (f : fu
   let qual = if has_try f.body then "volatile " else "" in
   let decls = "    Handler* entry_handler = ferdek_handler;"
     :: "    const char* entry_file = ferdek_file; int entry_line = ferdek_line;"
+    :: Printf.sprintf "    int entry_depth = ferdek_depth; FERDEK_ENTER(%s);"
+         (c_string_literal (Option.value display ~default:f.name))
     :: List.map (fun n ->
          if List.mem n own_ints then Printf.sprintf "    %slong long %s = 0;" qual (var_c n)
          else Printf.sprintf "    %sFerdekValue %s = make_null();" qual (var_c n)) locals in
@@ -741,7 +743,7 @@ let compile_body ?(own_ints = []) ?(ret_int = false) ctx ~proto ~members (f : fu
   ctx.ints <- global_ints ctx;
   ctx.ret_int <- false;
   String.concat "\n" ([Printf.sprintf "%s {" proto] @ decls @ body
-                      @ ["    ferdek_handler = entry_handler;"; "    FERDEK_AT(entry_file, entry_line);";
+                      @ ["    ferdek_handler = entry_handler;"; "    ferdek_depth = entry_depth;"; "    FERDEK_AT(entry_file, entry_line);";
                          if ret_int then "    return 0;" else "    return make_null();"; "}"])
 
 
@@ -757,7 +759,7 @@ let () = compile_lambda := fun ctx name params caps body ->
   let proto = Printf.sprintf "static FerdekValue %s_body(%s)" name
       (if f.params = [] then "void"
        else String.concat ", " (List.map (fun p -> "FerdekValue " ^ var_c p) f.params)) in
-  let code = compile_body ctx ~proto ~members:[] f in
+  let code = compile_body ~display:"anonimowa" ctx ~proto ~members:[] f in
   String.concat "\n" [
     code;
     Printf.sprintf "static FerdekValue %s(void* self, int argc, FerdekValue* argv) {" name;
@@ -928,8 +930,43 @@ static void print_loc(void) {
     else fprintf(stderr, " (linia %d)", ferdek_line);
 }
 
+/* Ścieżka wywołań: funkcja i miejsce wywołania. Pierścień - przy głębokiej rekurencji
+   i tak pokazujemy tylko najgłębsze ramki. */
+typedef struct { const char* name; const char* file; int line; } Frame;
+static Frame ferdek_frames[256];
+static int ferdek_depth = 0;
+#define FERDEK_ENTER(n) (ferdek_frames[ferdek_depth & 255] = (Frame){(n), ferdek_file, ferdek_line}, ferdek_depth++)
+
+/* Linia z błędem (wbudowane źródła) i ścieżka wywołań - ten sam tekst co Sources.context */
+static const char* source_line(const char* file, int line);
+static void print_context(void) {
+    const char* l = source_line(ferdek_file, ferdek_line);
+    if (l) fprintf(stderr, "%5d | %s\n", ferdek_line, l);
+    /* powtórzenia z rekurencji zwijamy: "(12 razy)"; ramki starsze niż pierścień liczymy jako ukryte */
+    int low = ferdek_depth > 256 ? ferdek_depth - 256 : 0;   /* starsze ramki są nadpisane - tylko je liczymy */
+    int d = ferdek_depth - 1, shown = 0, hidden = low;
+    while (d >= low) {
+        int k = 1;
+        Frame* f = &ferdek_frames[d & 255];
+        while (d - k >= low) {
+            Frame* g = &ferdek_frames[(d - k) & 255];
+            if (g->line != f->line || strcmp(g->name, f->name) != 0 || strcmp(g->file, f->file) != 0) break;
+            k++;
+        }
+        if (shown < 8) {
+            if (f->file[0] && strcmp(f->file, ferdek_file) != 0) fprintf(stderr, "  w funkcji %s, wywołanej w %s, linia %d", f->name, f->file, f->line);
+            else fprintf(stderr, "  w funkcji %s, wywołanej w linii %d", f->name, f->line);
+            if (k > 1) fprintf(stderr, " (%d razy)", k);
+            fprintf(stderr, "\n");
+            shown++;
+        } else hidden += k;
+        d -= k;
+    }
+    if (hidden > 0) fprintf(stderr, "  ... i jeszcze %d\n", hidden);
+}
+
 /* Wyjątki: stos handlerów na setjmp/longjmp */
-typedef struct Handler { jmp_buf buf; struct Handler* prev; } Handler;
+typedef struct Handler { jmp_buf buf; struct Handler* prev; int depth; } Handler;
 static Handler* ferdek_handler = NULL;
 static FerdekValue ferdek_exception;
 static FerdekValue make_string(const char* s);
@@ -944,6 +981,7 @@ static void ferdek_fatal(const char* fmt, ...) {
     va_end(ap);
     print_loc();
     fprintf(stderr, "\n");
+    print_context();
     exit(1);
 }
 
@@ -965,6 +1003,7 @@ static void ferdek_die(const char* fmt, ...) {
     va_end(ap);
     print_loc();
     fprintf(stderr, "\n");
+    print_context();
     exit(1);
 }
 
@@ -1402,6 +1441,7 @@ static void ferdek_throw(FerdekValue v) {
         fprintf(stderr, "Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Nikt nie złapał wyjątku: %s", s);
         print_loc();
         fprintf(stderr, "\n");
+        print_context();
         exit(1);
     }
     ferdek_exception = v;
@@ -2554,6 +2594,23 @@ let compile_program ?(load_module = fun _ -> None) prog =
                 |> List.map (fun n ->
                      if Hashtbl.mem ctx.int_globals n then Printf.sprintf "static long long %s = 0;" (var_c n)
                      else Printf.sprintf "static FerdekValue %s;" (var_c n)) in
+  (* Teksty plików do pokazania linii z błędem - jak Sources.line w interpreterze *)
+  let sources =
+    let files = Sources.all () in
+    List.mapi (fun i (_, lines) ->
+      Printf.sprintf "static const char* ferdek_src_%d[] = {%s};" i
+        (String.concat ", " (List.map c_string_literal (Array.to_list lines)))) files
+    @ ["static const struct { const char* file; int n; const char** lines; } ferdek_sources[] = {";
+       String.concat ",\n" (List.mapi (fun i (f, lines) ->
+         Printf.sprintf "    {%s, %d, ferdek_src_%d}" (c_string_literal f) (Array.length lines) i) files
+         @ ["    {NULL, 0, NULL}"]);
+       "};";
+       "static const char* source_line(const char* file, int line) {";
+       "    for (int i = 0; ferdek_sources[i].file; i++)";
+       "        if (strcmp(ferdek_sources[i].file, file) == 0)";
+       "            return line >= 1 && line <= ferdek_sources[i].n ? ferdek_sources[i].lines[line - 1] : NULL;";
+       "    return NULL;";
+       "}"] in
   let protos = Hashtbl.fold (fun _ f acc -> (fun_proto ctx f ^ ";") :: (wrap_proto f ^ ";") :: acc) ctx.funcs [] |> dedup in
   let wrappers = Hashtbl.fold (fun _ f acc -> compile_wrapper ctx f :: acc) ctx.funcs [] |> dedup in
 
@@ -2582,7 +2639,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
     "#include <fcntl.h>";
     "";
     runtime_library;
-  ] @ graphics @ globals @ [""] @ protos @ object_protos @ [""] @ List.rev ctx.lambdas @ [""] @ functions @ method_code @ [""] @ wrappers
+  ] @ graphics @ sources @ globals @ [""] @ protos @ object_protos @ [""] @ List.rev ctx.lambdas @ [""] @ functions @ method_code @ [""] @ wrappers
     @ method_wrappers @ [""] @ constructors @ [
     "";
     "int main(void) {";

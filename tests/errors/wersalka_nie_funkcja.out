@@ -1,1 +1,2 @@
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: PRZERABIAJ WERSALKĘ: drugi argument musi być funkcją (tests/errors/wersalka_nie_funkcja.ferdek, linia 2)
+    2 | PANIE SENSACJA REWELACJA W MORDĘ JEŻA PRZERABIAJ WERSALKĘ([1], 5)

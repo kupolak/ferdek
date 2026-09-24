@@ -1,1 +1,3 @@
-A fe! Błąd Parsowania! Walduś, coś tu jest pokręcone! W tests/errors/skladnia_brak_no_i_gitara.ferdek, linia 3, kolumna 1, przy 'PANIE SENSACJA REWELACJA'. Spodziewałem się: 'NO I GITARA'.
+A fe! Błąd Parsowania! Walduś, coś tu jest pokręcone! W tests/errors/skladnia_brak_no_i_gitara.ferdek, linia 2, na końcu linii (dalej jest 'PANIE SENSACJA REWELACJA'). Spodziewałem się: 'NO I GITARA'.
+    2 | O KURDE MAM POMYSŁA x A PROSZĘ BARDZO 5
+      |                                        ^

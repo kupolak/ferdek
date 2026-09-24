@@ -61,6 +61,10 @@
   keywords, builtins and your names, completion (multi-word keywords too), go to definition
   (also into imported modules), find references and rename. Needs the `yojson` opam package.
 - Lexer and preprocessor messages are in Polish too.
+- Errors show the program line they are about. Syntax errors point with `^` at the spot, and when a
+  statement is cut short, at the end of that line instead of the start of the next one. Runtime
+  errors show the call path (`w funkcji dziel, wywołanej w linii 10`, recursion folded into
+  `(12 razy)`), the same in the interpreter and compiled programs.
 - Several syntax errors are reported at once (up to 10): the broken statement is skipped and
   parsing goes on, stopping early where a block is broken to avoid made-up follow-up errors.
 - The REPL keeps state between lines and accepts multi-line statements.

@@ -1,0 +1,6 @@
+Dzielenie przez zero
+5
+Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Dzielenie przez zero (tests/errors/stos_po_zlapaniu.ferdek, linia 5)
+    5 |     I JA INFORMUJĘ ŻE WYCHODZĘ a MUSZĘ DO SRACZA b
+  w funkcji dziel, wywołanej w linii 10
+  w funkcji srednia, wywołanej w linii 18

@@ -1,1 +1,3 @@
-A fe! Błąd Parsowania! Walduś, coś tu jest pokręcone! W tests/errors/skladnia_niezamkniety_if.ferdek, linia 4, kolumna 1, przy 'MOJA NOGA JUŻ TUTAJ NIE POSTANIE'. Spodziewałem się: 'A DUPA TAM' albo 'AAA TO ZMIENIA POSTAĆ RZECZY' albo 'DO CHAŁUPY ALE JUŻ'.
+A fe! Błąd Parsowania! Walduś, coś tu jest pokręcone! W tests/errors/skladnia_niezamkniety_if.ferdek, linia 3, na końcu linii (dalej jest 'MOJA NOGA JUŻ TUTAJ NIE POSTANIE'). Spodziewałem się: 'A DUPA TAM' albo 'AAA TO ZMIENIA POSTAĆ RZECZY' albo 'DO CHAŁUPY ALE JUŻ'.
+    3 |     PANIE SENSACJA REWELACJA 1
+      |                               ^

@@ -1,2 +1,3 @@
 start
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Tekst "abc" to nie liczba (tests/errors/tekst_to_nie_liczba.ferdek, linia 3)
+    3 | PANIE SENSACJA REWELACJA "abc" PASZOŁ WON 1

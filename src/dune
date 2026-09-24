@@ -45,6 +45,7 @@
   qualify
   keyword_docs
   source
+  sources
   lsp
   builtins_string
   builtins_hashmap

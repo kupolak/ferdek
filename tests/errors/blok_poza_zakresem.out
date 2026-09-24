@@ -1,2 +1,3 @@
 42
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: CZYTAJ Z BLOKU: indeks 4 poza zakresem (rozmiar: 4) (tests/errors/blok_poza_zakresem.ferdek, linia 5)
+    5 | PANIE SENSACJA REWELACJA W MORDĘ JEŻA CZYTAJ Z BLOKU(b, 4)

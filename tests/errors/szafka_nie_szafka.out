@@ -1,1 +1,2 @@
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: WŁÓŻ DO SZAFKI: pierwszy argument musi być szafką (mapą) (tests/errors/szafka_nie_szafka.ferdek, linia 4)
+    4 | W MORDĘ JEŻA WŁÓŻ DO SZAFKI(x, "a", 1)

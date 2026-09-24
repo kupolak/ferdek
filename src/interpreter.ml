@@ -90,11 +90,12 @@ let new_session () =
 
 let eval_in env prog =
   current_loc := ("", 0);
+  call_stack := [];
   try
     List.iter (eval_top_level_decl env) prog.declarations;
     Ok ()
   with
-  | RuntimeError msg ->
+  | RuntimeError msg | Fatal msg ->
       Error (Printf.sprintf "%s%s" msg (loc_suffix ()))
   | ThrowException value ->
       Error (Printf.sprintf "Nikt nie złapał wyjątku: %s%s" (string_of_value value) (loc_suffix ()))
@@ -107,3 +108,6 @@ let eval_in env prog =
       Error (Printf.sprintf "Nieoczekiwany błąd: %s%s" (Printexc.to_string e) (loc_suffix ()))
 
 let eval_program prog = eval_in (new_session ()) prog
+
+(* Linia z błędem i ścieżka wywołań - po Error z eval_in *)
+let error_context () = Sources.context !current_loc !call_stack

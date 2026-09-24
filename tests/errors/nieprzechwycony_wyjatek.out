@@ -1,1 +1,2 @@
 Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Nikt nie złapał wyjątku: bum (tests/errors/nieprzechwycony_wyjatek.ferdek, linia 4)
+    4 | O KARWASZ TWARZ "bum"
