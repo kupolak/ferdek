@@ -1,5 +1,5 @@
 (tests
- (names test_ast test_lexer test_parser test_infer test_builtins test_vars)
+ (names test_ast test_lexer test_parser test_infer test_builtins test_vars test_highlight)
  (flags
   (:standard -w -27-32-33))
  (libraries ferdek_lib))

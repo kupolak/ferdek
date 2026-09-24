@@ -1,5 +1,5 @@
 (* Ferdek w przeglądarce: interpreter jako Web Worker. Strona wysyła {cmd, code, input},
-   worker odsyła {kind: "out"|"err"|"done"|"fmt"|"examples", ...}. Nowy worker na każde
+   worker odsyła {kind: "out"|"err"|"done"|"fmt"|"examples"|"highlight", ...}. Nowy worker na każde
    uruchomienie - świeży stan, a "Stop" to po prostu terminate(). *)
 
 open Js_of_ocaml
@@ -40,11 +40,24 @@ let run code input =
   flush stdout; flush stderr;
   post ["kind", str "done"; "code", Js.Unsafe.inject code]
 
+(* Kolorowanie: płaska tablica [początek, koniec, rodzaj, ...] w jednostkach UTF-16 (jak w JS) *)
+let highlight code =
+  let n = String.length code in
+  let u16 = Array.make (n + 1) 0 in
+  for i = 0 to n - 1 do
+    let c = Char.code code.[i] in
+    u16.(i + 1) <- u16.(i) + (if c < 0x80 || c >= 0xC0 then (if c >= 0xF0 then 2 else 1) else 0)
+  done;
+  let spans = Highlight.spans ~is_builtin:(Value.Vars.mem Value.builtins) code in
+  let flat = List.concat_map (fun (a, b, k) -> [u16.(a); u16.(b); Highlight.kind_code k]) spans in
+  Js.Unsafe.inject (Js.array (Array.of_list flat))
+
 let () =
   Worker.set_onmessage (fun (msg : Js.Unsafe.any) ->
     let get k = Js.to_string (Js.Unsafe.get msg (Js.string k)) in
     match get "cmd" with
     | "run" -> run (get "code") (get "input")
+    | "highlight" -> post ["kind", str "highlight"; "spans", highlight (get "code"); "seq", Js.Unsafe.get msg (Js.string "seq")]
     | "fmt" -> post ["kind", str "fmt"; "text", str (Formatter.format (get "code"))]
     | "examples" ->
         let ex = List.filter (fun (p, _) -> String.length p > 10 && String.sub p 0 10 = "przyklady/") Embedded.files in

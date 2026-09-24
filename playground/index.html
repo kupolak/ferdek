@@ -18,6 +18,12 @@
     --screen-err: #FF8F7A;
     --screen-dim: #8FA398;
     --focus: #1F7A63;
+    --hl-key: #2E5C4E;
+    --hl-fn: #8A5A00;
+    --hl-str: #A3412F;
+    --hl-num: #1F5FA8;
+    --hl-com: #7A8A83;
+    --hl-pre: #7A4FA0;
     --display: "Archivo Black", "Arial Black", Impact, sans-serif;
     --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
     --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -34,6 +40,12 @@
       --wall-ink: #EAF2EE;
       --screen: #0A0F0C;
       --focus: #5CC4A6;
+      --hl-key: #7FC7AE;
+      --hl-fn: #F2C56B;
+      --hl-str: #FF9E85;
+      --hl-num: #8DB8F2;
+      --hl-com: #75857E;
+      --hl-pre: #C39BE6;
     }
   }
   :root[data-theme="dark"] {
@@ -47,6 +59,12 @@
     --wall-ink: #EAF2EE;
     --screen: #0A0F0C;
     --focus: #5CC4A6;
+    --hl-key: #7FC7AE;
+    --hl-fn: #F2C56B;
+    --hl-str: #FF9E85;
+    --hl-num: #8DB8F2;
+    --hl-com: #75857E;
+    --hl-pre: #C39BE6;
   }
 
   html, body { height: 100%; }
@@ -152,7 +170,30 @@
     box-sizing: border-box;
     width: 100%;
   }
-  #code { flex: 1; min-height: 320px; }
+  /* Edytor: przezroczysty textarea na kolorowanym <pre> - ten sam font, odstępy i przewijanie */
+  .editor { position: relative; flex: 1; min-height: 320px; }
+  .editor textarea, .editor pre {
+    position: absolute; inset: 0; margin: 0;
+    font: 14px/1.6 var(--mono); tab-size: 4;
+    padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px;
+    white-space: pre; overflow: auto; box-sizing: border-box;
+  }
+  .editor pre { background: var(--panel); color: var(--ink); pointer-events: none; }
+  .editor textarea { background: transparent; color: transparent; caret-color: var(--ink); }
+  .editor textarea::selection { background: color-mix(in srgb, var(--focus) 30%, transparent); }
+  .editor pre .k0 { color: var(--hl-key); font-weight: 600; }
+  .editor pre .k1 { color: var(--hl-fn); font-weight: 600; }
+  .editor pre .k2 { color: var(--hl-str); }
+  .editor pre .k3, .editor pre .k6 { color: var(--hl-num); }
+  .editor pre .k4 { color: var(--hl-com); font-style: italic; }
+  .editor pre .k5 { color: var(--hl-pre); }
+  .share { display: flex; gap: 8px; align-items: center; }
+  .share[hidden] { display: none; }
+  .share input {
+    flex: 1; min-width: 0; font: 12.5px var(--mono); color: var(--ink);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px;
+  }
+  .share span { color: var(--muted); font-size: 13px; white-space: nowrap; }
 
   /* Telewizor: jedyne mocne miejsce na stronie */
   .tv {
@@ -205,7 +246,7 @@
 
   @media (max-width: 820px) {
     main { grid-template-columns: minmax(0, 1fr); }
-    #code { min-height: 300px; }
+    .editor { min-height: 300px; }
     .controls { margin-left: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -223,6 +264,7 @@
       <label for="examples" class="label" style="text-transform:none;letter-spacing:0;font-size:13px">Przykład</label>
       <select id="examples" aria-label="Przykładowy program"><option>witaj.ferdek</option></select>
       <button id="fmt" type="button">Uporządkuj</button>
+      <button id="shareBtn" type="button">Udostępnij</button>
       <button id="stop" type="button" disabled>Stop</button>
       <button id="run" class="run" type="button">Odpalamy <kbd>Ctrl ↵</kbd></button>
     </div>
@@ -231,7 +273,14 @@
   <main>
     <section class="pane">
       <div class="label"><span>Program</span><span id="where">program.ferdek</span></div>
-      <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Kod programu w Ferdku"></textarea>
+      <div class="editor">
+        <pre id="hl" aria-hidden="true"></pre>
+        <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Kod programu w Ferdku"></textarea>
+      </div>
+      <div class="share" id="share" hidden>
+        <input id="shareLink" readonly aria-label="Link do programu">
+        <span id="shareNote"></span>
+      </div>
     </section>
 
     <section class="pane">
@@ -258,6 +307,7 @@
   const $ = id => document.getElementById(id);
   const code = $("code"), screen = $("screen"), lamp = $("lamp"), input = $("input");
   const runBtn = $("run"), stopBtn = $("stop"), fmtBtn = $("fmt"), examples = $("examples");
+  const hl = $("hl"), shareBtn = $("shareBtn"), share = $("share"), shareLink = $("shareLink"), shareNote = $("shareNote");
   let worker = null, timer = null, samples = {};
 
   const store = {
@@ -311,12 +361,79 @@
   function format() {
     const w = spawn(m => {
       if (m.kind === "fmt") {
-        code.value = m.text; store.set("ferdek-code", code.value);
+        setCode(m.text); store.set("ferdek-code", code.value);
         w.terminate();
       }
     });
     w.postMessage({ cmd: "fmt", code: code.value, input: "" });
   }
+
+  // Kolorowanie: stały worker z lekserem Ferdka; do czasu odpowiedzi tekst bez kolorów
+  let hlSeq = 0, hlPending = false, lastSpans = [];
+  const highlighter = spawn(m => {
+    if (m.kind !== "highlight") return;
+    hlPending = false;
+    if (m.seq !== hlSeq) { sendHighlight(); return; }   // tekst zmienił się w międzyczasie
+    lastSpans = Array.from(m.spans);
+    paint(lastSpans);
+  });
+  function paint(spans) {
+    const text = code.value, frag = document.createDocumentFragment();
+    let at = 0;
+    for (let i = 0; i + 2 < spans.length; i += 3) {
+      const [a, b, k] = [spans[i], spans[i + 1], spans[i + 2]];
+      if (a < at || b > text.length) break;
+      if (a > at) frag.appendChild(document.createTextNode(text.slice(at, a)));
+      const s = document.createElement("span");
+      s.className = "k" + k;
+      s.textContent = text.slice(a, b);
+      frag.appendChild(s);
+      at = b;
+    }
+    frag.appendChild(document.createTextNode(text.slice(at) + "\n"));   // ostatnia pusta linia też ma wysokość
+    hl.textContent = "";
+    hl.appendChild(frag);
+    syncScroll();
+  }
+  function sendHighlight() {
+    hlPending = true;
+    highlighter.postMessage({ cmd: "highlight", code: code.value, input: "", seq: hlSeq });
+  }
+  function requestHighlight() {
+    paint(lastSpans);   // od razu nowy tekst ze starymi kolorami - nowe za chwilę
+    hlSeq++;
+    if (!hlPending) sendHighlight();
+  }
+  function syncScroll() { hl.scrollTop = code.scrollTop; hl.scrollLeft = code.scrollLeft; }
+  code.addEventListener("scroll", syncScroll);
+  function setCode(text) { code.value = text; requestHighlight(); }
+
+  // Udostępnianie: program w linku po #, skompresowany (z...) albo zwykły (t...), base64url
+  const b64 = bytes => btoa(Array.from(bytes, b => String.fromCharCode(b)).join("")).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const unb64 = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
+  async function pipe(bytes, stream) {
+    return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+  }
+  async function encode(text) {
+    const raw = new TextEncoder().encode(text);
+    if (typeof CompressionStream === "function") {
+      try { return "z" + b64(await pipe(raw, new CompressionStream("deflate-raw"))); } catch { /* niżej bez kompresji */ }
+    }
+    return "t" + b64(raw);
+  }
+  async function decode(token) {
+    const bytes = unb64(token.slice(1));
+    const raw = token[0] === "z" ? await pipe(bytes, new DecompressionStream("deflate-raw")) : bytes;
+    return new TextDecoder().decode(raw);
+  }
+  shareBtn.addEventListener("click", async () => {
+    const link = location.href.split("#")[0] + "#" + await encode(code.value);
+    share.hidden = false;
+    shareLink.value = link;
+    shareLink.focus(); shareLink.select();
+    try { await navigator.clipboard.writeText(link); shareNote.textContent = "skopiowany"; }
+    catch { shareNote.textContent = "skopiuj (Ctrl+C)"; }
+  });
 
   // Lista przykładów z interpretera (wbudowane przy kompilacji)
   const lister = spawn(m => {
@@ -329,19 +446,25 @@
       opt.value = opt.textContent = name;
       examples.appendChild(opt);
     });
-    const saved = store.get("ferdek-code");
-    code.value = saved || samples["witaj.ferdek"] || "";
-    if (!saved) { examples.value = "witaj.ferdek"; run(); }
     lister.terminate();
+    const token = location.hash.slice(1);
+    if (/^[zt][A-Za-z0-9_-]+$/.test(token)) {
+      decode(token).then(text => { setCode(text); $("where").textContent = "z linku"; },
+                         () => { setCode(""); write("\nZepsuty link - nie da się odczytać programu.\n", "err"); });
+      return;
+    }
+    const saved = store.get("ferdek-code");
+    setCode(saved || samples["witaj.ferdek"] || "");
+    if (!saved) { examples.value = "witaj.ferdek"; run(); }
   });
   lister.postMessage({ cmd: "examples", code: "", input: "" });
 
   examples.addEventListener("change", () => {
-    code.value = samples[examples.value] || "";
+    setCode(samples[examples.value] || "");
     $("where").textContent = examples.value;
     store.set("ferdek-code", code.value);
   });
-  code.addEventListener("input", () => store.set("ferdek-code", code.value));
+  code.addEventListener("input", () => { store.set("ferdek-code", code.value); requestHighlight(); share.hidden = true; });
   code.addEventListener("keydown", e => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); run(); return; }
     if (e.key === "Tab" && !e.shiftKey) {
@@ -349,6 +472,7 @@
       const s = code.selectionStart, t = code.selectionEnd;
       code.setRangeText("    ", s, t, "end");
       store.set("ferdek-code", code.value);
+      requestHighlight();
     }
   });
   runBtn.addEventListener("click", run);
