@@ -72,6 +72,30 @@ let builtins = [
   ["KARTA LUBI DYM"], ("b_karta_lubi_dym", None);
   ["TABLICA 2D"], ("b_tablica_2d", Some 2);
   ["PO PIERWSZE PRIMO"], ("b_po_pierwsze_primo", Some 2);
+  ["WYTNIJ Z WERSALKI"], ("b_wytnij", Some 3);
+  ["GDZIE LEŻY NA WERSALCE"], ("b_gdzie_lezy", Some 2);
+  ["ZESTAW WERSALKI"], ("b_zestaw", Some 2);
+  ["ZSUMUJ WERSALKĘ"], ("b_zsumuj", Some 1);
+  ["NAJMNIEJSZY NA WERSALCE"], ("b_najmniejszy", Some 1);
+  ["NAJWIĘKSZY NA WERSALCE"], ("b_najwiekszy", Some 1);
+  ["ZWIŃ WERSALKĘ"], ("b_zwin", Some 3);
+  ["BEZ POWTÓREK"], ("b_bez_powtorek", Some 1);
+  ["ZRÓB KOLEJKĘ"], ("b_kolejka", Some 2);
+  ["WYLOSUJ Z WERSALKI"], ("b_wylosuj", Some 1);
+  ["POWTÓRZ NA KANAPIE"], ("b_powtorz", Some 2);
+  ["CZY SIEDZI NA KANAPIE"], ("b_czy_siedzi", Some 2);
+  ["GDZIE SIEDZI NA KANAPIE"], ("b_gdzie_siedzi", Some 2);
+  ["ZACZYNA SIĘ OD"], ("b_zaczyna", Some 2);
+  ["KOŃCZY SIĘ NA"], ("b_konczy", Some 2);
+  ["ODWRÓĆ KANAPĘ"], ("b_odwroc_kanape", Some 1);
+  ["ROZCIĄGNIJ Z LEWEJ"], ("b_rozciagnij_lewo", Some 2);
+  ["WSZYSTKIE RZECZY"], ("b_wszystkie_rzeczy", Some 1);
+  ["DOŁÓŻ SZAFKĘ"], ("b_doloz_szafke", Some 2);
+  ["JAKI DZIŚ DZIEŃ"], ("b_dzis", Some 0);
+  ["KTÓRA GODZINA"], ("b_godzina", Some 0);
+  ["DZIEŃ TYGODNIA"], ("b_dzien_tygodnia", Some 1);
+  ["DODAJ DNI"], ("b_dodaj_dni", Some 2);
+  ["ILE DNI MIĘDZY"], ("b_ile_dni", Some 2);
   ["OTWÓRZ KIBEL"], ("b_otworz_kibel", Some 1);
   ["OTWÓRZ KIBEL DO ZAPISU"], ("b_otworz_kibel_zapis", Some 1);
   ["ZAMKNIJ KIBEL"], ("b_zamknij_kibel", Some 1);
@@ -481,6 +505,26 @@ let tenv ctx = {
   ifun = (fun n -> if is_function_name ctx n && find_builtin n = None then Hashtbl.find_opt ctx.sigs n else None);
 }
 
+(* Kilka obliczeń od lewej do prawej, jak w interpreterze. C nie ustala kolejności liczenia
+   operandów, argumentów funkcji ani elementów inicjalizatora - a części mogą mieć skutki uboczne
+   (funkcja zmieniająca zmienną, wypisywanie, błąd). Gdy więcej niż jedna część nie jest stałą,
+   liczymy je po kolei do zmiennych tymczasowych w wyrażeniu blokowym ({ ... }) (gcc i clang).
+   parts: (wyrażenie Ferdka, typ C, kod C); k dostaje kody albo nazwy zmiennych tymczasowych. *)
+let is_literal = function
+  | IntLiteral _ | FloatLiteral _ | StringLiteral _ | BoolLiteral _ | NullLiteral -> true
+  | _ -> false
+
+let in_order ctx parts k =
+  if List.length (List.filter (fun (e, _, _) -> not (is_literal e)) parts) <= 1 then
+    k (List.map (fun (_, _, c) -> c) parts)
+  else
+    let decls, names = List.split (List.map (fun (e, ty, c) ->
+      if is_literal e then ("", c)
+      else let n = fresh ctx "ord_" in (Printf.sprintf "%s %s = %s; " ty n c, n)) parts) in
+    Printf.sprintf "({ %s%s; })" (String.concat "" decls) (k names)
+
+let fv = "FerdekValue"
+
 (* Kod C lambdy: ctx, nazwa, parametry, złapane nazwy, ciało. Ustawiane niżej, przy compile_body *)
 let compile_lambda : (codegen_context -> string -> string list -> string list -> stmt list -> string) ref =
   ref (fun _ _ _ _ _ -> "")
@@ -494,7 +538,8 @@ let rec compile_expr ctx expr =
   | ComparisonOp (a, _, b) when num_type (tenv ctx) a <> Other && num_type (tenv ctx) b <> Other ->
       Printf.sprintf "make_bool(%s)" (compile_cond ctx expr)
   | ArrayAccess (arr, idx) when is_int (tenv ctx) idx ->
-      Printf.sprintf "index_get_i(%s, %s)" (compile_expr ctx arr) (compile_int ctx idx)
+      in_order ctx [arr, fv, compile_expr ctx arr; idx, "long long", compile_int ctx idx]
+        (fun c -> Printf.sprintf "index_get_i(%s, %s)" (List.nth c 0) (List.nth c 1))
   | IntLiteral n -> Printf.sprintf "make_int(%dLL)" n
   | FloatLiteral f -> Printf.sprintf "make_float(%.17g)" f
   | StringLiteral s -> Printf.sprintf "make_lit(%s)" (c_string_literal s)
@@ -509,24 +554,27 @@ let rec compile_expr ctx expr =
       else error (Errors.unknown "zmienna" name
                     (ctx.locals @ ctx.members @ Hashtbl.fold (fun n () acc -> n :: acc) ctx.globals []))
   | BinaryOp (e1, op, e2) ->
-      Printf.sprintf "%s(%s, %s)" (arith_c op) (compile_expr ctx e1) (compile_expr ctx e2)
+      in_order ctx [e1, fv, compile_expr ctx e1; e2, fv, compile_expr ctx e2]
+        (fun c -> Printf.sprintf "%s(%s, %s)" (arith_c op) (List.nth c 0) (List.nth c 1))
   | ComparisonOp (e1, op, e2) ->
-      Printf.sprintf "compare_op(%s, %s, %s)"
-        (compile_expr ctx e1) (compile_expr ctx e2) (comparison_c op)
+      in_order ctx [e1, fv, compile_expr ctx e1; e2, fv, compile_expr ctx e2]
+        (fun c -> Printf.sprintf "compare_op(%s, %s, %s)" (List.nth c 0) (List.nth c 1) (comparison_c op))
   | LogicalOp (e1, op, e2) ->
-      Printf.sprintf "%s(%s, %s)" (match op with And -> "logic_and" | Or -> "logic_or")
-        (compile_expr ctx e1) (compile_expr ctx e2)
+      in_order ctx [e1, fv, compile_expr ctx e1; e2, fv, compile_expr ctx e2]
+        (fun c -> Printf.sprintf "%s(%s, %s)" (match op with And -> "logic_and" | Or -> "logic_or")
+                    (List.nth c 0) (List.nth c 1))
   | BitwiseOp _ -> Printf.sprintf "make_int(%s)" (compile_int ctx expr)
   | BitwiseNot e -> Printf.sprintf "make_int(~to_int(%s))" (compile_expr ctx e)
   | LogicalNot e -> Printf.sprintf "make_bool(!to_bool(%s))" (compile_expr ctx e)
   | ArrayLiteral [] -> "make_array(NULL, 0)"
   | ArrayLiteral es ->
-      Printf.sprintf "make_array((FerdekValue[]){%s}, %d)"
-        (String.concat ", " (List.map (compile_expr ctx) es)) (List.length es)
+      in_order ctx (List.map (fun e -> e, fv, compile_expr ctx e) es)
+        (fun c -> Printf.sprintf "make_array((FerdekValue[]){%s}, %d)" (String.concat ", " c) (List.length es))
   | ToFixed e -> Printf.sprintf "to_fixed(%s)" (compile_expr ctx e)
   | FromFixed e -> Printf.sprintf "make_int(ishr(to_int(%s), 16))" (compile_expr ctx e)
   | ArrayAccess (arr, idx) ->
-      Printf.sprintf "index_get(%s, %s)" (compile_expr ctx arr) (compile_expr ctx idx)
+      in_order ctx [arr, fv, compile_expr ctx arr; idx, fv, compile_expr ctx idx]
+        (fun c -> Printf.sprintf "index_get(%s, %s)" (List.nth c 0) (List.nth c 1))
   | FunctionCall (name, args) -> compile_call ctx name args
   | Parenthesized e -> Printf.sprintf "(%s)" (compile_expr ctx e)
   (* Argumenty konstruktora interpreter ignoruje (nawet ich nie liczy) - tu też *)
@@ -540,8 +588,9 @@ let rec compile_expr ctx expr =
   | AddressOf name -> Printf.sprintf "make_pointer(%s)" (compile_expr ctx (Identifier name))
   | Dereference e -> Printf.sprintf "deref(%s)" (compile_expr ctx e)
   | PointerArithmetic (e1, op, e2) ->
-      Printf.sprintf "pointer_step(%s, %s, %s)" (compile_expr ctx e1) (compile_expr ctx e2)
-        (if op = Minus then "-1" else "1")
+      in_order ctx [e1, fv, compile_expr ctx e1; e2, fv, compile_expr ctx e2]
+        (fun c -> Printf.sprintf "pointer_step(%s, %s, %s)" (List.nth c 0) (List.nth c 1)
+                    (if op = Minus then "-1" else "1"))
   | FunctionRef name when is_function_name ctx name -> function_value ctx name
   | FunctionRef name -> error (Printf.sprintf "Nieznana funkcja: %s" name)
   | Lambda (params, body) ->
@@ -567,21 +616,18 @@ let rec compile_expr ctx expr =
 and compile_int ctx e =
   let env = tenv ctx in
   let arg a = if is_int env a then compile_int ctx a else Printf.sprintf "to_int(%s)" (compile_expr ctx a) in
+  let two a b f = in_order ctx [a, "long long", arg a; b, "long long", arg b] (fun c -> f (List.nth c 0) (List.nth c 1)) in
   match e with
   | IntLiteral n -> Printf.sprintf "%dLL" n
   | Identifier n when env.ivar n -> var_c n
   | Parenthesized e -> Printf.sprintf "(%s)" (compile_int ctx e)
   | BinaryOp (a, op, b) when is_int env e ->
-      let a = compile_int ctx a and b = compile_int ctx b in
-      (match op with
-       | Plus -> Printf.sprintf "iadd(%s, %s)" a b
-       | Minus -> Printf.sprintf "isub(%s, %s)" a b
-       | Multiply -> Printf.sprintf "imul(%s, %s)" a b
-       | Divide -> Printf.sprintf "int_div(%s, %s)" a b
-       | Modulo -> Printf.sprintf "int_mod(%s, %s)" a b)
-  | BitwiseOp (a, BitShiftLeft, b) -> Printf.sprintf "ishl(%s, %s)" (arg a) (arg b)
-  | BitwiseOp (a, BitShiftRight, b) -> Printf.sprintf "ishr(%s, %s)" (arg a) (arg b)
-  | BitwiseOp (a, op, b) -> Printf.sprintf "(%s %s %s)" (arg a) (bitwise_c op) (arg b)
+      let f = match op with
+        | Plus -> "iadd" | Minus -> "isub" | Multiply -> "imul" | Divide -> "int_div" | Modulo -> "int_mod" in
+      two a b (Printf.sprintf "%s(%s, %s)" f)
+  | BitwiseOp (a, BitShiftLeft, b) -> two a b (Printf.sprintf "ishl(%s, %s)")
+  | BitwiseOp (a, BitShiftRight, b) -> two a b (Printf.sprintf "ishr(%s, %s)")
+  | BitwiseOp (a, op, b) -> two a b (fun x y -> Printf.sprintf "(%s %s %s)" x (bitwise_c op) y)
   | BitwiseNot a -> Printf.sprintf "(~%s)" (arg a)
   | FunctionCall (f, args) when List.mem f int_builtins -> compile_call_generic ctx f args ^ ".value.int_val"
   | FunctionCall (f, args) when is_int env e -> specialized_call ctx f args
@@ -596,13 +642,14 @@ and compile_float ctx e =
   | Identifier n when env.fvar n -> var_c n
   | Parenthesized e -> Printf.sprintf "(%s)" (compile_float ctx e)
   | BinaryOp (a, op, b) when is_float env e ->
-      let a = compile_float ctx a and b = compile_float ctx b in
-      (match op with
-       | Plus -> Printf.sprintf "(%s + %s)" a b
-       | Minus -> Printf.sprintf "(%s - %s)" a b
-       | Multiply -> Printf.sprintf "(%s * %s)" a b
-       | Divide -> Printf.sprintf "float_div(%s, %s)" a b
-       | Modulo -> Printf.sprintf "float_mod(%s, %s)" a b)
+      in_order ctx [a, "double", compile_float ctx a; b, "double", compile_float ctx b] (fun c ->
+        let a = List.nth c 0 and b = List.nth c 1 in
+        match op with
+        | Plus -> Printf.sprintf "(%s + %s)" a b
+        | Minus -> Printf.sprintf "(%s - %s)" a b
+        | Multiply -> Printf.sprintf "(%s * %s)" a b
+        | Divide -> Printf.sprintf "float_div(%s, %s)" a b
+        | Modulo -> Printf.sprintf "float_mod(%s, %s)" a b)
   | FunctionCall (f, args) when List.mem f float_builtins -> compile_call_generic ctx f args ^ ".value.float_val"
   | e -> Printf.sprintf "to_float(%s)" (compile_expr ctx e)
 
@@ -612,13 +659,16 @@ and compile_cond ctx e =
   match e with
   | ComparisonOp (a, op, b) when is_int env a && is_int env b ->
       let c = match op with Equal -> "==" | NotEqual -> "!=" | Greater -> ">" | Less -> "<" | GreaterEqual -> ">=" in
-      Printf.sprintf "%s %s %s" (compile_int ctx a) c (compile_int ctx b)
+      in_order ctx [a, "long long", compile_int ctx a; b, "long long", compile_int ctx b]
+        (fun x -> Printf.sprintf "%s %s %s" (List.nth x 0) c (List.nth x 1))
   | ComparisonOp (a, op, b) when num_type env a <> Other && num_type env b <> Other ->
       (* jak compare3: (x > y) - (x < y), więc NaN wychodzi "równe" - tak samo jak w interpreterze *)
       let c = match op with Equal -> "==" | NotEqual -> "!=" | Greater -> ">" | Less -> "<" | GreaterEqual -> ">=" in
-      Printf.sprintf "fcmp(%s, %s) %s 0" (compile_float ctx a) (compile_float ctx b) c
+      in_order ctx [a, "double", compile_float ctx a; b, "double", compile_float ctx b]
+        (fun x -> Printf.sprintf "fcmp(%s, %s) %s 0" (List.nth x 0) (List.nth x 1) c)
   | ComparisonOp (a, op, b) ->
-      Printf.sprintf "compare_bool(%s, %s, %s)" (compile_expr ctx a) (compile_expr ctx b) (comparison_c op)
+      in_order ctx [a, fv, compile_expr ctx a; b, fv, compile_expr ctx b]
+        (fun x -> Printf.sprintf "compare_bool(%s, %s, %s)" (List.nth x 0) (List.nth x 1) (comparison_c op))
   | Parenthesized e -> compile_cond ctx e
   | e -> Printf.sprintf "to_bool(%s)" (compile_expr ctx e)
 
@@ -627,8 +677,9 @@ and specialized_call ctx name args =
   let ps, _ = Hashtbl.find ctx.sigs name in
   if List.length ps <> List.length args then
     error (Printf.sprintf "Funkcja %s oczekuje %s, podano %d" name (Errors.argumentow (List.length ps)) (List.length args));
-  Printf.sprintf "%s(%s)" (fun_c name)
-    (String.concat ", " (List.map2 (fun is_i a -> if is_i then compile_int ctx a else compile_expr ctx a) ps args))
+  in_order ctx (List.map2 (fun is_i a ->
+      if is_i then (a, "long long", compile_int ctx a) else (a, fv, compile_expr ctx a)) ps args)
+    (fun c -> Printf.sprintf "%s(%s)" (fun_c name) (String.concat ", " c))
 
 and compile_call ctx name args =
   match (tenv ctx).ifun name with
@@ -636,7 +687,9 @@ and compile_call ctx name args =
   | None -> compile_call_generic ctx name args
 
 and compile_call_generic ctx name args =
-  let c_args = List.map (compile_expr ctx) args in
+  in_order ctx (List.map (fun a -> a, fv, compile_expr ctx a) args) (fun c_args -> call_with_args ctx name args c_args)
+
+and call_with_args ctx name args c_args =
   (* Builtiny mają pierwszeństwo przed funkcjami użytkownika - jak w interpreterze *)
   match find_builtin name, Hashtbl.find_opt ctx.funcs name with
   | Some (c_name, arity), _ ->
@@ -703,17 +756,19 @@ and compile_stmt ctx indent stmt =
   | ArrayDecl (name, []) ->
       Printf.sprintf "%s%s = make_array(NULL, 0);" ind (var_c name)
   | ArrayDecl (name, exprs) ->
-      Printf.sprintf "%s%s = make_array((FerdekValue[]){%s}, %d);" ind (var_c name)
-        (String.concat ", " (List.map (compile_expr ctx) exprs)) (List.length exprs)
+      Printf.sprintf "%s%s = %s;" ind (var_c name) (compile_expr ctx (ArrayLiteral exprs))
   | Print e -> Printf.sprintf "%sprint_value(%s);" ind (compile_expr ctx e)
   | PrintInline e -> Printf.sprintf "%sprint_inline(%s);" ind (compile_expr ctx e)
   | Read name -> ind ^ assign ctx name "read_value()"
+  (* Jak interpreter: najpierw wartość, potem tablica, potem indeks *)
   | ArrayAssign (ArrayAccess (arr, idx), value) when is_int (tenv ctx) idx ->
-      Printf.sprintf "%sindex_set_i(%s, %s, %s);" ind
-        (compile_expr ctx arr) (compile_int ctx idx) (compile_expr ctx value)
+      ind ^ in_order ctx [value, fv, compile_expr ctx value; arr, fv, compile_expr ctx arr;
+                          idx, "long long", compile_int ctx idx]
+        (fun c -> Printf.sprintf "index_set_i(%s, %s, %s)" (List.nth c 1) (List.nth c 2) (List.nth c 0)) ^ ";"
   | ArrayAssign (ArrayAccess (arr, idx), value) ->
-      Printf.sprintf "%sindex_set(%s, %s, %s);" ind
-        (compile_expr ctx arr) (compile_expr ctx idx) (compile_expr ctx value)
+      ind ^ in_order ctx [value, fv, compile_expr ctx value; arr, fv, compile_expr ctx arr;
+                          idx, fv, compile_expr ctx idx]
+        (fun c -> Printf.sprintf "index_set(%s, %s, %s)" (List.nth c 1) (List.nth c 2) (List.nth c 0)) ^ ";"
   | ArrayAssign _ -> error "Przypisanie do tablicy bez indeksu"
   | If (cond, then_stmts, else_stmts) ->
       let else_code = match else_stmts with
@@ -2057,6 +2112,272 @@ static FerdekValue b_pierwiastek(int argc, FerdekValue* argv) {
     if (x < 0.0) ferdek_die("PIERWIASTEK ZE SKRZYNKI: pierwiastek z liczby ujemnej");
     return make_float(sqrt(x));
 }
+/* ---- Biblioteka 2.0 - te same zasady i komunikaty co w interpreterze ---- */
+
+static bool same_element(FerdekValue a, FerdekValue x) {   /* jak CZY LEŻY NA WERSALCE */
+    if (a.type != x.type) return false;
+    return (a.type == TYPE_INT && a.value.int_val == x.value.int_val) ||
+           (a.type == TYPE_STRING && strcmp(a.value.string_val, x.value.string_val) == 0) ||
+           (a.type == TYPE_BOOL && a.value.bool_val == x.value.bool_val);
+}
+
+static FerdekValue b_wytnij(int argc, FerdekValue* argv) {
+    FerdekArray* a = list_arg(argv[0], "WYTNIJ Z WERSALKI: pierwszy argument musi być tablicą");
+    long long od = to_int(argv[1]), d = to_int(argv[2]);
+    if (od < 0 || d < od || d > a->length)
+        ferdek_die("WYTNIJ Z WERSALKI: zły zakres %lld..%lld (tablica ma %d)", od, d, a->length);
+    return make_array(a->data + od, (int)(d - od));
+}
+
+static FerdekValue b_gdzie_lezy(int argc, FerdekValue* argv) {
+    FerdekArray* a = list_arg(argv[0], "GDZIE LEŻY NA WERSALCE: pierwszy argument musi być tablicą");
+    for (int i = 0; i < a->length; i++) if (same_element(a->data[i], argv[1])) return make_int(i);
+    return make_int(-1);
+}
+
+static FerdekValue b_zestaw(int argc, FerdekValue* argv) {
+    if (argv[0].type != TYPE_ARRAY || argv[1].type != TYPE_ARRAY) ferdek_die("ZESTAW WERSALKI: oba argumenty muszą być tablicami");
+    FerdekArray *a = argv[0].value.array_val, *b = argv[1].value.array_val;
+    FerdekValue out = make_array(NULL, 0);
+    out.value.array_val->data = fx_malloc(sizeof(FerdekValue) * (a->length + b->length + 1));
+    memcpy(out.value.array_val->data, a->data, sizeof(FerdekValue) * a->length);
+    memcpy(out.value.array_val->data + a->length, b->data, sizeof(FerdekValue) * b->length);
+    out.value.array_val->length = a->length + b->length;
+    return out;
+}
+
+static FerdekValue b_zsumuj(int argc, FerdekValue* argv) {
+    FerdekArray* a = list_arg(argv[0], "ZSUMUJ WERSALKĘ: argument musi być tablicą");
+    if (a->length == 0) return make_int(0);
+    FerdekValue acc = a->data[0];
+    for (int i = 1; i < a->length; i++) acc = op_add(acc, a->data[i]);
+    return acc;
+}
+
+static FerdekValue b_najmniejszy(int argc, FerdekValue* argv) {
+    FerdekArray* a = list_arg(argv[0], "NAJMNIEJSZY NA WERSALCE: argument musi być tablicą");
+    if (a->length == 0) ferdek_die("NAJMNIEJSZY NA WERSALCE: pusta tablica");
+    FerdekValue best = a->data[0];
+    for (int i = 0; i < a->length; i++) if (compare3(a->data[i], best, false) < 0) best = a->data[i];
+    return best;
+}
+
+static FerdekValue b_najwiekszy(int argc, FerdekValue* argv) {
+    FerdekArray* a = list_arg(argv[0], "NAJWIĘKSZY NA WERSALCE: argument musi być tablicą");
+    if (a->length == 0) ferdek_die("NAJWIĘKSZY NA WERSALCE: pusta tablica");
+    FerdekValue best = a->data[0];
+    for (int i = 0; i < a->length; i++) if (compare3(a->data[i], best, false) > 0) best = a->data[i];
+    return best;
+}
+
+static FerdekValue b_zwin(int argc, FerdekValue* argv) {
+    FerdekArray* a = list_arg(argv[0], "ZWIŃ WERSALKĘ: pierwszy argument musi być tablicą");
+    if (argv[2].type != TYPE_FUNCTION) ferdek_die("ZWIŃ WERSALKĘ: trzeci argument musi być funkcją");
+    FerdekValue acc = argv[1];
+    for (int i = 0; i < a->length; i++) {
+        FerdekValue args[2] = { acc, a->data[i] };
+        acc = call_value(argv[2], argv[2].value.fn_val.name, 2, args);
+    }
+    return acc;
+}
+
+static FerdekValue b_bez_powtorek(int argc, FerdekValue* argv) {
+    FerdekArray* a = list_arg(argv[0], "BEZ POWTÓREK: argument musi być tablicą");
+    FerdekValue out = make_array(NULL, 0);
+    FerdekArray* o = out.value.array_val;
+    o->data = fx_malloc(sizeof(FerdekValue) * (a->length + 1));
+    for (int i = 0; i < a->length; i++) {
+        bool seen = false;
+        for (int j = 0; j < o->length && !seen; j++) seen = same_element(a->data[i], o->data[j]);
+        if (!seen) o->data[o->length++] = a->data[i];
+    }
+    return out;
+}
+
+static FerdekValue b_kolejka(int argc, FerdekValue* argv) {
+    long long od = to_int(argv[0]), d = to_int(argv[1]);
+    if (d >= od && d - od >= 10000000) ferdek_die("ZRÓB KOLEJKĘ: za długa (najwyżej 10000000 liczb)");
+    if (d < od) return make_array(NULL, 0);
+    FerdekValue out = make_array(NULL, 0);
+    out.value.array_val->data = fx_malloc(sizeof(FerdekValue) * (d - od + 1));
+    for (long long i = 0; i <= d - od; i++) out.value.array_val->data[i] = make_int(od + i);
+    out.value.array_val->length = (int)(d - od + 1);
+    return out;
+}
+
+static long long rng_next(void) {   /* jak rng_next w interpreterze */
+    if (ferdek_rng < 0) ferdek_rng = ((long long)time(NULL) * 1000 + clock()) & 0x7FFFFFFF;
+    ferdek_rng = (ferdek_rng * 1103515245 + 12345) & 0x7FFFFFFF;
+    return ferdek_rng;
+}
+
+static FerdekValue b_wylosuj(int argc, FerdekValue* argv) {
+    FerdekArray* a = list_arg(argv[0], "WYLOSUJ Z WERSALKI: argument musi być tablicą");
+    if (a->length == 0) ferdek_die("WYLOSUJ Z WERSALKI: pusta tablica");
+    return a->data[rng_next() % a->length];
+}
+
+static FerdekValue b_powtorz(int argc, FerdekValue* argv) {
+    long long n = to_int(argv[1]);
+    if (n < 0) ferdek_die("POWTÓRZ NA KANAPIE: ujemna liczba powtórzeń");
+    char* t = to_str(argv[0]);
+    size_t len = strlen(t);
+    if ((double)len * n > 100000000.0) ferdek_die("POWTÓRZ NA KANAPIE: za długi tekst");
+    char* s = fx_malloc(len * n + 1);
+    for (long long i = 0; i < n; i++) memcpy(s + i * len, t, len);
+    s[len * n] = '\0';
+    fx_free(t);
+    return own_string(s);
+}
+
+/* Pozycja fragmentu w znakach albo -1 - jak kanapa_gdzie */
+static long long kanapa_gdzie(FerdekValue tv, FerdekValue fv) {
+    char* t = to_str(tv); char* f = to_str(fv);
+    char* hit = strstr(t, f);
+    long long r = -1;
+    if (hit) { *hit = '\0'; r = utf8_index(t, NULL); }
+    fx_free(t); fx_free(f);
+    return r;
+}
+static FerdekValue b_czy_siedzi(int argc, FerdekValue* argv) { return make_bool(kanapa_gdzie(argv[0], argv[1]) >= 0); }
+static FerdekValue b_gdzie_siedzi(int argc, FerdekValue* argv) { return make_int(kanapa_gdzie(argv[0], argv[1])); }
+
+static FerdekValue b_zaczyna(int argc, FerdekValue* argv) {
+    char* t = to_str(argv[0]); char* p = to_str(argv[1]);
+    bool r = strncmp(t, p, strlen(p)) == 0;
+    fx_free(t); fx_free(p);
+    return make_bool(r);
+}
+static FerdekValue b_konczy(int argc, FerdekValue* argv) {
+    char* t = to_str(argv[0]); char* k = to_str(argv[1]);
+    size_t lt = strlen(t), lk = strlen(k);
+    bool r = lk <= lt && strcmp(t + lt - lk, k) == 0;
+    fx_free(t); fx_free(k);
+    return make_bool(r);
+}
+
+static FerdekValue b_odwroc_kanape(int argc, FerdekValue* argv) {
+    char* t = to_str(argv[0]);
+    long long* off;
+    long long n = utf8_index(t, &off);
+    size_t len = strlen(t);
+    char* s = fx_malloc(len + 1);
+    size_t w = 0;
+    for (long long i = n - 1; i >= 0; i--) {
+        size_t cl = off[i + 1] - off[i];
+        memcpy(s + w, t + off[i], cl);
+        w += cl;
+    }
+    s[w] = '\0';
+    fx_free(off); fx_free(t);
+    return own_string(s);
+}
+
+static FerdekValue b_rozciagnij_lewo(int argc, FerdekValue* argv) {
+    char* t = to_str(argv[0]);
+    long long target = to_int(argv[1]);
+    long long chars = utf8_index(t, NULL);
+    if (chars >= target) return own_string(t);
+    size_t len = strlen(t), pad = (size_t)(target - chars);
+    char* s = fx_malloc(len + pad + 1);
+    memset(s, ' ', pad);
+    memcpy(s + pad, t, len + 1);
+    fx_free(t);
+    return own_string(s);
+}
+
+static FerdekValue b_wszystkie_rzeczy(int argc, FerdekValue* argv) {
+    FerdekMap* m = map_arg(argv[0], "WSZYSTKIE RZECZY: argument musi być szafką (mapą)");
+    char** keys = map_sorted_keys(m);
+    FerdekValue out = make_array(NULL, 0);
+    out.value.array_val->data = fx_malloc(sizeof(FerdekValue) * (m->len + 1));
+    for (int i = 0; i < m->len; i++) out.value.array_val->data[i] = m->vals[map_find(m, keys[i])];
+    out.value.array_val->length = m->len;
+    fx_free(keys);
+    return out;
+}
+
+static FerdekValue b_doloz_szafke(int argc, FerdekValue* argv) {
+    if (argv[0].type != TYPE_MAP || argv[1].type != TYPE_MAP) ferdek_die("DOŁÓŻ SZAFKĘ: oba argumenty muszą być szafkami (mapami)");
+    FerdekValue out = b_szafka_otworz(0, NULL);
+    FerdekMap* src[2] = { argv[0].value.map_val, argv[1].value.map_val };
+    for (int k = 0; k < 2; k++)
+        for (int i = 0; i < src[k]->len; i++) {
+            FerdekValue kv[3] = { out, make_string(src[k]->keys[i]), src[k]->vals[i] };
+            b_szafka_wloz(3, kv);
+        }
+    return out;
+}
+
+/* ---- KALENDARZ: dni od 1970-01-01, ten sam algorytm co w interpreterze ---- */
+static long long days_from_civil(long long y, long long m, long long d) {
+    y -= m <= 2;
+    long long era = (y >= 0 ? y : y - 399) / 400;
+    long long yoe = y - era * 400;
+    long long doy = (153 * (m > 2 ? m - 3 : m + 9) + 2) / 5 + d - 1;
+    long long doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    return era * 146097 + doe - 719468;
+}
+static void civil_from_days(long long z, long long* y, long long* m, long long* d) {
+    z += 719468;
+    long long era = (z >= 0 ? z : z - 146096) / 146097;
+    long long doe = z - era * 146097;
+    long long yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    long long doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    long long mp = (5 * doy + 2) / 153;
+    *d = doy - (153 * mp + 2) / 5 + 1;
+    *m = mp < 10 ? mp + 3 : mp - 9;
+    *y = yoe + era * 400 + (*m <= 2);
+}
+static int days_in_month(long long y, long long m) {
+    if (m == 2) return ((y % 4 == 0 && y % 100 != 0) || y % 400 == 0) ? 29 : 28;
+    return (m == 4 || m == 6 || m == 9 || m == 11) ? 30 : 31;
+}
+static long long parse_date(const char* what, FerdekValue v) {
+    char* s = to_str(v);
+    int ok = strlen(s) == 10 && s[4] == '-' && s[7] == '-';
+    for (int i = 0; ok && i < 10; i++) if (i != 4 && i != 7 && (s[i] < '0' || s[i] > '9')) ok = 0;
+    long long y = 0, m = 0, d = 0;
+    if (ok) {
+        y = (s[0] - '0') * 1000 + (s[1] - '0') * 100 + (s[2] - '0') * 10 + (s[3] - '0');
+        m = (s[5] - '0') * 10 + (s[6] - '0');
+        d = (s[8] - '0') * 10 + (s[9] - '0');
+        ok = y >= 1 && m >= 1 && m <= 12 && d >= 1 && d <= days_in_month(y, m);
+    }
+    if (!ok) ferdek_die("%s: zła data \"%s\" (ma być RRRR-MM-DD)", what, s);
+    fx_free(s);
+    return days_from_civil(y, m, d);
+}
+static FerdekValue format_date(const char* what, long long z) {
+    long long y, m, d;
+    civil_from_days(z, &y, &m, &d);
+    if (y < 1 || y > 9999) ferdek_die("%s: wynik poza latami 1-9999", what);
+    char buf[16];
+    snprintf(buf, sizeof buf, "%04lld-%02lld-%02lld", y, m, d);
+    return make_string(buf);
+}
+static FerdekValue b_dzis(int argc, FerdekValue* argv) {
+    time_t now = time(NULL); struct tm t; localtime_r(&now, &t);
+    char buf[16]; snprintf(buf, sizeof buf, "%04d-%02d-%02d", t.tm_year + 1900, t.tm_mon + 1, t.tm_mday);
+    return make_string(buf);
+}
+static FerdekValue b_godzina(int argc, FerdekValue* argv) {
+    time_t now = time(NULL); struct tm t; localtime_r(&now, &t);
+    char buf[16]; snprintf(buf, sizeof buf, "%02d:%02d:%02d", t.tm_hour, t.tm_min, t.tm_sec);
+    return make_string(buf);
+}
+static FerdekValue b_dzien_tygodnia(int argc, FerdekValue* argv) {
+    static const char* names[] = { "poniedziałek", "wtorek", "środa", "czwartek", "piątek", "sobota", "niedziela" };
+    long long z = parse_date("DZIEŃ TYGODNIA", argv[0]);
+    return make_lit(names[((z % 7) + 7 + 3) % 7]);
+}
+static FerdekValue b_dodaj_dni(int argc, FerdekValue* argv) {
+    return format_date("DODAJ DNI", iadd(parse_date("DODAJ DNI", argv[0]), to_int(argv[1])));
+}
+static FerdekValue b_ile_dni(int argc, FerdekValue* argv) {
+    return make_int(parse_date("ILE DNI MIĘDZY", argv[1]) - parse_date("ILE DNI MIĘDZY", argv[0]));
+}
+
 static FerdekValue b_sinus(int argc, FerdekValue* argv) { return make_float(sin(to_float(argv[0]))); }
 static FerdekValue b_cosinus(int argc, FerdekValue* argv) { return make_float(cos(to_float(argv[0]))); }
 

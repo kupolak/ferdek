@@ -26,6 +26,15 @@
 - Modules with a namespace: `O KOGO MOJE PIĘKNE OCZY WIDZĄ matma JAKO m`, then `m.dodaj(1, 2)`,
   `m.PI`. The module's top-level names get the `m.` prefix, so they cannot clash with yours;
   the plain import works as before. `JAKO` is now a keyword.
+- Standard library, built in (no import), same in both modes:
+  - arrays: `WYTNIJ Z WERSALKI`, `GDZIE LEŻY NA WERSALCE`, `ZESTAW WERSALKI`, `ZSUMUJ WERSALKĘ`,
+    `NAJMNIEJSZY/NAJWIĘKSZY NA WERSALCE`, `ZWIŃ WERSALKĘ` (reduce), `BEZ POWTÓREK`, `ZRÓB KOLEJKĘ`,
+    `WYLOSUJ Z WERSALKI`;
+  - text: `POWTÓRZ NA KANAPIE`, `CZY/GDZIE SIEDZI NA KANAPIE`, `ZACZYNA SIĘ OD`, `KOŃCZY SIĘ NA`,
+    `ODWRÓĆ KANAPĘ`, `ROZCIĄGNIJ Z LEWEJ`;
+  - maps: `WSZYSTKIE RZECZY`, `DOŁÓŻ SZAFKĘ`;
+  - dates (text `RRRR-MM-DD`): `JAKI DZIŚ DZIEŃ`, `KTÓRA GODZINA`, `DZIEŃ TYGODNIA`, `DODAJ DNI`,
+    `ILE DNI MIĘDZY`.
 - Loop over elements: `KRĘCI CEMENT BETONIARA x Z kolekcja` ... `A ROBIĆ NI MA KOMU` - array
   elements, map keys (sorted) or characters of a text. `Z` is now a keyword.
 - Anonymous functions: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2`, or with statements:
@@ -57,6 +66,9 @@
 - `ZRÓB DŁUGI` / `ZAMIEŃ NA FIXED` on a number too big for a whole number (or NaN) is an error
   in both modes; before, the result depended on the mode and the processor.
 - C compiler warnings about the generated code are no longer shown.
+- Compiled programs evaluate operands, function arguments and array elements left to right, like
+  the interpreter (C leaves the order open; with gcc a function changing a variable used in the
+  same expression could give a different result).
 - With the Boehm GC installed, compiled programs free memory (a 2M-iteration text loop: 3 MB instead
   of 32 MB and growing).
 

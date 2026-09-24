@@ -11,6 +11,64 @@ let function_arg builtin = function
   | VFunction (fdecl, closure_env) -> apply_function fdecl.name fdecl closure_env
   | _ -> raise (RuntimeError (builtin ^ ": drugi argument musi być funkcją"))
 
+(* Generator liczb losowych - wspólny dla KARTA LUBI DYM i WYLOSUJ Z WERSALKI (jak ferdek_rng w C) *)
+let rng_next () =
+  if !rng_state < 0 then rng_state := int_of_float (Unix.gettimeofday () *. 1000.) land 0x7FFFFFFF;
+  rng_state := (!rng_state * 1103515245 + 12345) land 0x7FFFFFFF;
+  !rng_state
+
+(* Równość jak w CZY LEŻY NA WERSALCE: liczby całkowite, teksty i prawda/fałsz *)
+let same_element a b =
+  match a, b with
+  | VInt x, VInt y -> x = y
+  | VString x, VString y -> x = y
+  | VBool x, VBool y -> x = y
+  | _ -> false
+
+(* ---- KALENDARZ: daty jako teksty RRRR-MM-DD, dni liczone od 1970-01-01 (jak kalendarz_* w C) ---- *)
+let days_from_civil y m d =
+  let y = if m <= 2 then y - 1 else y in
+  let era = (if y >= 0 then y else y - 399) / 400 in
+  let yoe = y - era * 400 in
+  let doy = (153 * (if m > 2 then m - 3 else m + 9) + 2) / 5 + d - 1 in
+  let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy in
+  era * 146097 + doe - 719468
+
+let civil_from_days z =
+  let z = z + 719468 in
+  let era = (if z >= 0 then z else z - 146096) / 146097 in
+  let doe = z - era * 146097 in
+  let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365 in
+  let doy = doe - (365 * yoe + yoe / 4 - yoe / 100) in
+  let mp = (5 * doy + 2) / 153 in
+  let d = doy - (153 * mp + 2) / 5 + 1 in
+  let m = if mp < 10 then mp + 3 else mp - 9 in
+  ((yoe + era * 400) + (if m <= 2 then 1 else 0), m, d)
+
+let days_in_month y m =
+  match m with
+  | 2 -> if (y mod 4 = 0 && y mod 100 <> 0) || y mod 400 = 0 then 29 else 28
+  | 4 | 6 | 9 | 11 -> 30
+  | _ -> 31
+
+let parse_date what v =
+  let s = to_string v in
+  let bad () = raise (RuntimeError (Printf.sprintf "%s: zła data \"%s\" (ma być RRRR-MM-DD)" what s)) in
+  let digit i = s.[i] >= '0' && s.[i] <= '9' in
+  if String.length s <> 10 || s.[4] <> '-' || s.[7] <> '-'
+     || not (List.for_all digit [0; 1; 2; 3; 5; 6; 8; 9]) then bad ();
+  let y = int_of_string (String.sub s 0 4) and m = int_of_string (String.sub s 5 2)
+  and d = int_of_string (String.sub s 8 2) in
+  if y < 1 || m < 1 || m > 12 || d < 1 || d > days_in_month y m then bad ();
+  days_from_civil y m d
+
+let format_date what z =
+  let y, m, d = civil_from_days z in
+  if y < 1 || y > 9999 then raise (RuntimeError (what ^ ": wynik poza latami 1-9999"));
+  Printf.sprintf "%04d-%02d-%02d" y m d
+
+let weekdays = [| "poniedziałek"; "wtorek"; "środa"; "czwartek"; "piątek"; "sobota"; "niedziela" |]
+
 (* Wbudowane funkcje: nazwy (z wariantami), liczba argumentów (None = dowolna), implementacja.
    Liczbę argumentów sprawdza eval_function_call; z tej tabeli czyta też ferdek --check. *)
 let register () =
@@ -477,11 +535,6 @@ let register () =
      Własny LCG zamiast Random: ten sam ciąg co w skompilowanym C *));
 
   ["KARTA LUBI DYM"], None, (fun env args ->
-      let rng_next () =
-        if !rng_state < 0 then rng_state := int_of_float (Unix.gettimeofday () *. 1000.) land 0x7FFFFFFF;
-        rng_state := (!rng_state * 1103515245 + 12345) land 0x7FFFFFFF;
-        !rng_state
-      in
       (match List.map (eval_expr env) args with
        | [seed] -> rng_state := to_int seed land 0x7FFFFFFF; VNull
        | [lo; hi] ->
@@ -793,5 +846,163 @@ let register () =
           let n = to_int places in
           if n < 0 || n > 30 then raise (RuntimeError "PO PIERWSZE PRIMO: liczba miejsc musi być od 0 do 30");
           VString (Printf.sprintf "%.*f" n (to_float x))
+      | _ -> VNull);
+
+  (* ============ WERSALKA: więcej o tablicach ============ *)
+  ["WYTNIJ Z WERSALKI"], Some 3, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a; od; d] ->
+          let od = to_int od and d = to_int d in
+          if od < 0 || d < od || d > Array.length a then
+            raise (RuntimeError (Printf.sprintf "WYTNIJ Z WERSALKI: zły zakres %d..%d (tablica ma %d)" od d (Array.length a)));
+          VArray (Array.sub a od (d - od))
+      | _ -> raise (RuntimeError "WYTNIJ Z WERSALKI: pierwszy argument musi być tablicą"));
+
+  ["GDZIE LEŻY NA WERSALCE"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a; x] ->
+          let rec find i = if i >= Array.length a then -1 else if same_element a.(i) x then i else find (i + 1) in
+          VInt (find 0)
+      | _ -> raise (RuntimeError "GDZIE LEŻY NA WERSALCE: pierwszy argument musi być tablicą"));
+
+  ["ZESTAW WERSALKI"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a; VArray b] -> VArray (Array.append a b)
+      | _ -> raise (RuntimeError "ZESTAW WERSALKI: oba argumenty muszą być tablicami"));
+
+  (* Suma jak kolejne BABKA DAWAJ RENTĘ; pusta tablica to 0 *)
+  ["ZSUMUJ WERSALKĘ"], Some 1, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a] ->
+          if Array.length a = 0 then VInt 0
+          else Array.fold_left (eval_arith_op Plus) a.(0) (Array.sub a 1 (Array.length a - 1))
+      | _ -> raise (RuntimeError "ZSUMUJ WERSALKĘ: argument musi być tablicą"));
+
+  ["NAJMNIEJSZY NA WERSALCE"], Some 1, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a] ->
+          if Array.length a = 0 then raise (RuntimeError "NAJMNIEJSZY NA WERSALCE: pusta tablica");
+          Array.fold_left (fun best x -> if compare_values x best < 0 then x else best) a.(0) a
+      | _ -> raise (RuntimeError "NAJMNIEJSZY NA WERSALCE: argument musi być tablicą"));
+
+  ["NAJWIĘKSZY NA WERSALCE"], Some 1, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a] ->
+          if Array.length a = 0 then raise (RuntimeError "NAJWIĘKSZY NA WERSALCE: pusta tablica");
+          Array.fold_left (fun best x -> if compare_values x best > 0 then x else best) a.(0) a
+      | _ -> raise (RuntimeError "NAJWIĘKSZY NA WERSALCE: argument musi być tablicą"));
+
+  (* ZWIŃ WERSALKĘ(t, start, f): f(f(f(start, t[0]), t[1]), ...) *)
+  ["ZWIŃ WERSALKĘ"], Some 3, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a; start; VFunction (fdecl, closure_env)] ->
+          Array.fold_left (fun acc x -> apply_function fdecl.name fdecl closure_env [acc; x]) start a
+      | [VArray _; _; _] -> raise (RuntimeError "ZWIŃ WERSALKĘ: trzeci argument musi być funkcją")
+      | _ -> raise (RuntimeError "ZWIŃ WERSALKĘ: pierwszy argument musi być tablicą"));
+
+  ["BEZ POWTÓREK"], Some 1, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a] ->
+          let out = List.fold_left (fun acc x -> if List.exists (same_element x) acc then acc else x :: acc) [] (Array.to_list a) in
+          VArray (Array.of_list (List.rev out))
+      | _ -> raise (RuntimeError "BEZ POWTÓREK: argument musi być tablicą"));
+
+  ["ZRÓB KOLEJKĘ"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [od; d] ->
+          let od = to_int od and d = to_int d in
+          if d >= od && d - od >= 10_000_000 then raise (RuntimeError "ZRÓB KOLEJKĘ: za długa (najwyżej 10000000 liczb)");
+          if d < od then VArray [||] else VArray (Array.init (d - od + 1) (fun i -> VInt (od + i)))
+      | _ -> VNull);
+
+  ["WYLOSUJ Z WERSALKI"], Some 1, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a] ->
+          if Array.length a = 0 then raise (RuntimeError "WYLOSUJ Z WERSALKI: pusta tablica");
+          a.(rng_next () mod Array.length a)
+      | _ -> raise (RuntimeError "WYLOSUJ Z WERSALKI: argument musi być tablicą"));
+
+  (* ============ KANAPA: więcej o tekstach (pozycje w znakach, nie bajtach) ============ *)
+  ["POWTÓRZ NA KANAPIE"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [t; n] ->
+          let n = to_int n in
+          if n < 0 then raise (RuntimeError "POWTÓRZ NA KANAPIE: ujemna liczba powtórzeń");
+          let t = to_string t in
+          if String.length t * n > 100_000_000 then raise (RuntimeError "POWTÓRZ NA KANAPIE: za długi tekst");
+          VString (String.concat "" (List.init n (fun _ -> t)))
+      | _ -> VNull);
+
+  ["CZY SIEDZI NA KANAPIE"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [t; f] -> VBool (Builtins_string.kanapa_gdzie (to_string t) (to_string f) >= 0)
+      | _ -> VNull);
+
+  ["GDZIE SIEDZI NA KANAPIE"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [t; f] -> VInt (Builtins_string.kanapa_gdzie (to_string t) (to_string f))
+      | _ -> VNull);
+
+  ["ZACZYNA SIĘ OD"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [t; p] -> VBool (String.starts_with ~prefix:(to_string p) (to_string t))
+      | _ -> VNull);
+
+  ["KOŃCZY SIĘ NA"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [t; k] -> VBool (String.ends_with ~suffix:(to_string k) (to_string t))
+      | _ -> VNull);
+
+  ["ODWRÓĆ KANAPĘ"], Some 1, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [t] ->
+          let c = Builtins_string.utf8_chars (to_string t) in
+          VString (String.concat "" (List.rev (Array.to_list c)))
+      | _ -> VNull);
+
+  ["ROZCIĄGNIJ Z LEWEJ"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [t; n] ->
+          let t = to_string t and n = to_int n in
+          let len = Builtins_string.utf8_length t in
+          VString (if len >= n then t else String.make (n - len) ' ' ^ t)
+      | _ -> VNull);
+
+  (* ============ SZAFKA: wartości i łączenie ============ *)
+  ["WSZYSTKIE RZECZY"], Some 1, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VHashMap tbl] ->
+          VArray (Array.of_list (List.map (Hashtbl.find tbl) (Builtins_hashmap.szafka_wszystkie_szufladki tbl)))
+      | _ -> raise (RuntimeError "WSZYSTKIE RZECZY: argument musi być szafką (mapą)"));
+
+  ["DOŁÓŻ SZAFKĘ"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VHashMap a; VHashMap b] ->
+          let out = Hashtbl.copy a in
+          Hashtbl.iter (Hashtbl.replace out) b;
+          VHashMap out
+      | _ -> raise (RuntimeError "DOŁÓŻ SZAFKĘ: oba argumenty muszą być szafkami (mapami)"));
+
+  (* ============ KALENDARZ ============ *)
+  ["JAKI DZIŚ DZIEŃ"], Some 0, (fun _ _ ->
+      let t = Unix.localtime (Unix.time ()) in
+      VString (Printf.sprintf "%04d-%02d-%02d" (t.tm_year + 1900) (t.tm_mon + 1) t.tm_mday));
+
+  ["KTÓRA GODZINA"], Some 0, (fun _ _ ->
+      let t = Unix.localtime (Unix.time ()) in
+      VString (Printf.sprintf "%02d:%02d:%02d" t.tm_hour t.tm_min t.tm_sec));
+
+  ["DZIEŃ TYGODNIA"], Some 1, (fun env args ->
+      let z = parse_date "DZIEŃ TYGODNIA" (eval_expr env (List.hd args)) in
+      VString weekdays.(((z mod 7) + 7 + 3) mod 7));
+
+  ["DODAJ DNI"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [d; n] -> VString (format_date "DODAJ DNI" (parse_date "DODAJ DNI" d + to_int n))
+      | _ -> VNull);
+
+  ["ILE DNI MIĘDZY"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [a; b] -> VInt (parse_date "ILE DNI MIĘDZY" b - parse_date "ILE DNI MIĘDZY" a)
       | _ -> VNull);
   ]

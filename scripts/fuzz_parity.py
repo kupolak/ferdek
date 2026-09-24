@@ -53,6 +53,11 @@ class Gen:
             *[f"W MORDĘ JEŻA {n}({self.expr('float', d)})" for n, rt in self.funcs if rt == "int" and self.r.random() < 0.1],
             *(["W MORDĘ JEŻA ile0()"] if self.has_class else []),
             f'W MORDĘ JEŻA ILE W SZAFCE(W MORDĘ JEŻA OTWÓRZ SZAFKĘ("a", {self.expr("int", d)}, "b", 2))',
+            f"W MORDĘ JEŻA GDZIE LEŻY NA WERSALCE({self.expr('arr', d)}, {self.expr('int', d)})",
+            f"W MORDĘ JEŻA ZSUMUJ WERSALKĘ({self.expr('arr', d)})",
+            f"W MORDĘ JEŻA NAJWIĘKSZY NA WERSALCE([{self.expr('int', d)}, {self.expr('int', d)}])",
+            f"W MORDĘ JEŻA GDZIE SIEDZI NA KANAPIE({self.expr('str', d)}, {self.expr('str', d)})",
+            f'W MORDĘ JEŻA ILE DNI MIĘDZY("2026-01-01", W MORDĘ JEŻA DODAJ DNI("2026-01-01", {self.expr("int", d)}))',
         ])
 
     def e_float(self, leaf, d):
@@ -79,6 +84,10 @@ class Gen:
             f"W MORDĘ JEŻA CO TO ZA TYP({self.expr(self.pick(['int', 'float', 'arr']), d)})",
             f"W MORDĘ JEŻA POTNIJ KANAPĘ({a}, {self.r.randint(0, 2)}, {self.r.randint(1, 4)})",
             f"W MORDĘ JEŻA ZNAK Z KANAPY({a}, {self.r.randint(0, 3)})",
+            f"W MORDĘ JEŻA ODWRÓĆ KANAPĘ({a})",
+            f"W MORDĘ JEŻA ROZCIĄGNIJ Z LEWEJ({a}, {self.r.randint(0, 8)})",
+            f"W MORDĘ JEŻA POWTÓRZ NA KANAPIE({a}, {self.r.randint(0, 3)})",
+            f'W MORDĘ JEŻA DZIEŃ TYGODNIA(W MORDĘ JEŻA DODAJ DNI("1999-03-16", {self.expr("int", d)}))',
             *[f"W MORDĘ JEŻA {n}({self.expr('int', d)})" for n, rt in self.funcs if rt == "mixed"],
         ])
 
@@ -103,6 +112,10 @@ class Gen:
             f"W MORDĘ JEŻA POSKŁADAJ WERSALKĘ({a})", f"W MORDĘ JEŻA ODWRÓĆ WERSALKĘ({a})",
             f"W MORDĘ JEŻA POŁÓŻ NA WERSALCE({a}, {self.expr('int', d)})",
             f"[{self.expr('int', d)}, {self.expr('int', d)}]",
+            f"W MORDĘ JEŻA WYTNIJ Z WERSALKI({a}, {self.r.randint(0, 2)}, {self.r.randint(0, 3)})",
+            f"W MORDĘ JEŻA ZESTAW WERSALKI({a}, {self.expr('arr', d)})",
+            f"W MORDĘ JEŻA BEZ POWTÓREK({a})",
+            f"W MORDĘ JEŻA ZRÓB KOLEJKĘ({self.r.randint(-3, 3)}, {self.r.randint(-3, 5)})",
             f"W MORDĘ JEŻA PRZERABIAJ WERSALKĘ({a}, {self.lam(d)})",
         ])
 
@@ -111,7 +124,13 @@ class Gen:
         self.vars["int"].append("x")
         body = self.expr("int", d)
         # Z ciałem z instrukcjami; przypisania do globalnych tworzą w lambdzie lokalne
-        block = self.stmts(1, 2, "    ") if self.r.random() < 0.3 else None
+        # bez lambd z blokiem w lambdzie z blokiem: instrukcje zaczynają od głębokości 0, więc
+        # zagnieżdżanie nie miałoby końca
+        block = None
+        if not getattr(self, "in_block_lambda", False) and self.r.random() < 0.3:
+            self.in_block_lambda = True
+            block = self.stmts(1, 2, "    ")
+            self.in_block_lambda = False
         self.vars["int"].remove("x")
         if block is not None:
             return ("JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ\n"

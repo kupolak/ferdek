@@ -56,3 +56,11 @@ let kanapa_przesun s sep =
 let kanapa_zamien s old_str new_str =
   if old_str = "" then s
   else Str.global_substitute (Str.regexp_string old_str) (fun _ -> new_str) s
+
+(* Pozycja (w znakach) pierwszego wystąpienia fragmentu albo -1; pusty fragment jest na pozycji 0 *)
+let kanapa_gdzie s f =
+  let n = String.length s and k = String.length f in
+  let rec find i = if i + k > n then -1 else if String.sub s i k = f then i else find (i + 1) in
+  match find 0 with
+  | -1 -> -1
+  | byte -> utf8_length (String.sub s 0 byte)

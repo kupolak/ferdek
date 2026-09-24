@@ -34,6 +34,8 @@ Some examples:
 - `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2` - anonymous function (local variables captured as copies);
   with statements: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ` ... `DO WIDZENIA PANU`
 - `OTWÓRZ SZAFKĘ("piwo", 3, "wódka", 1)` - map with initial key/value pairs; `PO PIERWSZE PRIMO(3.14159, 2)` - `"3.14"`
+- Library for arrays (`ZSUMUJ WERSALKĘ`, `WYTNIJ Z WERSALKI`, `ZWIŃ WERSALKĘ`...), text (`CZY SIEDZI NA KANAPIE`,
+  `ODWRÓĆ KANAPĘ`...), maps and dates (`JAKI DZIŚ DZIEŃ`, `DODAJ DNI`, `DZIEŃ TYGODNIA`) - see `docs/JEZYK.md`
 - `ZNAK Z KANAPY(s, i)`, `KANAPA DO GÓRY(s)`, `KANAPA W DÓŁ(s)` - character at position, upper/lower case (Polish letters too)
 
 Run your tests - every `*_test.ferdek` file under a directory (use BABKA for assertions):

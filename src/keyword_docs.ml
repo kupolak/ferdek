@@ -15,6 +15,7 @@ let entries = [
   "ALE WIE PAN JA ZASADNICZO", "ALE WIE PAN JA ZASADNICZO", "Definicja funkcji", false;
   "BABKA DAWAJ RENTĘ", "BABKA DAWAJ RENTĘ", "+ (z tekstem skleja)", false;
   "BABKA PODSUMUJ", "BABKA PODSUMUJ()", "BABKA: raport; błąd, jeśli coś oblano", true;
+  "BEZ POWTÓREK", "BEZ POWTÓREK(tablica)", "Tablica bez powtórzonych elementów, w kolejności pierwszego wystąpienia", true;
   "CHLUŚNIEM BO UŚNIEM", "CHLUŚNIEM BO UŚNIEM", "Pętla while", false;
   "CO", "CO", "Krok pętli for (domyślnie 1, ujemny liczy w dół)", false;
   "CO JEST KURDE", "CO JEST KURDE", "Początek programu", false;
@@ -29,6 +30,7 @@ let entries = [
   "CYCU PRZYNIEŚ NO", "CYCU PRZYNIEŚ NO", "Deklaracja zmiennej: CYCU PRZYNIEŚ NO x / TO NIE SĄ TANIE RZECZY 5", false;
   "CZY KIBEL ZAJĘTY", "CZY KIBEL ZAJĘTY(ścieżka)", "Czy plik istnieje", true;
   "CZY LEŻY NA WERSALCE", "CZY LEŻY NA WERSALCE(tablica, element)", "Czy tablica zawiera element", true;
+  "CZY SIEDZI NA KANAPIE", "CZY SIEDZI NA KANAPIE(tekst, fragment)", "Czy tekst zawiera fragment", true;
   "CZY SĄSIAD W DOMU", "CZY SĄSIAD W DOMU(host)", "KLATKA: ping", true;
   "CZY TO KIBEL", "CZY TO KIBEL(ścieżka)", "Czy to katalog", true;
   "CZY W SZAFCE", "CZY W SZAFCE(mapa, klucz)", "Czy klucz istnieje", true;
@@ -38,8 +40,13 @@ let entries = [
   "DO", "DO", "Koniec zakresu pętli for (włącznie)", false;
   "DO CHAŁUPY ALE JUŻ", "DO CHAŁUPY ALE JUŻ", "Koniec if / bloku catch", false;
   "DO WIDZENIA PANU", "DO WIDZENIA PANU", "Koniec funkcji / klasy", false;
+  "DODAJ DNI", "DODAJ DNI(data, n)", "Data o n dni późniejsza (n ujemne - wcześniejsza)", true;
+  "DOŁÓŻ SZAFKĘ", "DOŁÓŻ SZAFKĘ(a, b)", "Nowa mapa: a, nadpisane tym, co jest w b", true;
   "DZIAD ZDZIADZIAŁY JEDEN", "DZIAD ZDZIADZIAŁY JEDEN", "Nowy obiekt klasy", false;
+  "DZIEŃ TYGODNIA", "DZIEŃ TYGODNIA(data)", "Nazwa dnia tygodnia (\"1999-03-16\" -> \"wtorek\")", true;
   "DZIŚ GORSZY BAJZEL", "DZIŚ GORSZY BAJZEL(a, b)", "BABKA: nie to samo", true;
+  "GDZIE LEŻY NA WERSALCE", "GDZIE LEŻY NA WERSALCE(tablica, element)", "Indeks pierwszego takiego elementu albo -1", true;
+  "GDZIE SIEDZI NA KANAPIE", "GDZIE SIEDZI NA KANAPIE(tekst, fragment)", "Pozycja fragmentu (w znakach) albo -1", true;
   "GDZIE STOI", "GDZIE STOI", "Adres zmiennej", false;
   "GRUBA ŚWINIA", "GRUBA ŚWINIA", ">", false;
   "GUZIK PRAWDA", "GUZIK PRAWDA(warunek)", "BABKA: asercja fałszu", true;
@@ -47,6 +54,7 @@ let entries = [
   "HELENA MAM ZAWAŁ", "HELENA MAM ZAWAŁ", "catch (zmienna z wyjątkiem albo tekstem błędu wykonania, np. \"Dzielenie przez zero\"); blok kończy DO CHAŁUPY ALE JUŻ", false;
   "HELENA MUSZĘ CI COŚ POWIEDZIEĆ", "HELENA MUSZĘ CI COŚ POWIEDZIEĆ", "try", false;
   "I JA INFORMUJĘ ŻE WYCHODZĘ", "I JA INFORMUJĘ ŻE WYCHODZĘ", "return", false;
+  "ILE DNI MIĘDZY", "ILE DNI MIĘDZY(a, b)", "Liczba dni od daty a do daty b", true;
   "ILE KASY LECI", "ILE KASY LECI()", "Statystyki alokatora", true;
   "ILE MIEJSCA NA KANAPIE", "ILE MIEJSCA NA KANAPIE(tekst)", "Długość tekstu w znakach (ż to jeden znak)", true;
   "ILE NA WERSALCE", "ILE NA WERSALCE(tablica)", "Długość tablicy", true;
@@ -55,6 +63,7 @@ let entries = [
   "JA JESTEM PONAD TO", "JA JESTEM PONAD TO", ">=", false;
   "JA TU RZĄDZĘ", "JA TU RZĄDZĘ(wynik)", "BABKA: asercja wyniku operacji", true;
   "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ", "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ", "Funkcja bez nazwy (lambda): JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2, albo z instrukcjami: (x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ ... DO WIDZENIA PANU. Zmienne lokalne łapie jako kopie z chwili utworzenia (każde wywołanie zaczyna od nich), globalne są wspólne", false;
+  "JAKI DZIŚ DZIEŃ", "JAKI DZIŚ DZIEŃ()", "Dzisiejsza data jako tekst RRRR-MM-DD", true;
   "JAKO", "JAKO", "Import z przestrzenią nazw: O KOGO MOJE PIĘKNE OCZY WIDZĄ matma JAKO m, potem m.dodaj(1, 2), m.PI", false;
   "JEDZIEM Z TYM ŚLEDZIEM", "JEDZIEM Z TYM ŚLEDZIEM", "Wypisz wartość bez końca linii", false;
   "JEST TRZECIA W NOCY", "JEST TRZECIA W NOCY()", "Milisekundy od startu programu (do mierzenia czasu)", true;
@@ -66,10 +75,12 @@ let entries = [
   "KONIEC MEBLA", "KONIEC MEBLA", "Koniec struktury", false;
   "KONIEC UNII EUROPEJSKIEJ", "KONIEC UNII EUROPEJSKIEJ", "Koniec unii", false;
   "KOPIUJ PAMIĘĆ", "KOPIUJ PAMIĘĆ(skąd, dokąd, rozmiar)", "Kopiuj pamięć (memcpy)", true;
+  "KOŃCZY SIĘ NA", "KOŃCZY SIĘ NA(tekst, koniec)", "Czy tekst kończy się podanym końcem", true;
   "KROK DALEJ", "KROK DALEJ", "Przesunięcie wskaźnika do przodu", false;
   "KROK WSTECZ", "KROK WSTECZ", "Przesunięcie wskaźnika do tyłu", false;
   "KRĘCI CEMENT BETONIARA", "KRĘCI CEMENT BETONIARA", "Pętla for: KRĘCI CEMENT BETONIARA i OD 1 DO 10 CO 2", false;
   "KTO NA KLATCE", "KTO NA KLATCE()", "KLATKA: twój publiczny adres IP", true;
+  "KTÓRA GODZINA", "KTÓRA GODZINA()", "Aktualna godzina jako tekst GG:MM:SS", true;
   "LOSUJ ZE SKRZYNKI", "LOSUJ ZE SKRZYNKI(min, max)", "SKRZYNKA: losowa liczba", true;
   "MA BYĆ RÓWNE", "MA BYĆ RÓWNE(oczekiwane, rzeczywiste)", "BABKA: asercja równości", true;
   "MEBEL", "MEBEL", "Definicja struktury", false;
@@ -79,6 +90,8 @@ let entries = [
   "MUSZĘ DO SRACZA", "MUSZĘ DO SRACZA", "/ (na liczbach całkowitych dzielenie całkowite)", false;
   "NA OPAK", "NA OPAK", "~ (negacja bitowa)", false;
   "NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO", "NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO", "Parametry funkcji (a, b albo a, ... dla zmiennej liczby)", false;
+  "NAJMNIEJSZY NA WERSALCE", "NAJMNIEJSZY NA WERSALCE(tablica)", "Najmniejszy element (liczby albo teksty)", true;
+  "NAJWIĘKSZY NA WERSALCE", "NAJWIĘKSZY NA WERSALCE(tablica)", "Największy element (liczby albo teksty)", true;
   "NIKT LEPIEJ ODE MNIE", "NIKT LEPIEJ ODE MNIE(wynik)", "BABKA: zaprzeczenie wyniku operacji", true;
   "NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ", "NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ", "Funkcja zwraca wartość", false;
   "NO I GITARA", "NO I GITARA", "Koniec przypisania", false;
@@ -89,6 +102,7 @@ let entries = [
   "O KURDE MAM POMYSŁA", "O KURDE MAM POMYSŁA", "Przypisanie: O KURDE MAM POMYSŁA x A PROSZĘ BARDZO 5 NO I GITARA", false;
   "OD", "OD", "Początek zakresu pętli for", false;
   "ODDAJ WSZYSTKO", "ODDAJ WSZYSTKO(blok)", "Zwolnij blok", true;
+  "ODWRÓĆ KANAPĘ", "ODWRÓĆ KANAPĘ(tekst)", "Tekst od tyłu (polskie znaki zostają całe)", true;
   "ODWRÓĆ WERSALKĘ", "ODWRÓĆ WERSALKĘ(tablica)", "Odwrócona kopia", true;
   "OLEWAM TO", "OLEWAM TO(wiadomość)", "BABKA: pomiń test", true;
   "OPAKUJ W GAZETĘ", "OPAKUJ W GAZETĘ(tekst)", "Zacytuj tekst jako jeden argument powłoki - używaj przy sklejaniu poleceń dla SYSTEM", true;
@@ -113,6 +127,7 @@ let entries = [
   "POSKŁADAJ KANAPĘ", "POSKŁADAJ KANAPĘ(tablica, separator)", "Sklej tablicę w tekst", true;
   "POSKŁADAJ WERSALKĘ", "POSKŁADAJ WERSALKĘ(tablica)", "Posortowana kopia; z funkcją f(a, b) zwracającą <0, 0, >0 - własna kolejność", true;
   "POTNIJ KANAPĘ", "POTNIJ KANAPĘ(tekst, od, do)", "Fragment tekstu (znaki od..do-1)", true;
+  "POWTÓRZ NA KANAPIE", "POWTÓRZ NA KANAPIE(tekst, n)", "Tekst powtórzony n razy (\"la\", 3 -> \"lalala\")", true;
   "POŁÓŻ NA WERSALCE", "POŁÓŻ NA WERSALCE(tablica, element)", "Nowa tablica z elementem na końcu", true;
   "PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ", "PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ", "% (reszta z dzielenia)", false;
   "PRZEFILTRUJ WERSALKĘ", "PRZEFILTRUJ WERSALKĘ(tablica, funkcja)", "Elementy, dla których f(x) jest prawdą (filter)", true;
@@ -123,6 +138,7 @@ let entries = [
   "RENTA BABKI", "RENTA BABKI", "Dziedziczenie (extends)", false;
   "RESZTA ZE SKRZYNKI", "RESZTA ZE SKRZYNKI(a, b)", "SKRZYNKA: reszta z dzielenia", true;
   "ROZCIĄGNIJ KANAPĘ", "ROZCIĄGNIJ KANAPĘ(tekst, długość)", "Dopełnij spacjami do długości", true;
+  "ROZCIĄGNIJ Z LEWEJ", "ROZCIĄGNIJ Z LEWEJ(tekst, długość)", "Dopełnia spacjami z lewej do podanej długości - do wyrównywania liczb", true;
   "ROZDUPCĘ BANK", "ROZDUPCĘ BANK", "*", false;
   "ROZMIAR BLOKU", "ROZMIAR BLOKU(blok)", "Rozmiar bloku", true;
   "RUSZ SIĘ W LEWO", "RUSZ SIĘ W LEWO", "<< (przesunięcie bitowe)", false;
@@ -148,6 +164,7 @@ let entries = [
   "WIĘKSZA ZE SKRZYNEK", "WIĘKSZA ZE SKRZYNEK(a, b)", "SKRZYNKA: większa z dwóch liczb", true;
   "WPISZ DO TABELI", "WPISZ DO TABELI(tabela, indeks, wartość)", "Zapisz w tablicy wyszukiwania", true;
   "WSZYSCY OBLANI", "WSZYSCY OBLANI(wiadomość)", "BABKA: oblej test", true;
+  "WSZYSTKIE RZECZY", "WSZYSTKIE RZECZY(mapa)", "Wartości, w kolejności posortowanych kluczy", true;
   "WSZYSTKIE SZUFLADKI", "WSZYSTKIE SZUFLADKI(mapa)", "Posortowana tablica kluczy", true;
   "WSZYSTKO MUSI BYĆ", "WSZYSTKO MUSI BYĆ", "& (bitowe)", false;
   "WYGRAŁAM", "WYGRAŁAM()", "BABKA: zalicz test", true;
@@ -155,15 +172,18 @@ let entries = [
   "WYJMIJ Z FIXED", "WYJMIJ Z FIXED", "Fixed-point 16.16 na liczbę", false;
   "WYJMIJ Z SZAFKI", "WYJMIJ Z SZAFKI(mapa, klucz)", "Wartość spod klucza (null, gdy brak)", true;
   "WYKOP WSZYSTKIE KIBLE", "WYKOP WSZYSTKIE KIBLE(ścieżka)", "Usuń katalog z zawartością", true;
+  "WYLOSUJ Z WERSALKI", "WYLOSUJ Z WERSALKI(tablica)", "Losowy element (ten sam generator co KARTA LUBI DYM)", true;
   "WYPIERDZIELAJ PAN NA POZYCJĘ", "WYPIERDZIELAJ PAN NA POZYCJĘ", "Element tablicy: WYPIERDZIELAJ PAN NA POZYCJĘ t[0]", false;
   "WYPOMPUJ", "WYPOMPUJ(uchwyt)", "Przeczytaj cały plik", true;
   "WYRZUĆ ZE SZAFKI", "WYRZUĆ ZE SZAFKI(mapa, klucz)", "Usuń klucz", true;
+  "WYTNIJ Z WERSALKI", "WYTNIJ Z WERSALKI(tablica, od, do)", "Kawałek tablicy: elementy od indeksu od do indeksu do (bez niego)", true;
   "WYTRZEP KANAPĘ", "WYTRZEP KANAPĘ(tekst)", "Usuń białe znaki z brzegów", true;
   "WYWAL KIBEL", "WYWAL KIBEL(ścieżka)", "Usuń katalog", true;
   "WYŁĄCZ TELEWIZOR", "WYŁĄCZ TELEWIZOR(ekran)", "Usuń framebuffer", true;
   "WŁÓŻ DO SZAFKI", "WŁÓŻ DO SZAFKI(mapa, klucz, wartość)", "Zapisz wartość pod kluczem", true;
   "WŁĄCZ TELEWIZOR", "WŁĄCZ TELEWIZOR(szerokość, wysokość)", "Utwórz framebuffer", true;
   "Z", "Z", "Pętla po elementach: KRĘCI CEMENT BETONIARA x Z kolekcja - tablica (elementy), szafka (klucze, posortowane) albo tekst (znaki)", false;
+  "ZACZYNA SIĘ OD", "ZACZYNA SIĘ OD(tekst, początek)", "Czy tekst zaczyna się od podanego początku", true;
   "ZAMIEŃ NA FIXED", "ZAMIEŃ NA FIXED", "Liczba na fixed-point 16.16", false;
   "ZAMIEŃ NA KANAPIE", "ZAMIEŃ NA KANAPIE(tekst, stary, nowy)", "Zamień wszystkie wystąpienia", true;
   "ZAMKNIJ KIBEL", "ZAMKNIJ KIBEL(uchwyt)", "Zamknij plik", true;
@@ -172,14 +192,18 @@ let entries = [
   "ZAPUKAJ DO SĄSIADA", "ZAPUKAJ DO SĄSIADA(url, dane)", "KLATKA: HTTP POST", true;
   "ZDEJMIJ Z WERSALKI", "ZDEJMIJ Z WERSALKI(tablica)", "Ostatni element", true;
   "ZERO", "ZERO(wartość)", "BABKA: asercja null", true;
+  "ZESTAW WERSALKI", "ZESTAW WERSALKI(a, b)", "Nowa tablica: elementy a, potem b", true;
   "ZMIEŃ KANAŁ", "ZMIEŃ KANAŁ(ekran, x, y, kolor)", "Ustaw piksel", true;
   "ZMONTUJ MEBEL", "ZMONTUJ MEBEL", "Nowa struktura", false;
   "ZNAK Z KANAPY", "ZNAK Z KANAPY(tekst, i)", "Znak na pozycji i", true;
   "ZRÓB BAJCIK", "ZRÓB BAJCIK(x)", "Bajt 0-255", true;
   "ZRÓB DŁUGI", "ZRÓB DŁUGI(x)", "Liczba całkowita (obcina liczbę z przecinkiem, tekst zamienia na liczbę)", true;
   "ZRÓB KIBEL", "ZRÓB KIBEL(ścieżka)", "Utwórz katalog", true;
+  "ZRÓB KOLEJKĘ", "ZRÓB KOLEJKĘ(od, do)", "Tablica liczb od..do włącznie ([] gdy od > do)", true;
   "ZRÓB KRÓTKI", "ZRÓB KRÓTKI(x)", "Liczba 16-bitowa ze znakiem", true;
   "ZRÓB UŁAMEK", "ZRÓB UŁAMEK(x)", "Fixed-point 16.16", true;
+  "ZSUMUJ WERSALKĘ", "ZSUMUJ WERSALKĘ(tablica)", "Suma elementów (jak kolejne BABKA DAWAJ RENTĘ); pusta tablica to 0", true;
+  "ZWIŃ WERSALKĘ", "ZWIŃ WERSALKĘ(tablica, start, funkcja)", "Zwija tablicę funkcją f(dotąd, element), zaczynając od start", true;
   "ŁYSA PAŁA", "ŁYSA PAŁA", "<", false;
   "ŚWINIA", "ŚWINIA", "<", false;
 ]
