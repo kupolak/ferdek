@@ -1,4 +1,12 @@
-; Runtime programów C (runtime.c) i nakładki grafiki - pliki C, wbudowane w kompilator jako napisy
+; Runtime programów C: pliki z runtime/ sklejone w tej kolejności w runtime.c (kolejność ma znaczenie -
+; C wymaga deklaracji przed użyciem), plus nakładka grafiki - wbudowane w kompilator jako napisy
+(rule
+ (targets runtime.c)
+ (deps
+  runtime/core.c runtime/objects.c runtime/builtins.c runtime/maps.c runtime/library.c
+  runtime/dates.c runtime/json.c runtime/files.c runtime/memory.c runtime/io.c runtime/network.c)
+ (action (with-stdout-to %{targets} (system "cat %{deps}"))))
+
 (rule
  (targets runtime_source.ml)
  (deps runtime.c runtime_graphics.c)

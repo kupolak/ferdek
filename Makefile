@@ -157,10 +157,10 @@ test-errors: build
 test-repl: build
 	@$(FERDEK) --repl < tests/repl/session.in 2>&1 | diff -u tests/repl/session.out - && echo "--- REPL: OK"
 
-# Runtime programów C (src/compiler/runtime.c) kompiluje się bez ostrzeżeń; source_line dopisuje
+# Runtime programów C (src/compiler/runtime/*.c, sklejone przez dune w runtime.c) kompiluje się bez ostrzeżeń; source_line dopisuje
 # dopiero wygenerowany program - tu zaślepka
 test-runtime:
-	@mkdir -p _build && { cat src/compiler/runtime.c; echo 'static const char* source_line(const char* f, int l) { (void)f; (void)l; return 0; }'; } > _build/runtime_check.c
+	@dune build src/compiler/runtime.c && { cat _build/default/src/compiler/runtime.c; echo 'static const char* source_line(const char* f, int l) { (void)f; (void)l; return 0; }'; } > _build/runtime_check.c
 	@cc -std=c99 -fsyntax-only -Wall -Wextra -Wno-unused-parameter -Werror _build/runtime_check.c && echo "--- runtime.c: bez ostrzeżeń"
 
 # Debugger dla edytorów (DAP): punkt zatrzymania, stos, zmienne, krok, wyjście programu

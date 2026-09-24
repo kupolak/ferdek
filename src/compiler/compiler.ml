@@ -1116,7 +1116,7 @@ let compile_top_level ctx decl =
 
 (* ============ RUNTIME LIBRARY ============ *)
 
-(* Runtime programów C: src/runtime.c (razem z nagłówkami), wbudowany przez regułę w src/dune *)
+(* Runtime programów C: src/compiler/runtime/*.c sklejone w runtime.c, wbudowane przez regułę w src/compiler/dune *)
 let runtime_library = Runtime_source.code
 
 (* Nakładki na graphics_x11.c (Graphics_source) - dołączane tylko do programów z grafiką *)
