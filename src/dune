@@ -44,6 +44,7 @@
   syntax_errors
   qualify
   keyword_docs
+  source
   lsp
   builtins_string
   builtins_hashmap
