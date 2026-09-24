@@ -460,7 +460,7 @@ let register () =
        | [arg] ->
            (* Jawne obcięcie liczby z przecinkiem *)
            (match eval_expr env arg with
-            | VFloat f -> VInt (int_of_float f)
+            | VFloat f -> VInt (float_to_int "ZRÓB DŁUGI" f)
             | v -> VInt (to_int v))
        | _ -> raise (RuntimeError "ZRÓB DŁUGI oczekuje 1 argumentu")));
 

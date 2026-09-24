@@ -164,6 +164,9 @@ type codegen_context = {
   sigs: (string, bool list * bool) Hashtbl.t; (* funkcje z parametrami/wynikiem long long *)
   int_globals: (string, unit) Hashtbl.t;
   int_locals: (string, string list) Hashtbl.t; (* funkcja -> jej zmienne i parametry long long *)
+  mutable floats: string list;                (* zmienne double widoczne w bieżącym miejscu *)
+  float_globals: (string, unit) Hashtbl.t;
+  float_locals: (string, string list) Hashtbl.t;
 }
 
 let fresh ctx prefix =
@@ -233,15 +236,33 @@ let argv_c c_args = if c_args = [] then "(FerdekValue[]){make_null()}" else
    jako wartość) dostaje parametry i wynik long long, gdy wszystkie wywołania podają liczby, a każda
    ścieżka zwraca liczbę. Reszta zostaje FerdekValue - wynik jest ten sam, tylko szybciej. *)
 
-type tenv = { ivar : string -> bool; ifun : string -> (bool list * bool) option }
+type tenv = { ivar : string -> bool; fvar : string -> bool; ifun : string -> (bool list * bool) option }
 
-let rec is_int env = function
-  | IntLiteral _ | BitwiseOp _ | BitwiseNot _ -> true   (* bitowe zawsze dają make_int(to_int ...) *)
-  | Identifier n -> env.ivar n
-  | Parenthesized e -> is_int env e
-  | BinaryOp (a, _, b) -> is_int env a && is_int env b
-  | FunctionCall (f, _) -> (match env.ifun f with Some (_, r) -> r | None -> false)
-  | _ -> false
+(* Wbudowane, które zawsze dają liczbę całkowitą / z przecinkiem (albo kończą się błędem).
+   Wbudowana ma pierwszeństwo przed funkcją użytkownika - nazwy nie da się przesłonić. *)
+let int_builtins = ["ILE NA WERSALCE"; "ILE MIEJSCA NA KANAPIE"; "ZRÓB DŁUGI"; "ILE W SZAFCE"]
+let float_builtins = ["SINUS ZE SKRZYNKI"; "COSINUS ZE SKRZYNKI"; "PIERWIASTEK ZE SKRZYNKI"]
+
+type num = Int | Float | Other
+
+(* Typ liczbowy wyrażenia: działanie na liczbie całkowitej i z przecinkiem daje liczbę z przecinkiem *)
+let rec num_type env = function
+  | IntLiteral _ | BitwiseOp _ | BitwiseNot _ -> Int   (* bitowe zawsze dają make_int(to_int ...) *)
+  | FloatLiteral _ -> Float
+  | Identifier n -> if env.ivar n then Int else if env.fvar n then Float else Other
+  | Parenthesized e -> num_type env e
+  | BinaryOp (a, _, b) ->
+      (match num_type env a, num_type env b with
+       | Int, Int -> Int
+       | (Int | Float), (Int | Float) -> Float
+       | _ -> Other)
+  | FunctionCall (f, _) when List.mem f int_builtins -> Int
+  | FunctionCall (f, _) when List.mem f float_builtins -> Float
+  | FunctionCall (f, _) -> (match env.ifun f with Some (_, true) -> Int | _ -> Other)
+  | _ -> Other
+
+let is_int env e = num_type env e = Int
+let is_float env e = num_type env e = Float
 
 (* Podwyrażenia (bez wnętrza lambd - to osobne funkcje) *)
 let subexprs = function
@@ -358,12 +379,13 @@ let infer_ints ctx decls =
   let ifun n = match Hashtbl.find_opt params n with
     | Some ps -> Some (Array.to_list ps, !(Hashtbl.find rets n))
     | None -> None in
-  let env_main = { ivar = Hashtbl.mem g; ifun } in
-  let env_other = { ivar = (fun _ -> false); ifun } in   (* metody, lambdy, pola: ostrożnie *)
+  let no_f = fun _ -> false in
+  let env_main = { ivar = Hashtbl.mem g; fvar = no_f; ifun } in
+  let env_other = { ivar = (fun _ -> false); fvar = no_f; ifun } in   (* metody, lambdy, pola: ostrożnie *)
   let env_f (f : function_decl) =
     let sc = function_scope ctx f and li = Hashtbl.find locals f.name in
     let ps = Hashtbl.find_opt params f.name in
-    { ifun; ivar = fun n ->
+    { ifun; fvar = no_f; ivar = fun n ->
         if List.mem n sc then
           List.mem n !li
           || (match ps with
@@ -407,6 +429,36 @@ let infer_ints ctx decls =
     calls env_other (List.concat_map all_exprs field_exprs)
   done;
   Hashtbl.iter (fun n () -> Hashtbl.replace ctx.int_globals n ()) g;
+  (* Liczby z przecinkiem - druga runda, gdy liczby całkowite są już ustalone. Tylko zmienne
+     (globalne i lokalne funkcji), bez parametrów i wyników. *)
+  let fg = Hashtbl.copy ctx.globals in
+  Hashtbl.iter (fun n () -> Hashtbl.remove fg n) g;
+  List.iter (fun (_, b) -> let d, a = targets_block ([], []) b in List.iter (Hashtbl.remove fg) (d @ a)) lambdas;
+  let flocals = Hashtbl.create 16 in
+  List.iter (fun (f : function_decl) ->
+    let ints = !(Hashtbl.find locals f.name) in
+    Hashtbl.replace flocals f.name
+      (ref (List.filter (fun n -> not (List.mem n (all_params f)) && not (List.mem n ints)) (function_scope ctx f)))) funcs;
+  let fenv_main = { env_main with fvar = Hashtbl.mem fg } in
+  let fenv_f (f : function_decl) =
+    let e = env_f f and sc = function_scope ctx f and fl = Hashtbl.find flocals f.name in
+    { e with fvar = fun n -> if List.mem n sc then List.mem n !fl else Hashtbl.mem fg n } in
+  let changed = ref true in
+  let fok env = function Some e -> is_float env e | None -> false in
+  while !changed do
+    changed := false;
+    let drop n = if Hashtbl.mem fg n then (Hashtbl.remove fg n; changed := true) in
+    List.iter (fun (n, rhs) -> if not (fok fenv_main rhs) then drop n) (List.fold_left assigns [] top);
+    List.iter (fun (f : function_decl) ->
+      let env = fenv_f f and sc = function_scope ctx f and fl = Hashtbl.find flocals f.name in
+      List.iter (fun (n, rhs) ->
+        if not (fok env rhs) then begin
+          if not (List.mem n sc) then drop n
+          else if List.mem n !fl then (fl := List.filter (( <> ) n) !fl; changed := true)
+        end) (List.fold_left assigns [] f.body)) funcs
+  done;
+  Hashtbl.iter (fun n () -> Hashtbl.replace ctx.float_globals n ()) fg;
+  List.iter (fun (f : function_decl) -> Hashtbl.replace ctx.float_locals f.name !(Hashtbl.find flocals f.name)) funcs;
   List.iter (fun (f : function_decl) ->
     let ps = match Hashtbl.find_opt params f.name with
       | Some ps -> List.filteri (fun i _ -> ps.(i)) f.params | None -> [] in
@@ -415,10 +467,17 @@ let infer_ints ctx decls =
     | Some (ps, r) when r || List.exists Fun.id ps -> Hashtbl.replace ctx.sigs f.name (ps, r)
     | _ -> ()) funcs
 
+(* Literał double zawsze z kropką albo wykładnikiem - inaczej 3 / 2 w C to dzielenie całkowite *)
+let float_lit f =
+  let s = Printf.sprintf "%.17g" f in
+  if String.exists (fun c -> c = '.' || c = 'e' || c = 'n' || c = 'i') s then s else s ^ ".0"
+
 let global_ints ctx = Hashtbl.fold (fun n () acc -> n :: acc) ctx.int_globals []
+let global_floats ctx = Hashtbl.fold (fun n () acc -> n :: acc) ctx.float_globals []
 
 let tenv ctx = {
   ivar = (fun n -> List.mem n ctx.ints && not (is_function_name ctx n));
+  fvar = (fun n -> List.mem n ctx.floats && not (is_function_name ctx n));
   ifun = (fun n -> if is_function_name ctx n && find_builtin n = None then Hashtbl.find_opt ctx.sigs n else None);
 }
 
@@ -430,8 +489,12 @@ let rec compile_expr ctx expr =
   match expr with
   | (Identifier _ | BinaryOp _ | FunctionCall _ | Parenthesized _) when is_int (tenv ctx) expr ->
       Printf.sprintf "make_int(%s)" (compile_int ctx expr)
-  | ComparisonOp (a, _, b) when is_int (tenv ctx) a && is_int (tenv ctx) b ->
+  | (Identifier _ | BinaryOp _ | FunctionCall _ | Parenthesized _) when is_float (tenv ctx) expr ->
+      Printf.sprintf "make_float(%s)" (compile_float ctx expr)
+  | ComparisonOp (a, _, b) when num_type (tenv ctx) a <> Other && num_type (tenv ctx) b <> Other ->
       Printf.sprintf "make_bool(%s)" (compile_cond ctx expr)
+  | ArrayAccess (arr, idx) when is_int (tenv ctx) idx ->
+      Printf.sprintf "index_get_i(%s, %s)" (compile_expr ctx arr) (compile_int ctx idx)
   | IntLiteral n -> Printf.sprintf "make_int(%dLL)" n
   | FloatLiteral f -> Printf.sprintf "make_float(%.17g)" f
   | StringLiteral s -> Printf.sprintf "make_lit(%s)" (c_string_literal s)
@@ -491,12 +554,12 @@ let rec compile_expr ctx expr =
                  |> List.sort_uniq compare in
       let cap_values = List.map (fun n -> compile_expr ctx (Identifier n)) caps in
       let name = fresh ctx "lambda_" in
-      let saved = (ctx.locals, ctx.members, ctx.in_function, ctx.loop_handlers, ctx.ints, ctx.ret_int) in
+      let saved = (ctx.locals, ctx.members, ctx.in_function, ctx.loop_handlers, ctx.ints, ctx.ret_int, ctx.floats) in
       ctx.loop_handlers <- [];
       let code = !compile_lambda ctx name params caps body in
-      let (l, m, f, h, i, r) = saved in
+      let (l, m, f, h, i, r, fl) = saved in
       ctx.locals <- l; ctx.members <- m; ctx.in_function <- f; ctx.loop_handlers <- h;
-      ctx.ints <- i; ctx.ret_int <- r;
+      ctx.ints <- i; ctx.ret_int <- r; ctx.floats <- fl;
       ctx.lambdas <- code :: ctx.lambdas;
       Printf.sprintf "make_method(%s, \"anonimowa\", %d, false, %s)" name (List.length params)
         (if caps = [] then "NULL"
@@ -520,8 +583,28 @@ and compile_int ctx e =
        | Modulo -> Printf.sprintf "int_mod(%s, %s)" a b)
   | BitwiseOp (a, op, b) -> Printf.sprintf "(%s %s %s)" (arg a) (bitwise_c op) (arg b)
   | BitwiseNot a -> Printf.sprintf "(~%s)" (arg a)
+  | FunctionCall (f, args) when List.mem f int_builtins -> compile_call_generic ctx f args ^ ".value.int_val"
   | FunctionCall (f, args) when is_int env e -> specialized_call ctx f args
   | e -> Printf.sprintf "to_int(%s)" (compile_expr ctx e)
+
+(* Wyrażenie liczbowe (całkowite albo z przecinkiem) -> double; to samo, co op_* dla FLOAT *)
+and compile_float ctx e =
+  let env = tenv ctx in
+  match e with
+  | FloatLiteral f -> float_lit f
+  | e when is_int env e -> Printf.sprintf "((double)%s)" (compile_int ctx e)
+  | Identifier n when env.fvar n -> var_c n
+  | Parenthesized e -> Printf.sprintf "(%s)" (compile_float ctx e)
+  | BinaryOp (a, op, b) when is_float env e ->
+      let a = compile_float ctx a and b = compile_float ctx b in
+      (match op with
+       | Plus -> Printf.sprintf "(%s + %s)" a b
+       | Minus -> Printf.sprintf "(%s - %s)" a b
+       | Multiply -> Printf.sprintf "(%s * %s)" a b
+       | Divide -> Printf.sprintf "float_div(%s, %s)" a b
+       | Modulo -> Printf.sprintf "float_mod(%s, %s)" a b)
+  | FunctionCall (f, args) when List.mem f float_builtins -> compile_call_generic ctx f args ^ ".value.float_val"
+  | e -> Printf.sprintf "to_float(%s)" (compile_expr ctx e)
 
 (* Warunek w if/while: porównanie liczb wprost w C, reszta przez to_bool *)
 and compile_cond ctx e =
@@ -530,6 +613,12 @@ and compile_cond ctx e =
   | ComparisonOp (a, op, b) when is_int env a && is_int env b ->
       let c = match op with Equal -> "==" | NotEqual -> "!=" | Greater -> ">" | Less -> "<" | GreaterEqual -> ">=" in
       Printf.sprintf "%s %s %s" (compile_int ctx a) c (compile_int ctx b)
+  | ComparisonOp (a, op, b) when num_type env a <> Other && num_type env b <> Other ->
+      (* jak compare3: (x > y) - (x < y), więc NaN wychodzi "równe" - tak samo jak w interpreterze *)
+      let c = match op with Equal -> "==" | NotEqual -> "!=" | Greater -> ">" | Less -> "<" | GreaterEqual -> ">=" in
+      Printf.sprintf "fcmp(%s, %s) %s 0" (compile_float ctx a) (compile_float ctx b) c
+  | ComparisonOp (a, op, b) ->
+      Printf.sprintf "compare_bool(%s, %s, %s)" (compile_expr ctx a) (compile_expr ctx b) (comparison_c op)
   | Parenthesized e -> compile_cond ctx e
   | e -> Printf.sprintf "to_bool(%s)" (compile_expr ctx e)
 
@@ -589,6 +678,7 @@ and compile_call_generic ctx name args =
 let assign ctx name value =
   if is_member ctx name then Printf.sprintf "field_set(self, %s, %s);" (c_string_literal name) value
   else if List.mem name ctx.ints then Printf.sprintf "%s = to_int(%s);" (var_c name) value
+  else if List.mem name ctx.floats then Printf.sprintf "%s = to_float(%s);" (var_c name) value
   else Printf.sprintf "%s = %s;" (var_c name) value
 
 (* Ciało pętli; gdy w środku jest try, break/continue muszą zdjąć handlery założone w pętli *)
@@ -607,6 +697,8 @@ and compile_stmt ctx indent stmt =
   match stmt with
   | VarDecl (name, e) | Assign (name, e) when List.mem name ctx.ints && not (is_member ctx name) ->
       Printf.sprintf "%s%s = %s;" ind (var_c name) (compile_int ctx e)
+  | VarDecl (name, e) | Assign (name, e) when List.mem name ctx.floats && not (is_member ctx name) ->
+      Printf.sprintf "%s%s = %s;" ind (var_c name) (compile_float ctx e)
   | VarDecl (name, e) | Assign (name, e) -> ind ^ assign ctx name (compile_expr ctx e)
   | ArrayDecl (name, []) ->
       Printf.sprintf "%s%s = make_array(NULL, 0);" ind (var_c name)
@@ -616,6 +708,9 @@ and compile_stmt ctx indent stmt =
   | Print e -> Printf.sprintf "%sprint_value(%s);" ind (compile_expr ctx e)
   | PrintInline e -> Printf.sprintf "%sprint_inline(%s);" ind (compile_expr ctx e)
   | Read name -> ind ^ assign ctx name "read_value()"
+  | ArrayAssign (ArrayAccess (arr, idx), value) when is_int (tenv ctx) idx ->
+      Printf.sprintf "%sindex_set_i(%s, %s, %s);" ind
+        (compile_expr ctx arr) (compile_int ctx idx) (compile_expr ctx value)
   | ArrayAssign (ArrayAccess (arr, idx), value) ->
       Printf.sprintf "%sindex_set(%s, %s, %s);" ind
         (compile_expr ctx arr) (compile_expr ctx idx) (compile_expr ctx value)
@@ -713,7 +808,7 @@ let fun_proto ctx (f : function_decl) =
     (if params = [] then "void" else String.concat ", " params)
 
 (* Ciało funkcji albo metody. members <> [] = metoda: nazwy pól i metod obiektu (self) *)
-let compile_body ?(own_ints = []) ?(ret_int = false) ?display ctx ~proto ~members (f : function_decl) =
+let compile_body ?(own_ints = []) ?(own_floats = []) ?(ret_int = false) ?display ctx ~proto ~members (f : function_decl) =
   let decl, assigned = block_names ([], []) f.body in
   (* Funkcja: przypisanie do istniejącej globalnej zmienia globalną (set_var w interpreterze).
      Metoda: przypisanie do czegoś, co nie jest polem, tworzy lokalną - set_var sprawdza
@@ -728,6 +823,7 @@ let compile_body ?(own_ints = []) ?(ret_int = false) ?display ctx ~proto ~member
   ctx.in_function <- true;
   (* long long: własne zmienne funkcji i globalne, których nic tu nie przesłania *)
   ctx.ints <- own_ints @ List.filter (fun n -> not (List.mem n ctx.locals || List.mem n members)) (global_ints ctx);
+  ctx.floats <- own_floats @ List.filter (fun n -> not (List.mem n ctx.locals || List.mem n members)) (global_floats ctx);
   ctx.ret_int <- ret_int;
   (* setjmp: lokalne zmieniane w try muszą być volatile, inaczej po longjmp mają śmieci.
      ponytail: parametry nie są volatile - przypisanie do parametru w try i odczyt w catch to UB *)
@@ -738,12 +834,14 @@ let compile_body ?(own_ints = []) ?(ret_int = false) ?display ctx ~proto ~member
          (c_string_literal (Option.value display ~default:f.name))
     :: List.map (fun n ->
          if List.mem n own_ints then Printf.sprintf "    %slong long %s = 0;" qual (var_c n)
+         else if List.mem n own_floats then Printf.sprintf "    %sdouble %s = 0.0;" qual (var_c n)
          else Printf.sprintf "    %sFerdekValue %s = make_null();" qual (var_c n)) locals in
   let body = List.map (compile_stmt ctx 1) f.body in
   ctx.locals <- [];
   ctx.members <- [];
   ctx.in_function <- false;
   ctx.ints <- global_ints ctx;
+  ctx.floats <- global_floats ctx;
   ctx.ret_int <- false;
   String.concat "\n" ([Printf.sprintf "%s {" proto] @ decls @ body
                       @ ["    ferdek_handler = entry_handler;"; "    ferdek_depth = entry_depth;"; "    FERDEK_AT(entry_file, entry_line);";
@@ -753,6 +851,7 @@ let compile_body ?(own_ints = []) ?(ret_int = false) ?display ctx ~proto ~member
 let compile_function ctx (f : function_decl) =
   compile_body ctx ~proto:(fun_proto ctx f) ~members:[] f
     ~own_ints:(Option.value (Hashtbl.find_opt ctx.int_locals f.name) ~default:[])
+    ~own_floats:(Option.value (Hashtbl.find_opt ctx.float_locals f.name) ~default:[])
     ~ret_int:(match Hashtbl.find_opt ctx.sigs f.name with Some (_, r) -> r | None -> false)
 
 (* Lambda: ciało jak funkcja, której złapane zmienne są dodatkowymi parametrami (każde wywołanie
@@ -1238,6 +1337,16 @@ static inline long long int_mod(long long a, long long b) {
     return a % b;
 }
 
+static inline double float_div(double a, double b) {
+    if (b == 0.0) ferdek_die("Dzielenie przez zero");
+    return a / b;
+}
+static inline double float_mod(double a, double b) {
+    if (b == 0.0) ferdek_die("Reszta z dzielenia przez zero");
+    return fmod(a, b);
+}
+static inline int fcmp(double x, double y) { return (x > y) - (x < y); }
+
 static FerdekValue op_mod(FerdekValue a, FerdekValue b) {
     if (ANY_FLOAT(a, b)) {
         double d = to_float(b);
@@ -1272,7 +1381,8 @@ static int compare3(FerdekValue a, FerdekValue b, bool equality) {
     return 0;
 }
 
-static FerdekValue compare_op(FerdekValue a, FerdekValue b, int op) {
+/* Porównanie od razu jako bool - w warunkach if/while bez make_bool/to_bool */
+static inline bool compare_bool(FerdekValue a, FerdekValue b, int op) {
     int c;
     if (a.type == TYPE_INT && b.type == TYPE_INT) {
         long long x = a.value.int_val, y = b.value.int_val;
@@ -1281,13 +1391,15 @@ static FerdekValue compare_op(FerdekValue a, FerdekValue b, int op) {
         c = compare3(a, b, op == CMP_EQ || op == CMP_NE);
     }
     switch (op) {
-        case CMP_EQ: return make_bool(c == 0);
-        case CMP_NE: return make_bool(c != 0);
-        case CMP_GT: return make_bool(c > 0);
-        case CMP_LT: return make_bool(c < 0);
-        default: return make_bool(c >= 0);
+        case CMP_EQ: return c == 0;
+        case CMP_NE: return c != 0;
+        case CMP_GT: return c > 0;
+        case CMP_LT: return c < 0;
+        default: return c >= 0;
     }
 }
+
+static FerdekValue compare_op(FerdekValue a, FerdekValue b, int op) { return make_bool(compare_bool(a, b, op)); }
 
 /* Interpreter liczy obie strony (bez short-circuit) - funkcja robi to samo */
 static FerdekValue logic_and(FerdekValue a, FerdekValue b) { return make_bool(to_bool(a) && to_bool(b)); }
@@ -1397,6 +1509,23 @@ static void index_set(FerdekValue c, FerdekValue key, FerdekValue v) {
     } else {
         ferdek_die("Indeks tablicy musi być liczbą całkowitą");
     }
+}
+
+/* t[i] z indeksem, o którym kompilator wie, że jest liczbą całkowitą - bez pakowania indeksu */
+static inline FerdekValue index_get_i(FerdekValue c, long long i) {
+    if (c.type == TYPE_ARRAY) {
+        if (i < 0 || i >= c.value.array_val->length) ferdek_die("Indeks tablicy poza zakresem");
+        return c.value.array_val->data[i];
+    }
+    return index_get(c, make_int(i));
+}
+static inline void index_set_i(FerdekValue c, long long i, FerdekValue v) {
+    if (c.type == TYPE_ARRAY) {
+        if (i < 0 || i >= c.value.array_val->length) ferdek_die("Indeks poza zakresem: %lld", i);
+        c.value.array_val->data[i] = v;
+        return;
+    }
+    index_set(c, make_int(i), v);
 }
 
 static FerdekValue make_pointer(FerdekValue target) {
@@ -1729,12 +1858,19 @@ static FerdekValue b_wersalka_przefiltruj(int argc, FerdekValue* argv) {
 
 static FerdekValue b_zrob_bajcik(int argc, FerdekValue* argv) { return make_typed(TYPE_BYTE, to_int(argv[0]) & 0xFF); }
 /* Jawne obcięcie liczby z przecinkiem - jak int_of_float */
+/* Jak float_to_int w interpreterze: poza zakresem int OCamla (±2^62) i NaN to błąd */
+static long long float_to_int(const char* what, double f) {
+    if (isnan(f) || f >= 4611686018427387904.0 || f < -4611686018427387904.0)
+        ferdek_die("%s: liczba za duża, żeby zrobić z niej całkowitą", what);
+    return (long long)f;
+}
+
 static FerdekValue b_zrob_dlugi(int argc, FerdekValue* argv) {
-    return argv[0].type == TYPE_FLOAT ? make_int((long long)argv[0].value.float_val) : make_int(to_int(argv[0]));
+    return argv[0].type == TYPE_FLOAT ? make_int(float_to_int("ZRÓB DŁUGI", argv[0].value.float_val)) : make_int(to_int(argv[0]));
 }
 
 static FerdekValue to_fixed(FerdekValue v) {
-    return v.type == TYPE_FLOAT ? make_int((long long)(v.value.float_val * 65536.0)) : make_int(to_int(v) << 16);
+    return v.type == TYPE_FLOAT ? make_int(float_to_int("ZAMIEŃ NA FIXED", v.value.float_val * 65536.0)) : make_int(to_int(v) << 16);
 }
 static FerdekValue b_zrob_ulamek(int argc, FerdekValue* argv) { return make_typed(TYPE_FIXED, to_int(argv[0]) * 65536); }
 
@@ -2560,7 +2696,8 @@ let compile_program ?(load_module = fun _ -> None) prog =
               in_function = false; loop_handlers = []; counter = 0;
               classes = Hashtbl.create 8; records = Hashtbl.create 8; members = []; lambdas = [];
               ints = []; ret_int = false; sigs = Hashtbl.create 8; int_globals = Hashtbl.create 32;
-              int_locals = Hashtbl.create 16 } in
+              int_locals = Hashtbl.create 16; floats = []; float_globals = Hashtbl.create 16;
+              float_locals = Hashtbl.create 16 } in
   List.iter (function
     | FunctionDecl f -> Hashtbl.replace ctx.funcs f.name f
     | ClassDecl c -> Hashtbl.replace ctx.classes c.name c
@@ -2574,6 +2711,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
     | _ -> ()) prog.declarations;
   infer_ints ctx prog.declarations;
   ctx.ints <- global_ints ctx;
+  ctx.floats <- global_floats ctx;
 
   let functions = List.filter_map (function
     | FunctionDecl f -> Some (compile_function ctx f)
@@ -2596,6 +2734,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
   let globals = Hashtbl.fold (fun n () acc -> n :: acc) ctx.globals [] |> dedup
                 |> List.map (fun n ->
                      if Hashtbl.mem ctx.int_globals n then Printf.sprintf "static long long %s = 0;" (var_c n)
+                     else if Hashtbl.mem ctx.float_globals n then Printf.sprintf "static double %s = 0.0;" (var_c n)
                      else Printf.sprintf "static FerdekValue %s;" (var_c n)) in
   (* Teksty plików do pokazania linii z błędem - jak Sources.line w interpreterze *)
   let sources =

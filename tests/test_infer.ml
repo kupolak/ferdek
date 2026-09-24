@@ -61,5 +61,13 @@ let () =
      ^ "ALE JAJA A\n    CYCU PRZYNIEŚ NO pole\n    TO NIE SĄ TANIE RZECZY 3\n    ALE WIE PAN JA ZASADNICZO m\n    NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ\n        I JA INFORMUJĘ ŻE WYCHODZĘ W MORDĘ JEŻA k(pole)\n    DO WIDZENIA PANU\nDO WIDZENIA PANU\n"
      ^ "PANIE SENSACJA REWELACJA W MORDĘ JEŻA k(1)")
     ~has:["f_k(FerdekValue v_x)"] ~lacks:["f_k(long long"];
+  check "z przecinkiem" ("CYCU PRZYNIEŚ NO s\nTO NIE SĄ TANIE RZECZY 0.0\nKRĘCI CEMENT BETONIARA k OD 1 DO 10\n"
+                         ^ "    O KURDE MAM POMYSŁA s A PROSZĘ BARDZO s BABKA DAWAJ RENTĘ 1 MUSZĘ DO SRACZA k NO I GITARA\nA ROBIĆ NI MA KOMU\n"
+                         ^ "CYCU PRZYNIEŚ NO r\nTO NIE SĄ TANIE RZECZY W MORDĘ JEŻA SINUS ZE SKRZYNKI(s)")
+    ~has:["static double v_s = 0.0;"; "static double v_r = 0.0;"; "static long long v_k = 0;"] ~lacks:[];
+  check "raz całkowita, raz z przecinkiem" ("CYCU PRZYNIEŚ NO m\nTO NIE SĄ TANIE RZECZY 1\nO KURDE MAM POMYSŁA m A PROSZĘ BARDZO 2.5 NO I GITARA")
+    ~has:["static FerdekValue v_m;"] ~lacks:["static double v_m"; "static long long v_m"];
+  check "długość jako liczba" ("CYCU PRZYNIEŚ NO n\nTO NIE SĄ TANIE RZECZY W MORDĘ JEŻA ILE NA WERSALCE([1, 2]) BABKA DAWAJ RENTĘ 1")
+    ~has:["static long long v_n = 0;"] ~lacks:[];
   if !failures > 0 then (Printf.printf "Padło: %d\n" !failures; exit 1)
   else print_endline "--- infer_ints: OK"

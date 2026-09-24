@@ -47,6 +47,12 @@
 - Variables that always hold whole numbers compile to plain C `long long`, and so do the parameters
   and results of functions only ever called with numbers: fib(35) 0.15 s -> 0.03 s, a divisor-sum
   loop 0.44 s -> 0.04 s. Everything else stays as before, so results do not change.
+- Numbers with a decimal point get the same treatment (plain C `double` for variables that always
+  hold them; a Leibniz-series loop: 0.20 s -> 0.02 s), and so do results of builtins that always
+  give numbers (`ILE NA WERSALCE`, `SINUS ZE SKRZYNKI`, ...). Array indexing with a whole-number
+  index and comparisons in conditions skip the boxing too (bubble sort: 0.55 s -> 0.43 s).
+- `ZRÓB DŁUGI` / `ZAMIEŃ NA FIXED` on a number too big for a whole number (or NaN) is an error
+  in both modes; before, the result depended on the mode and the processor.
 - C compiler warnings about the generated code are no longer shown.
 - With the Boehm GC installed, compiled programs free memory (a 2M-iteration text loop: 3 MB instead
   of 32 MB and growing).

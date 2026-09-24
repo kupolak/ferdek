@@ -39,7 +39,7 @@ let rec eval_expr env = function
   | ToFixed e ->
       (* Convert integer to fixed-point 16.16 format *)
       (match eval_expr env e with
-       | VFloat f -> VInt (int_of_float (f *. 65536.))
+       | VFloat f -> VInt (float_to_int "ZAMIEŃ NA FIXED" (f *. 65536.))
        | v -> VInt (to_int v lsl 16))
   | FromFixed e ->
       (* Convert from fixed-point 16.16 format to integer *)

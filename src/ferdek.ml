@@ -243,8 +243,10 @@ let cc c_file exe =
       then Some (Printf.sprintf " -DFERDEK_GC -I%s -L%s -lgc" inc lib) else None)
       ["/opt/homebrew/include", "/opt/homebrew/lib"; "/usr/local/include", "/usr/local/lib"; "/usr/include", "/usr/lib"]
     |> Option.value ~default:"" in
-  (* -w: ostrzeżenia o wygenerowanym kodzie (np. x == x z programu) nic nie mówią użytkownikowi *)
-  Sys.command (Printf.sprintf "cc -std=c99 -O2 -w -o %s %s -lm%s%s" (Filename.quote exe) (Filename.quote c_file) x11 gc)
+  (* -w: ostrzeżenia o wygenerowanym kodzie (np. x == x z programu) nic nie mówią użytkownikowi.
+     -ffp-contract=off: bez łączenia a*b+c w jedno działanie (FMA) - inaczej ostatnie cyfry
+     liczb z przecinkiem różniłyby się od interpretera *)
+  Sys.command (Printf.sprintf "cc -std=c99 -O2 -ffp-contract=off -w -o %s %s -lm%s%s" (Filename.quote exe) (Filename.quote c_file) x11 gc)
 
 (* -c: plik .c albo (inne rozszerzenie) gotowa binarka *)
 let compile_file input_file output_file =

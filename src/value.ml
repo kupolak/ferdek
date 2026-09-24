@@ -75,6 +75,13 @@ let global_env () =
 (* Klucz, po którym apply_function poznaje złapane zmienne lambdy (nazwa zmiennej tak wyglądać nie może) *)
 let lambda_marker = "(lambda)"
 
+(* Liczba z przecinkiem -> całkowita (obcięcie). Poza zakresem int (±2^62) i NaN to błąd, a nie
+   przypadkowa wartość - tak samo robi float_to_int w C *)
+let float_to_int what f =
+  if Float.is_nan f || f >= 4611686018427387904. || f < -4611686018427387904. then
+    raise (RuntimeError (what ^ ": liczba za duża, żeby zrobić z niej całkowitą"))
+  else int_of_float f
+
 (* Get variable from environment *)
 (* Wszystkie nazwy widoczne ze środowiska - do podpowiedzi przy literówce *)
 let rec visible_names env =
