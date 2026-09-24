@@ -1,0 +1,4 @@
+sprzątam
+Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Dzielenie przez zero (tests/errors/posprzatac_blad_dalej.ferdek, linia 6)
+    6 |         PANIE SENSACJA REWELACJA 1 MUSZĘ DO SRACZA 0
+  w funkcji licz, wywołanej w linii 11

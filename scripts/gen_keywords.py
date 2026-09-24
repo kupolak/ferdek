@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # Token z leksera -> zakres kolorowania
 SCOPES = {
-    "keyword.control.ferdek": """IF ELSE ELSE_IF END_IF SWITCH CASE DEFAULT END_SWITCH WHILE END_WHILE FOR FOR_FROM FOR_TO FOR_STEP FOR_IN
+    "keyword.control.ferdek": """IF ELSE ELSE_IF END_IF SWITCH CASE DEFAULT END_SWITCH FINALLY WHILE END_WHILE FOR FOR_FROM FOR_TO FOR_STEP FOR_IN
         TRY CATCH THROW BREAK CONTINUE RETURN PROGRAM_START PROGRAM_END""",
     "storage.type.ferdek": """VAR_DECL CONST VAR_INIT ARRAY_DECL FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END
         CLASS EXTENDS STRUCT END_STRUCT UNION END_UNION ENUM END_ENUM IMPORT IMPORT_AS""",
@@ -118,6 +118,7 @@ SECTIONS = [
         "OD": "Początek zakresu pętli for",
         "DO": "Koniec zakresu pętli for (włącznie)",
         "CO": "Krok pętli for (domyślnie 1, ujemny liczy w dół)",
+        "I TAK TRZEBA POSPRZĄTAĆ": "Ostatnia część bloku HELENA: wykonywana zawsze - także po błędzie, return i break",
         "TO JE NA AMEN": "Stała: TO JE NA AMEN x / TO NIE SĄ TANIE RZECZY 5 - później nie wolno przypisać",
         "CO TO JE": "Wybór wariantu: CO TO JE x / JAK JE 1, 2 / A JAK NIC Z TEGO / KONIEC GADANIA",
         "JAK JE": "Przypadek w CO TO JE - jedna albo kilka wartości po przecinku",

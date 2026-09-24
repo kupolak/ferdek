@@ -171,6 +171,10 @@ let find_builtin name =
 
 (* ============ CODE GENERATION ============ *)
 
+(* Co trzeba zrobić, wychodząc z bloku przez return/break/continue: posprzątać (finally,
+   z handlerem danego try) albo nic, bo to pętla, do której skaczemy *)
+type unwind = Fin of string * stmt list | LoopMark
+
 type codegen_context = {
   funcs: (string, function_decl) Hashtbl.t;   (* Funkcje użytkownika *)
   globals: (string, unit) Hashtbl.t;          (* Zmienne programu głównego *)
@@ -190,6 +194,7 @@ type codegen_context = {
   int_locals: (string, string list) Hashtbl.t; (* funkcja -> jej zmienne i parametry long long *)
   mutable floats: string list;                (* zmienne double widoczne w bieżącym miejscu *)
   mutable fn_has_try: bool;                   (* bieżąca funkcja ma try - tylko wtedy pilnuje handlera *)
+  mutable unwind: unwind list;                (* otaczające bloki sprzątania i pętle, od najbliższego *)
   float_globals: (string, unit) Hashtbl.t;
   float_locals: (string, string list) Hashtbl.t;
 }
@@ -317,7 +322,7 @@ let rec stmt_exprs = function
   | ForEach (_, c, b) -> c :: List.concat_map stmt_exprs b
   | FunctionCallStmt (n, args) | FunctionCallWithAssign (_, n, args) -> [FunctionCall (n, args)]
   | Return e -> Option.to_list e
-  | Try (a, _, b) -> List.concat_map stmt_exprs (a @ b)
+  | Try (a, _, b, f) -> List.concat_map stmt_exprs (a @ b @ f)
   | Located (_, _, s) -> stmt_exprs s
   | Read _ | Break | Continue -> []
 
@@ -336,7 +341,7 @@ let rec assigns acc = function
   | For (v, _, _, _, b) -> List.fold_left assigns ((v, Some (IntLiteral 0)) :: acc) b
   | Read n | ArrayDecl (n, _) -> (n, None) :: acc
   | ForEach (v, _, b) -> List.fold_left assigns ((v, None) :: acc) b
-  | Try (a, v, b) -> List.fold_left assigns ((v, None) :: acc) (a @ b)
+  | Try (a, v, b, f) -> List.fold_left assigns ((v, None) :: acc) (a @ b @ f)
   | If (_, a, b) -> List.fold_left assigns acc (a @ Option.value b ~default:[])
   | While (_, b) -> List.fold_left assigns acc b
   | Located (_, _, s) -> assigns acc s
@@ -356,7 +361,7 @@ let rec returns_in stmts = List.concat_map (function
   | Return e -> [e]
   | If (_, a, b) -> returns_in (a @ Option.value b ~default:[])
   | While (_, b) | For (_, _, _, _, b) | ForEach (_, _, b) -> returns_in b
-  | Try (a, _, b) -> returns_in (a @ b)
+  | Try (a, _, b, f) -> returns_in (a @ b @ f)
   | Located (_, _, s) -> returns_in [s]
   | _ -> []) stmts
 
@@ -749,12 +754,31 @@ let assign ctx name value =
 (* Ciało pętli; gdy w środku jest try, break/continue muszą zdjąć handlery założone w pętli *)
 let rec loop_body ctx indent body =
   let h = if has_try body then fresh ctx "loop_handler" else "" in
-  let saved = ctx.loop_handlers in
+  let saved = ctx.loop_handlers and saved_unwind = ctx.unwind in
   ctx.loop_handlers <- h :: saved;
+  ctx.unwind <- LoopMark :: saved_unwind;
   let code = String.concat "\n" (List.map (compile_stmt ctx (indent + 1)) body) in
   ctx.loop_handlers <- saved;
+  ctx.unwind <- saved_unwind;
   let setup = if h = "" then "" else Printf.sprintf "%s    Handler* %s = ferdek_handler;\n" (String.make (indent * 4) ' ') h in
   (setup, code)
+
+(* Kod bloków sprzątania od najbliższego, przy wyjściu z nich przez return (wszystkie w funkcji)
+   albo break/continue (do najbliższej pętli). Każdy wykonuje się z handlerem i ścieżką wywołań
+   sprzed swojego try, a sam jest kompilowany bez siebie na liście - return w nim nie zapętli. *)
+and run_finallies ctx indent ~to_loop =
+  let rec go = function
+    | [] | LoopMark :: _ when to_loop -> []
+    | LoopMark :: rest -> go rest
+    | Fin (h, stmts) :: rest ->
+        let saved = ctx.unwind in
+        ctx.unwind <- rest;
+        let code = Printf.sprintf "ferdek_handler = %s.prev; ferdek_top = %s.top;\n%s\n" h h
+                     (String.concat "\n" (List.map (compile_stmt ctx indent) stmts)) in
+        ctx.unwind <- saved;
+        code :: go rest
+    | [] -> [] in
+  String.concat "" (go ctx.unwind)
 
 and compile_stmt ctx indent stmt =
   let ind = String.make (indent * 4) ' ' in
@@ -842,9 +866,44 @@ and compile_stmt ctx indent stmt =
         | None -> "FerdekValue", "make_null()"
         | Some e -> "FerdekValue", compile_expr ctx e in
       (* Wartość liczymy przed zdjęciem handlerów - może rzucić wyjątek *)
-      Printf.sprintf "%s{ %s ret = %s; %sferdek_top = frame.prev; FERDEK_AT(frame.file, frame.line); return ret; }" ind ty v
+      Printf.sprintf "%s{ %s ret = %s; %s%sferdek_top = frame.prev; FERDEK_AT(frame.file, frame.line); return ret; }" ind ty v
+        (run_finallies ctx (indent + 1) ~to_loop:false)
         (if ctx.fn_has_try then "ferdek_handler = entry_handler; " else "")
-  | Try (try_stmts, var, catch_stmts) ->
+  | Try (try_stmts, var, catch_stmts, (_ :: _ as fin)) ->
+      let h = fresh ctx "handler" and h2 = fresh ctx "handler" in
+      let block ?(extra = 2) stmts = String.concat "\n" (List.map (compile_stmt ctx (indent + extra)) stmts) in
+      let saved = ctx.unwind in
+      ctx.unwind <- Fin (h, fin) :: saved;
+      let try_code = block try_stmts and catch_code = block ~extra:3 catch_stmts in
+      ctx.unwind <- saved;
+      let i n = ind ^ String.make (4 * n) ' ' in
+      String.concat "\n" [
+        ind ^ "{";
+        Printf.sprintf "%sHandler %s; %s.prev = ferdek_handler; %s.top = ferdek_top;" (i 1) h h h;
+        Printf.sprintf "%sferdek_handler = &%s;" (i 1) h;
+        Printf.sprintf "%sif (setjmp(%s.buf) == 0) {" (i 1) h;
+        try_code;
+        Printf.sprintf "%sferdek_handler = %s.prev;" (i 2) h;
+        Printf.sprintf "%s} else {" (i 1);
+        Printf.sprintf "%sferdek_handler = %s.prev; ferdek_top = %s.top;" (i 2) h h;
+        Printf.sprintf "%s%s = ferdek_exception;" (i 2) (var_c var);
+        (* błąd w catch: posprzątać i puścić go dalej - z tą samą pozycją *)
+        Printf.sprintf "%sHandler %s; %s.prev = ferdek_handler; %s.top = ferdek_top;" (i 2) h2 h2 h2;
+        Printf.sprintf "%sferdek_handler = &%s;" (i 2) h2;
+        Printf.sprintf "%sif (setjmp(%s.buf) == 0) {" (i 2) h2;
+        catch_code;
+        Printf.sprintf "%sferdek_handler = %s.prev;" (i 3) h2;
+        Printf.sprintf "%s} else {" (i 2);
+        Printf.sprintf "%sferdek_handler = %s.prev; ferdek_top = %s.top;" (i 3) h2 h2;
+        Printf.sprintf "%sbool pending_error = ferdek_exception_error; FerdekValue pending = ferdek_exception;" (i 3);
+        Printf.sprintf "%sconst char* pending_file = ferdek_file; int pending_line = ferdek_line;" (i 3);
+        block ~extra:3 fin;
+        Printf.sprintf "%sFERDEK_AT(pending_file, pending_line); ferdek_rethrow(pending_error, pending);" (i 3);
+        Printf.sprintf "%s}" (i 2);
+        Printf.sprintf "%s}" (i 1);
+        block ~extra:1 fin;
+        ind ^ "}" ]
+  | Try (try_stmts, var, catch_stmts, []) ->
       let h = fresh ctx "handler" in
       Printf.sprintf "%s{\n%s    Handler %s;\n%s    %s.prev = ferdek_handler; %s.top = ferdek_top;\n%s    ferdek_handler = &%s;\n%s    if (setjmp(%s.buf) == 0) {\n%s\n%s        ferdek_handler = %s.prev;\n%s    } else {\n%s        ferdek_handler = %s.prev; ferdek_top = %s.top;\n%s        %s = ferdek_exception;\n%s\n%s    }\n%s}"
         ind ind h ind h h ind h ind h
@@ -858,6 +917,7 @@ and compile_stmt ctx indent stmt =
       Printf.sprintf "%sFERDEK_AT(%s, %d);\n%s" ind (c_string_literal file) line (compile_stmt ctx indent s)
   | Break | Continue ->
       let kw = if stmt = Break then "break;" else "continue;" in
+      let kw = if ctx.loop_handlers = [] then kw else run_finallies ctx indent ~to_loop:true ^ kw in
       (match ctx.loop_handlers with
        | [] ->   (* jak w interpreterze: błąd wykonania, nie wyskok z funkcji *)
            Printf.sprintf "%sferdek_fatal(\"%s poza pętlą\");" ind
@@ -900,6 +960,8 @@ let compile_body ?(own_ints = []) ?(own_floats = []) ?(ret_int = false) ?display
   let qual = if has_try f.body then "volatile " else "" in
   (* Bez try funkcja nie zmienia handlera (wołane funkcje przywracają swój) - nie trzeba go pilnować *)
   ctx.fn_has_try <- has_try f.body;
+  let saved_unwind = ctx.unwind in
+  ctx.unwind <- [];
   let decls = (if ctx.fn_has_try then "    Handler* entry_handler = ferdek_handler;" else "")
     :: Printf.sprintf "    Frame frame = { %s, ferdek_file, ferdek_line, ferdek_top }; ferdek_top = &frame;"
          (c_string_literal (Option.value display ~default:f.name))
@@ -918,6 +980,7 @@ let compile_body ?(own_ints = []) ?(own_floats = []) ?(ret_int = false) ?display
   ctx.ints <- global_ints ctx;
   ctx.floats <- global_floats ctx;
   ctx.ret_int <- false;
+  ctx.unwind <- saved_unwind;
   String.concat "\n" ([Printf.sprintf "%s {" proto] @ decls @ body
                       @ [(if ctx.fn_has_try then "    ferdek_handler = entry_handler;" else ""); "    ferdek_top = frame.prev;"; "    FERDEK_AT(frame.file, frame.line);";
                          if ret_int then "    return 0;" else "    return make_null();"; "}"])
@@ -1146,6 +1209,7 @@ typedef struct Handler { jmp_buf buf; struct Handler* prev; Frame* top; } Handle
 static Handler* ferdek_handler = NULL;
 static FerdekValue ferdek_exception;
 static FerdekValue make_string(const char* s);
+static bool ferdek_exception_error = false;   /* ferdek_exception pochodzi z błędu wykonania (ferdek_die) */
 
 /* Błąd, którego HELENA MAM ZAWAŁ nie łapie (break/return poza pętlą/funkcją - jak w interpreterze) */
 static void ferdek_fatal(const char* fmt, ...) {
@@ -1170,6 +1234,7 @@ static void ferdek_die(const char* fmt, ...) {
         vsnprintf(msg, sizeof msg, fmt, ap);
         va_end(ap);
         ferdek_exception = make_string(msg);
+        ferdek_exception_error = true;
         longjmp(ferdek_handler->buf, 1);
     }
     fflush(stdout);
@@ -1695,7 +1760,14 @@ static void ferdek_throw(FerdekValue v) {
         exit(1);
     }
     ferdek_exception = v;
+    ferdek_exception_error = false;
     longjmp(ferdek_handler->buf, 1);
+}
+
+/* Po sprzątaniu (I TAK TRZEBA POSPRZĄTAĆ) ten sam błąd albo wyjątek leci dalej */
+static void ferdek_rethrow(bool is_error, FerdekValue v) {
+    if (is_error) ferdek_die("%s", v.value.string_val);
+    ferdek_throw(v);
 }
 
 /* ---- Builtiny (semantyka jak w interpreterze) ---- */
@@ -3081,7 +3153,7 @@ let compile_program ?(load_module = fun _ -> None) prog =
               classes = Hashtbl.create 8; records = Hashtbl.create 8; members = []; lambdas = [];
               ints = []; ret_int = false; sigs = Hashtbl.create 8; int_globals = Hashtbl.create 32;
               int_locals = Hashtbl.create 16; floats = []; float_globals = Hashtbl.create 16;
-              float_locals = Hashtbl.create 16; fn_has_try = false } in
+              float_locals = Hashtbl.create 16; fn_has_try = false; unwind = [] } in
   List.iter (function
     | FunctionDecl f -> Hashtbl.replace ctx.funcs f.name f
     | ClassDecl c -> Hashtbl.replace ctx.classes c.name c

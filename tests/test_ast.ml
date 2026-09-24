@@ -112,7 +112,8 @@ let test_exception_handling () =
   let stmt = Try (
     [Print (StringLiteral "Próbuję...")],
     "err",
-    [Print (StringLiteral "Złapałem błąd!")]
+    [Print (StringLiteral "Złapałem błąd!")],
+    []
   ) in
   print_endline "Test 11: Obsługa wyjątków";
   print_endline (string_of_stmt "" stmt);

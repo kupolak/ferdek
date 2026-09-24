@@ -68,7 +68,7 @@ let qualify alias (prog : program) =
     | FunctionCallStmt (n, args) -> FunctionCallStmt (r n, List.map e args)
     | FunctionCallWithAssign (v, n, args) -> FunctionCallWithAssign (r v, r n, List.map e args)
     | Return v -> Return (Option.map e v)
-    | Try (a, v, b) -> Try (bl a, r v, bl b)
+    | Try (a, v, b, f) -> Try (bl a, r v, bl b, bl f)
     | Located (f, l, st) -> Located (f, l, s sh st)
     | Break | Continue -> x
   in

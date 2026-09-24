@@ -30,6 +30,7 @@ let keywords = [
   Parser.FOR_IN, "Z";
   Parser.SWITCH, "CO TO JE";
   Parser.CONST, "TO JE NA AMEN";
+  Parser.FINALLY, "I TAK TRZEBA POSPRZĄTAĆ";
   Parser.CASE, "JAK JE";
   Parser.DEFAULT, "A JAK NIC Z TEGO";
   Parser.END_SWITCH, "KONIEC GADANIA";

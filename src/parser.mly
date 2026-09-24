@@ -7,7 +7,7 @@ open Ast
 %token VAR_DECL VAR_INIT
 %token PRINT PRINT_INLINE PRINT_NEWLINE READ
 %token ASSIGN_START ASSIGN_OP ASSIGN_END
-%token IF ELSE ELSE_IF END_IF SWITCH CASE DEFAULT END_SWITCH CONST
+%token IF ELSE ELSE_IF END_IF SWITCH CASE DEFAULT END_SWITCH CONST FINALLY
 %token WHILE END_WHILE FOR FOR_FROM FOR_TO FOR_STEP FOR_IN
 %token FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END ELLIPSIS
 %token FUNC_CALL FUNC_CALL_ASSIGN RETURN LAMBDA
@@ -235,8 +235,14 @@ return_stmt:
 
 try_stmt:
   (* Blok catch zamyka DO CHAŁUPY ALE JUŻ - bez tego połykał resztę programu *)
-  | TRY try_block=list(statement) CATCH catch_var=IDENTIFIER catch_block=list(statement) END_IF
-    { Try (try_block, catch_var, catch_block) }
+  | TRY try_block=list(statement) CATCH catch_var=IDENTIFIER catch_block=list(statement)
+    fin=option(finally_block) END_IF
+    { Try (try_block, catch_var, catch_block, Option.value fin ~default:[]) }
+  ;
+
+(* I TAK TRZEBA POSPRZĄTAĆ: wykonywane zawsze - po try, po catch, przy return/break i przy błędzie *)
+finally_block:
+  | FINALLY b=list(statement) { b }
   ;
 
 throw_stmt:

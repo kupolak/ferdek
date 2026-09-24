@@ -17,7 +17,7 @@ let weight = function SWITCH | END_SWITCH -> 2 | _ -> 1
 
 (* Linia na poziomie otwierającego bloku, bez zmiany głębokości: else, catch, nagłówek funkcji *)
 let at_opener_level = function
-  | ELSE | ELSE_IF | CATCH | FUNC_RETURNS | FUNC_PARAMS | CASE | DEFAULT -> true
+  | ELSE | ELSE_IF | CATCH | FINALLY | FUNC_RETURNS | FUNC_PARAMS | CASE | DEFAULT -> true
   | _ -> false
 
 (* Tokeny z numerami linii początku i końca; None, gdy lekser się wyłoży (wtedy nie formatujemy) *)

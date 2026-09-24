@@ -39,6 +39,9 @@
 - Choosing a variant: `CO TO JE x` / `JAK JE 1, 2` / `A JAK NIC Z TEGO` / `KONIEC GADANIA`.
 - Default parameter values: `NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO komu, ile TO NIE SĄ TANIE RZECZY 1`;
   evaluated at the call, they can use earlier parameters.
+- `I TAK TRZEBA POSPRZĄTAĆ` (finally) as the last part of a `HELENA MUSZĘ CI COŚ POWIEDZIEĆ` block: runs
+  after the try, after the catch, on return/break/continue out of the block and when the catch fails
+  (the error then continues outwards).
 - Constants: `TO JE NA AMEN x` / `TO NIE SĄ TANIE RZECZY 5`. Changing one is reported before the
   program runs (both modes, `--check`, the editor); a local variable in a function may reuse the name.
 - Loop over elements: `KRĘCI CEMENT BETONIARA x Z kolekcja` ... `A ROBIĆ NI MA KOMU` - array

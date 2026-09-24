@@ -1,0 +1,3 @@
+sprzątam
+Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Nikt nie złapał wyjątku: drugi: pierwszy (tests/errors/posprzatac_wyjatek_dalej.ferdek, linia 5)
+    5 |     O KARWASZ TWARZ "drugi: " BABKA DAWAJ RENTĘ blad

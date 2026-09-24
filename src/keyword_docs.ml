@@ -56,6 +56,7 @@ let entries = [
   "HELENA MAM ZAWAŁ", "HELENA MAM ZAWAŁ", "catch (zmienna z wyjątkiem albo tekstem błędu wykonania, np. \"Dzielenie przez zero\"); blok kończy DO CHAŁUPY ALE JUŻ", false;
   "HELENA MUSZĘ CI COŚ POWIEDZIEĆ", "HELENA MUSZĘ CI COŚ POWIEDZIEĆ", "try", false;
   "I JA INFORMUJĘ ŻE WYCHODZĘ", "I JA INFORMUJĘ ŻE WYCHODZĘ", "return", false;
+  "I TAK TRZEBA POSPRZĄTAĆ", "I TAK TRZEBA POSPRZĄTAĆ", "Ostatnia część bloku HELENA: wykonywana zawsze - także po błędzie, return i break", false;
   "ILE DNI MIĘDZY", "ILE DNI MIĘDZY(a, b)", "Liczba dni od daty a do daty b", true;
   "ILE KASY LECI", "ILE KASY LECI()", "Statystyki alokatora", true;
   "ILE MIEJSCA NA KANAPIE", "ILE MIEJSCA NA KANAPIE(tekst)", "Długość tekstu w znakach (ż to jeden znak)", true;

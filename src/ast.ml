@@ -82,7 +82,7 @@ and stmt =
   | FunctionCallStmt of string * expr list               (* Function call statement (W MORDĘ JEŻA) *)
   | FunctionCallWithAssign of string * string * expr list (* Function call with assignment (AFERA JEST ... W MORDĘ JEŻA) *)
   | Return of expr option                                (* Return statement (I JA INFORMUJĘ ŻE WYCHODZĘ) *)
-  | Try of stmt list * string * stmt list                (* Try-catch block (HELENA MUSZĘ CI COŚ POWIEDZIEĆ ... HELENA MAM ZAWAŁ) *)
+  | Try of stmt list * string * stmt list * stmt list    (* try, zmienna, catch, I TAK TRZEBA POSPRZĄTAĆ (finally, [] gdy brak) *)
   | Throw of expr                                        (* Throw exception (O KARWASZ TWARZ) *)
   | Break                                                (* Break statement (A POCAŁUJCIE MNIE WSZYSCY W DUPĘ) *)
   | Continue                                             (* Continue statement (AKUKARACZA) *)
@@ -286,10 +286,12 @@ and string_of_stmt indent = function
       indent ^ "return"
   | Return (Some expr) ->
       indent ^ "return " ^ string_of_expr expr
-  | Try (try_stmts, catch_var, catch_stmts) ->
+  | Try (try_stmts, catch_var, catch_stmts, finally_stmts) ->
       let try_str = String.concat "\n" (List.map (string_of_stmt (indent ^ "  ")) try_stmts) in
       let catch_str = String.concat "\n" (List.map (string_of_stmt (indent ^ "  ")) catch_stmts) in
-      indent ^ "try\n" ^ try_str ^ "\n" ^ indent ^ "catch " ^ catch_var ^ "\n" ^ catch_str
+      let fin_str = if finally_stmts = [] then "" else
+        "\n" ^ indent ^ "finally\n" ^ String.concat "\n" (List.map (string_of_stmt (indent ^ "  ")) finally_stmts) in
+      indent ^ "try\n" ^ try_str ^ "\n" ^ indent ^ "catch " ^ catch_var ^ "\n" ^ catch_str ^ fin_str
   | Throw expr ->
       indent ^ "throw " ^ string_of_expr expr
   | Break ->
@@ -331,7 +333,7 @@ and stmt_names = function
   | FunctionCallStmt (n, args) -> n :: List.concat_map expr_names args
   | FunctionCallWithAssign (v, n, args) -> v :: n :: List.concat_map expr_names args
   | Return e -> (match e with Some e -> expr_names e | None -> [])
-  | Try (a, v, b) -> v :: List.concat_map stmt_names (a @ b)
+  | Try (a, v, b, f) -> v :: List.concat_map stmt_names (a @ b @ f)
   | Located (_, _, s) -> stmt_names s
   | Break | Continue -> []
 
@@ -342,7 +344,7 @@ and block_decls stmts = List.concat_map (function
   | Located (_, _, s) -> block_decls [s]
   | If (_, a, b) -> block_decls (a @ Option.value b ~default:[])
   | While (_, b) | For (_, _, _, _, b) | ForEach (_, _, b) -> block_decls b
-  | Try (a, v, b) -> v :: block_decls (a @ b)
+  | Try (a, v, b, f) -> v :: block_decls (a @ b @ f)
   | _ -> []) stmts
 
 (* Zmienne zadeklarowane (VarDecl/ArrayDecl/catch) i przypisane w bloku.
@@ -354,7 +356,7 @@ let rec targets_stmt (decl, assigned) = function
   | While (_, b) -> targets_block (decl, assigned) b
   | ForEach (v, _, b) -> targets_block (decl, v :: assigned) b
   | For (v, _, _, _, b) -> targets_block (decl, v :: assigned) b
-  | Try (a, v, b) -> targets_block (targets_block (v :: decl, assigned) a) b
+  | Try (a, v, b, f) -> targets_block (targets_block (targets_block (v :: decl, assigned) a) b) f
   | Located (_, _, s) -> targets_stmt (decl, assigned) s
   | _ -> (decl, assigned)
 and targets_block acc stmts = List.fold_left targets_stmt acc stmts

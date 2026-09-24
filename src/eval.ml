@@ -452,18 +452,31 @@ and eval_stmt env = function
       in
       raise (ReturnValue value)
 
-  | Try (try_stmts, catch_var, catch_stmts) ->
+  | Try (try_stmts, catch_var, catch_stmts, finally_stmts) ->
       let entry_stack = !call_stack in
       let catch value =
         call_stack := entry_stack;
         let catch_env = create_env (Some env) in
         define_var catch_env catch_var value;
         List.iter (eval_stmt catch_env) catch_stmts in
-      (try
-        List.iter (eval_stmt env) try_stmts
-      with
-      | ThrowException value -> catch value
-      | RuntimeError msg -> catch (VString msg))   (* błąd wykonania też - jako tekst komunikatu *)
+      let body () =
+        try List.iter (eval_stmt env) try_stmts with
+        | ThrowException value -> catch value
+        | RuntimeError msg -> catch (VString msg) in   (* błąd wykonania też - jako tekst komunikatu *)
+      if finally_stmts = [] then body ()
+      else begin
+        match body () with
+        | () -> List.iter (eval_stmt env) finally_stmts
+        | exception (Fatal _ as e) -> raise e   (* jak ferdek_fatal w C - bez sprzątania *)
+        | exception e ->
+            (* sprzątanie, potem to samo dalej (błąd, wyjątek, return, break); pozycja błędu jak
+               przed sprzątaniem, ścieżka wywołań - od poziomu bloku (jak w C) *)
+            let loc = !current_loc in
+            call_stack := entry_stack;
+            List.iter (eval_stmt env) finally_stmts;
+            current_loc := loc;
+            raise e
+      end
 
   | Throw expr ->
       let value = eval_expr env expr in

@@ -197,8 +197,12 @@ class Gen:
         body = self.stmts(1, d + 1, ind + "    ")
         if self.r.random() < 0.6:
             body.append(f"{ind}    O KARWASZ TWARZ {self.expr(self.pick(['str', 'int']), 1)}")
-        return ([f"{ind}HELENA MUSZĘ CI COŚ POWIEDZIEĆ"] + body
-                + [f"{ind}HELENA MAM ZAWAŁ blad", f"{ind}    PANIE SENSACJA REWELACJA blad", f"{ind}DO CHAŁUPY ALE JUŻ"])
+        catch = [f"{ind}HELENA MAM ZAWAŁ blad", f"{ind}    PANIE SENSACJA REWELACJA blad"]
+        if self.r.random() < 0.3:   # błąd także w catch - po sprzątaniu leci dalej
+            catch.append(f"{ind}    PANIE SENSACJA REWELACJA (1 MUSZĘ DO SRACZA i2)")
+        fin = ([f"{ind}I TAK TRZEBA POSPRZĄTAĆ", f"{ind}    PANIE SENSACJA REWELACJA \"sprzątam\""]
+               if self.r.random() < 0.4 else [])
+        return ([f"{ind}HELENA MUSZĘ CI COŚ POWIEDZIEĆ"] + body + catch + fin + [f"{ind}DO CHAŁUPY ALE JUŻ"])
 
     # Funkcja z parametrem i0, zmienną lokalną a0, czasem pętlą i zmianą globalnej i2.
     # "mixed" zwraca raz liczbę, raz tekst - kompilator nie może jej wtedy traktować jak liczby.

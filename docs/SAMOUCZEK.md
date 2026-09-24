@@ -84,6 +84,32 @@ Wynik:
 Pora na piwo
 ```
 
+Kiedy wariantów jest dużo, wygodniej jest `CO TO JE`: każdy `JAK JE` wymienia pasujące wartości,
+a `A JAK NIC Z TEGO` łapie resztę.
+
+```ferdek
+CO JEST KURDE
+KRĘCI CEMENT BETONIARA dzien Z ["piątek", "sobota", "wtorek"]
+    CO TO JE dzien
+        JAK JE "sobota", "niedziela"
+            PANIE SENSACJA REWELACJA dzien BABKA DAWAJ RENTĘ ": schabowy"
+        JAK JE "piątek"
+            PANIE SENSACJA REWELACJA dzien BABKA DAWAJ RENTĘ ": ryba"
+        A JAK NIC Z TEGO
+            PANIE SENSACJA REWELACJA dzien BABKA DAWAJ RENTĘ ": zupa z torebki"
+    KONIEC GADANIA
+A ROBIĆ NI MA KOMU
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
+```
+
+Wynik:
+
+```
+piątek: ryba
+sobota: schabowy
+wtorek: zupa z torebki
+```
+
 ## 4. Pętle
 
 `KRĘCI CEMENT BETONIARA i OD 1 DO 5` liczy (z `CO krok` - co tyle), `KRĘCI CEMENT BETONIARA x Z kolekcja`
@@ -151,6 +177,32 @@ Wynik:
 ```
 10! = 3628800
 ```
+
+Parametr może mieć wartość domyślną - wtedy przy wywołaniu można go pominąć. Wartość, której nie wolno
+zmienić, to stała: `TO JE NA AMEN` zamiast `CYCU PRZYNIEŚ NO`.
+
+```ferdek
+CO JEST KURDE
+TO JE NA AMEN cena_piwa
+TO NIE SĄ TANIE RZECZY 3
+ALE WIE PAN JA ZASADNICZO rachunek
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO kto, piwa TO NIE SĄ TANIE RZECZY 1
+    I JA INFORMUJĘ ŻE WYCHODZĘ kto BABKA DAWAJ RENTĘ " płaci " BABKA DAWAJ RENTĘ piwa ROZDUPCĘ BANK cena_piwa
+DO WIDZENIA PANU
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA rachunek("Ferdek")
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA rachunek("Boczek", 4)
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
+```
+
+Wynik:
+
+```
+Ferdek płaci 3
+Boczek płaci 12
+```
+
+Przypisanie do stałej (`O KURDE MAM POMYSŁA cena_piwa ...`) to błąd, zgłaszany jeszcze przed uruchomieniem.
 
 ## 6. Tablice i szafki
 
@@ -295,6 +347,39 @@ Wynik:
 Wypłacono 100
 Babka mówi: Renta nie z gumy!
 Złapane: Dzielenie przez zero
+```
+
+Ostatnia część bloku, `I TAK TRZEBA POSPRZĄTAĆ`, wykona się zawsze - także gdy z bloku wychodzi się przez
+`I JA INFORMUJĘ ŻE WYCHODZĘ` albo gdy w `HELENA MAM ZAWAŁ` znowu coś pęknie:
+
+```ferdek
+CO JEST KURDE
+ALE WIE PAN JA ZASADNICZO do_kibla
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO kto
+    HELENA MUSZĘ CI COŚ POWIEDZIEĆ
+        NO JAK NIE JAK TAK kto TO PANU SIĘ CHCE WTEDY KIEDY MNIE "Paździoch"
+            O KARWASZ TWARZ "zajęte"
+        DO CHAŁUPY ALE JUŻ
+        I JA INFORMUJĘ ŻE WYCHODZĘ kto BABKA DAWAJ RENTĘ " wszedł"
+    HELENA MAM ZAWAŁ blad
+        I JA INFORMUJĘ ŻE WYCHODZĘ kto BABKA DAWAJ RENTĘ ": " BABKA DAWAJ RENTĘ blad
+    I TAK TRZEBA POSPRZĄTAĆ
+        PANIE SENSACJA REWELACJA "(spuszczam wodę)"
+    DO CHAŁUPY ALE JUŻ
+DO WIDZENIA PANU
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA do_kibla("Ferdek")
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA do_kibla("Paździoch")
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
+```
+
+Wynik:
+
+```
+(spuszczam wodę)
+Ferdek wszedł
+(spuszczam wodę)
+Paździoch: zajęte
 ```
 
 Błąd, którego nikt nie złapie, kończy program i pokazuje linię oraz ścieżkę wywołań:

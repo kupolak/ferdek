@@ -82,7 +82,7 @@ and stmt =
   | FunctionCallStmt of string * expr list
   | FunctionCallWithAssign of string * string * expr list
   | Return of expr option
-  | Try of stmt list * string * stmt list
+  | Try of stmt list * string * stmt list * stmt list   (* try, zmienna, catch, finally ([] gdy brak) *)
   | Throw of expr
   | Break
   | Continue

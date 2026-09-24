@@ -104,7 +104,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
     | For (_, a, b, k, body) -> expr sc a; expr sc b; Option.iter (expr sc) k; block sc body
     | FunctionCallStmt (n, args) | FunctionCallWithAssign (_, n, args) -> expr sc (FunctionCall (n, args))
     | Return e -> Option.iter (expr sc) e
-    | Try (a, _, b) -> block sc a; block sc b
+    | Try (a, _, b, f) -> block sc a; block sc b; block sc f
     | Read _ | Break | Continue -> ()
   and block sc stmts = List.iter (stmt sc) stmts in
 

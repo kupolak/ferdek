@@ -10,7 +10,7 @@ let rec setters line acc = function
   | VarDecl (n, _) | ArrayDecl (n, _) | Assign (n, _) | Read n | FunctionCallWithAssign (n, _, _) -> (n, line, false) :: acc
   | ConstDecl (n, _) -> (n, line, true) :: acc
   | For (v, _, _, _, b) | ForEach (v, _, b) -> List.fold_left (setters line) ((v, line, false) :: acc) b
-  | Try (a, v, b) -> List.fold_left (setters line) ((v, line, false) :: acc) (a @ b)
+  | Try (a, v, b, f) -> List.fold_left (setters line) ((v, line, false) :: acc) (a @ b @ f)
   | If (_, a, b) -> List.fold_left (setters line) acc (a @ Option.value b ~default:[])
   | While (_, b) -> List.fold_left (setters line) acc b
   | _ -> acc

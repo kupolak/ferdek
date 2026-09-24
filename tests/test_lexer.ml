@@ -21,6 +21,7 @@ let string_of_token = function
   | FOR_IN -> "FOR_IN"
   | SWITCH -> "SWITCH"
   | CONST -> "CONST"
+  | FINALLY -> "FINALLY"
   | CASE -> "CASE"
   | DEFAULT -> "DEFAULT"
   | END_SWITCH -> "END_SWITCH"
