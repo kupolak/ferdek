@@ -24,6 +24,13 @@ let () =
     else if Sys.file_exists "/proc/version" then def "LINUX"
   end
 
+(* Makra działają w pliku, w którym je zdefiniowano - nie przeciekają do importowanych modułów
+   (moduły to osobne pliki, a nie doklejany tekst) ani do kolejnych plików w ferdek --lsp *)
+let builtin_macros = Hashtbl.copy macros
+let reset_macros () =
+  Hashtbl.reset macros;
+  Hashtbl.iter (Hashtbl.replace macros) builtin_macros
+
 (* Tokenize macro replacement (simple whitespace split) *)
 let tokenize s =
   let s = String.trim s in
@@ -154,6 +161,7 @@ let process_line line cond_stack =
 (* Preprocess a file *)
 let preprocess_file filename =
   let ic = open_in filename in
+  reset_macros ();
   let result = ref [] in
   let cond_stack = ref [] in
 
@@ -171,11 +179,12 @@ let preprocess_file filename =
   with End_of_file ->
     close_in ic;
     if !cond_stack <> [] then
-      failwith "Unclosed #ifdef/#ifndef";
+      failwith "Niezamknięte #ifdef/#ifndef - brakuje #endif";
     List.rev !result
 
 (* Preprocess a string *)
 let preprocess_string content =
+  reset_macros ();
   let lines = String.split_on_char '\n' content in
   let result = ref [] in
   let cond_stack = ref [] in
@@ -189,6 +198,6 @@ let preprocess_string content =
   ) lines;
 
   if !cond_stack <> [] then
-    failwith "Unclosed #ifdef/#ifndef";
+    failwith "Niezamknięte #ifdef/#ifndef - brakuje #endif";
 
   String.concat "\n" (List.rev !result)
