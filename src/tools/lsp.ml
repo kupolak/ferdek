@@ -164,25 +164,28 @@ let keyword_doc lines tk =
           (* pisownia bez polskich znaków: opis przy polskiej *)
           | None -> Option.bind (List.assoc_opt t Syntax_errors.keywords) doc_of_word)
 
+(* Parametry funkcji zadeklarowanej w tokenie i (nagłówek zaraz po nazwie) *)
+let function_params toks i =
+  let n = Array.length toks in
+  let ps = ref [] and in_params = ref false and j = ref (i + 1) in
+  (try
+    while !j < n do
+      (match toks.(!j).t with
+       | FUNC_RETURNS -> ()
+       | FUNC_PARAMS -> in_params := true
+       | IDENTIFIER p when !in_params -> ps := p :: !ps
+       | ELLIPSIS when !in_params -> ps := "..." :: !ps
+       | COMMA when !in_params -> ()
+       | _ -> raise Exit);
+      incr j
+    done
+  with Exit -> ());
+  List.rev !ps
+
 (* Czym jest nazwa zadeklarowana w tokenie i *)
 let describe toks i name =
-  let n = Array.length toks in
   let kind = match if i > 0 then Some toks.(i - 1).t else None with
-    | Some FUNC_DECL ->
-        let ps = ref [] and in_params = ref false and j = ref (i + 1) in
-        (try
-          while !j < n do
-            (match toks.(!j).t with
-             | FUNC_RETURNS -> ()
-             | FUNC_PARAMS -> in_params := true
-             | IDENTIFIER p when !in_params -> ps := p :: !ps
-             | ELLIPSIS when !in_params -> ps := "..." :: !ps
-             | COMMA when !in_params -> ()
-             | _ -> raise Exit);
-            incr j
-          done
-        with Exit -> ());
-        Printf.sprintf "funkcja %s(%s)" name (String.concat ", " (List.rev !ps))
+    | Some FUNC_DECL -> Printf.sprintf "funkcja %s(%s)" name (String.concat ", " (function_params toks i))
     | Some CLASS -> "klasa " ^ name
     | Some STRUCT -> "mebel (struktura) " ^ name
     | Some UNION -> "unia " ^ name
@@ -535,6 +538,52 @@ let publish ~diagnose uri text =
             "source", `String "ferdek"; "message", `String msg]) found in
   notify "textDocument/publishDiagnostics" (`Assoc ["uri", `String uri; "diagnostics", `List (diags @ warn_diags)])
 
+(* Podpowiedź argumentów: najbliższy niezamknięty nawias przed kursorem, nazwa przed nim i liczba
+   przecinków. Wbudowane - sygnatura z opisów słów, funkcje programu i modułów - z nagłówka. *)
+let signature_help ~find_module dir toks lines line ch =
+  let text l = if l < Array.length lines then lines.(l) else "" in
+  let before tk =
+    tk.line - 1 < line || (tk.line - 1 = line && utf16_of_bytes (text line) (tk.col + tk.len) <= ch) in
+  let stack = ref [] in
+  Array.iteri (fun i tk ->
+    if before tk then match tk.t with
+      | LPAREN ->
+          let name = if i > 0 then (match toks.(i - 1).t with IDENTIFIER n -> Some (n, i - 1) | _ -> None) else None in
+          stack := (name, ref 0) :: !stack
+      | RPAREN -> (match !stack with _ :: r -> stack := r | [] -> ())
+      | COMMA -> (match !stack with (_, k) :: _ -> incr k | [] -> ())
+      | _ -> ()) toks;
+  let signature label params doc active =
+    `Assoc ["signatures", `List [`Assoc ([
+              "label", `String label;
+              "parameters", `List (List.map (fun p -> `Assoc ["label", `String p]) params)]
+              @ (match doc with Some d -> ["documentation", `String d] | None -> []))];
+            "activeSignature", `Int 0;
+            (* po "..." każdy kolejny argument to ta sama pozycja *)
+            "activeParameter", `Int (if params <> [] && List.nth params (List.length params - 1) = "..."
+                                     then min active (List.length params - 1) else active)] in
+  match !stack with
+  | (Some (name, i), k) :: _ ->
+      (match doc_of_word name with
+       | Some (_, insert, doc, true) ->
+           let params = match String.index_opt insert '(' with
+             | Some a when String.length insert > a + 2 ->
+                 String.split_on_char ',' (String.sub insert (a + 1) (String.length insert - a - 2))
+                 |> List.map String.trim
+             | _ -> [] in
+           signature insert params (Some doc) !k
+       | _ ->
+           let from toks d = let ps = function_params toks d in
+             signature (Printf.sprintf "%s(%s)" name (String.concat ", " ps)) ps None !k in
+           match resolve toks.(i).scope name with
+           | Some (_, d) when is_function_decl toks d -> from toks d
+           | Some _ -> `Null
+           | None ->
+               match module_decl ~find_module dir toks name with
+               | Some (_, _, mtoks, d) when is_function_decl mtoks d -> from mtoks d
+               | _ -> `Null)
+  | _ -> `Null
+
 (* Uzupełnianie: słowa kluczowe, wbudowane, nazwy z pliku i z modułów JAKO.
    Słowa wielowyrazowe podmieniają to, co już napisano ("W MO" -> "W MORDĘ JEŻA"). *)
 let completion ~find_module dir toks lines line ch =
@@ -641,6 +690,7 @@ let run ~diagnose ~find_module () =
                   "renameProvider", `Bool true;
                   "hoverProvider", `Bool true;
                   "documentFormattingProvider", `Bool true;
+                  "signatureHelpProvider", `Assoc ["triggerCharacters", `List [`String "("; `String ","]];
                   "semanticTokensProvider", `Assoc [
                     "legend", `Assoc ["tokenTypes", `List (List.map (fun s -> `String s) token_types);
                                       "tokenModifiers", `List (List.map (fun s -> `String s) token_modifiers)];
@@ -696,6 +746,9 @@ let run ~diagnose ~find_module () =
           | "textDocument/semanticTokens/full" ->
               let text = Option.value (Hashtbl.find_opt docs (doc_uri ())) ~default:"" in
               reply id (`Assoc ["data", `List (List.map (fun n -> `Int n) (semantic_tokens text))])
+          | "textDocument/signatureHelp" ->
+              let uri, lines, toks, line, ch = at_cursor () in
+              reply id (signature_help ~find_module (dir_of uri) toks lines line ch)
           | "textDocument/formatting" ->
               (* jak ferdek --fmt; jedna zmiana na cały dokument, brak zmian - pusta lista *)
               let uri = doc_uri () in

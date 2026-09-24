@@ -208,6 +208,14 @@ check("kolor: wbudowana", tok(find(20, "ILE MIEJSCA NA KANAPIE")), ("ILE MIEJSCA
 check("kolor: tekst", tok((20, LINES[20].index('"a"'))), ('"a"', "string", []))
 check("kolor: liczba", tok((2, LINES[2].index("1"))), ("1", "number", []))
 
+# Podpowiedź argumentów: funkcja programu (drugi argument) i wbudowana
+sh = send("textDocument/signatureHelp", at((19, LINES[19].index("2)"))))["result"]
+check("argumenty funkcji", (sh["signatures"][0]["label"], sh["activeParameter"]), ("f(x, żółw)", 1))
+sh = send("textDocument/signatureHelp", at((20, LINES[20].index('"a"'))))["result"]
+check("argumenty wbudowanej", (sh["signatures"][0]["label"], [p["label"] for p in sh["signatures"][0]["parameters"]],
+                               sh["activeParameter"]), ("ILE MIEJSCA NA KANAPIE(tekst)", ["tekst"], 0))
+check("poza wywołaniem", send("textDocument/signatureHelp", at((0, 3)))["result"], None)
+
 # Formatowanie: jak ferdek --fmt, jedna zmiana na cały dokument
 FURI = "file:///fmt.ferdek"
 UGLY = "CO JEST KURDE\nNO JAK NIE JAK TAK 1 ŁYSA PAŁA 2\nPANIE SENSACJA REWELACJA 1\nDO CHAŁUPY ALE JUŻ\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n"
