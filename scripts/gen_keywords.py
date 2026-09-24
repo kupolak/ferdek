@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Generuje z src/lexer.mll wszystko, co opisuje słowa kluczowe:
   - docs/JEZYK.md - słownik języka,
-  - dla rozszerzenia VS Code: gramatykę TextMate (kolorowanie) i keywords.json.
+  - src/keyword_docs.ml - opisy dla ferdek --lsp (podpowiedzi, uzupełnianie),
+  - dla rozszerzenia VS Code: gramatykę TextMate (kolorowanie); opisy i uzupełnianie daje ferdek --lsp
+    z src/keyword_docs.ml.
 
 Lekser jest jedynym źródłem prawdy o słowach kluczowych - uruchom po każdej zmianie:
     python3 scripts/gen_keywords.py [ferdek-vscode]
@@ -423,5 +425,4 @@ if __name__ == "__main__":
     if sys.argv[1:]:
         ext = Path(sys.argv[1])
         (ext / "syntaxes" / "ferdek.tmLanguage.json").write_text(dump(grammar()), encoding="utf-8")
-        (ext / "keywords.json").write_text(dump(keyword_docs()), encoding="utf-8")
         check_snippets(ext / "snippets" / "ferdek.json")
