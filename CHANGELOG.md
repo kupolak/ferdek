@@ -51,6 +51,9 @@
   hold them; a Leibniz-series loop: 0.20 s -> 0.02 s), and so do results of builtins that always
   give numbers (`ILE NA WERSALCE`, `SINUS ZE SKRZYNKI`, ...). Array indexing with a whole-number
   index and comparisons in conditions skip the boxing too (bubble sort: 0.55 s -> 0.43 s).
+- Whole numbers have 63 bits and wrap around on overflow the same way in both modes (compiled C
+  used 64 bits). Shifts right are logical in both, a shift by less than 0 or more than 62 bits is
+  an error, and text with a number outside that range is not a number.
 - `ZRÓB DŁUGI` / `ZAMIEŃ NA FIXED` on a number too big for a whole number (or NaN) is an error
   in both modes; before, the result depended on the mode and the processor.
 - C compiler warnings about the generated code are no longer shown.

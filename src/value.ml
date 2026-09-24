@@ -291,6 +291,9 @@ let eval_bitwise_op op v1 v2 =
     | BitAnd -> n1 land n2
     | BitOr -> n1 lor n2
     | BitXor -> n1 lxor n2
+    (* poza 0..62 OCaml daje przypadkowy wynik - jak w C: błąd *)
+    | BitShiftLeft | BitShiftRight when n2 < 0 || n2 > 62 ->
+        raise (RuntimeError (Printf.sprintf "Przesunięcie o %d bitów - można od 0 do 62" n2))
     | BitShiftLeft -> n1 lsl n2
     | BitShiftRight -> n1 lsr n2
   )

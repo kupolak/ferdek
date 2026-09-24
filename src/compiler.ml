@@ -516,9 +516,7 @@ let rec compile_expr ctx expr =
   | LogicalOp (e1, op, e2) ->
       Printf.sprintf "%s(%s, %s)" (match op with And -> "logic_and" | Or -> "logic_or")
         (compile_expr ctx e1) (compile_expr ctx e2)
-  | BitwiseOp (e1, op, e2) ->
-      Printf.sprintf "make_int(to_int(%s) %s to_int(%s))"
-        (compile_expr ctx e1) (bitwise_c op) (compile_expr ctx e2)
+  | BitwiseOp _ -> Printf.sprintf "make_int(%s)" (compile_int ctx expr)
   | BitwiseNot e -> Printf.sprintf "make_int(~to_int(%s))" (compile_expr ctx e)
   | LogicalNot e -> Printf.sprintf "make_bool(!to_bool(%s))" (compile_expr ctx e)
   | ArrayLiteral [] -> "make_array(NULL, 0)"
@@ -526,7 +524,7 @@ let rec compile_expr ctx expr =
       Printf.sprintf "make_array((FerdekValue[]){%s}, %d)"
         (String.concat ", " (List.map (compile_expr ctx) es)) (List.length es)
   | ToFixed e -> Printf.sprintf "to_fixed(%s)" (compile_expr ctx e)
-  | FromFixed e -> Printf.sprintf "make_int(to_int(%s) >> 16)" (compile_expr ctx e)
+  | FromFixed e -> Printf.sprintf "make_int(ishr(to_int(%s), 16))" (compile_expr ctx e)
   | ArrayAccess (arr, idx) ->
       Printf.sprintf "index_get(%s, %s)" (compile_expr ctx arr) (compile_expr ctx idx)
   | FunctionCall (name, args) -> compile_call ctx name args
@@ -576,11 +574,13 @@ and compile_int ctx e =
   | BinaryOp (a, op, b) when is_int env e ->
       let a = compile_int ctx a and b = compile_int ctx b in
       (match op with
-       | Plus -> Printf.sprintf "(%s + %s)" a b
-       | Minus -> Printf.sprintf "(%s - %s)" a b
-       | Multiply -> Printf.sprintf "(%s * %s)" a b
+       | Plus -> Printf.sprintf "iadd(%s, %s)" a b
+       | Minus -> Printf.sprintf "isub(%s, %s)" a b
+       | Multiply -> Printf.sprintf "imul(%s, %s)" a b
        | Divide -> Printf.sprintf "int_div(%s, %s)" a b
        | Modulo -> Printf.sprintf "int_mod(%s, %s)" a b)
+  | BitwiseOp (a, BitShiftLeft, b) -> Printf.sprintf "ishl(%s, %s)" (arg a) (arg b)
+  | BitwiseOp (a, BitShiftRight, b) -> Printf.sprintf "ishr(%s, %s)" (arg a) (arg b)
   | BitwiseOp (a, op, b) -> Printf.sprintf "(%s %s %s)" (arg a) (bitwise_c op) (arg b)
   | BitwiseNot a -> Printf.sprintf "(~%s)" (arg a)
   | FunctionCall (f, args) when List.mem f int_builtins -> compile_call_generic ctx f args ^ ".value.int_val"
@@ -735,10 +735,10 @@ and compile_stmt ctx indent stmt =
       let setup, body_code = loop_body ctx indent body in
       let loop =
         if List.mem var ctx.ints then
-          Printf.sprintf "%sfor (%s = for_start%s; for_step%s > 0 ? %s <= for_stop%s : %s >= for_stop%s; %s += for_step%s) {"
-            ind v n n v n v n v n
+          Printf.sprintf "%sfor (%s = for_start%s; for_step%s > 0 ? %s <= for_stop%s : %s >= for_stop%s; %s = iadd(%s, for_step%s)) {"
+            ind v n n v n v n v v n
         else
-          Printf.sprintf "%sfor (%s = make_int(for_start%s); for_step%s > 0 ? to_int(%s) <= for_stop%s : to_int(%s) >= for_stop%s; %s = make_int(to_int(%s) + for_step%s)) {"
+          Printf.sprintf "%sfor (%s = make_int(for_start%s); for_step%s > 0 ? to_int(%s) <= for_stop%s : to_int(%s) >= for_stop%s; %s = make_int(iadd(to_int(%s), for_step%s))) {"
             ind v n n v n v n v v n in
       String.concat "\n" [
         ind ^ "{";
@@ -1139,11 +1139,58 @@ static FerdekValue make_array(FerdekValue* data, int length) {
     return v;
 }
 
+/* Liczby całkowite jak w interpreterze (OCaml): 63 bity, przepełnienie zawija. Wartość trzymamy
+   w long long rozszerzoną znakiem z bitu 62; działania liczymy na unsigned (bez UB) i obcinamy. */
+#define FERDEK_INT_MAX 4611686018427387903LL
+#define FERDEK_INT_MIN (-FERDEK_INT_MAX - 1)
+static inline long long w63(unsigned long long x) { return (long long)(x << 1) >> 1; }
+/* Szybka ścieżka: wynik w zakresie (prawie zawsze) - zwykłe działanie; inaczej zawijamy */
+#define FERDEK_FITS(r) ((r) >= FERDEK_INT_MIN && (r) <= FERDEK_INT_MAX)
+/* (zmierzone: szybsze niż samo przycinanie przesunięciami i niż porównanie zakresu) */
+static inline long long iadd(long long a, long long b) {
+    long long r;
+    if (__builtin_expect(!__builtin_add_overflow(a, b, &r) && FERDEK_FITS(r), 1)) return r;
+    return w63((unsigned long long)a + (unsigned long long)b);
+}
+static inline long long isub(long long a, long long b) {
+    long long r;
+    if (__builtin_expect(!__builtin_sub_overflow(a, b, &r) && FERDEK_FITS(r), 1)) return r;
+    return w63((unsigned long long)a - (unsigned long long)b);
+}
+static inline long long imul(long long a, long long b) {
+    long long r;
+    if (__builtin_expect(!__builtin_mul_overflow(a, b, &r) && FERDEK_FITS(r), 1)) return r;
+    return w63((unsigned long long)a * (unsigned long long)b);
+}
+static inline long long int_div(long long a, long long b) {
+    if (b == 0) ferdek_die("Dzielenie przez zero");
+    if (b == -1) return isub(0, a);   /* min_int / -1: w OCamlu zawija, w C to awaria */
+    return a / b;
+}
+static inline long long int_mod(long long a, long long b) {
+    if (b == 0) ferdek_die("Reszta z dzielenia przez zero");
+    if (b == -1) return 0;
+    return a % b;
+}
+static inline void check_shift(long long n) {
+    if (n < 0 || n > 62) ferdek_die("Przesunięcie o %lld bitów - można od 0 do 62", n);
+}
+static inline long long ishl(long long a, long long n) { check_shift(n); return w63((unsigned long long)a << n); }
+/* lsr w OCamlu: przesunięcie logiczne 63-bitowej liczby */
+static inline long long ishr(long long a, long long n) {
+    check_shift(n);
+    return w63(((unsigned long long)a & 0x7FFFFFFFFFFFFFFFULL) >> n);
+}
+
+/* Tekst jako liczba: tylko zapis dziesiętny w zakresie int OCamla - jak decimal_of_string */
 static bool is_decimal(const char* s) {
-    if (*s == '-') s++;
-    if (!*s) return false;
-    for (; *s; s++) if (*s < '0' || *s > '9') return false;
-    return true;
+    const char* p = s;
+    if (*p == '-') p++;
+    if (!*p) return false;
+    for (const char* q = p; *q; q++) if (*q < '0' || *q > '9') return false;
+    errno = 0;
+    long long v = strtoll(s, NULL, 10);
+    return errno == 0 && v >= FERDEK_INT_MIN && v <= FERDEK_INT_MAX;
 }
 
 static bool is_numeric(FerdekValue v) { return v.type != TYPE_STRING || is_decimal(v.value.string_val); }
@@ -1284,7 +1331,7 @@ static const char* str_view(FerdekValue v, char* num, size_t n, char** owned) {
 /* + z tekstem po którejkolwiek stronie skleja - jak w interpreterze */
 static FerdekValue op_add(FerdekValue a, FerdekValue b) {
     /* Szybka ścieżka: dwie liczby całkowite - ten sam wynik co ogólna, bez rozgałęzień */
-    if (a.type == TYPE_INT && b.type == TYPE_INT) return make_int(a.value.int_val + b.value.int_val);
+    if (a.type == TYPE_INT && b.type == TYPE_INT) return make_int(iadd(a.value.int_val, b.value.int_val));
     if (a.type == TYPE_STRING || b.type == TYPE_STRING) {
         char na[32], nb[32];
         char *oa, *ob;
@@ -1302,18 +1349,18 @@ static FerdekValue op_add(FerdekValue a, FerdekValue b) {
         return v;
     }
     if (a.type == TYPE_FLOAT || b.type == TYPE_FLOAT) return make_float(to_float(a) + to_float(b));
-    return make_int(to_int(a) + to_int(b));
+    return make_int(iadd(to_int(a), to_int(b)));
 }
 #define ANY_FLOAT(a, b) ((a).type == TYPE_FLOAT || (b).type == TYPE_FLOAT)
 
 static FerdekValue op_sub(FerdekValue a, FerdekValue b) {
-    if (a.type == TYPE_INT && b.type == TYPE_INT) return make_int(a.value.int_val - b.value.int_val);
-    return ANY_FLOAT(a, b) ? make_float(to_float(a) - to_float(b)) : make_int(to_int(a) - to_int(b));
+    if (a.type == TYPE_INT && b.type == TYPE_INT) return make_int(isub(a.value.int_val, b.value.int_val));
+    return ANY_FLOAT(a, b) ? make_float(to_float(a) - to_float(b)) : make_int(isub(to_int(a), to_int(b)));
 }
 
 static FerdekValue op_mul(FerdekValue a, FerdekValue b) {
-    if (a.type == TYPE_INT && b.type == TYPE_INT) return make_int(a.value.int_val * b.value.int_val);
-    return ANY_FLOAT(a, b) ? make_float(to_float(a) * to_float(b)) : make_int(to_int(a) * to_int(b));
+    if (a.type == TYPE_INT && b.type == TYPE_INT) return make_int(imul(a.value.int_val, b.value.int_val));
+    return ANY_FLOAT(a, b) ? make_float(to_float(a) * to_float(b)) : make_int(imul(to_int(a), to_int(b)));
 }
 
 static FerdekValue op_div(FerdekValue a, FerdekValue b) {
@@ -1322,20 +1369,10 @@ static FerdekValue op_div(FerdekValue a, FerdekValue b) {
         if (d == 0.0) ferdek_die("Dzielenie przez zero");
         return make_float(to_float(a) / d);
     }
-    long long d = to_int(b);
-    if (d == 0) ferdek_die("Dzielenie przez zero");
-    return make_int(to_int(a) / d);
+    return make_int(int_div(to_int(a), to_int(b)));
 }
 
 /* Dzielenie liczb całkowitych bez opakowania - te same komunikaty co op_div/op_mod */
-static inline long long int_div(long long a, long long b) {
-    if (b == 0) ferdek_die("Dzielenie przez zero");
-    return a / b;
-}
-static inline long long int_mod(long long a, long long b) {
-    if (b == 0) ferdek_die("Reszta z dzielenia przez zero");
-    return a % b;
-}
 
 static inline double float_div(double a, double b) {
     if (b == 0.0) ferdek_die("Dzielenie przez zero");
@@ -1353,9 +1390,7 @@ static FerdekValue op_mod(FerdekValue a, FerdekValue b) {
         if (d == 0.0) ferdek_die("Reszta z dzielenia przez zero");
         return make_float(fmod(to_float(a), d));
     }
-    long long d = to_int(b);
-    if (d == 0) ferdek_die("Reszta z dzielenia przez zero");
-    return make_int(to_int(a) % d);
+    return make_int(int_mod(to_int(a), to_int(b)));
 }
 
 /* Jak w interpreterze: tekst z tekstem porównujemy jako tekst; tekst z liczbą
@@ -1544,7 +1579,8 @@ static FerdekValue deref(FerdekValue p) {
 /* KROK DALEJ / WSTECZ - jak w interpreterze: wskaźnik się nie przesuwa, liczby się dodają */
 static FerdekValue pointer_step(FerdekValue a, FerdekValue b, int dir) {
     if (a.type == TYPE_POINTER && b.type == TYPE_INT) return a;
-    if (a.type == TYPE_INT && b.type == TYPE_INT) return make_int(a.value.int_val + dir * b.value.int_val);
+    if (a.type == TYPE_INT && b.type == TYPE_INT)
+        return make_int(dir > 0 ? iadd(a.value.int_val, b.value.int_val) : isub(a.value.int_val, b.value.int_val));
     ferdek_die("Nieprawidłowe działanie na wskaźniku");
     return make_null();
 }
@@ -1870,7 +1906,7 @@ static FerdekValue b_zrob_dlugi(int argc, FerdekValue* argv) {
 }
 
 static FerdekValue to_fixed(FerdekValue v) {
-    return v.type == TYPE_FLOAT ? make_int(float_to_int("ZAMIEŃ NA FIXED", v.value.float_val * 65536.0)) : make_int(to_int(v) << 16);
+    return v.type == TYPE_FLOAT ? make_int(float_to_int("ZAMIEŃ NA FIXED", v.value.float_val * 65536.0)) : make_int(ishl(to_int(v), 16));
 }
 static FerdekValue b_zrob_ulamek(int argc, FerdekValue* argv) { return make_typed(TYPE_FIXED, to_int(argv[0]) * 65536); }
 
