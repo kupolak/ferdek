@@ -57,13 +57,21 @@ let analyze text =
   let n = Array.length toks in
   let ident i = if i < n then (match toks.(i).t with IDENTIFIER s -> Some s | _ -> None) else None in
   let blocks = ref [global] in      (* klasy i funkcje; zamyka je DO WIDZENIA PANU *)
-  let lambdas = ref [] in           (* ponytail: parametr lambdy widać do końca linii, bez śledzenia wyrażenia *)
+  (* lambdy z wyrażeniem: zasięg i liczba otwartych nawiasów od początku lambdy. Ciało kończy się
+     na "," albo ")" na jej poziomie (argument wywołania) albo na końcu linii *)
+  let lambdas = ref [] in
   let classes = ref [] in           (* id zasięgów klas *)
   let record = ref false and enum = ref false and params = ref false in
   let block () = List.hd !blocks in
   for i = 0 to n - 1 do
     if i > 0 && toks.(i).line <> toks.(i - 1).line then lambdas := [];
-    let cur = match !lambdas with s :: _ -> s | [] -> block () in
+    (match toks.(i).t with
+     | COMMA | RPAREN ->
+         while (match !lambdas with (_, d) :: _ -> !d = 0 | [] -> false) do lambdas := List.tl !lambdas done;
+         if toks.(i).t = RPAREN then (match !lambdas with (_, d) :: _ -> decr d | [] -> ())
+     | LPAREN -> List.iter (fun (_, d) -> incr d) !lambdas
+     | _ -> ());
+    let cur = match !lambdas with (s, _) :: _ -> s | [] -> block () in
     toks.(i).scope <- cur;
     (match toks.(i).t with
      | IDENTIFIER _ | COMMA | ELLIPSIS when !params -> ()
@@ -95,7 +103,7 @@ let analyze text =
           toks.(k).scope <- s;
           (match toks.(k).t with IDENTIFIER p -> declare s p k | _ -> ())
         done;
-        if block_body then blocks := s :: !blocks else lambdas := s :: !lambdas
+        if block_body then blocks := s :: !blocks else lambdas := (s, ref 0) :: !lambdas
     | _ -> ()
   done;
   (* Przypisanie do nieznanej nazwy tworzy zmienną w bieżącej funkcji (albo globalną).

@@ -216,6 +216,18 @@ check("argumenty wbudowanej", (sh["signatures"][0]["label"], [p["label"] for p i
                                sh["activeParameter"]), ("ILE MIEJSCA NA KANAPIE(tekst)", ["tekst"], 0))
 check("poza wywołaniem", send("textDocument/signatureHelp", at((0, 3)))["result"], None)
 
+# Lambda z wyrażeniem jako argument: jej parametr kończy się na ")" wywołania
+LURI = "file:///lambda.ferdek"
+LAM = ("CO JEST KURDE\nCYCU PRZYNIEŚ NO x\nTO NIE SĄ TANIE RZECZY 5\n"
+       "PANIE SENSACJA REWELACJA W MORDĘ JEŻA ZSUMUJ WERSALKĘ(W MORDĘ JEŻA PRZERABIAJ WERSALKĘ([1, 2], "
+       "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2)) BABKA DAWAJ RENTĘ x\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n")
+send("textDocument/didOpen", {"textDocument": {"uri": LURI, "text": LAM}}, request=False)
+l3 = LAM.split("\n")[3]
+d = send("textDocument/definition", at((3, l3.rindex("x")), LURI))["result"]
+check("po lambdzie - globalna", d["range"]["start"]["line"], 1)
+d = send("textDocument/definition", at((3, l3.index("x ROZDUPCĘ")), LURI))["result"]
+check("w lambdzie - parametr", d["range"]["start"]["line"], 3)
+
 # Formatowanie: jak ferdek --fmt, jedna zmiana na cały dokument
 FURI = "file:///fmt.ferdek"
 UGLY = "CO JEST KURDE\nNO JAK NIE JAK TAK 1 ŁYSA PAŁA 2\nPANIE SENSACJA REWELACJA 1\nDO CHAŁUPY ALE JUŻ\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n"
