@@ -117,16 +117,22 @@ let compiled_function (fdecl : function_decl) =
       body = !compile_block_ref cx fdecl.body;
       defaults = List.map (fun (p, e) -> (p, !compile_expr_ref cx e)) fdecl.defaults })
 
-(* Wywołanie funkcji użytkownika z gotowymi wartościami argumentów (też z builtinów, np. sortowania) *)
-let apply_function name (fdecl : function_decl) closure_env arg_values =
-  let cf = compiled_function fdecl in
-  let slots = Array.make cf.nslots unset in
+(* Sloty nowego wywołania: małe tablice literałem (bez wywołania C jak Array.make) *)
+let new_slots = function
+  | 0 -> [||] | 1 -> [| unset |] | 2 -> [| unset; unset |] | 3 -> [| unset; unset; unset |]
+  | 4 -> [| unset; unset; unset; unset |] | 5 -> [| unset; unset; unset; unset; unset |]
+  | 6 -> [| unset; unset; unset; unset; unset; unset |]
+  | n -> Array.make n unset
+
+(* Wywołanie funkcji użytkownika z gotowymi wartościami argumentów; cf - jej skompilowana postać *)
+let apply_compiled name (fdecl : function_decl) cf closure_env arg_values =
+  let slots = new_slots cf.nslots in
   (* Lambda: złapane zmienne kopiujemy do środowiska wywołania, a jego rodzicem jest globalne -
      każde wywołanie zaczyna od tych samych kopii, przypisanie do globalnej działa jak w funkcji *)
   let func_env = match closure_env.parent with
     | Some global when Vars.mem closure_env.vars lambda_marker ->
         { vars = Vars.copy closure_env.vars; parent = Some global; slots; layout = cf.layout }
-    | _ -> { vars = Vars.create 1; parent = Some closure_env; slots; layout = cf.layout } in
+    | _ -> { vars = no_vars; parent = Some closure_env; slots; layout = cf.layout } in
   let num_params = Array.length cf.param_slots in
   let num_args = List.length arg_values in
   if fdecl.is_variadic then begin
@@ -147,9 +153,9 @@ let apply_function name (fdecl : function_decl) closure_env arg_values =
     List.iteri (fun i v -> slots.(cf.param_slots.(i)) <- v) arg_values
   end;
   (* Execute function body; po powrocie pozycja wraca do instrukcji wołającej *)
-  let caller_loc = !current_loc in
+  let caller_loc = !loc_id in
   let caller_stack = !call_stack in
-  call_stack := (fdecl.name, caller_loc) :: caller_stack;
+  call_stack := (fdecl.name, !locs.(caller_loc)) :: caller_stack;
   (* brakujące argumenty: wartości domyślne, liczone już w funkcji (widzą wcześniejsze parametry) *)
   if num_args < num_params then
     List.iteri (fun i p ->
@@ -165,9 +171,13 @@ let apply_function name (fdecl : function_decl) closure_env arg_values =
     | BreakLoop -> raise (Fatal "A POCAŁUJCIE MNIE WSZYSCY W DUPĘ poza pętlą")
     | ContinueLoop -> raise (Fatal "AKUKARACZA poza pętlą"))
   in
-  current_loc := caller_loc;
+  loc_id := caller_loc;
   call_stack := caller_stack;
   result
+
+(* Wywołanie z gotowymi wartościami argumentów (też z builtinów, np. sortowania) *)
+let apply_function name fdecl closure_env arg_values =
+  apply_compiled name fdecl (compiled_function fdecl) closure_env arg_values
 
 (* ============ OBIEKTY ============ *)
 
@@ -400,6 +410,8 @@ and compile_call cx name args : code =
   | Some (_, impl) -> fun env -> impl env cargs
   | None ->
       let r = reader cx name in
+      (* skompilowana funkcja ostatnio wołana stąd - zwykle ciągle ta sama *)
+      let last = ref None in
       fun env ->
         let f = try r env with RuntimeError _ ->
           (* nieznana nazwa: podpowiedź z funkcji i zmiennych programu oraz wbudowanych *)
@@ -407,7 +419,10 @@ and compile_call cx name args : code =
             (visible_names env @ Vars.fold (fun n _ acc -> n :: acc) builtins []))) in
         match f with
         | VFunction (fdecl, closure_env) ->
-            apply_function name fdecl closure_env (List.map (fun c -> c env) cargs)
+            let cf = match !last with
+              | Some (d, cf) when d == fdecl -> cf
+              | _ -> let cf = compiled_function fdecl in last := Some (fdecl, cf); cf in
+            apply_compiled name fdecl cf closure_env (List.map (fun c -> c env) cargs)
         | _ -> raise (RuntimeError (Printf.sprintf "%s to nie funkcja" name))
 
 (* ============ INSTRUKCJE ============ *)
@@ -565,10 +580,10 @@ and compile_stmt cx : stmt -> scode = function
           | exception e ->
               (* sprzątanie, potem to samo dalej (błąd, wyjątek, return, break); pozycja błędu jak
                  przed sprzątaniem, ścieżka wywołań - od poziomu bloku (jak w C) *)
-              let loc = !current_loc in
+              let loc = !loc_id in
               call_stack := entry_stack;
               finally_code env;
-              current_loc := loc;
+              loc_id := loc;
               raise e
         end
 
@@ -577,9 +592,9 @@ and compile_stmt cx : stmt -> scode = function
       fun env -> raise (ThrowException (c env))
 
   | Located (file, line, s) ->
-      let loc = (file, line) and c = compile_stmt cx s in
+      let id = register_loc (file, line) and c = compile_stmt cx s in
       fun env ->
-        current_loc := loc;
+        loc_id := id;
         (match !stmt_hook with Some hook -> hook file line env | None -> ());
         c env
 

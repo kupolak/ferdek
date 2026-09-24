@@ -72,7 +72,7 @@ let run ~parse ~load_module () =
   (* ramki: od najgłębszej - (nazwa, plik, linia) *)
   let frames () =
     let names = List.map fst !call_stack @ ["program"] in
-    let locs = !current_loc :: List.map snd !call_stack in
+    let locs = current_loc () :: List.map snd !call_stack in
     List.map2 (fun n (f, l) -> (n, f, l)) names locs in
   let vars_of e =
     List.filter (fun (n, v) -> match v with

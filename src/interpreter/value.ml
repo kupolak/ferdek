@@ -114,11 +114,32 @@ and environment = {
   layout: int Vars.t;
 }
 
-(* Plik i linia wykonywanej instrukcji - doklejane do komunikatu błędu *)
-let current_loc = ref ("", 0)
+(* Plik i linia wykonywanej instrukcji - doklejane do komunikatu błędu. Trzymamy numer miejsca
+   z tabeli (loc_id), bo zapis liczby przy każdej instrukcji nie przechodzi przez barierę
+   odśmiecacza, a zapis pary (plik, linia) tak. *)
+let locs = ref [| ("", 0) |]
+let loc_count = ref 1
+let loc_ids : (string * int, int) Hashtbl.t = Hashtbl.create 64
+let loc_id = ref 0
+
+(* Numer miejsca (ten sam dla tej samej pary) *)
+let register_loc loc =
+  match Hashtbl.find_opt loc_ids loc with
+  | Some id -> id
+  | None ->
+      if !loc_count = Array.length !locs then
+        locs := Array.append !locs (Array.make (Array.length !locs) ("", 0));
+      let id = !loc_count in
+      !locs.(id) <- loc;
+      incr loc_count;
+      Hashtbl.replace loc_ids loc id;
+      id
+
+let current_loc () = !locs.(!loc_id)
+let set_loc loc = loc_id := register_loc loc
 
 let loc_suffix () =
-  match !current_loc with
+  match current_loc () with
   | (_, 0) -> ""
   | ("", line) -> Printf.sprintf " (linia %d)" line
   | (file, line) -> Printf.sprintf " (%s, linia %d)" file line
@@ -156,6 +177,10 @@ let unset = VString "(unset)"
 
 (* Wspólny pusty układ dla środowisk bez slotów (globalne, obiekt, catch) - nigdy nie zmieniany *)
 let no_layout : int Vars.t = Vars.create 1
+
+(* Wspólna pusta tablica zmiennych wywołania funkcji: prawdziwą zakładamy dopiero przy pierwszej
+   zmiennej spoza slotów (define_var_h) - zwykle nigdy *)
+let no_vars : value Vars.t = Vars.create 1
 
 (* Create a new environment *)
 let create_env parent =
@@ -227,7 +252,9 @@ let get_var env name = get_var_h env name (Vars.hash name)
 let define_var_h env name h value =
   match Vars.find_h env.layout name h with
   | Some i -> env.slots.(i) <- value
-  | None -> Vars.replace_h env.vars name h value
+  | None ->
+      if env.vars == no_vars then env.vars <- Vars.create 8;
+      Vars.replace_h env.vars name h value
 
 let define_var env name value = define_var_h env name (Vars.hash name) value
 
@@ -250,6 +277,7 @@ let set_var_h env name h value =
 let set_var env name value = set_var_h env name (Vars.hash name) value
 
 (* ============ VALUE OPERATIONS ============ *)
+
 
 (* Convert value to string *)
 (* Liczba z przecinkiem jako tekst - ten sam format co runtime C (%.15g, "2.0" zamiast "2") *)

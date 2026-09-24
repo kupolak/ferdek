@@ -93,7 +93,7 @@ let new_session () =
   global_env ()
 
 let eval_in env prog =
-  current_loc := ("", 0);
+  loc_id := 0;
   call_stack := [];
   try
     List.iter (eval_top_level_decl env) prog.declarations;
@@ -114,4 +114,4 @@ let eval_in env prog =
 let eval_program prog = eval_in (new_session ()) prog
 
 (* Linia z błędem i ścieżka wywołań - po Error z eval_in *)
-let error_context () = Source_texts.context !current_loc !call_stack
+let error_context () = Source_texts.context (current_loc ()) !call_stack
