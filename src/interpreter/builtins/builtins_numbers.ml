@@ -91,6 +91,41 @@ let register () = add [
 
   ["COSINUS ZE SKRZYNKI"], Some 1, (fun env args -> VFloat (cos (to_float (eval_expr env (List.hd args)))));
 
+  ["TANGENS ZE SKRZYNKI"], Some 1, (fun env args -> VFloat (tan (to_float (eval_expr env (List.hd args)))));
+
+  (* POTĘGA ZE SKRZYNKI(a, b) - całkowite do nieujemnej całkowitej: całkowita (zawija jak mnożenie);
+     inaczej liczba z przecinkiem *)
+  ["POTĘGA ZE SKRZYNKI"], Some 2, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [a; b] when not (is_float a || is_float b) && to_int b >= 0 ->
+          let rec pow acc x n = if n = 0 then acc else pow (if n land 1 = 1 then acc * x else acc) (x * x) (n lsr 1) in
+          VInt (pow 1 (to_int a) (to_int b))
+      | [a; b] -> VFloat (Float.pow (to_float a) (to_float b))
+      | _ -> VNull);
+
+  (* LOGARYTM ZE SKRZYNKI(x) - logarytm naturalny; dziesiętny to LOGARYTM(x) / LOGARYTM(10) *)
+  ["LOGARYTM ZE SKRZYNKI"], Some 1, (fun env args ->
+      let x = to_float (eval_expr env (List.hd args)) in
+      if not (x > 0.0) then raise (RuntimeError "LOGARYTM ZE SKRZYNKI: liczba musi być większa od zera");
+      VFloat (log x));
+
+  (* PODŁOGA / SUFIT ZE SKRZYNKI(x) - zaokrąglenie w dół / w górę do liczby całkowitej *)
+  ["PODŁOGA ZE SKRZYNKI"], Some 1, (fun env args ->
+      match eval_expr env (List.hd args) with
+      | VFloat f -> VInt (float_to_int "PODŁOGA ZE SKRZYNKI" (Float.floor f))
+      | v -> VInt (to_int v));
+
+  ["SUFIT ZE SKRZYNKI"], Some 1, (fun env args ->
+      match eval_expr env (List.hd args) with
+      | VFloat f -> VInt (float_to_int "SUFIT ZE SKRZYNKI" (Float.ceil f))
+      | v -> VInt (to_int v));
+
+  (* MODUŁ ZE SKRZYNKI(x) - wartość bezwzględna, typ jak argument *)
+  ["MODUŁ ZE SKRZYNKI"], Some 1, (fun env args ->
+      match eval_expr env (List.hd args) with
+      | VFloat f -> VFloat (Float.abs f)
+      | v -> let n = to_int v in VInt (if n < 0 then - n else n));
+
   (* PO PIERWSZE PRIMO(x, miejsca) - liczba jako tekst z ustaloną liczbą miejsc po przecinku *)
   ["PO PIERWSZE PRIMO"], Some 2, (fun env args ->
       match List.map (eval_expr env) args with

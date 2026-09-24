@@ -283,6 +283,38 @@ static long long float_to_int(const char* what, double f) {
     return (long long)f;
 }
 
+/* Matematyka ZE SKRZYNKI - te same zasady co w interpreterze */
+static FerdekValue b_tangens(int argc, FerdekValue* argv) { return make_float(tan(to_float(argv[0]))); }
+
+static FerdekValue b_potega(int argc, FerdekValue* argv) {
+    if (argv[0].type != TYPE_FLOAT && argv[1].type != TYPE_FLOAT && to_int(argv[1]) >= 0) {
+        long long acc = 1, x = to_int(argv[0]), n = to_int(argv[1]);
+        while (n != 0) { if (n & 1) acc = imul(acc, x); x = imul(x, x); n >>= 1; }
+        return make_int(acc);
+    }
+    return make_float(pow(to_float(argv[0]), to_float(argv[1])));
+}
+
+static FerdekValue b_logarytm(int argc, FerdekValue* argv) {
+    double x = to_float(argv[0]);
+    if (!(x > 0.0)) ferdek_die("LOGARYTM ZE SKRZYNKI: liczba musi być większa od zera");
+    return make_float(log(x));
+}
+
+static FerdekValue b_podloga(int argc, FerdekValue* argv) {
+    return argv[0].type == TYPE_FLOAT ? make_int(float_to_int("PODŁOGA ZE SKRZYNKI", floor(argv[0].value.float_val))) : make_int(to_int(argv[0]));
+}
+
+static FerdekValue b_sufit(int argc, FerdekValue* argv) {
+    return argv[0].type == TYPE_FLOAT ? make_int(float_to_int("SUFIT ZE SKRZYNKI", ceil(argv[0].value.float_val))) : make_int(to_int(argv[0]));
+}
+
+static FerdekValue b_modul(int argc, FerdekValue* argv) {
+    if (argv[0].type == TYPE_FLOAT) return make_float(fabs(argv[0].value.float_val));
+    long long n = to_int(argv[0]);
+    return make_int(n < 0 ? isub(0, n) : n);
+}
+
 static FerdekValue b_zrob_dlugi(int argc, FerdekValue* argv) {
     return argv[0].type == TYPE_FLOAT ? make_int(float_to_int("ZRÓB DŁUGI", argv[0].value.float_val)) : make_int(to_int(argv[0]));
 }

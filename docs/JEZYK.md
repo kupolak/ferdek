@@ -234,6 +234,12 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `PIERWIASTEK ZE SKRZYNKI(x)` | Pierwiastek kwadratowy (wbudowana, bez importu) |
 | `SINUS ZE SKRZYNKI(x)` | Sinus kąta w radianach (wbudowana) |
 | `COSINUS ZE SKRZYNKI(x)` | Cosinus kąta w radianach (wbudowana) |
+| `TANGENS ZE SKRZYNKI(x)` | Tangens kąta w radianach (wbudowana) |
+| `POTĘGA ZE SKRZYNKI(a, b)` | a do potęgi b; całkowite do nieujemnej całkowitej daje całkowitą, inaczej liczbę z przecinkiem |
+| `LOGARYTM ZE SKRZYNKI(x)` | Logarytm naturalny (x > 0); dziesiętny: LOGARYTM(x) / LOGARYTM(10) |
+| `PODŁOGA ZE SKRZYNKI(x)` | Zaokrąglenie w dół do liczby całkowitej |
+| `SUFIT ZE SKRZYNKI(x)` | Zaokrąglenie w górę do liczby całkowitej |
+| `MODUŁ ZE SKRZYNKI(x)` | Wartość bezwzględna (typ jak argument) |
 
 ## KALENDARZ - daty
 

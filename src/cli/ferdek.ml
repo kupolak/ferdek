@@ -311,11 +311,11 @@ let cc c_file exe =
   let gc = match gc_flags () with Some f -> " -DFERDEK_GC " ^ f | None -> "" in
   (* -w: ostrzeżenia o wygenerowanym kodzie (np. x == x z programu) nic nie mówią użytkownikowi.
      -ffp-contract=off: bez łączenia a*b+c w jedno działanie (FMA) - inaczej ostatnie cyfry
-     liczb z przecinkiem różniłyby się od interpretera. -fno-builtin-sin/cos: gcc liczyłby sin stałej
+     liczb z przecinkiem różniłyby się od interpretera. -fno-builtin-sin/cos/tan/log/pow: gcc liczyłby je dla stałych
      już przy kompilacji (dokładniej niż biblioteka, z której korzysta interpreter) *)
   (* FERDEK_CC: inny kompilator C (np. gcc-15), domyślnie systemowe cc *)
   let compiler = match Sys.getenv_opt "FERDEK_CC" with Some c when c <> "" -> c | _ -> "cc" in
-  Sys.command (Printf.sprintf "%s -std=c99 -O2 -ffp-contract=off -fno-builtin-sin -fno-builtin-cos -w -o %s %s -lm%s%s" compiler (Filename.quote exe) (Filename.quote c_file) x11 gc)
+  Sys.command (Printf.sprintf "%s -std=c99 -O2 -ffp-contract=off -fno-builtin-sin -fno-builtin-cos -fno-builtin-tan -fno-builtin-log -fno-builtin-pow -w -o %s %s -lm%s%s" compiler (Filename.quote exe) (Filename.quote c_file) x11 gc)
 
 (* -c: plik .c albo (inne rozszerzenie) gotowa binarka *)
 let compile_file input_file output_file =

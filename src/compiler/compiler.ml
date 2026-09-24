@@ -159,6 +159,12 @@ let builtins = [
   ["PIERWIASTEK ZE SKRZYNKI"], ("b_pierwiastek", Some 1);
   ["SINUS ZE SKRZYNKI"], ("b_sinus", Some 1);
   ["COSINUS ZE SKRZYNKI"], ("b_cosinus", Some 1);
+  ["TANGENS ZE SKRZYNKI"], ("b_tangens", Some 1);
+  ["POTĘGA ZE SKRZYNKI"], ("b_potega", Some 2);
+  ["LOGARYTM ZE SKRZYNKI"], ("b_logarytm", Some 1);
+  ["PODŁOGA ZE SKRZYNKI"], ("b_podloga", Some 1);
+  ["SUFIT ZE SKRZYNKI"], ("b_sufit", Some 1);
+  ["MODUŁ ZE SKRZYNKI"], ("b_modul", Some 1);
   ["OTWÓRZ SZAFKĘ"], ("b_szafka_otworz", None);
   ["WŁÓŻ DO SZAFKI"], ("b_szafka_wloz", Some 3);
   ["WYJMIJ Z SZAFKI"], ("b_szafka_wyjmij", Some 2);

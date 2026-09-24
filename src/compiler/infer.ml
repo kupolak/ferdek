@@ -12,8 +12,10 @@ type tenv = { ivar : string -> bool; fvar : string -> bool; ifun : string -> (bo
 
 (* Wbudowane, które zawsze dają liczbę całkowitą / z przecinkiem (albo kończą się błędem).
    Wbudowana ma pierwszeństwo przed funkcją użytkownika - nazwy nie da się przesłonić. *)
-let int_builtins = ["ILE NA WERSALCE"; "ILE MIEJSCA NA KANAPIE"; "ZRÓB DŁUGI"; "ILE W SZAFCE"]
-let float_builtins = ["SINUS ZE SKRZYNKI"; "COSINUS ZE SKRZYNKI"; "PIERWIASTEK ZE SKRZYNKI"]
+let int_builtins = ["ILE NA WERSALCE"; "ILE MIEJSCA NA KANAPIE"; "ZRÓB DŁUGI"; "ILE W SZAFCE";
+                    "PODŁOGA ZE SKRZYNKI"; "SUFIT ZE SKRZYNKI"]
+let float_builtins = ["SINUS ZE SKRZYNKI"; "COSINUS ZE SKRZYNKI"; "PIERWIASTEK ZE SKRZYNKI"; "TANGENS ZE SKRZYNKI";
+                      "LOGARYTM ZE SKRZYNKI"]
 
 type num = Int | Float | Other
 
