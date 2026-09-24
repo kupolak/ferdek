@@ -442,7 +442,7 @@ and compile_stmt cx : stmt -> scode = function
   | Read name ->
       let w = writer cx name in
       fun env ->
-        let line = read_line () in
+        let line = !read_input () in
         w env (match decimal_of_string line with Some n -> VInt n | None -> VString line)
 
   | Assign (name, expr) ->

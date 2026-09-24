@@ -1,7 +1,8 @@
 (* ferdek --dap: Debug Adapter Protocol (VS Code i inne edytory) na stdin/stdout.
    Silnik jak w --debug (Value.stmt_hook). stdout należy do protokołu, więc to, co wypisuje
    program, idzie do pliku tymczasowego i trafia do edytora jako zdarzenia "output".
-   ponytail: CO TAM U PANA SŁYCHAĆ (wejście) w tym trybie nie działa - stdin to protokół. *)
+   CO TAM U PANA SŁYCHAĆ czyta z "input" (tekst) albo "inputFile" z konfiguracji uruchomienia -
+   stdin to protokół. *)
 
 open Value
 
@@ -91,6 +92,20 @@ let run ~parse ~load_module () =
     | "launch" ->
         let path = args |> member "program" |> to_string in
         stop_on_entry := (try args |> member "stopOnEntry" |> to_bool with _ -> false);
+        (* wejście programu: tekst albo plik; bez nich CO TAM U PANA SŁYCHAĆ zgłasza błąd *)
+        let input = match args |> member "input", args |> member "inputFile" with
+          | `String s, _ -> Some s
+          | _, `String f -> (try Some (In_channel.with_open_bin f In_channel.input_all) with Sys_error _ -> None)
+          | _ -> None in
+        let lines = ref (match input with
+          | Some "" | None -> []
+          | Some s -> String.split_on_char '\n' (if String.ends_with ~suffix:"\n" s then String.sub s 0 (String.length s - 1) else s)) in
+        read_input := (fun () ->
+          if input = None then
+            raise (RuntimeError "CO TAM U PANA SŁYCHAĆ: w debuggerze podaj wejście w konfiguracji (\"input\" albo \"inputFile\")");
+          match !lines with
+          | l :: rest -> lines := rest; l
+          | [] -> raise End_of_file);
         (match parse path with
          | Ok prog -> program := Some prog; respond req true
          | Error msg ->

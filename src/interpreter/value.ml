@@ -142,6 +142,10 @@ exception Fatal of string
    była w chwili błędu; HELENA MAM ZAWAŁ przywraca ją do stanu z wejścia do bloku. *)
 let call_stack : (string * (string * int)) list ref = ref []
 
+(* Wejście dla CO TAM U PANA SŁYCHAĆ: linia bez końca linii, End_of_file na końcu.
+   ferdek --dap podmienia je na tekst z konfiguracji (stdin to tam protokół). *)
+let read_input : (unit -> string) ref = ref read_line
+
 (* Debugger (ferdek --debug): wołany przed każdą instrukcją z plikiem, linią i środowiskiem *)
 let stmt_hook : (string -> int -> environment -> unit) option ref = ref None
 

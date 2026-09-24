@@ -86,6 +86,22 @@ check("kod wyjścia", wait_event("exited")["body"]["exitCode"], 0)
 output = "".join(e["body"]["output"] for e in events if e["event"] == "output")
 check("wyjście programu", output, "Suma: 12\n")
 request("disconnect")
+proc.wait(timeout=5)
+
+# CO TAM U PANA SŁYCHAĆ: wejście z konfiguracji ("input"); bez niego - czytelny błąd, a nie protokół
+WEJSCIE = os.path.abspath("tests/debug/wejscie.ferdek")
+for launch, want in [({"input": "Waldek\n41\n"}, "Cześć Waldek\n42\n"), ({}, "w debuggerze podaj wejście")]:
+    proc = subprocess.Popen([FERDEK, "--dap"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+    events = []
+    request("initialize", {"adapterID": "ferdek"})
+    wait_event("initialized")
+    request("launch", dict({"program": WEJSCIE}, **launch))
+    request("configurationDone")
+    wait_event("exited")
+    output = "".join(e["body"]["output"] for e in events if e["event"] == "output")
+    check(f"wejście {launch}", want in output, True)
+    request("disconnect")
+    proc.wait(timeout=5)
 
 if failures:
     sys.exit(1)
