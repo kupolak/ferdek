@@ -281,6 +281,25 @@ let write_file path content =
   output_string oc content;
   close_out oc
 
+(* Odśmiecacz Boehma (bdw-gc): najpierw pkg-config, potem typowe katalogi (Homebrew, /usr/local,
+   pakiet libgc-dev). Bez niego skompilowany program nie zwalnia pamięci. *)
+let gc_flags () =
+  let from_pkg_config () =
+    try
+      let ic = Unix.open_process_in "pkg-config --cflags --libs bdw-gc 2>/dev/null" in
+      let out = String.trim (try input_line ic with End_of_file -> "") in
+      match Unix.close_process_in ic with
+      | Unix.WEXITED 0 when out <> "" -> Some out
+      | _ -> None
+    with Unix.Unix_error _ -> None in
+  match from_pkg_config () with
+  | Some f -> Some f
+  | None ->
+      List.find_map (fun (inc, lib) ->
+        if Sys.file_exists (Filename.concat inc "gc.h")
+        then Some (Printf.sprintf "-I%s -L%s -lgc" inc lib) else None)
+        ["/opt/homebrew/include", "/opt/homebrew/lib"; "/usr/local/include", "/usr/local/lib"; "/usr/include", "/usr/lib"]
+
 (* cc zamiast gcc: na macOS i Linuksie to domyślny kompilator C *)
 let cc c_file exe =
   (* Program z grafiką (Graphics_source w środku) potrzebuje X11: XQuartz, Homebrew albo systemowe *)
@@ -289,13 +308,7 @@ let cc c_file exe =
     try ignore (Str.search_forward (Str.regexp_string "X11/Xlib.h") code 0);
         " -I/opt/X11/include -I/opt/homebrew/include -I/usr/local/include -L/opt/X11/lib -L/opt/homebrew/lib -L/usr/local/lib -lX11"
     with Not_found -> "" in
-  (* Odśmiecacz Boehma, jeśli jest w systemie (Homebrew, /usr/local, pakiet libgc-dev) *)
-  let gc =
-    List.find_map (fun (inc, lib) ->
-      if Sys.file_exists (Filename.concat inc "gc.h")
-      then Some (Printf.sprintf " -DFERDEK_GC -I%s -L%s -lgc" inc lib) else None)
-      ["/opt/homebrew/include", "/opt/homebrew/lib"; "/usr/local/include", "/usr/local/lib"; "/usr/include", "/usr/lib"]
-    |> Option.value ~default:"" in
+  let gc = match gc_flags () with Some f -> " -DFERDEK_GC " ^ f | None -> "" in
   (* -w: ostrzeżenia o wygenerowanym kodzie (np. x == x z programu) nic nie mówią użytkownikowi.
      -ffp-contract=off: bez łączenia a*b+c w jedno działanie (FMA) - inaczej ostatnie cyfry
      liczb z przecinkiem różniłyby się od interpretera. -fno-builtin-sin/cos: gcc liczyłby sin stałej
@@ -315,6 +328,9 @@ let compile_file input_file output_file =
   | Ok c_code ->
       let c_file = Filename.temp_file "ferdek_" ".c" in
       write_file c_file c_code;
+      if gc_flags () = None then
+        prerr_endline "Uwaga: nie ma odśmiecacza bdw-gc - program nie będzie zwalniał pamięci \
+                       (brew install bdw-gc albo apt install libgc-dev)";
       let rc = cc c_file output_file in
       (try Sys.remove c_file with _ -> ());
       if rc = 0 then begin
