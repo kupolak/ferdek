@@ -124,19 +124,165 @@ let range lines tk =
   let pos b = `Assoc ["line", `Int (tk.line - 1); "character", `Int (utf16_of_bytes text b)] in
   `Assoc ["start", pos tk.col; "end", pos (tk.col + tk.len)]
 
+(* Token pod kursorem; na styku dwóch tokenów wygrywa ten, który się tu zaczyna *)
+let token_at toks lines line ch =
+  if line >= Array.length lines then None else
+  let text = lines.(line) in
+  let span tk = utf16_of_bytes text tk.col, utf16_of_bytes text (tk.col + tk.len) in
+  let on_line = Array.to_list toks |> List.filter (fun tk -> tk.line = line + 1) in
+  match List.find_opt (fun tk -> let a, b = span tk in a <= ch && ch < b) on_line with
+  | Some tk -> Some tk
+  | None -> List.find_opt (fun tk -> snd (span tk) = ch) on_line
+
 (* Nazwa pod kursorem i jej wiązanie (zasięg deklaracji + nazwa) *)
 let binding_at toks lines line ch =
-  let hit = Array.to_list toks |> List.find_opt (fun tk ->
-    match tk.t with
-    | IDENTIFIER _ when tk.line = line + 1 ->
-        let text = lines.(line) in
-        let a = utf16_of_bytes text tk.col and b = utf16_of_bytes text (tk.col + tk.len) in
-        a <= ch && ch <= b
-    | _ -> false) in
-  match hit with
+  match token_at toks lines line ch with
   | Some ({ t = IDENTIFIER name; _ } as tk) ->
       Option.map (fun (s, decl) -> (name, s.id, decl)) (resolve tk.scope name)
   | _ -> None
+
+let root_scope toks =
+  let rec up s = match s.parent with Some p -> up p | None -> s in
+  if Array.length toks = 0 then None else Some (up toks.(0).scope)
+
+let lexeme lines tk =
+  let text = if tk.line - 1 < Array.length lines then lines.(tk.line - 1) else "" in
+  if tk.col >= String.length text then "" else String.sub text tk.col (min tk.len (String.length text - tk.col))
+
+(* ---- opisy: słowa kluczowe i wbudowane (z keyword_docs.ml) oraz nazwy z programu ---- *)
+
+let doc_of_word w = List.find_opt (fun (word, _, _, _) -> word = w) Keyword_docs.entries
+
+let keyword_doc lines tk =
+  match tk.t with
+  | IDENTIFIER n -> doc_of_word n
+  | t -> (match doc_of_word (lexeme lines tk) with
+          | Some d -> Some d
+          (* pisownia bez polskich znaków: opis przy polskiej *)
+          | None -> Option.bind (List.assoc_opt t Syntax_errors.keywords) doc_of_word)
+
+(* Czym jest nazwa zadeklarowana w tokenie i *)
+let describe toks i name =
+  let n = Array.length toks in
+  let kind = match if i > 0 then Some toks.(i - 1).t else None with
+    | Some FUNC_DECL ->
+        let ps = ref [] and in_params = ref false and j = ref (i + 1) in
+        (try
+          while !j < n do
+            (match toks.(!j).t with
+             | FUNC_RETURNS -> ()
+             | FUNC_PARAMS -> in_params := true
+             | IDENTIFIER p when !in_params -> ps := p :: !ps
+             | ELLIPSIS when !in_params -> ps := "..." :: !ps
+             | COMMA when !in_params -> ()
+             | _ -> raise Exit);
+            incr j
+          done
+        with Exit -> ());
+        Printf.sprintf "funkcja %s(%s)" name (String.concat ", " (List.rev !ps))
+    | Some CLASS -> "klasa " ^ name
+    | Some STRUCT -> "mebel (struktura) " ^ name
+    | Some UNION -> "unia " ^ name
+    | Some ENUM -> "lista " ^ name
+    | Some ARRAY_DECL -> "tablica " ^ name
+    | Some FOR -> "zmienna pętli " ^ name
+    | Some CATCH -> "złapany wyjątek " ^ name
+    | Some (FUNC_PARAMS | COMMA | LPAREN) -> "parametr " ^ name
+    | _ -> "zmienna " ^ name in
+  Printf.sprintf "%s (linia %d)" kind toks.(i).line
+
+let is_function_decl toks i = i > 0 && toks.(i - 1).t = FUNC_DECL
+let is_class_decl toks i = i > 0 && toks.(i - 1).t = CLASS
+
+(* ---- importy: O KOGO MOJE PIĘKNE OCZY WIDZĄ ścieżka [JAKO alias] ---- *)
+
+let imports toks =
+  let n = Array.length toks in
+  let out = ref [] in
+  Array.iteri (fun i tk ->
+    if tk.t = IMPORT then begin
+      let parts = ref [] and j = ref (i + 1) in
+      let rec path () =
+        if !j < n then match toks.(!j).t with
+          | IDENTIFIER p -> parts := p :: !parts; incr j;
+              if !j < n && toks.(!j).t = SLASH then (incr j; path ())
+          | _ -> () in
+      path ();
+      let alias = if !j + 1 < n && toks.(!j).t = IMPORT_AS
+                  then (match toks.(!j + 1).t with IDENTIFIER a -> Some a | _ -> None) else None in
+      if !parts <> [] then out := (String.concat "/" (List.rev !parts), alias) :: !out
+    end) toks;
+  List.rev !out
+
+let read_file f = try Some (In_channel.with_open_bin f In_channel.input_all) with Sys_error _ -> None
+
+(* Plik modułu: najpierw obok programu, potem to, co znajdzie ferdek (stdlib) *)
+let module_file ~find_module dir path =
+  let local = Filename.concat dir (path ^ ".ferdek") in
+  if Sys.file_exists local then Some local else find_module path
+
+(* Nazwa z importu: l.nazwa (import JAKO l) albo nazwa z modułu zaimportowanego zwyczajnie.
+   Wynik: plik modułu, jego tekst, tokeny i indeks deklaracji. ponytail: jeden poziom importów *)
+let module_decl ~find_module dir toks name =
+  let candidates = match String.index_opt name '.' with
+    | Some k ->
+        let alias = String.sub name 0 k and rest = String.sub name (k + 1) (String.length name - k - 1) in
+        List.filter_map (fun (p, a) -> if a = Some alias then Some (p, rest) else None) (imports toks)
+    | None -> List.filter_map (fun (p, a) -> if a = None then Some (p, name) else None) (imports toks) in
+  List.find_map (fun (p, n) ->
+    Option.bind (module_file ~find_module dir p) (fun f ->
+      Option.bind (read_file f) (fun text ->
+        let mtoks = analyze text in
+        Option.bind (root_scope mtoks) (fun g ->
+          Option.map (fun i -> (f, text, mtoks, i)) (Hashtbl.find_opt g.decls n))))) candidates
+
+(* Nazwy z modułów zaimportowanych z aliasem, do uzupełniania: (alias.nazwa, tokeny, indeks) *)
+let module_names ~find_module dir toks =
+  List.concat_map (fun (p, alias) ->
+    match alias, module_file ~find_module dir p with
+    | Some a, Some f ->
+        (match read_file f with
+         | None -> []
+         | Some text ->
+             let mtoks = analyze text in
+             match root_scope mtoks with
+             | None -> []
+             | Some g -> Hashtbl.fold (fun n i acc -> (a ^ "." ^ n, mtoks, i) :: acc) g.decls [])
+    | _ -> []) (imports toks)
+
+(* ---- URI <-> ścieżka ---- *)
+
+let path_of_uri uri =
+  let s = if String.length uri > 7 && String.sub uri 0 7 = "file://" then String.sub uri 7 (String.length uri - 7) else uri in
+  let b = Buffer.create (String.length s) in
+  let i = ref 0 in
+  while !i < String.length s do
+    (if s.[!i] = '%' && !i + 2 < String.length s then
+       (match int_of_string_opt ("0x" ^ String.sub s (!i + 1) 2) with
+        | Some c -> Buffer.add_char b (Char.chr c); i := !i + 2
+        | None -> Buffer.add_char b '%')
+     else Buffer.add_char b s.[!i]);
+    incr i
+  done;
+  Buffer.contents b
+
+let uri_of_path p =
+  let p = if Filename.is_relative p then Filename.concat (Sys.getcwd ()) p else p in
+  let b = Buffer.create (String.length p + 8) in
+  Buffer.add_string b "file://";
+  String.iter (fun c -> match c with
+    | 'A'..'Z' | 'a'..'z' | '0'..'9' | '/' | '.' | '_' | '-' | '~' -> Buffer.add_char b c
+    | c -> Buffer.add_string b (Printf.sprintf "%%%02X" (Char.code c))) p;
+  Buffer.contents b
+
+(* znak UTF-16 -> bajt w linii *)
+let bytes_of_utf16 text ch =
+  let n = String.length text in
+  let rec go k u = if k >= n || u >= ch then k else
+    let c = Char.code text.[k] in
+    let len = if c < 0x80 then 1 else if c < 0xE0 then 2 else if c < 0xF0 then 3 else 4 in
+    go (k + len) (u + if len = 4 then 2 else 1) in
+  go 0 0
 
 let occurrences toks (name, sid, _) =
   Array.to_list toks |> List.filter (fun tk ->
@@ -181,7 +327,72 @@ let read_message () =
     | s -> Some s
     | exception End_of_file -> None)
 
-let run () =
+let pos line ch = `Assoc ["line", `Int line; "character", `Int ch]
+
+let notify meth params = send (`Assoc ["jsonrpc", `String "2.0"; "method", `String meth; "params", params])
+
+(* Błędy składni i problemy z --check, od razu po otwarciu i każdej zmianie *)
+let publish ~diagnose uri text =
+  let lines = Array.of_list (String.split_on_char '\n' text) in
+  let found = try diagnose (path_of_uri uri) text with _ -> [] in
+  let diags = List.map (fun (line, col, msg) ->
+    let l = max 0 (line - 1) in
+    let lt = if l < Array.length lines then lines.(l) else "" in
+    let c = utf16_of_bytes lt (max 0 (col - 1)) in
+    let e = max (c + 1) (utf16_of_bytes lt (String.length lt)) in
+    `Assoc ["range", `Assoc ["start", pos l c; "end", pos l e]; "severity", `Int 1;
+            "source", `String "ferdek"; "message", `String msg]) found in
+  notify "textDocument/publishDiagnostics" (`Assoc ["uri", `String uri; "diagnostics", `List diags])
+
+(* Uzupełnianie: słowa kluczowe, wbudowane, nazwy z pliku i z modułów JAKO.
+   Słowa wielowyrazowe podmieniają to, co już napisano ("W MO" -> "W MORDĘ JEŻA"). *)
+let completion ~find_module dir toks lines line ch =
+  let text = if line < Array.length lines then lines.(line) else "" in
+  let cur = bytes_of_utf16 text ch in
+  let before = String.sub text 0 (min cur (String.length text)) in
+  let is_word c = match c with 'A'..'Z' | 'a'..'z' | '0'..'9' | '_' | '.' -> true | c -> Char.code c >= 0x80 in
+  let boundary k = k = 0 || not (is_word before.[k - 1]) in
+  (* najdłuższy koniec "before" (od granicy słowa), który jest początkiem słowa w *)
+  let typed w =
+    let rec go k =
+      if k > String.length before then None
+      else
+        let len = String.length before - k in
+        if len > 0 && len <= String.length w && boundary k && String.sub w 0 len = String.sub before k len
+        then Some k else go (k + 1) in
+    go 0 in
+  let word_start = let k = ref (String.length before) in
+    while !k > 0 && is_word before.[!k - 1] do decr k done; !k in
+  let edit start new_text =
+    `Assoc ["range", `Assoc ["start", pos line (utf16_of_bytes text start); "end", pos line ch];
+            "newText", `String new_text] in
+  let item ?(snippet = false) ?doc ~kind ~detail label insert start =
+    `Assoc ([ "label", `String label; "kind", `Int kind; "detail", `String detail;
+              "textEdit", edit start insert ]
+            @ (if snippet then ["insertTextFormat", `Int 2] else [])
+            @ (match doc with Some d -> ["documentation", `String d] | None -> [])) in
+  let keywords = List.filter_map (fun (word, insert, doc, is_fn) ->
+    let start = match typed word with Some k -> Some k | None -> if word_start = cur then Some cur else None in
+    Option.map (fun start ->
+      if is_fn then item ~snippet:true ~doc ~kind:3 ~detail:insert word (word ^ "($0)") start
+      else item ~doc ~kind:14 ~detail:"słowo kluczowe" word word start) start) Keyword_docs.entries in
+  let seen = Hashtbl.create 32 in
+  let name_item toks i name =
+    if Hashtbl.mem seen name then None else begin
+      Hashtbl.add seen name ();
+      let kind = if is_function_decl toks i then 3 else if is_class_decl toks i then 7 else 6 in
+      Some (item ~kind ~detail:(describe toks i name) name name word_start)
+    end in
+  let own = List.filter_map (fun (i, tk) -> match tk.t with
+    | IDENTIFIER n -> (match resolve tk.scope n with
+        | Some (_, d) when d = i -> name_item toks i n
+        | _ -> None)
+    | _ -> None) (List.mapi (fun i tk -> (i, tk)) (Array.to_list toks)) in
+  let from_modules = List.filter_map (fun (n, mtoks, i) -> name_item mtoks i n)
+      (module_names ~find_module dir toks) in
+  `List (keywords @ own @ from_modules)
+
+let run ~diagnose ~find_module () =
   set_binary_mode_in stdin true;
   set_binary_mode_out stdout true;
   let docs : (string, string) Hashtbl.t = Hashtbl.create 8 in
@@ -195,17 +406,18 @@ let run () =
         let meth = try msg |> member "method" |> to_string with _ -> "" in
         let params = msg |> member "params" in
         let doc_uri () = params |> member "textDocument" |> member "uri" |> to_string in
-        (* Dokument, pozycja, tokeny - wspólne dla definicji, użyć i zmiany nazwy *)
+        (* Dokument, pozycja, tokeny - wspólne dla definicji, użyć, zmiany nazwy, podpowiedzi *)
         let at_cursor () =
           let uri = doc_uri () in
           let text = Option.value (Hashtbl.find_opt docs uri) ~default:"" in
           let lines = Array.of_list (String.split_on_char '\n' text) in
-          let pos = params |> member "position" in
-          let line = pos |> member "line" |> to_int and ch = pos |> member "character" |> to_int in
+          let p = params |> member "position" in
+          let line = p |> member "line" |> to_int and ch = p |> member "character" |> to_int in
           let toks = analyze text in
-          let b = if line < Array.length lines then binding_at toks lines line ch else None in
-          uri, lines, toks, b in
+          uri, lines, toks, line, ch in
+        let dir_of uri = Filename.dirname (path_of_uri uri) in
         let loc uri lines tk = `Assoc ["uri", `String uri; "range", range lines tk] in
+        let markdown s = `Assoc ["contents", `Assoc ["kind", `String "markdown"; "value", `String s]] in
         (try match meth with
           | "initialize" ->
               reply id (`Assoc [
@@ -213,30 +425,68 @@ let run () =
                   "textDocumentSync", `Int 1;   (* pełny tekst przy każdej zmianie *)
                   "definitionProvider", `Bool true;
                   "referencesProvider", `Bool true;
-                  "renameProvider", `Bool true];
+                  "renameProvider", `Bool true;
+                  "hoverProvider", `Bool true;
+                  "completionProvider", `Assoc []];
                 "serverInfo", `Assoc ["name", `String "ferdek"; "version", `String "2.0"]])
           | "shutdown" -> reply id `Null
           | "exit" -> exit (if shutdown then 0 else 1)
           | "textDocument/didOpen" ->
               let d = params |> member "textDocument" in
-              Hashtbl.replace docs (d |> member "uri" |> to_string) (d |> member "text" |> to_string)
+              let uri = d |> member "uri" |> to_string and text = d |> member "text" |> to_string in
+              Hashtbl.replace docs uri text;
+              publish ~diagnose uri text
           | "textDocument/didChange" ->
               (match params |> member "contentChanges" |> to_list |> List.rev with
-               | last :: _ -> Hashtbl.replace docs (doc_uri ()) (last |> member "text" |> to_string)
+               | last :: _ ->
+                   let uri = doc_uri () and text = last |> member "text" |> to_string in
+                   Hashtbl.replace docs uri text;
+                   publish ~diagnose uri text
                | [] -> ())
-          | "textDocument/didClose" -> Hashtbl.remove docs (doc_uri ())
+          | "textDocument/didClose" ->
+              let uri = doc_uri () in
+              Hashtbl.remove docs uri;
+              notify "textDocument/publishDiagnostics" (`Assoc ["uri", `String uri; "diagnostics", `List []])
           | "textDocument/definition" ->
-              let uri, lines, toks, b = at_cursor () in
-              reply id (match b with Some (_, _, decl) -> loc uri lines toks.(decl) | None -> `Null)
+              let uri, lines, toks, line, ch = at_cursor () in
+              reply id (match binding_at toks lines line ch, token_at toks lines line ch with
+                | Some (_, _, decl), _ -> loc uri lines toks.(decl)
+                | None, Some { t = IDENTIFIER name; _ } ->
+                    (match module_decl ~find_module (dir_of uri) toks name with
+                     | Some (f, text, mtoks, i) ->
+                         loc (uri_of_path f) (Array.of_list (String.split_on_char '\n' text)) mtoks.(i)
+                     | None -> `Null)
+                | _ -> `Null)
+          | "textDocument/hover" ->
+              let uri, lines, toks, line, ch = at_cursor () in
+              reply id (match token_at toks lines line ch with
+                | None -> `Null
+                | Some tk ->
+                    match binding_at toks lines line ch with
+                    | Some (name, _, decl) -> markdown (describe toks decl name)
+                    | None ->
+                        match keyword_doc lines tk with
+                        | Some (_, insert, doc, _) -> markdown (Printf.sprintf "**%s**\n\n%s" insert doc)
+                        | None ->
+                            match tk.t with
+                            | IDENTIFIER name ->
+                                (match module_decl ~find_module (dir_of uri) toks name with
+                                 | Some (f, _, mtoks, i) ->
+                                     markdown (describe mtoks i name ^ " - z modułu " ^ Filename.basename f)
+                                 | None -> `Null)
+                            | _ -> `Null)
+          | "textDocument/completion" ->
+              let uri, lines, toks, line, ch = at_cursor () in
+              reply id (completion ~find_module (dir_of uri) toks lines line ch)
           | "textDocument/references" ->
-              let uri, lines, toks, b = at_cursor () in
-              reply id (match b with
+              let uri, lines, toks, line, ch = at_cursor () in
+              reply id (match binding_at toks lines line ch with
                 | Some b -> `List (List.map (loc uri lines) (occurrences toks b))
                 | None -> `List [])
           | "textDocument/rename" ->
-              let uri, lines, toks, b = at_cursor () in
+              let uri, lines, toks, line, ch = at_cursor () in
               let new_name = params |> member "newName" |> to_string in
-              (match b with
+              (match binding_at toks lines line ch with
                | None -> fail id (-32602) "Tu nie ma nazwy zdefiniowanej w tym pliku (wbudowanej nie zmienisz)"
                | Some _ when not (valid_name new_name) ->
                    fail id (-32602) (Printf.sprintf "'%s' to nie jest dobra nazwa" new_name)

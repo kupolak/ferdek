@@ -55,8 +55,8 @@ Check a program without running it (unknown names, wrong argument counts):
 ferdek --check program.ferdek
 ```
 
-Editors: `ferdek --lsp` is a Language Server (stdin/stdout) with go to definition, find references
-and rename, within one file. Point any LSP client at it, e.g. in Neovim:
+Editors: `ferdek --lsp` is a Language Server (stdin/stdout): errors as you type, hover docs,
+completion, go to definition (also into imported modules), find references and rename. Point any LSP client at it, e.g. in Neovim:
 
 ```lua
 vim.lsp.start({ name = "ferdek", cmd = { "ferdek", "--lsp" } })

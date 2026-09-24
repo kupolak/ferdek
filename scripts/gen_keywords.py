@@ -396,16 +396,30 @@ def docs():
     return "\n".join(lines)
 
 
+def ocaml_docs():
+    """src/keyword_docs.ml - opisy dla ferdek --lsp (podpowiedzi i uzupełnianie)"""
+    q = lambda t: '"' + t.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    rows = [f"  {q(e['word'])}, {q(e['insert'])}, {q(e['doc'])}, {'true' if e['kind'] == 'function' else 'false'};"
+            for e in keyword_docs()]
+    return ("(* Wygenerowane przez scripts/gen_keywords.py - nie edytuj ręcznie *)\n\n"
+            "(* słowo, tekst do wstawienia (z sygnaturą), opis, czy funkcja wbudowana *)\n"
+            "let entries = [\n" + "\n".join(rows) + "\n]\n")
+
+
 if __name__ == "__main__":
     dump = lambda data: json.dumps(data, ensure_ascii=False, indent=2) + "\n"
     doc_path = ROOT / "docs" / "JEZYK.md"
+    ml_path = ROOT / "src" / "keyword_docs.ml"
     if sys.argv[1:] == ["--check"]:
         keyword_docs()  # przerwie, jeśli jakieś słowo nie ma opisu
         if not doc_path.exists() or doc_path.read_text(encoding="utf-8") != docs():
             sys.exit("docs/JEZYK.md jest nieaktualny - uruchom: python3 scripts/gen_keywords.py")
+        if ml_path.read_text(encoding="utf-8") != ocaml_docs():
+            sys.exit("src/keyword_docs.ml jest nieaktualny - uruchom: python3 scripts/gen_keywords.py")
         sys.exit(0)
     doc_path.parent.mkdir(exist_ok=True)
     doc_path.write_text(docs(), encoding="utf-8")
+    ml_path.write_text(ocaml_docs(), encoding="utf-8")
     if sys.argv[1:]:
         ext = Path(sys.argv[1])
         (ext / "syntaxes" / "ferdek.tmLanguage.json").write_text(dump(grammar()), encoding="utf-8")

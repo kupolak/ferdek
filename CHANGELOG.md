@@ -51,8 +51,10 @@
 - `ferdek --check` (unknown names, wrong argument counts), `ferdek test` (runs `*_test.ferdek`),
   `ferdek --fmt` (indentation).
 - Errors report file and line; syntax errors say what was expected; all messages in Polish.
-- `ferdek --lsp`: Language Server with go to definition, find references and rename (one file;
-  scopes: global, class, function, lambda). Needs the `yojson` opam package to build.
+- `ferdek --lsp`: Language Server with errors as you type (syntax and `--check`), hover docs for
+  keywords, builtins and your names, completion (multi-word keywords too), go to definition
+  (also into imported modules), find references and rename. Needs the `yojson` opam package.
+- Lexer and preprocessor messages are in Polish too.
 - Several syntax errors are reported at once (up to 10): the broken statement is skipped and
   parsing goes on, stopping early where a block is broken to avoid made-up follow-up errors.
 - The REPL keeps state between lines and accepts multi-line statements.

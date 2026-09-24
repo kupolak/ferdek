@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Test serwera ferdek --lsp: definicje, użycia i zmiana nazwy na małym programie."""
 import json
+import os
 import subprocess
 import sys
 
@@ -36,6 +37,29 @@ MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 
 proc = subprocess.Popen([FERDEK, "--lsp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 next_id = 0
+notifications = []
+
+
+def read():
+    length = None
+    while True:
+        line = proc.stdout.readline().strip()
+        if not line:
+            break
+        k, v = line.split(b":", 1)
+        if k.lower() == b"content-length":
+            length = int(v)
+    return json.loads(proc.stdout.read(length))
+
+
+def diagnostics(uri):
+    """Ostatnie publishDiagnostics dla dokumentu (serwer wysyła je od razu po didOpen/didChange)"""
+    while True:
+        for n in reversed(notifications):
+            if n["method"] == "textDocument/publishDiagnostics" and n["params"]["uri"] == uri:
+                notifications.remove(n)
+                return n["params"]["diagnostics"]
+        notifications.append(read())
 
 
 def send(method, params, request=True):
@@ -49,17 +73,13 @@ def send(method, params, request=True):
     proc.stdin.flush()
     if not request:
         return None
-    length = None
     while True:
-        line = proc.stdout.readline().strip()
-        if not line:
-            break
-        k, v = line.split(b":", 1)
-        if k.lower() == b"content-length":
-            length = int(v)
-    resp = json.loads(proc.stdout.read(length))
-    assert resp["id"] == next_id, resp
-    return resp
+        resp = read()
+        if "id" not in resp:
+            notifications.append(resp)
+            continue
+        assert resp["id"] == next_id, resp
+        return resp
 
 
 LINES = PROGRAM.split("\n")
@@ -71,9 +91,9 @@ def find(line, word, n=1):
     return (line, [m.start() for m in re.finditer(rf"(?<!\w){re.escape(word)}(?!\w)", LINES[line])][n - 1])
 
 
-def at(spot):
+def at(spot, uri=URI):
     line, ch = spot
-    return {"textDocument": {"uri": URI}, "position": {"line": line, "character": ch}}
+    return {"textDocument": {"uri": uri}, "position": {"line": line, "character": ch}}
 
 
 def spots(locs):
@@ -128,6 +148,46 @@ check("nowy tekst", {e["newText"] for e in edits}, {"policz"})
 # Nie wolno: słowo kluczowe jako nazwa, nazwa wbudowana
 check("zła nowa nazwa", "error" in send("textDocument/rename", dict(at(find(3, "f")), newName="NO JAK NIE JAK TAK")), True)
 check("wbudowana", "error" in send("textDocument/rename", dict(at(find(20, "KANAPIE")), newName="z")), True)
+
+check("bez błędów", diagnostics(URI), [])
+
+# Błędy na bieżąco: składnia (kilka naraz) i --check
+BAD = "file:///zly.ferdek"
+send("textDocument/didOpen", {"textDocument": {"uri": BAD, "text":
+     "CO JEST KURDE\nCYCU PRZYNIEŚ NO a\nTO NIE SĄ TANIE RZECZY 1 BABKA DAWAJ RENTĘ\n"
+     "PANIE SENSACJA REWELACJA a\nPANIE SENSACJA REWELACJA ( a\nPANIE SENSACJA REWELACJA 1\n"
+     "MOJA NOGA JUŻ TUTAJ NIE POSTANIE\n"}}, request=False)
+check("błędy składni", [d["range"]["start"]["line"] for d in diagnostics(BAD)], [3, 5])
+send("textDocument/didChange", {"textDocument": {"uri": BAD}, "contentChanges": [{"text":
+     "CO JEST KURDE\nPANIE SENSACJA REWELACJA nie_ma\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n"}]}, request=False)
+d = diagnostics(BAD)
+check("--check", [(x["range"]["start"]["line"], "Nieznana zmienna: nie_ma" in x["message"]) for x in d], [(1, True)])
+
+# Podpowiedzi: słowo kluczowe, wbudowana funkcja, nazwa z pliku
+hover = lambda spot: (send("textDocument/hover", at(spot))["result"] or {}).get("contents", {}).get("value", "")
+check("hover słowo kluczowe", "Wypisz" in hover(find(20, "SENSACJA")), True)
+check("hover wbudowana", "ILE MIEJSCA NA KANAPIE" in hover(find(20, "MIEJSCA")), True)
+check("hover funkcja", hover(find(19, "f")).startswith("funkcja f(x, żółw)"), True)
+
+# Uzupełnianie: "W MO" -> W MORDĘ JEŻA, podmieniając napisane "W MO"
+send("textDocument/didChange", {"textDocument": {"uri": URI}, "contentChanges": [{"text":
+     PROGRAM.replace("PANIE SENSACJA REWELACJA W MORDĘ JEŻA ILE", "PANIE SENSACJA REWELACJA W MO\nILE")}]}, request=False)
+items = send("textDocument/completion", at((20, len("PANIE SENSACJA REWELACJA W MO"))))["result"]
+w = [i for i in items if i["label"] == "W MORDĘ JEŻA"]
+check("uzupełnianie słowa", [i["textEdit"]["range"]["start"]["character"] for i in w], [len("PANIE SENSACJA REWELACJA ")])
+check("uzupełnianie nazw z pliku", {"f", "Licznik", "g"} <= {i["label"] for i in items}, True)
+
+# Import JAKO: definicja l.dodaj w pliku modułu, uzupełnianie l.nazw
+here = os.path.abspath("tests/integration/features/lsp_import.ferdek")
+MURI = "file://" + here
+send("textDocument/didOpen", {"textDocument": {"uri": MURI, "text":
+     "CO JEST KURDE\nO KOGO MOJE PIĘKNE OCZY WIDZĄ moduly/licznik JAKO l\n"
+     "PANIE SENSACJA REWELACJA W MORDĘ JEŻA l.dodaj(1)\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n"}}, request=False)
+check("import bez błędów", diagnostics(MURI), [])
+d = send("textDocument/definition", at((2, 40), MURI))["result"]
+check("definicja w module", (d["uri"].endswith("moduly/licznik.ferdek"), d["range"]["start"]["line"]), (True, 11))
+labels = {i["label"] for i in send("textDocument/completion", at((2, 38), MURI))["result"]}
+check("uzupełnianie z modułu", {"l.dodaj", "l.stan", "l.Skarbonka"} <= labels, True)
 
 send("shutdown", None)
 send("exit", None, request=False)

@@ -43,6 +43,7 @@
   formatter
   syntax_errors
   qualify
+  keyword_docs
   lsp
   builtins_string
   builtins_hashmap

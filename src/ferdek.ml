@@ -103,7 +103,7 @@ let parse_text filename text =
   with Parser.Error ->
     let p = lexbuf.Lexing.lex_start_p in
     let tok = Lexing.lexeme lexbuf in
-    Error ((!prev_line, p.Lexing.pos_lnum),
+    Error ((!prev_line, p.Lexing.pos_lnum), p.Lexing.pos_cnum - p.Lexing.pos_bol + 1,
            Printf.sprintf "Błąd Parsowania! Walduś, coś tu jest pokręcone! W %s, linia %d, kolumna %d, przy '%s'.%s"
              filename p.Lexing.pos_lnum (p.Lexing.pos_cnum - p.Lexing.pos_bol + 1) tok
              (Syntax_errors.hint text filename))
@@ -138,9 +138,10 @@ let parse_collecting filename text =
     match parse_text filename text with
     | Ok prog when errors = [] -> Ok prog
     | Ok _ -> Error (List.rev errors)
-    | Error (_, msg) when List.mem msg errors -> Error (List.rev errors)   (* wycięcie nie pomogło *)
-    | Error ((first, line), msg) ->
-        let errors = msg :: errors in
+    | Error (_, _, msg) when List.exists (fun (_, _, m) -> m = msg) errors ->
+        Error (List.rev errors)   (* wycięcie nie pomogło *)
+    | Error ((first, line), col, msg) ->
+        let errors = (line, col, msg) :: errors in
         let lines = Array.of_list (String.split_on_char '\n' text) in
         (* Wycinamy całą zepsutą instrukcję: od linii, w której się zaczęła, do linii błędu.
            Gdy błąd wyszedł dopiero na początku następnej linii, ta linia zostaje. *)
@@ -158,60 +159,76 @@ let parse_collecting filename text =
         end in
   go text []
 
-(* Parse a file *)
-let parse_file filename =
+(* Błąd wczytania programu: linia (0 = nieznana), kolumna, komunikat *)
+let lex_error_pos = Str.regexp "linii \\([0-9]+\\), kolumna \\([0-9]+\\)"
+
+(* Tekst (już po preprocesorze albo przed) -> program albo lista błędów z pozycjami *)
+let parse_source ?(preprocessed = false) filename text =
   try
-    let preprocessed_content = String.concat "\n" (Preprocessor.preprocess_file filename) in
-    match parse_collecting filename preprocessed_content with
+    let text = if preprocessed then text else Preprocessor.preprocess_string text in
+    match parse_collecting filename text with
     | Ok prog -> Ok (resolve_local_imports filename prog)
-    | Error msgs -> Error (String.concat "\nA fe! " msgs)
+    | Error errs -> Error errs
   with
   | Lexer.LexError msg ->
-      Error (Printf.sprintf "Błąd Leksera! Ktoś tu namieszał w słowach! W %s: %s (Paździoch ukradł słowa)." filename msg)
+      let line, col =
+        try ignore (Str.search_forward lex_error_pos msg 0);
+            int_of_string (Str.matched_group 1 msg), int_of_string (Str.matched_group 2 msg)
+        with Not_found -> 0, 1 in
+      Error [line, col, Printf.sprintf "Błąd Leksera! Ktoś tu namieszał w słowach! W %s: %s (Paździoch ukradł słowa)." filename msg]
   | Failure msg ->
-      Error (Printf.sprintf "Błąd Preprocesora w %s: %s" filename msg)
-  | Sys_error msg ->
-      Error (Printf.sprintf "Nie ma takiego pliku, Paździoch go zajumał: %s" msg)
+      Error [0, 1, Printf.sprintf "Błąd Preprocesora w %s: %s" filename msg]
+
+(* Parse a file *)
+let parse_file filename =
+  match String.concat "\n" (Preprocessor.preprocess_file filename) with
+  | text ->
+      (match parse_source ~preprocessed:true filename text with
+       | Ok prog -> Ok prog
+       | Error errs -> Error (String.concat "\nA fe! " (List.map (fun (_, _, m) -> m) errs)))
+  | exception Failure msg -> Error (Printf.sprintf "Błąd Preprocesora w %s: %s" filename msg)
+  | exception Lexer.LexError msg ->
+      Error (Printf.sprintf "Błąd Leksera! Ktoś tu namieszał w słowach! W %s: %s (Paździoch ukradł słowa)." filename msg)
+  | exception Sys_error msg -> Error (Printf.sprintf "Nie ma takiego pliku, Paździoch go zajumał: %s" msg)
+
+(* Plik modułu: ścieżka z resolve_local_imports (plik obok programu) albo moduł z stdlib *)
+let find_module_file module_name =
+  if Filename.check_suffix module_name ".ferdek" && Sys.file_exists module_name then Some module_name
+  else match find_stdlib_dir () with
+    | None -> None
+    | Some stdlib_dir ->
+        let klamoty = Filename.concat stdlib_dir "KLAMOTY" in
+        let name = if String.length module_name > 8 && String.sub module_name 0 8 = "KLAMOTY/"
+                   then String.sub module_name 8 (String.length module_name - 8) else module_name in
+        (* KLAMOTY/<nazwa>/<nazwa>.ferdek (np. BABKA) albo KLAMOTY/<nazwa>.ferdek *)
+        List.find_opt Sys.file_exists
+          [Filename.concat (Filename.concat klamoty name) (name ^ ".ferdek");
+           Filename.concat klamoty (name ^ ".ferdek")]
 
 (* Module loader for stdlib *)
 let load_stdlib_module module_name =
-  (* Try to find module in stdlib *)
-  let try_load_from_path module_path =
-    if Sys.file_exists module_path then begin
-      match parse_file module_path with
+  match find_module_file module_name with
+  | None -> None
+  | Some path ->
+      match parse_file path with
       | Ok ast -> Some ast
       | Error msg ->
-          Printf.eprintf "Error parsing module %s: %s\n" module_name msg;
+          Printf.eprintf "Błąd w module %s: %s\n" module_name msg;
           None
-    end else
-      None
-  in
-  (* Ścieżka do pliku użytkownika (z resolve_local_imports) ma pierwszeństwo przed stdlib *)
-  if Filename.check_suffix module_name ".ferdek" && Sys.file_exists module_name then
-    try_load_from_path module_name
-  else
-  match find_stdlib_dir () with
-  | Some stdlib_dir ->
-      (* First, check if it's a direct module name like "BABKA" - look in KLAMOTY/<name>/<name>.ferdek *)
-      let direct_path = Filename.concat (Filename.concat (Filename.concat stdlib_dir "KLAMOTY") module_name) (module_name ^ ".ferdek") in
-      (match try_load_from_path direct_path with
-      | Some ast -> Some ast
-      | None ->
-          (* Then check KLAMOTY/<name>.ferdek for simple modules *)
-          let simple_path = Filename.concat (Filename.concat stdlib_dir "KLAMOTY") (module_name ^ ".ferdek") in
-          (match try_load_from_path simple_path with
-          | Some ast -> Some ast
-          | None ->
-              (* Finally, check if it starts with KLAMOTY/ prefix *)
-              if String.length module_name > 8 && String.sub module_name 0 8 = "KLAMOTY/" then
-                let stdlib_module = String.sub module_name 8 (String.length module_name - 8) in
-                let prefixed_path = Filename.concat (Filename.concat stdlib_dir "KLAMOTY") (stdlib_module ^ ".ferdek") in
-                (match try_load_from_path prefixed_path with
-                | Some ast -> Some ast
-                | None -> None)
-              else None))
-  | None ->
-      None
+
+(* Dla ferdek --lsp: błędy składni albo problemy z --check, jako (linia, kolumna, komunikat) *)
+let diagnose filename text =
+  match parse_source filename text with
+  | Error errs -> errs
+  | Ok prog ->
+      let where = Str.regexp "^\\(\\(.*\\), \\)?linia \\([0-9]+\\): " in
+      Checker.check ~load_module:load_stdlib_module prog |> List.filter_map (fun issue ->
+        if Str.string_match where issue 0 then
+          let file = try Str.matched_group 2 issue with Not_found -> filename in
+          let line = int_of_string (Str.matched_group 3 issue) in
+          (* problemy z modułów zostają w modułach *)
+          if file = filename then Some (line, 1, Str.string_after issue (Str.match_end ())) else None
+        else Some (0, 1, issue))
 
 (* Interpretuje plik *)
 let interpret_file filename =
@@ -439,7 +456,7 @@ let () =
       | "--check" ->
           if i + 1 >= argc then (print_help (); exit 1);
           parse_args (i + 2) `Check output_file (Some Sys.argv.(i + 1))
-      | "--lsp" -> exit (Lsp.run ())
+      | "--lsp" -> exit (Lsp.run ~diagnose ~find_module:find_module_file ())
       | "--repl" ->
           parse_args (i + 1) `REPL output_file input_file
       | "-i" | "--interpret" ->

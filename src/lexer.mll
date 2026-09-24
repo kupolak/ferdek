@@ -374,7 +374,7 @@ rule token = parse
   | _ {
       let pos = Lexing.lexeme_start_p lexbuf in
       let char_code = Char.code (Lexing.lexeme_char lexbuf 0) in
-      raise (LexError (Printf.sprintf "Unexpected character at line %d, col %d (code: 0x%02X)"
+      raise (LexError (Printf.sprintf "Nieznany znak w linii %d, kolumna %d (kod: 0x%02X)"
         pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1) char_code))
     }
 
@@ -394,5 +394,5 @@ and read_string buf = parse
   | newline   { Lexing.new_line lexbuf;
                 Buffer.add_char buf '\n';
                 read_string buf lexbuf }
-  | eof       { raise (LexError "Unterminated string") }
+  | eof       { raise (LexError "Niezamknięty tekst - brakuje cudzysłowu") }
   | _ as c    { Buffer.add_char buf c; read_string buf lexbuf }
