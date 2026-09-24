@@ -184,6 +184,7 @@ let entries = [
   "WYJDŹ NA KLATKĘ", "WYJDŹ NA KLATKĘ(url)", "KLATKA: HTTP GET", true;
   "WYJMIJ Z FIXED", "WYJMIJ Z FIXED", "Fixed-point 16.16 na liczbę", false;
   "WYJMIJ Z SZAFKI", "WYJMIJ Z SZAFKI(mapa, klucz)", "Wartość spod klucza (null, gdy brak)", true;
+  "WYJMIJ ZE SŁOIKA", "WYJMIJ ZE SŁOIKA(tekst)", "JSON z tekstu: obiekty jako szafki, tablice jako wersalki", true;
   "WYKOP WSZYSTKIE KIBLE", "WYKOP WSZYSTKIE KIBLE(ścieżka)", "Usuń katalog z zawartością", true;
   "WYLOSUJ Z WERSALKI", "WYLOSUJ Z WERSALKI(tablica)", "Losowy element (ten sam generator co KARTA LUBI DYM)", true;
   "WYPIERDZIELAJ PAN NA POZYCJĘ", "WYPIERDZIELAJ PAN NA POZYCJĘ", "Element tablicy: WYPIERDZIELAJ PAN NA POZYCJĘ t[0]", false;
@@ -201,6 +202,7 @@ let entries = [
   "ZAMIEŃ NA KANAPIE", "ZAMIEŃ NA KANAPIE(tekst, stary, nowy)", "Zamień wszystkie wystąpienia", true;
   "ZAMKNIJ KIBEL", "ZAMKNIJ KIBEL(uchwyt)", "Zamknij plik", true;
   "ZAOKRĄGLIJ DO SKRZYNKI", "ZAOKRĄGLIJ DO SKRZYNKI(liczba)", "SKRZYNKA: zaokrąglenie do liczby całkowitej (połówki od zera)", true;
+  "ZAPAKUJ DO SŁOIKA", "ZAPAKUJ DO SŁOIKA(wartość)", "JSON: szafki, tablice, liczby, teksty, prawda/fałsz jako tekst JSON (klucze posortowane)", true;
   "ZAPISZ DO BLOKU", "ZAPISZ DO BLOKU(blok, indeks, wartość)", "Zapisz w bloku", true;
   "ZAPUKAJ DO SĄSIADA", "ZAPUKAJ DO SĄSIADA(url, dane)", "KLATKA: HTTP POST", true;
   "ZDEJMIJ Z WERSALKI", "ZDEJMIJ Z WERSALKI(tablica)", "Ostatni element", true;

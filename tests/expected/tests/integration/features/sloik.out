@@ -1,0 +1,18 @@
+{"adres":{"ulica":"Ćwiartki 3/4"},"nazwisko":"Kiepscy","nic":null,"osoby":["Ferdek","Halina","Waldek"],"piwa":6,"pracuje":false,"średnia":2.5}
+[Ferdek, Halina, Waldek]
+true
+"cudzysłów \" ukośnik \\ tab\tkoniec"
+żółw 😀
+[1, -250.0, 0, 4.61168601842739e+18, true, null, {}, []]
+DŁUGI
+[1.0,1e+20,-0.5]
+WYJMIJ ZE SŁOIKA: zły JSON (znak 7)
+WYJMIJ ZE SŁOIKA: zły JSON (znak 6)
+WYJMIJ ZE SŁOIKA: zły JSON (znak 2)
+WYJMIJ ZE SŁOIKA: zły JSON (znak 12)
+WYJMIJ ZE SŁOIKA: zły JSON (znak 1)
+WYJMIJ ZE SŁOIKA: zły JSON (znak 6)
+WYJMIJ ZE SŁOIKA: zły JSON (znak 3)
+WYJMIJ ZE SŁOIKA: zły JSON (znak 4)
+ZAPAKUJ DO SŁOIKA: tego nie zapakujesz: funkcja
+Program zakończony pomyślnie. Piwo dla Pana!

@@ -34,6 +34,8 @@
   - text: `POWTÓRZ NA KANAPIE`, `CZY/GDZIE SIEDZI NA KANAPIE`, `ZACZYNA SIĘ OD`, `KOŃCZY SIĘ NA`,
     `ODWRÓĆ KANAPĘ`, `ROZCIĄGNIJ Z LEWEJ`;
   - maps: `WSZYSTKIE RZECZY`, `DOŁÓŻ SZAFKĘ`;
+  - JSON: `ZAPAKUJ DO SŁOIKA(wartość)` / `WYJMIJ ZE SŁOIKA(tekst)` (maps, arrays, numbers, text, true/false,
+    null; strict parser, errors with the position);
   - dates (text `RRRR-MM-DD`): `JAKI DZIŚ DZIEŃ`, `KTÓRA GODZINA`, `DZIEŃ TYGODNIA`, `DODAJ DNI`,
     `ILE DNI MIĘDZY`.
 - Choosing a variant: `CO TO JE x` / `JAK JE 1, 2` / `A JAK NIC Z TEGO` / `KONIEC GADANIA`.

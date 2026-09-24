@@ -209,6 +209,8 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `CZY W SZAFCE(mapa, klucz)` | Czy klucz istnieje |
 | `WSZYSTKIE SZUFLADKI(mapa)` | Posortowana tablica kluczy |
 | `ILE W SZAFCE(mapa)` | Liczba kluczy |
+| `ZAPAKUJ DO SŁOIKA(wartość)` | JSON: szafki, tablice, liczby, teksty, prawda/fałsz jako tekst JSON (klucze posortowane) |
+| `WYJMIJ ZE SŁOIKA(tekst)` | JSON z tekstu: obiekty jako szafki, tablice jako wersalki |
 | `WSZYSTKIE RZECZY(mapa)` | Wartości, w kolejności posortowanych kluczy |
 | `DOŁÓŻ SZAFKĘ(a, b)` | Nowa mapa: a, nadpisane tym, co jest w b |
 

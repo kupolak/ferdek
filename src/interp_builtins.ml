@@ -1005,4 +1005,8 @@ let register () =
       match List.map (eval_expr env) args with
       | [a; b] -> VInt (parse_date "ILE DNI MIĘDZY" b - parse_date "ILE DNI MIĘDZY" a)
       | _ -> VNull);
+
+  (* ============ SŁOIK: JSON ============ *)
+  ["ZAPAKUJ DO SŁOIKA"], Some 1, (fun env args -> VString (Sloik.pack (eval_expr env (List.hd args))));
+  ["WYJMIJ ZE SŁOIKA"], Some 1, (fun env args -> Sloik.unpack (to_string (eval_expr env (List.hd args))));
   ]

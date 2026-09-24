@@ -37,7 +37,7 @@ Some examples:
   with statements: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ` ... `DO WIDZENIA PANU`
 - `OTWÓRZ SZAFKĘ("piwo", 3, "wódka", 1)` - map with initial key/value pairs; `PO PIERWSZE PRIMO(3.14159, 2)` - `"3.14"`
 - Library for arrays (`ZSUMUJ WERSALKĘ`, `WYTNIJ Z WERSALKI`, `ZWIŃ WERSALKĘ`...), text (`CZY SIEDZI NA KANAPIE`,
-  `ODWRÓĆ KANAPĘ`...), maps and dates (`JAKI DZIŚ DZIEŃ`, `DODAJ DNI`, `DZIEŃ TYGODNIA`) - see `docs/JEZYK.md`
+  `ODWRÓĆ KANAPĘ`...), maps, dates (`JAKI DZIŚ DZIEŃ`, `DODAJ DNI`, `DZIEŃ TYGODNIA`) and JSON (`ZAPAKUJ DO SŁOIKA`, `WYJMIJ ZE SŁOIKA`) - see `docs/JEZYK.md`
 - `ZNAK Z KANAPY(s, i)`, `KANAPA DO GÓRY(s)`, `KANAPA W DÓŁ(s)` - character at position, upper/lower case (Polish letters too)
 
 Start a project: `ferdek nowy moj_projekt` (program, module, test and README).

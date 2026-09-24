@@ -85,6 +85,7 @@ class Gen:
             f"W MORDĘ JEŻA POTNIJ KANAPĘ({a}, {self.r.randint(0, 2)}, {self.r.randint(1, 4)})",
             f"W MORDĘ JEŻA ZNAK Z KANAPY({a}, {self.r.randint(0, 3)})",
             f"W MORDĘ JEŻA ODWRÓĆ KANAPĘ({a})",
+            f"W MORDĘ JEŻA ZAPAKUJ DO SŁOIKA({self.expr(self.pick(['arr', 'str', 'float']), d)})",
             f"W MORDĘ JEŻA ROZCIĄGNIJ Z LEWEJ({a}, {self.r.randint(0, 8)})",
             f"W MORDĘ JEŻA POWTÓRZ NA KANAPIE({a}, {self.r.randint(0, 3)})",
             f'W MORDĘ JEŻA DZIEŃ TYGODNIA(W MORDĘ JEŻA DODAJ DNI("1999-03-16", {self.expr("int", d)}))',
@@ -115,6 +116,7 @@ class Gen:
             f"W MORDĘ JEŻA WYTNIJ Z WERSALKI({a}, {self.r.randint(0, 2)}, {self.r.randint(0, 3)})",
             f"W MORDĘ JEŻA ZESTAW WERSALKI({a}, {self.expr('arr', d)})",
             f"W MORDĘ JEŻA BEZ POWTÓREK({a})",
+            f"W MORDĘ JEŻA WYJMIJ ZE SŁOIKA(W MORDĘ JEŻA ZAPAKUJ DO SŁOIKA({a}))",
             f"W MORDĘ JEŻA ZRÓB KOLEJKĘ({self.r.randint(-3, 3)}, {self.r.randint(-3, 5)})",
             f"W MORDĘ JEŻA PRZERABIAJ WERSALKĘ({a}, {self.lam(d)})",
         ])

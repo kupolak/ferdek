@@ -50,6 +50,7 @@
   dap
   consts
   typy
+  sloik
   lsp
   builtins_string
   builtins_hashmap
