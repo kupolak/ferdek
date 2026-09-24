@@ -18,3 +18,6 @@ val compile_program : ?load_module:(string -> program option) -> program -> stri
 (* Podwyrażenia (bez wnętrza lambd) i wyrażenia instrukcji z zagnieżdżonymi instrukcjami *)
 val subexprs : expr -> expr list
 val stmt_exprs : stmt -> expr list
+
+(* Funkcje wbudowane, które zna kompilator: nazwa i liczba argumentów (None = dowolna) *)
+val builtin_arities : unit -> (string * int option) list

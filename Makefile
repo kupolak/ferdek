@@ -91,7 +91,7 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap
+test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
 
@@ -157,6 +157,12 @@ test-errors: build
 test-repl: build
 	@$(FERDEK) --repl < tests/repl/session.in 2>&1 | diff -u tests/repl/session.out - && echo "--- REPL: OK"
 
+# Runtime programów C (src/runtime.c) kompiluje się bez ostrzeżeń; source_line dopisuje
+# dopiero wygenerowany program - tu zaślepka
+test-runtime:
+	@mkdir -p _build && { cat src/runtime.c; echo 'static const char* source_line(const char* f, int l) { (void)f; (void)l; return 0; }'; } > _build/runtime_check.c
+	@cc -std=c99 -fsyntax-only -Wall -Wextra -Wno-unused-parameter -Werror _build/runtime_check.c && echo "--- runtime.c: bez ostrzeżeń"
+
 # Debugger dla edytorów (DAP): punkt zatrzymania, stos, zmienne, krok, wyjście programu
 test-dap: build
 	python3 scripts/test_dap.py $(FERDEK)
@@ -213,4 +219,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: playground all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: playground all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
