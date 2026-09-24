@@ -49,7 +49,7 @@ let list_around file line =
 
 let print_vars env =
   let show title tbl =
-    let vars = Hashtbl.fold (fun n v acc ->
+    let vars = Vars.fold (fun n v acc ->
       match v with
       | VFunction _ | VClass _ | VStruct _ | VUnion _ | VEnum _ -> acc
       | _ when n = lambda_marker -> acc

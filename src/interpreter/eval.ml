@@ -62,7 +62,7 @@ let rec eval_expr env = function
              | VInt i -> string_of_int i
              | v -> raise (RuntimeError (Printf.sprintf "Nazwa pola obiektu musi być tekstem, a jest: %s" (string_of_value v)))
            in
-           (match Hashtbl.find_opt obj field_name with
+           (match Vars.find_opt obj field_name with
             | Some v -> v
             | None -> raise (RuntimeError (Printf.sprintf "Obiekt nie ma pola: %s" field_name)))
        | _ -> raise (RuntimeError "To nie jest tablica ani obiekt"))
@@ -134,18 +134,18 @@ let rec eval_expr env = function
       let rec root e = match e.parent with Some p -> root p | None -> e in
       let global = root env in
       let captured = create_env (Some global) in
-      Hashtbl.replace captured.vars lambda_marker VNull;
+      Vars.replace captured.vars lambda_marker VNull;
       let rec capture e n =
         if e != global then
-          match Hashtbl.find_opt e.vars n with
-          | Some v -> Hashtbl.replace captured.vars n v
+          match Vars.find_opt e.vars n with
+          | Some v -> Vars.replace captured.vars n v
           | None -> Option.iter (fun p -> capture p n) e.parent in
       List.iter (capture env) (expr_names (Lambda (params, body)));
       VFunction ({ name = "anonimowa"; params; is_variadic = false; has_return = true; body; defaults = [] }, captured)
 
 (* Evaluate function call *)
 and eval_function_call env name args =
-  match Hashtbl.find_opt builtins name with
+  match Vars.find_opt builtins name with
   | Some (arity, impl) ->
       (match arity with
        | Some n when n <> List.length args ->
@@ -157,7 +157,7 @@ and eval_function_call env name args =
       let f = try get_var env name with RuntimeError _ ->
         (* nieznana nazwa: podpowiedź z funkcji i zmiennych programu oraz wbudowanych *)
         raise (RuntimeError (Errors.unknown "funkcja" name
-          (visible_names env @ Hashtbl.fold (fun n _ acc -> n :: acc) builtins []))) in
+          (visible_names env @ Vars.fold (fun n _ acc -> n :: acc) builtins []))) in
       (match f with
        | VFunction (fdecl, closure_env) ->
            apply_function name fdecl closure_env (List.map (eval_expr env) args)
@@ -168,8 +168,8 @@ and apply_function name (fdecl : function_decl) closure_env arg_values =
     (* Lambda: złapane zmienne kopiujemy do środowiska wywołania, a jego rodzicem jest globalne -
        każde wywołanie zaczyna od tych samych kopii, przypisanie do globalnej działa jak w funkcji *)
     let func_env = match closure_env.parent with
-      | Some global when Hashtbl.mem closure_env.vars lambda_marker ->
-          { vars = Hashtbl.copy closure_env.vars; parent = Some global }
+      | Some global when Vars.mem closure_env.vars lambda_marker ->
+          { vars = Vars.copy closure_env.vars; parent = Some global }
       | _ -> create_env (Some closure_env) in
     (* Bind parameters *)
     let num_params = List.length fdecl.params in
@@ -235,7 +235,7 @@ and eval_new_object env class_name args =
     match class_val with
     | VClass (cdecl, class_env) ->
         (* Create new object with fields *)
-        let obj = Hashtbl.create 16 in
+        let obj = Vars.create 16 in
 
         (* First, inherit fields and methods from parent class if exists *)
         (match cdecl.parent_class with
@@ -247,12 +247,12 @@ and eval_new_object env class_name args =
                    (* Copy parent fields *)
                    List.iter (fun (field_name, init_expr) ->
                      let field_value = eval_expr parent_env init_expr in
-                     Hashtbl.replace obj field_name field_value
+                     Vars.replace obj field_name field_value
                    ) parent_cdecl.fields;
                    (* Copy parent methods *)
                    List.iter (fun (method_decl : function_decl) ->
                      let method_env = { vars = obj; parent = Some parent_env } in
-                     Hashtbl.replace obj method_decl.name (VFunction (method_decl, method_env))
+                     Vars.replace obj method_decl.name (VFunction (method_decl, method_env))
                    ) parent_cdecl.methods
                | _ -> raise (RuntimeError (Printf.sprintf "Klasa bazowa %s to nie klasa" parent_name))
              with RuntimeError _ ->
@@ -262,14 +262,14 @@ and eval_new_object env class_name args =
         (* Initialize fields from class definition (may override parent fields) *)
         List.iter (fun (field_name, init_expr) ->
           let field_value = eval_expr class_env init_expr in
-          Hashtbl.replace obj field_name field_value
+          Vars.replace obj field_name field_value
         ) cdecl.fields;
 
         (* Add methods to object (may override parent methods) *)
         (* Metody współdzielą tablicę pól z obiektem - widzą bieżące wartości pól *)
         List.iter (fun (method_decl : function_decl) ->
           let method_env = { vars = obj; parent = Some class_env } in
-          Hashtbl.replace obj method_decl.name (VFunction (method_decl, method_env))
+          Vars.replace obj method_decl.name (VFunction (method_decl, method_env))
         ) cdecl.methods;
 
         VObject obj
@@ -286,12 +286,12 @@ and eval_new_struct env struct_name =
     match struct_val with
     | VStruct (sdecl, struct_env) ->
         (* Create new object with fields from struct definition *)
-        let obj = Hashtbl.create 16 in
+        let obj = Vars.create 16 in
 
         (* Initialize fields from struct definition *)
         List.iter (fun (field_name, init_expr) ->
           let field_value = eval_expr struct_env init_expr in
-          Hashtbl.replace obj field_name field_value
+          Vars.replace obj field_name field_value
         ) sdecl.fields;
 
         VObject obj
@@ -309,13 +309,13 @@ and eval_new_union env union_name =
     | VUnion (udecl, union_env) ->
         (* Create new object with fields from union definition *)
         (* In a union, all fields share the same memory, so we initialize with first field only *)
-        let obj = Hashtbl.create 16 in
+        let obj = Vars.create 16 in
 
         (* Initialize only the first field (union behavior) *)
         (match udecl.fields with
          | (field_name, init_expr) :: _ ->
              let field_value = eval_expr union_env init_expr in
-             Hashtbl.replace obj field_name field_value
+             Vars.replace obj field_name field_value
          | [] -> ());
 
         VObject obj
@@ -371,9 +371,9 @@ and eval_stmt env = function
                  else
                    arr_vals.(i) <- val_to_assign
              | VObject obj, VString s ->
-                 Hashtbl.replace obj s val_to_assign
+                 Vars.replace obj s val_to_assign
              | VObject obj, VInt i ->
-                 Hashtbl.replace obj (string_of_int i) val_to_assign
+                 Vars.replace obj (string_of_int i) val_to_assign
              | _, VInt _ ->
                  raise (RuntimeError "To nie jest tablica ani obiekt")
              | _, _ ->

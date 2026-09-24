@@ -72,7 +72,7 @@ let next_table_id = ref 0
 
 let register () =
   List.iter (fun (names, arity, impl) ->
-    List.iter (fun n -> Hashtbl.replace builtins n (arity, impl)) names) [
+    List.iter (fun n -> Vars.replace builtins n (arity, impl)) names) [
 
   (* ============ MEMORY MANAGEMENT (DOOM-style Zone Allocator) ============ *)
   (* DAJ MI HAJS - Z_Malloc(size, tag) - Allocate memory block *)

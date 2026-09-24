@@ -74,7 +74,7 @@ let run ~parse ~load_module () =
     let locs = !current_loc :: List.map snd !call_stack in
     List.map2 (fun n (f, l) -> (n, f, l)) names locs in
   let vars_of tbl =
-    Hashtbl.fold (fun n v acc -> match v with
+    Vars.fold (fun n v acc -> match v with
       | VFunction _ | VClass _ | VStruct _ | VUnion _ | VEnum _ -> acc
       | _ when n = lambda_marker -> acc
       | _ -> (n, v) :: acc) tbl [] |> List.sort compare

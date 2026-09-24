@@ -19,7 +19,7 @@ type value =
   | VStruct of struct_decl * environment
   | VUnion of union_decl * environment
   | VEnum of enum_decl * environment
-  | VObject of (string, value) Hashtbl.t
+  | VObject of value Value.Vars.t
   | VPointer of value ref
   | VFileHandle of file_handle
 

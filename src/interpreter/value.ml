@@ -4,6 +4,67 @@ open Ast
 
 (* ============ RUNTIME VALUES ============ *)
 
+(* Zmienne i pola obiektów: tablica z kluczem tekstowym. Własna, bo przy odczycie zmiennej hasz
+   liczymy raz i używamy go na każdym poziomie środowiska (Hashtbl liczyłby go od nowa, a do tego
+   porównuje klucze polimorficznym compare). Ta sama tablica służy za pola obiektu. *)
+module Vars = struct
+  type 'a bucket = Empty | Cons of { key : string; hash : int; mutable data : 'a; next : 'a bucket }
+  type 'a t = { mutable size : int; mutable buckets : 'a bucket array }
+
+  (* nazwy są krótkie - pętla w OCamlu jest tańsza niż wywołanie caml_hash *)
+  let hash s =
+    let h = ref 5381 in
+    for i = 0 to String.length s - 1 do
+      h := !h * 33 + Char.code (String.unsafe_get s i)
+    done;
+    !h land max_int
+
+  let create n = { size = 0; buckets = Array.make (max 8 n) Empty }
+  let index t h = h land (Array.length t.buckets - 1)
+
+  let rec find_in key h = function
+    | Empty -> None
+    | Cons c -> if c.hash = h && String.equal c.key key then Some c.data else find_in key h c.next
+
+  let find_h t key h = find_in key h t.buckets.(index t h)
+  let find_opt t key = find_h t key (hash key)
+  let mem_h t key h = find_h t key h <> None
+  let mem t key = mem_h t key (hash key)
+
+  let resize t =
+    let old = t.buckets in
+    t.buckets <- Array.make (2 * Array.length old) Empty;
+    let rec move = function
+      | Empty -> ()
+      | Cons c ->
+          let i = index t c.hash in
+          t.buckets.(i) <- Cons { c with next = t.buckets.(i) };
+          move c.next in
+    Array.iter move old
+
+  (* Zmienia istniejący wpis albo dodaje nowy *)
+  let replace_h t key h data =
+    let rec go = function
+      | Empty -> false
+      | Cons c -> if c.hash = h && String.equal c.key key then (c.data <- data; true) else go c.next in
+    if not (go t.buckets.(index t h)) then begin
+      if t.size >= 2 * Array.length t.buckets then resize t;
+      let i = index t h in
+      t.buckets.(i) <- Cons { key; hash = h; data; next = t.buckets.(i) };
+      t.size <- t.size + 1
+    end
+
+  let replace t key data = replace_h t key (hash key) data
+
+  let fold f t acc =
+    let rec go acc = function Empty -> acc | Cons c -> go (f c.key c.data acc) c.next in
+    Array.fold_left go acc t.buckets
+
+  let copy t =
+    let rec dup = function Empty -> Empty | Cons c -> Cons { c with next = dup c.next } in
+    { size = t.size; buckets = Array.map dup t.buckets }
+end
+
 (* Runtime value types *)
 type value =
   | VInt of int                                      (* Default 32-bit integer *)
@@ -21,7 +82,7 @@ type value =
   | VStruct of struct_decl * environment     (* Struct definition *)
   | VUnion of union_decl * environment       (* Union definition *)
   | VEnum of enum_decl * environment         (* Enum definition *)
-  | VObject of (string, value) Hashtbl.t
+  | VObject of value Vars.t
   | VPointer of value ref                    (* Pointer/reference (PALCEM POKAZUJĘ) *)
   | VFileHandle of file_handle
 
@@ -30,7 +91,7 @@ and file_handle =
   | OutputHandle of out_channel
 
 and environment = {
-  mutable vars: (string, value) Hashtbl.t;
+  mutable vars: value Vars.t;
   parent: environment option;
 }
 
@@ -69,7 +130,7 @@ let stmt_hook : (string -> int -> environment -> unit) option ref = ref None
 
 (* Create a new environment *)
 let create_env parent =
-  { vars = Hashtbl.create 16; parent }
+  { vars = Vars.create 16; parent }
 
 (* Create the global environment *)
 let global_env () =
@@ -105,12 +166,13 @@ let check_type v t what =
 (* Get variable from environment *)
 (* Wszystkie nazwy widoczne ze środowiska - do podpowiedzi przy literówce *)
 let rec visible_names env =
-  Hashtbl.fold (fun n _ acc -> if n = "(lambda)" then acc else n :: acc) env.vars
+  Vars.fold (fun n _ acc -> if n = "(lambda)" then acc else n :: acc) env.vars
     (match env.parent with Some p -> visible_names p | None -> [])
 
 let get_var env name =
+  let h = Vars.hash name in
   let rec go e =
-    match Hashtbl.find_opt e.vars name with
+    match Vars.find_h e.vars name h with
     | Some v -> v
     | None ->
         match e.parent with
@@ -119,22 +181,20 @@ let get_var env name =
   go env
 
 (* Set variable in environment *)
-let rec set_var env name value =
-  if Hashtbl.mem env.vars name then
-    Hashtbl.replace env.vars name value
-  else
-    match env.parent with
-    | Some parent ->
-        if Hashtbl.mem parent.vars name then
-          set_var parent name value
-        else
-          Hashtbl.add env.vars name value
-    | None ->
-        Hashtbl.add env.vars name value
+let set_var env name value =
+  let h = Vars.hash name in
+  let rec go env =
+    if Vars.mem_h env.vars name h then
+      Vars.replace_h env.vars name h value
+    else
+      match env.parent with
+      | Some parent when Vars.mem_h parent.vars name h -> go parent
+      | _ -> Vars.replace_h env.vars name h value in
+  go env
 
 (* Define variable in current scope *)
 let define_var env name value =
-  Hashtbl.replace env.vars name value
+  Vars.replace env.vars name value
 
 (* ============ VALUE OPERATIONS ============ *)
 
@@ -246,6 +306,10 @@ let to_string = function
 (* Evaluate arithmetic operator *)
 let eval_arith_op op v1 v2 =
   match op, v1, v2 with
+  (* najczęstszy przypadek - od razu, bez sprawdzania tekstu i przecinka *)
+  | Plus, VInt a, VInt b -> VInt (a + b)
+  | Minus, VInt a, VInt b -> VInt (a - b)
+  | Multiply, VInt a, VInt b -> VInt (a * b)
   (* + z tekstem po którejkolwiek stronie skleja *)
   | Plus, VString _, _ | Plus, _, VString _ -> VString (to_string v1 ^ to_string v2)
   (* Przecinek po którejkolwiek stronie = wynik z przecinkiem *)
@@ -285,7 +349,9 @@ let compare_values ?(equality = false) v1 v2 =
   | _ -> raise (RuntimeError "Nie można porównać tekstu z liczbą")
 
 let eval_comparison_op op v1 v2 =
-  let c = compare_values ~equality:(op = Equal || op = NotEqual) v1 v2 in
+  let c = match v1, v2 with
+    | VInt a, VInt b -> Int.compare a b
+    | _ -> compare_values ~equality:(match op with Equal | NotEqual -> true | _ -> false) v1 v2 in
   VBool (match op with
     | Equal -> c = 0
     | NotEqual -> c <> 0
@@ -319,8 +385,8 @@ let eval_bitwise_op op v1 v2 =
   )
 
 (* Tabela wbudowanych funkcji - wypełniana po definicji eval_expr (sekcja BUILTINS) *)
-let builtins : (string, int option * (environment -> expr list -> value)) Hashtbl.t = Hashtbl.create 128
+let builtins : (int option * (environment -> expr list -> value)) Vars.t = Vars.create 128
 
 (* Nazwy i liczba argumentów wszystkich builtinów - dla ferdek --check *)
-let builtin_arities () = Hashtbl.fold (fun n (a, _) acc -> (n, a) :: acc) builtins []
+let builtin_arities () = Vars.fold (fun n (a, _) acc -> (n, a) :: acc) builtins []
 

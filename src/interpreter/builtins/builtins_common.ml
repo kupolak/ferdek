@@ -7,7 +7,7 @@ open Eval
    Liczbę argumentów sprawdza eval_function_call; z tej tabeli czyta też ferdek --check. *)
 let add entries =
   List.iter (fun (names, arity, impl) ->
-    List.iter (fun n -> Hashtbl.replace builtins n (arity, impl)) names) entries
+    List.iter (fun n -> Vars.replace builtins n (arity, impl)) names) entries
 
 (* Funkcja przekazana builtinowi (np. do sortowania) jako OCamlowa funkcja na wartościach *)
 let function_arg builtin = function
