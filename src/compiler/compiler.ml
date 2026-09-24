@@ -114,6 +114,10 @@ let builtins = [
   ["CO MÓWI SĄSIAD"], ("b_co_mowi_sasiad", Some 1);
   ["ZAMYKAM INTERES"], ("b_zamykam_interes", Some 1);
   ["NASTĘPNA LINIJKA"], ("b_nastepna_linijka", Some 0);
+  ["CZY KANAPA PASUJE"], ("b_czy_kanapa_pasuje", Some 2);
+  ["ZNAJDŹ NA KANAPIE"], ("b_znajdz_na_kanapie", Some 2);
+  ["ZNAJDŹ WSZYSTKO NA KANAPIE"], ("b_znajdz_wszystko_na_kanapie", Some 2);
+  ["PODMIEŃ NA KANAPIE"], ("b_podmien_na_kanapie", Some 3);
   ["CAŁE WEJŚCIE"], ("b_cale_wejscie", Some 0);
   ["OPAKUJ W GAZETĘ"], ("b_opakuj", Some 1);
   ["DAJ MI HAJS"], ("b_daj_hajs", Some 2);

@@ -144,4 +144,25 @@ let register () = add [
           let len = Text_utils.utf8_length t in
           VString (if len >= n then t else String.make (n - len) ' ' ^ t)
       | _ -> VNull);
+
+  (* Wzorce (moduł Pattern): mały podzbiór wyrażeń regularnych, na znakach *)
+  ["CZY KANAPA PASUJE"], Some 2, (fun env args ->
+      match List.map (fun a -> to_string (eval_expr env a)) args with
+      | [t; p] -> VBool (Pattern.matches "CZY KANAPA PASUJE" t p)
+      | _ -> VNull);
+
+  ["ZNAJDŹ NA KANAPIE"], Some 2, (fun env args ->
+      match List.map (fun a -> to_string (eval_expr env a)) args with
+      | [t; p] -> (match Pattern.find "ZNAJDŹ NA KANAPIE" t p with Some s -> VString s | None -> VNull)
+      | _ -> VNull);
+
+  ["ZNAJDŹ WSZYSTKO NA KANAPIE"], Some 2, (fun env args ->
+      match List.map (fun a -> to_string (eval_expr env a)) args with
+      | [t; p] -> VArray (Array.of_list (List.map (fun s -> VString s) (Pattern.find_all "ZNAJDŹ WSZYSTKO NA KANAPIE" t p)))
+      | _ -> VNull);
+
+  ["PODMIEŃ NA KANAPIE"], Some 3, (fun env args ->
+      match List.map (fun a -> to_string (eval_expr env a)) args with
+      | [t; p; by] -> VString (Pattern.replace "PODMIEŃ NA KANAPIE" t p by)
+      | _ -> VNull);
   ]

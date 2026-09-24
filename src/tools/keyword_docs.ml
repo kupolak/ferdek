@@ -33,6 +33,7 @@ let entries = [
   "COSINUS ZE SKRZYNKI", "COSINUS ZE SKRZYNKI(x)", "Cosinus kąta w radianach (wbudowana)", true;
   "CYCU PRZYNIEŚ", "CYCU PRZYNIEŚ", "Import, krótsza forma: CYCU PRZYNIEŚ BABKA", false;
   "CYCU PRZYNIEŚ NO", "CYCU PRZYNIEŚ NO", "Deklaracja zmiennej: CYCU PRZYNIEŚ NO x / TO NIE SĄ TANIE RZECZY 5", false;
+  "CZY KANAPA PASUJE", "CZY KANAPA PASUJE(tekst, wzór)", "Czy wzór występuje w tekście (wzory: . [a-z] [^a] \\d \\w \\s * + ? ^ $)", true;
   "CZY KIBEL ZAJĘTY", "CZY KIBEL ZAJĘTY(ścieżka)", "Czy plik istnieje", true;
   "CZY LEŻY NA WERSALCE", "CZY LEŻY NA WERSALCE(tablica, element)", "Czy tablica zawiera element", true;
   "CZY SIEDZI NA KANAPIE", "CZY SIEDZI NA KANAPIE(tekst, fragment)", "Czy tekst zawiera fragment", true;
@@ -132,6 +133,7 @@ let entries = [
   "PISZ BAJT", "PISZ BAJT(blok, indeks, bajt)", "Zapisz bajt", true;
   "PIWO I TELEWIZOR", "PIWO I TELEWIZOR", "and", false;
   "PO PIERWSZE PRIMO", "PO PIERWSZE PRIMO(liczba, miejsca)", "Liczba jako tekst z podaną liczbą miejsc po przecinku (3.14159, 2 -> \"3.14\")", true;
+  "PODMIEŃ NA KANAPIE", "PODMIEŃ NA KANAPIE(tekst, wzór, na)", "Każdy fragment pasujący do wzoru zamieniony na tekst na", true;
   "PODZIEL SKRZYNKI", "PODZIEL SKRZYNKI(a, b)", "SKRZYNKA: dzielenie całkowite", true;
   "PODŁOGA ZE SKRZYNKI", "PODŁOGA ZE SKRZYNKI(x)", "Zaokrąglenie w dół do liczby całkowitej", true;
   "POLAŁA SIĘ KREW", "POLAŁA SIĘ KREW(format, ...)", "Zatrzymaj program z błędem (jak I_Error w DOOM); %s, %d w formacie", true;
@@ -221,6 +223,8 @@ let entries = [
   "ZESTAW WERSALKI", "ZESTAW WERSALKI(a, b)", "Nowa tablica: elementy a, potem b", true;
   "ZMIEŃ KANAŁ", "ZMIEŃ KANAŁ(ekran, x, y, kolor)", "Ustaw piksel", true;
   "ZMONTUJ MEBEL", "ZMONTUJ MEBEL", "Nowa struktura", false;
+  "ZNAJDŹ NA KANAPIE", "ZNAJDŹ NA KANAPIE(tekst, wzór)", "Pierwszy fragment pasujący do wzoru albo null", true;
+  "ZNAJDŹ WSZYSTKO NA KANAPIE", "ZNAJDŹ WSZYSTKO NA KANAPIE(tekst, wzór)", "Wszystkie fragmenty pasujące do wzoru (tablica)", true;
   "ZNAK Z KANAPY", "ZNAK Z KANAPY(tekst, i)", "Znak na pozycji i", true;
   "ZRÓB BAJCIK", "ZRÓB BAJCIK(x)", "Bajt 0-255", true;
   "ZRÓB DŁUGI", "ZRÓB DŁUGI(x)", "Liczba całkowita (obcina liczbę z przecinkiem, tekst zamienia na liczbę)", true;

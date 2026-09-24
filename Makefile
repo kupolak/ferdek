@@ -91,7 +91,7 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime test-args test-input
+test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime test-args test-input test-patterns
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
 
@@ -196,6 +196,10 @@ test-input: build
 	  if [ "$$out" != "$$exp" ]; then echo "FAIL test-input $$mode:"; echo "$$out"; exit 1; fi; \
 	done; echo "--- wejście programu: OK"
 
+# Wzorce: losowe wzory i teksty - oba tryby zgodne i wynik jak w Python re
+test-patterns: build
+	python3 scripts/test_patterns.py 300 2026 $(FERDEK)
+
 test-lsp: build
 	python3 scripts/test_lsp.py $(FERDEK)
 
@@ -236,4 +240,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: playground all build clean distclean test test-args test-input test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: playground all build clean distclean test test-args test-input test-patterns test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

@@ -164,6 +164,10 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `ZAMIEŃ NA KANAPIE(tekst, stary, nowy)` | Zamień wszystkie wystąpienia |
 | `ZNAK Z KANAPY(tekst, i)` | Znak na pozycji i |
 | `KANAPA DO GÓRY(tekst)` | Wielkie litery (także polskie) |
+| `CZY KANAPA PASUJE(tekst, wzór)` | Czy wzór występuje w tekście (wzory: . [a-z] [^a] \d \w \s * + ? ^ $) |
+| `ZNAJDŹ NA KANAPIE(tekst, wzór)` | Pierwszy fragment pasujący do wzoru albo null |
+| `ZNAJDŹ WSZYSTKO NA KANAPIE(tekst, wzór)` | Wszystkie fragmenty pasujące do wzoru (tablica) |
+| `PODMIEŃ NA KANAPIE(tekst, wzór, na)` | Każdy fragment pasujący do wzoru zamieniony na tekst na |
 | `KANAPA W DÓŁ(tekst)` | Małe litery (także polskie) |
 | `POWTÓRZ NA KANAPIE(tekst, n)` | Tekst powtórzony n razy ("la", 3 -> "lalala") |
 | `CZY SIEDZI NA KANAPIE(tekst, fragment)` | Czy tekst zawiera fragment |

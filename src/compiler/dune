@@ -3,7 +3,7 @@
 (rule
  (targets runtime.c)
  (deps
-  runtime/core.c runtime/objects.c runtime/builtins.c runtime/maps.c runtime/library.c
+  runtime/core.c runtime/objects.c runtime/builtins.c runtime/maps.c runtime/library.c runtime/pattern.c
   runtime/dates.c runtime/json.c runtime/files.c runtime/memory.c runtime/io.c runtime/network.c)
  (action (with-stdout-to %{targets} (system "cat %{deps}"))))
 
