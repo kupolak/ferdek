@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Generuje z src/lexer.mll wszystko, co opisuje słowa kluczowe:
+"""Generuje z src/language/lexer.mll wszystko, co opisuje słowa kluczowe:
   - docs/JEZYK.md - słownik języka,
-  - src/keyword_docs.ml - opisy dla ferdek --lsp (podpowiedzi, uzupełnianie),
+  - src/tools/keyword_docs.ml - opisy dla ferdek --lsp (podpowiedzi, uzupełnianie),
   - dla rozszerzenia VS Code: gramatykę TextMate (kolorowanie); opisy i uzupełnianie daje ferdek --lsp
-    z src/keyword_docs.ml.
+    z src/tools/keyword_docs.ml.
 
 Lekser jest jedynym źródłem prawdy o słowach kluczowych - uruchom po każdej zmianie:
     python3 scripts/gen_keywords.py [ferdek-vscode]
@@ -44,7 +44,7 @@ W = r"[\p{L}\p{N}_]"
 
 
 def keywords():
-    lexer = (ROOT / "src" / "lexer.mll").read_text(encoding="utf-8")
+    lexer = (ROOT / "src" / "language" / "lexer.mll").read_text(encoding="utf-8")
     found = {}
     for text, action in re.findall(r'\|\s*"([^"]+)"\s*\{\s*([^}]*)\}', lexer):
         tok = action.strip()
@@ -442,7 +442,7 @@ def docs():
 
 
 def ocaml_docs():
-    """src/keyword_docs.ml - opisy dla ferdek --lsp (podpowiedzi i uzupełnianie)"""
+    """src/tools/keyword_docs.ml - opisy dla ferdek --lsp (podpowiedzi i uzupełnianie)"""
     q = lambda t: '"' + t.replace("\\", "\\\\").replace('"', '\\"') + '"'
     rows = [f"  {q(e['word'])}, {q(e['insert'])}, {q(e['doc'])}, {'true' if e['kind'] == 'function' else 'false'};"
             for e in keyword_docs()]
@@ -454,13 +454,13 @@ def ocaml_docs():
 if __name__ == "__main__":
     dump = lambda data: json.dumps(data, ensure_ascii=False, indent=2) + "\n"
     doc_path = ROOT / "docs" / "JEZYK.md"
-    ml_path = ROOT / "src" / "keyword_docs.ml"
+    ml_path = ROOT / "src" / "tools" / "keyword_docs.ml"
     if sys.argv[1:] == ["--check"]:
         keyword_docs()  # przerwie, jeśli jakieś słowo nie ma opisu
         if not doc_path.exists() or doc_path.read_text(encoding="utf-8") != docs():
             sys.exit("docs/JEZYK.md jest nieaktualny - uruchom: python3 scripts/gen_keywords.py")
         if ml_path.read_text(encoding="utf-8") != ocaml_docs():
-            sys.exit("src/keyword_docs.ml jest nieaktualny - uruchom: python3 scripts/gen_keywords.py")
+            sys.exit("src/tools/keyword_docs.ml jest nieaktualny - uruchom: python3 scripts/gen_keywords.py")
         sys.exit(0)
     doc_path.parent.mkdir(exist_ok=True)
     doc_path.write_text(docs(), encoding="utf-8")

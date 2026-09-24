@@ -1,0 +1,13 @@
+; Runtime programów C (runtime.c) i nakładki grafiki - pliki C, wbudowane w kompilator jako napisy
+(rule
+ (targets runtime_source.ml)
+ (deps runtime.c runtime_graphics.c)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let code = {ferdek_c|")
+    (cat runtime.c)
+    (echo "|ferdek_c}\nlet graphics = {ferdek_c|")
+    (cat runtime_graphics.c)
+    (echo "|ferdek_c}\n")))))

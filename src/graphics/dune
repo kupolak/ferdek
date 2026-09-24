@@ -1,0 +1,13 @@
+; Kod grafiki X11 osadzony w kompilatorze - dołączany do programów, które rysują
+(rule
+ (targets graphics_source.ml)
+ (deps graphics_x11.h graphics_x11.c)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let header = {ferdek_c|")
+    (cat graphics_x11.h)
+    (echo "|ferdek_c}\nlet code = {ferdek_c|")
+    (cat graphics_x11.c)
+    (echo "|ferdek_c}\n")))))

@@ -1,77 +1,14 @@
-; ponytail: -ml omija limit tabel ocamllex ("automaton is too big")
-(rule
- (targets lexer.ml)
- (deps lexer.mll)
- (action (run ocamllex -ml -q %{deps})))
-
-; Kod grafiki X11 osadzony w kompilatorze - dołączany do programów, które rysują
-(rule
- (targets graphics_source.ml)
- (deps graphics_x11.h graphics_x11.c)
- (action
-  (with-stdout-to
-   %{targets}
-   (progn
-    (echo "let header = {ferdek_c|")
-    (cat graphics_x11.h)
-    (echo "|ferdek_c}\nlet code = {ferdek_c|")
-    (cat graphics_x11.c)
-    (echo "|ferdek_c}\n")))))
-
-; Runtime programów C (runtime.c) i nakładki grafiki - pliki C, wbudowane w kompilator jako napisy
-(rule
- (targets runtime_source.ml)
- (deps runtime.c runtime_graphics.c)
- (action
-  (with-stdout-to
-   %{targets}
-   (progn
-    (echo "let code = {ferdek_c|")
-    (cat runtime.c)
-    (echo "|ferdek_c}\nlet graphics = {ferdek_c|")
-    (cat runtime_graphics.c)
-    (echo "|ferdek_c}\n")))))
-
-(menhir
- (modules parser)
- (flags (--explain --table)))
+; Kod w podfolderach: language (składnia i wczytywanie), interpreter, compiler (C i runtime),
+; graphics (X11), tools (--check, formatter, LSP, DAP, debugger), cli (komenda ferdek).
+; Reguły generujące moduły są w dune każdego podfolderu.
+(include_subdirs unqualified)
 
 (library
  (name ferdek_lib)
  (wrapped false)
  (flags
   (:standard -w -27-32))
- (modules
-  ast
-  parser
-  lexer
-  preprocessor
-  value
-  eval
-  interp_builtins
-  interp_builtins_doom
-  interpreter
-  compiler
-  checker
-  graphics_source
-  runtime_source
-  formatter
-  syntax_errors
-  qualify
-  keyword_docs
-  source
-  sources
-  debugger
-  dap
-  consts
-  typy
-  sloik
-  lsp
-  builtins_string
-  builtins_hashmap
-  builtins_file
-  builtins_list
-  errors)
+ (modules :standard \ ferdek)
  (libraries unix str menhirLib yojson)
  (foreign_stubs
   (language c)
@@ -86,5 +23,3 @@
  (flags
   (:standard -w -27-32))
  (libraries ferdek_lib))
-
-

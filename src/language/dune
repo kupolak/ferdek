@@ -1,0 +1,9 @@
+; ponytail: -ml omija limit tabel ocamllex ("automaton is too big")
+(rule
+ (targets lexer.ml)
+ (deps lexer.mll)
+ (action (run ocamllex -ml -q %{deps})))
+
+(menhir
+ (modules parser)
+ (flags (--explain --table)))
