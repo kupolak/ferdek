@@ -62,6 +62,9 @@ exception Fatal of string
    była w chwili błędu; HELENA MAM ZAWAŁ przywraca ją do stanu z wejścia do bloku. *)
 let call_stack : (string * (string * int)) list ref = ref []
 
+(* Debugger (ferdek --debug): wołany przed każdą instrukcją z plikiem, linią i środowiskiem *)
+let stmt_hook : (string -> int -> environment -> unit) option ref = ref None
+
 (* ============ ENVIRONMENT MANAGEMENT ============ *)
 
 (* Create a new environment *)

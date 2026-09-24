@@ -46,6 +46,7 @@
   keyword_docs
   source
   sources
+  debugger
   lsp
   builtins_string
   builtins_hashmap

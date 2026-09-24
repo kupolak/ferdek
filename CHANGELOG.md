@@ -78,6 +78,8 @@
   of 32 MB and growing).
 
 ### Tools
+- `ferdek --debug program.ferdek`: step through a program (step, next, step out), breakpoints,
+  evaluate expressions, list variables and the call path.
 - Tutorial `docs/SAMOUCZEK.md` ("Ferdek w 15 minut"): every program in it is run in both modes by
   `make test` and must print what the tutorial shows.
 - Browser playground (`make playground`): the interpreter as JavaScript in a Web Worker, with

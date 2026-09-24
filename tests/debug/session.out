@@ -1,0 +1,28 @@
+Debugger Ferdka - h pokaże polecenia. Zatrzymuję się przed pierwszą instrukcją.
+program.ferdek:9  CYCU PRZYNIEŚ NO suma
+(ferdek) program.ferdek:11  KRĘCI CEMENT BETONIARA i OD 1 DO 3
+(ferdek) program.ferdek:12      O KURDE MAM POMYSŁA suma A PROSZĘ BARDZO suma BABKA DAWAJ RENTĘ W MORDĘ JEŻA podwoj(i) NO I GITARA
+(ferdek) program.ferdek:12      O KURDE MAM POMYSŁA suma A PROSZĘ BARDZO suma BABKA DAWAJ RENTĘ W MORDĘ JEŻA podwoj(i) NO I GITARA
+(ferdek) program.ferdek:5      CYCU PRZYNIEŚ NO wynik
+(ferdek) program.ferdek:7      I JA INFORMUJĘ ŻE WYCHODZĘ wynik
+(ferdek) lokalne:
+  wynik = 4
+  x = 2
+globalne:
+  i = 2
+  suma = 2
+(ferdek)   w funkcji podwoj, wywołanej w linii 12
+(ferdek) program.ferdek:12      O KURDE MAM POMYSŁA suma A PROSZĘ BARDZO suma BABKA DAWAJ RENTĘ W MORDĘ JEŻA podwoj(i) NO I GITARA
+(ferdek) 106
+(ferdek) Punkt zatrzymania: program.ferdek:14
+(ferdek) program.ferdek:14  PANIE SENSACJA REWELACJA "Suma: " BABKA DAWAJ RENTĘ suma
+(ferdek)     11  KRĘCI CEMENT BETONIARA i OD 1 DO 3
+    12      O KURDE MAM POMYSŁA suma A PROSZĘ BARDZO suma BABKA DAWAJ RENTĘ W MORDĘ JEŻA podwoj(i) NO I GITARA
+    13  A ROBIĆ NI MA KOMU
+->  14  PANIE SENSACJA REWELACJA "Suma: " BABKA DAWAJ RENTĘ suma
+    15  MOJA NOGA JUŻ TUTAJ NIE POSTANIE
+    16  
+(ferdek) Błąd: Nieznana zmienna: licnzik
+(ferdek) Nie znam polecenia - h pokaże listę
+(ferdek) Suma: 12
+Program zakończony pomyślnie. Piwo dla Pana!

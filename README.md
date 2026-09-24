@@ -61,6 +61,9 @@ Check a program without running it (unknown names, wrong argument counts):
 ferdek --check program.ferdek
 ```
 
+Debug step by step: `ferdek --debug program.ferdek` - `k` step, `n` next line, `w` step out, `b 12` breakpoint,
+`c` continue, `p expr` show a value, `z` variables, `g` call path (`h` lists everything).
+
 Editors: `ferdek --lsp` is a Language Server (stdin/stdout): errors as you type, hover docs,
 completion, go to definition (also into imported modules), find references and rename. Point any LSP client at it, e.g. in Neovim:
 

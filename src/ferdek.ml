@@ -64,7 +64,8 @@ let print_help () =
   Printf.printf "  --fmt <plik>            Wypisz program z uporządkowanymi wcięciami.\n";
   Printf.printf "  --fmt-check <plik>      Sprawdź, że formatowanie nie zmienia programu i jest stabilne.\n";
   Printf.printf "  --repl                  Pogadaj sobie z Ferdkiem (tryb interaktywny).\n";
-  Printf.printf "  --lsp                   Serwer LSP dla edytorów: definicje, użycia, zmiana nazwy.\n\n";
+  Printf.printf "  --lsp                   Serwer LSP dla edytorów: definicje, użycia, zmiana nazwy.\n";
+  Printf.printf "  --debug <plik>          Debugger: krok po kroku, punkty zatrzymania, podgląd zmiennych.\n\n";
 
   Printf.printf "Przykłady (A niech to dunder świśnie!):\n";
   Printf.printf "  ferdek program.ferdek           # Idziemy na łatwiznę, odpalamy program!\n";
@@ -365,6 +366,14 @@ let () =
           if i + 1 >= argc then (print_help (); exit 1);
           parse_args (i + 2) `Check output_file (Some Sys.argv.(i + 1))
       | "--lsp" -> exit (Lsp.run ~diagnose ~find_module:find_module_file ())
+      | "--debug" ->
+          if i + 1 >= argc then (print_help (); exit 1);
+          let file = Sys.argv.(i + 1) in
+          (match parse_file file with
+           | Error msg -> Printf.eprintf "A fe! %s\n" msg; exit 1
+           | Ok prog ->
+               Interpreter.set_module_loader load_stdlib_module;
+               exit (Debugger.run ~main_file:file prog))
       | "--repl" ->
           parse_args (i + 1) `REPL output_file input_file
       | "-i" | "--interpret" ->

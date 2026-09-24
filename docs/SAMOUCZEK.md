@@ -364,6 +364,8 @@ Wynik:
 - `ferdek --check program.ferdek` - sprawdzenie bez uruchamiania: literówki, nieznane nazwy, liczba argumentów.
 - `ferdek --fmt program.ferdek` - uporządkowane wcięcia.
 - `ferdek --repl` - rozmowa z Ferdkiem linia po linii.
+- `ferdek --debug program.ferdek` - program krok po kroku: `k` krok, `n` następna linia, `b 12` punkt
+  zatrzymania, `c` jedź dalej, `p x` wartość, `z` zmienne (`h` pokazuje wszystko).
 - `ferdek test` - uruchamia pliki `*_test.ferdek` (asercje z modułu BABKA).
 - Edytor: rozszerzenie do VS Code albo dowolny edytor z LSP (`ferdek --lsp`) - błędy na bieżąco,
   podpowiedzi, przejście do definicji.

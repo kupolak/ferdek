@@ -467,6 +467,7 @@ and eval_stmt env = function
 
   | Located (file, line, s) ->
       current_loc := (file, line);
+      (match !stmt_hook with Some hook -> hook file line env | None -> ());
       eval_stmt env s
 
   | Break -> raise BreakLoop
