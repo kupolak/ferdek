@@ -182,6 +182,10 @@ val stmt_names : stmt -> string list
 val block_decls : stmt list -> string list
 
 (* Przekształcenia: bezpośrednie podwyrażenia; wszystkie wyrażenia instrukcji (z zagnieżdżonymi) *)
+(* Podwyrażenia (bez wnętrza lambd) i wyrażenia instrukcji z zagnieżdżonymi instrukcjami *)
+val subexprs : expr -> expr list
+val stmt_exprs : stmt -> expr list
+
 val map_subexprs : (expr -> expr) -> expr -> expr
 val map_stmt_exprs : (expr -> expr) -> stmt -> stmt
 

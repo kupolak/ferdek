@@ -43,8 +43,8 @@ let check (prog : program) =
     check_block ~locals ~own_consts sets in
   let rec lambdas_in_expr e acc = match e with
     | Lambda (ps, b) -> List.fold_left lambdas_in_stmt ((ps, b) :: acc) b
-    | _ -> List.fold_left (fun acc x -> lambdas_in_expr x acc) acc (Compiler.subexprs e)
-  and lambdas_in_stmt acc s = List.fold_left (fun acc e -> lambdas_in_expr e acc) acc (Compiler.stmt_exprs s) in
+    | _ -> List.fold_left (fun acc x -> lambdas_in_expr x acc) acc (subexprs e)
+  and lambdas_in_stmt acc s = List.fold_left (fun acc e -> lambdas_in_expr e acc) acc (stmt_exprs s) in
   let lambdas stmts = List.fold_left lambdas_in_stmt [] stmts in
   let fn ?(members = []) (f : function_decl) =
     (* wartości domyślne tylko dla ostatnich parametrów i nie razem z ... *)

@@ -372,6 +372,30 @@ let rec targets_stmt (decl, assigned) = function
   | _ -> (decl, assigned)
 and targets_block acc stmts = List.fold_left targets_stmt acc stmts
 
+(* Podwyrażenia (bez wnętrza lambd - to osobne funkcje) *)
+let subexprs = function
+  | FunctionCall (_, es) | NewObject (_, es) | ArrayLiteral es -> es
+  | BinaryOp (a, _, b) | ComparisonOp (a, _, b) | LogicalOp (a, _, b) | BitwiseOp (a, _, b)
+  | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> [a; b]
+  | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
+  | Parenthesized e | Checked (e, _, _) -> [e]
+  | _ -> []
+
+(* Wyrażenia instrukcji razem z zagnieżdżonymi instrukcjami *)
+let rec stmt_exprs = function
+  | VarDecl (_, e) | ConstDecl (_, e) | Assign (_, e) | Print e | PrintInline e | Throw e -> [e]
+  | ArrayDecl (_, es) -> es
+  | ArrayAssign (a, v) -> [a; v]
+  | If (c, a, b) -> c :: List.concat_map stmt_exprs (a @ Option.value b ~default:[])
+  | While (c, b) -> c :: List.concat_map stmt_exprs b
+  | For (_, a, b, k, body) -> a :: b :: Option.to_list k @ List.concat_map stmt_exprs body
+  | ForEach (_, c, b) -> c :: List.concat_map stmt_exprs b
+  | FunctionCallStmt (n, args) | FunctionCallWithAssign (_, n, args) -> [FunctionCall (n, args)]
+  | Return e -> Option.to_list e
+  | Try (a, _, b, f) -> List.concat_map stmt_exprs (a @ b @ f)
+  | Located (_, _, s) -> stmt_exprs s
+  | Read _ | Break | Continue -> []
+
 (* Przekształcenie bezpośrednich podwyrażeń (f nie schodzi sama głębiej - robi to wołający) *)
 let map_subexprs f = function
   | FunctionCall (n, es) -> FunctionCall (n, List.map f es)

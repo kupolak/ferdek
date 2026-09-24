@@ -27,7 +27,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
     with Compiler.Compile_error msg -> report msg; prog.declarations
   in
   let add tbl names = List.iter (fun n -> Hashtbl.replace tbl n ()) names in
-  let names_of stmts = let d, a = Compiler.block_names ([], []) stmts in d @ a in
+  let names_of stmts = let d, a = targets_block ([], []) stmts in d @ a in
   let global = { vars = Hashtbl.create 64; funcs = Hashtbl.create 16; types = Hashtbl.create 16 } in
   let classes = Hashtbl.create 8 in
   List.iter (function
