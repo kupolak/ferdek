@@ -50,6 +50,8 @@ def keywords():
         tok = action.strip()
         if tok.startswith("IDENTIFIER"):
             scope = BUILTIN_SCOPE
+        elif tok.startswith("TYPE "):
+            scope = "storage.type.ferdek"
         elif tok in TOKEN_SCOPE:
             scope = TOKEN_SCOPE[tok]
         else:
@@ -118,6 +120,13 @@ SECTIONS = [
         "OD": "Początek zakresu pętli for",
         "DO": "Koniec zakresu pętli for (włącznie)",
         "CO": "Krok pętli for (domyślnie 1, ujemny liczy w dół)",
+        "TO JE LICZBA SYNEK": "Typ: liczba całkowita (po nazwie zmiennej, parametru albo po NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ)",
+        "TO JE LICZBA Z PRZECINKIEM": "Typ: liczba z przecinkiem",
+        "TO SĄ STRINGI": "Typ: tekst",
+        "TO JE TAK ALBO NIE": "Typ: prawda albo fałsz",
+        "TO JE WERSALKA": "Typ: tablica",
+        "TO JE SZAFKA": "Typ: szafka (mapa)",
+        "TO JE FUNKCJA": "Typ: funkcja",
         "I TAK TRZEBA POSPRZĄTAĆ": "Ostatnia część bloku HELENA: wykonywana zawsze - także po błędzie, return i break",
         "TO JE NA AMEN": "Stała: TO JE NA AMEN x / TO NIE SĄ TANIE RZECZY 5 - później nie wolno przypisać",
         "CO TO JE": "Wybór wariantu: CO TO JE x / JAK JE 1, 2 / A JAK NIC Z TEGO / KONIEC GADANIA",

@@ -1,0 +1,4 @@
+2
+Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Parametr ile funkcji polej: TO JE LICZBA SYNEK, a jest tekst (tests/errors/typ_parametru.ferdek, linia 7)
+    7 | W MORDĘ JEŻA polej(W MORDĘ JEŻA KANAPA DO GÓRY("dużo"))
+  w funkcji polej, wywołanej w linii 7

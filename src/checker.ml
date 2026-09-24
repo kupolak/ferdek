@@ -87,6 +87,19 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
     | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> expr sc a; expr sc b
     | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
     | Parenthesized e -> expr sc e
+    | Checked (e, t, what) ->
+        expr sc e;
+        let known = match e with
+          | IntLiteral _ -> Some TInt | FloatLiteral _ -> Some TFloat | StringLiteral _ -> Some TString
+          | BoolLiteral _ -> Some TBool | ArrayLiteral _ -> Some TArray | Lambda _ -> Some TFunction
+          | _ -> None in
+        (match known with
+         | Some k when k <> t ->
+             let noun = function
+               | TInt -> "liczbę całkowitą" | TFloat -> "liczbę z przecinkiem" | TString -> "tekst"
+               | TBool -> "prawdę/fałsz" | TArray -> "tablicę" | TMap -> "szafkę" | TFunction -> "funkcję" in
+             report (Printf.sprintf "%s: %s, a dostaje %s" what (string_of_typ t) (noun k))
+         | _ -> ())
     | ArrayLiteral es -> List.iter (expr sc) es
     | Lambda (ps, body) ->
         let vars = Hashtbl.copy sc.vars in

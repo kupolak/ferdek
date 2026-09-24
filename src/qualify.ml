@@ -46,6 +46,7 @@ let qualify alias (prog : program) =
     | Reference a -> Reference (e a)
     | Dereference a -> Dereference (e a)
     | Parenthesized a -> Parenthesized (e a)
+    | Checked (a, t, w) -> Checked (e a, t, w)
     | Lambda (ps, body) -> let sh = ps @ block_decls body @ sh in Lambda (ps, List.map (s sh) body)
     | IntLiteral _ | FloatLiteral _ | StringLiteral _ | BoolLiteral _ | NullLiteral -> x
   and s sh x =

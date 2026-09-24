@@ -117,7 +117,7 @@ let parse_source ?(preprocessed = false) filename text =
     match parse_collecting filename text with
     | Ok prog ->
         (match Consts.check prog with
-         | [] -> Ok (resolve_local_imports filename prog)
+         | [] -> Ok (resolve_local_imports filename (Typy.apply prog))
          | errs ->
              let lines = Array.of_list (String.split_on_char '\n' text) in
              (* znaczek pod początkiem instrukcji, nie pod wcięciem *)

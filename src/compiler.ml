@@ -287,6 +287,9 @@ let rec num_type env = function
   | FloatLiteral _ -> Float
   | Identifier n -> if env.ivar n then Int else if env.fvar n then Float else Other
   | Parenthesized e -> num_type env e
+  (* sprawdzony typ: w działającym programie jest dokładnie taki - kompilator może na tym polegać *)
+  | Checked (_, TInt, _) -> Int
+  | Checked (_, TFloat, _) -> Float
   | BinaryOp (a, _, b) ->
       (match num_type env a, num_type env b with
        | Int, Int -> Int
@@ -306,7 +309,7 @@ let subexprs = function
   | BinaryOp (a, _, b) | ComparisonOp (a, _, b) | LogicalOp (a, _, b) | BitwiseOp (a, _, b)
   | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> [a; b]
   | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
-  | Parenthesized e -> [e]
+  | Parenthesized e | Checked (e, _, _) -> [e]
   | _ -> []
 
 let rec all_exprs e = e :: List.concat_map all_exprs (subexprs e)
@@ -541,6 +544,10 @@ let fv = "FerdekValue"
 let compile_lambda : (codegen_context -> string -> string list -> string list -> stmt list -> string) ref =
   ref (fun _ _ _ _ _ -> "")
 
+let type_tag = function
+  | TInt -> "TYPE_INT" | TFloat -> "TYPE_FLOAT" | TString -> "TYPE_STRING" | TBool -> "TYPE_BOOL"
+  | TArray -> "TYPE_ARRAY" | TMap -> "TYPE_MAP" | TFunction -> "TYPE_FUNCTION"
+
 let rec compile_expr ctx expr =
   match expr with
   | (Identifier _ | BinaryOp _ | FunctionCall _ | Parenthesized _) when is_int (tenv ctx) expr ->
@@ -589,6 +596,8 @@ let rec compile_expr ctx expr =
         (fun c -> Printf.sprintf "index_get(%s, %s)" (List.nth c 0) (List.nth c 1))
   | FunctionCall (name, args) -> compile_call ctx name args
   | Parenthesized e -> Printf.sprintf "(%s)" (compile_expr ctx e)
+  | Checked (e, t, what) ->
+      Printf.sprintf "check_type(%s, %s, %s)" (compile_expr ctx e) (type_tag t) (c_string_literal what)
   (* Argumenty konstruktora interpreter ignoruje (nawet ich nie liczy) - tu też *)
   | NewObject (cls, _) ->
       if not (Hashtbl.mem ctx.classes cls) then error (Printf.sprintf "Nieznana klasa: %s" cls);
@@ -641,6 +650,8 @@ and compile_int ctx e =
   | BitwiseOp (a, BitShiftRight, b) -> two a b (Printf.sprintf "ishr(%s, %s)")
   | BitwiseOp (a, op, b) -> two a b (fun x y -> Printf.sprintf "(%s %s %s)" x (bitwise_c op) y)
   | BitwiseNot a -> Printf.sprintf "(~%s)" (arg a)
+  (* sprawdzenie niepotrzebne, gdy kompilator i tak wie, że to liczba *)
+  | Checked (inner, TInt, _) when is_int env inner -> compile_int ctx inner
   | FunctionCall (f, args) when List.mem f int_builtins -> compile_call_generic ctx f args ^ ".value.int_val"
   | FunctionCall (f, args) when is_int env e -> specialized_call ctx f args
   | e -> Printf.sprintf "to_int(%s)" (compile_expr ctx e)
@@ -662,6 +673,7 @@ and compile_float ctx e =
         | Multiply -> Printf.sprintf "(%s * %s)" a b
         | Divide -> Printf.sprintf "float_div(%s, %s)" a b
         | Modulo -> Printf.sprintf "float_mod(%s, %s)" a b)
+  | Checked (inner, TFloat, _) when is_float env inner -> compile_float ctx inner
   | FunctionCall (f, args) when List.mem f float_builtins -> compile_call_generic ctx f args ^ ".value.float_val"
   | e -> Printf.sprintf "to_float(%s)" (compile_expr ctx e)
 
@@ -1762,6 +1774,41 @@ static void ferdek_throw(FerdekValue v) {
     ferdek_exception = v;
     ferdek_exception_error = false;
     longjmp(ferdek_handler->buf, 1);
+}
+
+/* Typy: TO JE LICZBA SYNEK itd. - te same słowa co check_type w interpreterze */
+static const char* type_phrase(int t) {
+    switch (t) {
+        case TYPE_INT: return "TO JE LICZBA SYNEK";
+        case TYPE_FLOAT: return "TO JE LICZBA Z PRZECINKIEM";
+        case TYPE_STRING: return "TO SĄ STRINGI";
+        case TYPE_BOOL: return "TO JE TAK ALBO NIE";
+        case TYPE_ARRAY: return "TO JE WERSALKA";
+        case TYPE_MAP: return "TO JE SZAFKA";
+        default: return "TO JE FUNKCJA";
+    }
+}
+static const char* value_kind(FerdekValue v) {
+    switch (v.type) {
+        case TYPE_INT: return "liczba całkowita";
+        case TYPE_FLOAT: return "liczba z przecinkiem";
+        case TYPE_STRING: return "tekst";
+        case TYPE_BOOL: return "prawda/fałsz";
+        case TYPE_NULL: return "nic";
+        case TYPE_ARRAY: return "tablica";
+        case TYPE_MAP: return "szafka";
+        case TYPE_FUNCTION: return "funkcja";
+        case TYPE_BYTE: return "bajcik";
+        case TYPE_SHORT: return "krótki";
+        case TYPE_FIXED: return "ułamek";
+        case TYPE_OBJECT: return "obiekt";
+        case TYPE_POINTER: return "wskaźnik";
+        default: return "kibel (plik)";
+    }
+}
+static FerdekValue check_type(FerdekValue v, int t, const char* what) {
+    if ((int)v.type != t) ferdek_die("%s: %s, a jest %s", what, type_phrase(t), value_kind(v));
+    return v;
 }
 
 /* Po sprzątaniu (I TAK TRZEBA POSPRZĄTAĆ) ten sam błąd albo wyjątek leci dalej */

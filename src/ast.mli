@@ -34,6 +34,9 @@ type bitwise_op =
 (* ============ EXPRESSIONS ============ *)
 
 (* Expression - basic computational unit *)
+(* Typy (opcjonalne, sprawdzane w działającym programie): TO JE LICZBA SYNEK, TO SĄ STRINGI... *)
+type typ = TInt | TFloat | TString | TBool | TArray | TMap | TFunction
+
 type expr =
   | IntLiteral of int
   | FloatLiteral of float                                (* Liczba z przecinkiem: 3.14 *)
@@ -62,6 +65,7 @@ type expr =
   | FromFixed of expr
   | Parenthesized of expr
   | Lambda of string list * stmt list   (* ciało z wyrażeniem = [Return (Some e)] *)
+  | Checked of expr * typ * string     (* wartość musi mieć typ; napis mówi, czego dotyczy *)
 
 (* ============ STATEMENTS ============ *)
 
@@ -168,6 +172,7 @@ val string_of_bitwise_op : bitwise_op -> string
 
 (* Convert expression to string *)
 val string_of_expr : expr -> string
+val string_of_typ : typ -> string
 
 (* Nazwy zmiennych i funkcji użyte w wyrażeniu/instrukcji (bez własnych nazw lambd) *)
 val expr_names : expr -> string list

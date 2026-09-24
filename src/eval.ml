@@ -127,6 +127,7 @@ let rec eval_expr env = function
       with RuntimeError _ ->
         raise (RuntimeError (Printf.sprintf "Nieznana funkcja: %s" func_name)))
   | Parenthesized e -> eval_expr env e
+  | Checked (e, t, what) -> check_type (eval_expr env e) t what
   | Lambda (params, body) ->
       (* Zmienne lokalne (spoza środowiska globalnego) kopiujemy w chwili utworzenia - tak samo
          robi kompilator do C; globalne lambda widzi na żywo *)

@@ -1,5 +1,32 @@
 %{
 open Ast
+
+(* Opcjonalny typ: wartość owijamy sprawdzeniem (w działającym programie, oba tryby) *)
+let typed what t e = match t with Some t -> Checked (e, t, what) | None -> e
+
+(* Funkcja z typami: sprawdzenie parametrów na początku ciała, każdy return (także ten domyślny,
+   na końcu) owinięty typem wyniku. Wnętrza lambd to osobne funkcje - nie ruszamy. *)
+let rec wrap_returns what t = function
+  | Return None -> Return (Some (Checked (NullLiteral, t, what)))
+  | Return (Some e) -> Return (Some (Checked (e, t, what)))
+  | Located (f, l, s) -> Located (f, l, wrap_returns what t s)
+  | If (c, a, b) -> If (c, List.map (wrap_returns what t) a, Option.map (List.map (wrap_returns what t)) b)
+  | While (c, b) -> While (c, List.map (wrap_returns what t) b)
+  | For (v, a, b, k, body) -> For (v, a, b, k, List.map (wrap_returns what t) body)
+  | ForEach (v, c, b) -> ForEach (v, c, List.map (wrap_returns what t) b)
+  | Try (a, v, b, f) -> Try (List.map (wrap_returns what t) a, v, List.map (wrap_returns what t) b,
+                             List.map (wrap_returns what t) f)
+  | s -> s
+
+let typed_body name types ret body =
+  let checks = List.map (fun (p, t) ->
+    Assign (p, Checked (Identifier p, t, Printf.sprintf "Parametr %s funkcji %s" p name))) types in
+  let body = match ret with
+    | None -> body
+    | Some t ->
+        let what = "Wynik funkcji " ^ name in
+        List.map (wrap_returns what t) body @ [Return (Some (Checked (NullLiteral, t, what)))] in
+  checks @ body
 %}
 
 /* Token declarations */
@@ -45,6 +72,7 @@ open Ast
 %token POINTER_STEP_BACK
 %token LBRACKET RBRACKET
 %token <string> IDENTIFIER
+%token <Ast.typ> TYPE
 %token <int> INTEGER
 %token <float> FLOAT
 %token <string> STRING
@@ -128,10 +156,10 @@ statement_kind:
   ;
 
 var_decl:
-  | VAR_DECL id=IDENTIFIER VAR_INIT e=expression
-    { VarDecl (id, e) }
-  | CONST id=IDENTIFIER VAR_INIT e=expression
-    { ConstDecl (id, e) }
+  | VAR_DECL id=IDENTIFIER t=option(TYPE) VAR_INIT e=expression
+    { VarDecl (id, typed ("Zmienna " ^ id) t e) }
+  | CONST id=IDENTIFIER t=option(TYPE) VAR_INIT e=expression
+    { ConstDecl (id, typed ("Stała " ^ id) t e) }
   ;
 
 array_decl:
@@ -252,37 +280,38 @@ throw_stmt:
 /* ============ FUNCTIONS ============ */
 
 function_decl:
-  | FUNC_DECL name=IDENTIFIER FUNC_RETURNS body=list(statement) FUNC_END
-    { { name; params = []; is_variadic = false; has_return = true; body; defaults = [] } }
-  | FUNC_DECL name=IDENTIFIER FUNC_RETURNS FUNC_PARAMS ps=param_list body=list(statement) FUNC_END
-    { let params, is_variadic, defaults = ps in { name; params; is_variadic; has_return = true; body; defaults } }
+  | FUNC_DECL name=IDENTIFIER FUNC_RETURNS rt=option(TYPE) body=list(statement) FUNC_END
+    { { name; params = []; is_variadic = false; has_return = true; body = typed_body name [] rt body; defaults = [] } }
+  | FUNC_DECL name=IDENTIFIER FUNC_RETURNS rt=option(TYPE) FUNC_PARAMS ps=param_list body=list(statement) FUNC_END
+    { let params, is_variadic, defaults, types = ps in
+      { name; params; is_variadic; has_return = true; body = typed_body name types rt body; defaults } }
   | FUNC_DECL name=IDENTIFIER body=list(statement) FUNC_END
     { { name; params = []; is_variadic = false; has_return = false; body; defaults = [] } }
   | FUNC_DECL name=IDENTIFIER FUNC_PARAMS ps=param_list body=list(statement) FUNC_END
-    { let params, is_variadic, defaults = ps in { name; params; is_variadic; has_return = false; body; defaults } }
+    { let params, is_variadic, defaults, types = ps in
+      { name; params; is_variadic; has_return = false; body = typed_body name types None body; defaults } }
   ;
 
-(* Parametry: a, b TO NIE SĄ TANIE RZECZY 1 (wartość domyślna), na końcu opcjonalnie ... (wariadyczna).
-   Wynik: nazwy, czy wariadyczna, wartości domyślne *)
+(* Parametry: a, b TO JE LICZBA SYNEK TO NIE SĄ TANIE RZECZY 1 (typ i wartość domyślna - oba opcjonalne),
+   na końcu opcjonalnie ... (wariadyczna). Wynik: nazwy, czy wariadyczna, wartości domyślne, typy *)
 param_list:
-  | (* bez parametrów *) { ([], false, []) }
-  | ELLIPSIS { ([], true, []) }
-  | p=param_decl { let n, d = p in ([n], false, Option.to_list (Option.map (fun e -> (n, e)) d)) }
-  | p=param_decl COMMA rest=param_list_nonempty
-    { let n, d = p in let ps, v, ds = rest in (n :: ps, v, Option.to_list (Option.map (fun e -> (n, e)) d) @ ds) }
+  | (* bez parametrów *) { ([], false, [], []) }
+  | ps=param_list_nonempty { ps }
   ;
 
 param_list_nonempty:
-  | ELLIPSIS { ([], true, []) }
-  | p=param_decl { let n, d = p in ([n], false, Option.to_list (Option.map (fun e -> (n, e)) d)) }
+  | ELLIPSIS { ([], true, [], []) }
+  | p=param_decl { let n, t, d = p in ([n], false, Option.to_list (Option.map (fun e -> (n, e)) d),
+                                        Option.to_list (Option.map (fun t -> (n, t)) t)) }
   | p=param_decl COMMA rest=param_list_nonempty
-    { let n, d = p in let ps, v, ds = rest in (n :: ps, v, Option.to_list (Option.map (fun e -> (n, e)) d) @ ds) }
+    { let n, t, d = p in let ps, v, ds, ts = rest in
+      (n :: ps, v, Option.to_list (Option.map (fun e -> (n, e)) d) @ ds,
+       Option.to_list (Option.map (fun t -> (n, t)) t) @ ts) }
   ;
 
-(* Parametr, opcjonalnie z wartością domyślną: ile TO NIE SĄ TANIE RZECZY 1 *)
 param_decl:
-  | p=IDENTIFIER { (p, None) }
-  | p=IDENTIFIER VAR_INIT e=expression { (p, Some e) }
+  | p=IDENTIFIER t=option(TYPE) { (p, t, None) }
+  | p=IDENTIFIER t=option(TYPE) VAR_INIT e=expression { (p, t, Some e) }
   ;
 
 /* ============ CLASSES ============ */

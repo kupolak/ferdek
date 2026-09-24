@@ -204,6 +204,36 @@ Boczek płaci 12
 
 Przypisanie do stałej (`O KURDE MAM POMYSŁA cena_piwa ...`) to błąd, zgłaszany jeszcze przed uruchomieniem.
 
+Zmienna, parametr i wynik funkcji mogą mieć typ: `TO JE LICZBA SYNEK`, `TO JE LICZBA Z PRZECINKIEM`,
+`TO SĄ STRINGI`, `TO JE TAK ALBO NIE`, `TO JE WERSALKA`, `TO JE SZAFKA`, `TO JE FUNKCJA`.
+Każde przypisanie jest wtedy pilnowane, `ferdek --check` wyłapie oczywiste pomyłki przed uruchomieniem,
+a kompilator trzyma takie liczby jako zwykłe liczby C - szybciej.
+
+```ferdek
+CO JEST KURDE
+ALE WIE PAN JA ZASADNICZO srednia
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ TO JE LICZBA Z PRZECINKIEM
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO suma TO JE LICZBA SYNEK, ile TO JE LICZBA SYNEK
+    I JA INFORMUJĘ ŻE WYCHODZĘ suma MUSZĘ DO SRACZA (ile ROZDUPCĘ BANK 1.0)
+DO WIDZENIA PANU
+CYCU PRZYNIEŚ NO piwa TO JE LICZBA SYNEK
+TO NIE SĄ TANIE RZECZY 6
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA srednia(piwa, 4)
+HELENA MUSZĘ CI COŚ POWIEDZIEĆ
+    O KURDE MAM POMYSŁA piwa A PROSZĘ BARDZO W MORDĘ JEŻA KANAPA DO GÓRY("dużo") NO I GITARA
+HELENA MAM ZAWAŁ blad
+    PANIE SENSACJA REWELACJA blad
+DO CHAŁUPY ALE JUŻ
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
+```
+
+Wynik:
+
+```
+1.5
+Zmienna piwa: TO JE LICZBA SYNEK, a jest tekst
+```
+
 ## 6. Tablice i szafki
 
 Tablica to `[1, 2, 3]`, element to `WYPIERDZIELAJ PAN NA POZYCJĘ t[0]` (numerowane od zera).

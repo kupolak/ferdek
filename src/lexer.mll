@@ -70,6 +70,15 @@ rule token = parse
   (* Keywords - CONDITIONALS AND LOOPS *)
   | "NO JAK NIE JAK TAK" { IF }
   | "CO TO JE" { SWITCH }
+  (* Typy - po nazwie zmiennej, stałej, parametru i po NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ *)
+  | "TO JE LICZBA SYNEK" { TYPE Ast.TInt }
+  | "TO JE LICZBA Z PRZECINKIEM" { TYPE Ast.TFloat }
+  | "TO SĄ STRINGI" { TYPE Ast.TString }
+  | "TO SA STRINGI" { TYPE Ast.TString }
+  | "TO JE TAK ALBO NIE" { TYPE Ast.TBool }
+  | "TO JE WERSALKA" { TYPE Ast.TArray }
+  | "TO JE SZAFKA" { TYPE Ast.TMap }
+  | "TO JE FUNKCJA" { TYPE Ast.TFunction }
   | "I TAK TRZEBA POSPRZĄTAĆ" { FINALLY }
   | "I TAK TRZEBA POSPRZATAC" { FINALLY }
   | "TO JE NA AMEN" { CONST }

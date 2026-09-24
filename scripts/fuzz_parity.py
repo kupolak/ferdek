@@ -229,15 +229,17 @@ class Gen:
         return body + ["DO WIDZENIA PANU"]
 
     def program(self):
+        # czasem z typem - każde przypisanie jest wtedy sprawdzane, a kompilator trzyma liczby gołe
+        typ = lambda t: (" " + t) if self.r.random() < 0.5 else ""
         lines = ["CO JEST KURDE",
-                 "CYCU PRZYNIEŚ NO i0", "TO NIE SĄ TANIE RZECZY 3",
-                 "CYCU PRZYNIEŚ NO i1", "TO NIE SĄ TANIE RZECZY -2",
-                 "CYCU PRZYNIEŚ NO i2", "TO NIE SĄ TANIE RZECZY 7",
-                 "CYCU PRZYNIEŚ NO k0", "TO NIE SĄ TANIE RZECZY 0",
+                 "CYCU PRZYNIEŚ NO i0" + typ("TO JE LICZBA SYNEK"), "TO NIE SĄ TANIE RZECZY 3",
+                 "CYCU PRZYNIEŚ NO i1" + typ("TO JE LICZBA SYNEK"), "TO NIE SĄ TANIE RZECZY -2",
+                 "CYCU PRZYNIEŚ NO i2" + typ("TO JE LICZBA SYNEK"), "TO NIE SĄ TANIE RZECZY 7",
+                 "CYCU PRZYNIEŚ NO k0" + typ("TO JE LICZBA SYNEK"), "TO NIE SĄ TANIE RZECZY 0",
                  "CYCU PRZYNIEŚ NO k1", "TO NIE SĄ TANIE RZECZY 0",
-                 "CYCU PRZYNIEŚ NO f0", "TO NIE SĄ TANIE RZECZY 1.5",
-                 'CYCU PRZYNIEŚ NO s0', 'TO NIE SĄ TANIE RZECZY "Kiepski"',
-                 "CYCU PRZYNIEŚ NO t0", "TO NIE SĄ TANIE RZECZY [3, 1, 2]"]
+                 "CYCU PRZYNIEŚ NO f0" + typ("TO JE LICZBA Z PRZECINKIEM"), "TO NIE SĄ TANIE RZECZY 1.5",
+                 'CYCU PRZYNIEŚ NO s0' + typ("TO SĄ STRINGI"), 'TO NIE SĄ TANIE RZECZY "Kiepski"',
+                 "CYCU PRZYNIEŚ NO t0" + typ("TO JE WERSALKA"), "TO NIE SĄ TANIE RZECZY [3, 1, 2]"]
         lines += ['AFERA JEST m0 W MORDĘ JEŻA OTWÓRZ SZAFKĘ("piwo", 1, "wódka", 2)']
         for k in range(self.r.randint(0, 3)):
             name = f"fun{k}"

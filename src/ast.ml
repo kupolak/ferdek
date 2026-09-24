@@ -34,6 +34,9 @@ type bitwise_op =
 (* ============ EXPRESSIONS ============ *)
 
 (* Expression - basic computational unit *)
+(* Typy (opcjonalne, sprawdzane w działającym programie): TO JE LICZBA SYNEK, TO SĄ STRINGI... *)
+type typ = TInt | TFloat | TString | TBool | TArray | TMap | TFunction
+
 type expr =
   | IntLiteral of int                                    (* Integer literal *)
   | FloatLiteral of float                                (* Liczba z przecinkiem: 3.14 *)
@@ -62,6 +65,7 @@ type expr =
   | FromFixed of expr                                    (* Convert from fixed-point 16.16 (WYJMIJ Z FIXED) *)
   | Parenthesized of expr                                (* Parenthesized expression *)
   | Lambda of string list * stmt list                    (* JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x + 1  albo  (x) NO DOBRZE ... DO WIDZENIA PANU *)
+  | Checked of expr * typ * string                       (* wartość musi mieć typ; napis: czego dotyczy (do błędu) *)
 
 (* ============ STATEMENTS ============ *)
 
@@ -191,6 +195,12 @@ let string_of_bitwise_op = function
 (* ============ PRETTY PRINTING (for debugging) ============ *)
 
 (* Convert expression to string (simplified) *)
+(* Typ tak, jak się go pisze *)
+let string_of_typ = function
+  | TInt -> "TO JE LICZBA SYNEK" | TFloat -> "TO JE LICZBA Z PRZECINKIEM" | TString -> "TO SĄ STRINGI"
+  | TBool -> "TO JE TAK ALBO NIE" | TArray -> "TO JE WERSALKA" | TMap -> "TO JE SZAFKA"
+  | TFunction -> "TO JE FUNKCJA"
+
 let rec string_of_expr = function
   | IntLiteral n -> string_of_int n
   | FloatLiteral f -> Printf.sprintf "%.15g" f
@@ -239,6 +249,7 @@ let rec string_of_expr = function
       "from_fixed(" ^ string_of_expr e ^ ")"
   | Parenthesized e ->
       "(" ^ string_of_expr e ^ ")"
+  | Checked (e, t, what) -> "(" ^ string_of_expr e ^ " : " ^ string_of_typ t ^ " [" ^ what ^ "])"
   | Lambda (params, body) ->
       "fun(" ^ String.concat ", " params ^ ") {\n"
       ^ String.concat "\n" (List.map (string_of_stmt "  ") body) ^ "\n}"
@@ -311,7 +322,7 @@ let rec expr_names = function
   | BinaryOp (a, _, b) | ComparisonOp (a, _, b) | LogicalOp (a, _, b) | BitwiseOp (a, _, b)
   | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> expr_names a @ expr_names b
   | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
-  | Parenthesized e -> expr_names e
+  | Parenthesized e | Checked (e, _, _) -> expr_names e
   | Lambda (params, body) ->
       let own = params @ block_decls body in
       List.filter (fun n -> not (List.mem n own)) (List.concat_map stmt_names body)

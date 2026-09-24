@@ -42,6 +42,11 @@
 - `I TAK TRZEBA POSPRZĄTAĆ` (finally) as the last part of a `HELENA MUSZĘ CI COŚ POWIEDZIEĆ` block: runs
   after the try, after the catch, on return/break/continue out of the block and when the catch fails
   (the error then continues outwards).
+- Optional types: `TO JE LICZBA SYNEK`, `TO JE LICZBA Z PRZECINKIEM`, `TO SĄ STRINGI`,
+  `TO JE TAK ALBO NIE`, `TO JE WERSALKA`, `TO JE SZAFKA`, `TO JE FUNKCJA` after a variable, constant or
+  parameter name and after `NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ`. Every later assignment, parameter
+  and result is checked while the program runs (same error in both modes); `--check` reports obvious
+  mismatches before; the compiler keeps typed numbers as plain C numbers.
 - Constants: `TO JE NA AMEN x` / `TO NIE SĄ TANIE RZECZY 5`. Changing one is reported before the
   program runs (both modes, `--check`, the editor); a local variable in a function may reuse the name.
 - Loop over elements: `KRĘCI CEMENT BETONIARA x Z kolekcja` ... `A ROBIĆ NI MA KOMU` - array

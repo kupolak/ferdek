@@ -85,6 +85,23 @@ let float_to_int what f =
     raise (RuntimeError (what ^ ": liczba za duża, żeby zrobić z niej całkowitą"))
   else int_of_float f
 
+(* Typy: czy wartość pasuje i jak ją nazwać w błędzie - te same słowa co check_type w C *)
+let value_kind = function
+  | VInt _ -> "liczba całkowita" | VFloat _ -> "liczba z przecinkiem" | VString _ -> "tekst"
+  | VBool _ -> "prawda/fałsz" | VNull -> "nic" | VArray _ -> "tablica" | VHashMap _ -> "szafka"
+  | VFunction _ -> "funkcja" | VByte _ -> "bajcik" | VShort _ -> "krótki" | VFixed _ -> "ułamek"
+  | VObject _ -> "obiekt" | VPointer _ -> "wskaźnik" | VFileHandle _ -> "kibel (plik)"
+  | VClass _ | VStruct _ | VUnion _ | VEnum _ -> "definicja typu"
+
+let check_type v t what =
+  let ok = match t, v with
+    | TInt, VInt _ | TFloat, VFloat _ | TString, VString _ | TBool, VBool _
+    | TArray, VArray _ | TMap, VHashMap _ | TFunction, VFunction _ -> true
+    | _ -> false in
+  if not ok then
+    raise (RuntimeError (Printf.sprintf "%s: %s, a jest %s" what (string_of_typ t) (value_kind v)));
+  v
+
 (* Get variable from environment *)
 (* Wszystkie nazwy widoczne ze środowiska - do podpowiedzi przy literówce *)
 let rec visible_names env =

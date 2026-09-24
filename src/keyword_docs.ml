@@ -157,9 +157,16 @@ let entries = [
   "TAK BYĆ NIE BĘDZIE", "TAK BYĆ NIE BĘDZIE", "not", false;
   "TAK JEST I KROPKA", "TAK JEST I KROPKA(warunek)", "BABKA: asercja prawdy", true;
   "TEN SAM BAJZEL", "TEN SAM BAJZEL(a, b)", "BABKA: to samo", true;
+  "TO JE FUNKCJA", "TO JE FUNKCJA", "Typ: funkcja", false;
+  "TO JE LICZBA SYNEK", "TO JE LICZBA SYNEK", "Typ: liczba całkowita (po nazwie zmiennej, parametru albo po NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ)", false;
+  "TO JE LICZBA Z PRZECINKIEM", "TO JE LICZBA Z PRZECINKIEM", "Typ: liczba z przecinkiem", false;
   "TO JE NA AMEN", "TO JE NA AMEN", "Stała: TO JE NA AMEN x / TO NIE SĄ TANIE RZECZY 5 - później nie wolno przypisać", false;
+  "TO JE SZAFKA", "TO JE SZAFKA", "Typ: szafka (mapa)", false;
+  "TO JE TAK ALBO NIE", "TO JE TAK ALBO NIE", "Typ: prawda albo fałsz", false;
+  "TO JE WERSALKA", "TO JE WERSALKA", "Typ: tablica", false;
   "TO NIE SĄ TANIE RZECZY", "TO NIE SĄ TANIE RZECZY", "Wartość początkowa w deklaracji; w liście parametrów - wartość domyślna (ile TO NIE SĄ TANIE RZECZY 1)", false;
   "TO PANU SIĘ CHCE WTEDY KIEDY MNIE", "TO PANU SIĘ CHCE WTEDY KIEDY MNIE", "==", false;
+  "TO SĄ STRINGI", "TO SĄ STRINGI", "Typ: tekst", false;
   "TRZEBA SPAĆ", "TRZEBA SPAĆ(ms)", "Uśpij program na podaną liczbę milisekund", true;
   "TYLKO JEDNO Z TEGO", "TYLKO JEDNO Z TEGO", "^ (bitowe)", false;
   "USIĄDŹ NA KANAPIE", "USIĄDŹ NA KANAPIE(a, b, ...)", "Sklej teksty", true;
