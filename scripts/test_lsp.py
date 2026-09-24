@@ -163,6 +163,18 @@ send("textDocument/didChange", {"textDocument": {"uri": BAD}, "contentChanges": 
 d = diagnostics(BAD)
 check("--check", [(x["range"]["start"]["line"], "Nieznana zmienna: nie_ma" in x["message"]) for x in d], [(1, True)])
 
+# Ostrzeżenie: zmienna lokalna, której nikt nie odczytuje (przypisanie się nie liczy)
+UN = "file:///nieuzywane.ferdek"
+send("textDocument/didOpen", {"textDocument": {"uri": UN, "text":
+     "CO JEST KURDE\nCYCU PRZYNIEŚ NO globalna\nTO NIE SĄ TANIE RZECZY 1\n"
+     "ALE WIE PAN JA ZASADNICZO f\n    CYCU PRZYNIEŚ NO zbedna\n    TO NIE SĄ TANIE RZECZY 1\n"
+     "    O KURDE MAM POMYSŁA zbedna A PROSZĘ BARDZO 2 NO I GITARA\n"
+     "    CYCU PRZYNIEŚ NO t\n    TO NIE SĄ TANIE RZECZY [0]\n"
+     "    O KURDE MAM POMYSŁA t[0] A PROSZĘ BARDZO 5 NO I GITARA\nDO WIDZENIA PANU\n"
+     "MOJA NOGA JUŻ TUTAJ NIE POSTANIE\n"}}, request=False)
+check("nieużywana", [(x["severity"], x["message"]) for x in diagnostics(UN)],
+      [(2, "Zmienna zbedna nie jest nigdzie odczytywana")])
+
 # Podpowiedzi: słowo kluczowe, wbudowana funkcja, nazwa z pliku
 hover = lambda spot: (send("textDocument/hover", at(spot))["result"] or {}).get("contents", {}).get("value", "")
 check("hover słowo kluczowe", "Wypisz" in hover(find(20, "SENSACJA")), True)

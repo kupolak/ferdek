@@ -11,6 +11,7 @@ type scope = {
   parent : scope option;
   decls : (string, int) Hashtbl.t;   (* nazwa -> indeks tokenu z deklaracją *)
   is_method : bool;                  (* metoda: przypisanie nie sięga do globalnych *)
+  is_class : bool;                   (* ciało klasy: deklaracje to pola (obiekt["pole"]) *)
 }
 
 type tok = {
@@ -23,7 +24,8 @@ type tok = {
 
 let new_scope =
   let n = ref 0 in
-  fun ?(is_method = false) parent -> incr n; { id = !n; parent; decls = Hashtbl.create 8; is_method }
+  fun ?(is_method = false) ?(is_class = false) parent ->
+    incr n; { id = !n; parent; decls = Hashtbl.create 8; is_method; is_class }
 
 let tokens text =
   (* Dyrektywy preprocesora lekser by odrzucił - jak w formaterze zamieniamy je na puste linie *)
@@ -69,7 +71,7 @@ let analyze text =
     | (FUNC_DECL | CLASS), Some name when not !record ->
         declare (block ()) name (i + 1);
         let is_method = toks.(i).t = FUNC_DECL && List.mem (block ()).id !classes in
-        let inner = new_scope ~is_method (Some (block ())) in
+        let inner = new_scope ~is_method ~is_class:(toks.(i).t = CLASS) (Some (block ())) in
         if toks.(i).t = CLASS then classes := inner.id :: !classes;
         toks.(i + 1).scope <- block ();
         blocks := inner :: !blocks
@@ -332,10 +334,32 @@ let pos line ch = `Assoc ["line", `Int line; "character", `Int ch]
 
 let notify meth params = send (`Assoc ["jsonrpc", `String "2.0"; "method", `String meth; "params", params])
 
+(* Zmienne lokalne (w funkcjach i lambdach), których nikt nie odczytuje - ostrzeżenie.
+   Na najwyższym poziomie nie ostrzegamy: moduł może je wystawiać dla importujących. *)
+let unused toks =
+  let n = Array.length toks in
+  let prev i = if i > 0 then Some toks.(i - 1).t else None in
+  let write i = match prev i with
+    | Some (ASSIGN_START | FUNC_CALL_ASSIGN | READ) -> not (i + 1 < n && toks.(i + 1).t = LBRACKET)
+    | _ -> false in
+  Array.to_list (Array.mapi (fun i tk -> (i, tk)) toks) |> List.filter_map (fun (i, tk) ->
+    match tk.t, prev i with
+    | IDENTIFIER name, Some (VAR_DECL | CONST | ARRAY_DECL) ->
+        (match resolve tk.scope name with
+         | Some (s, d) when d = i && s.parent <> None && not s.is_class ->
+             let reads = occurrences toks (name, s.id, d)
+                         |> List.filter (fun t -> t != tk && not (write (let rec idx k = if toks.(k) == t then k else idx (k + 1) in idx 0))) in
+             if reads = [] then Some (tk, Printf.sprintf "Zmienna %s nie jest nigdzie odczytywana" name) else None
+         | _ -> None)
+    | _ -> None)
+
 (* Błędy składni i problemy z --check, od razu po otwarciu i każdej zmianie *)
 let publish ~diagnose uri text =
   let lines = Array.of_list (String.split_on_char '\n' text) in
   let found = try diagnose (path_of_uri uri) text with _ -> [] in
+  let warnings = try unused (analyze text) with _ -> [] in
+  let warn_diags = List.map (fun (tk, msg) ->
+    `Assoc ["range", range lines tk; "severity", `Int 2; "source", `String "ferdek"; "message", `String msg]) warnings in
   let diags = List.map (fun (line, col, msg) ->
     let l = max 0 (line - 1) in
     let lt = if l < Array.length lines then lines.(l) else "" in
@@ -343,7 +367,7 @@ let publish ~diagnose uri text =
     let e = max (c + 1) (utf16_of_bytes lt (String.length lt)) in
     `Assoc ["range", `Assoc ["start", pos l c; "end", pos l e]; "severity", `Int 1;
             "source", `String "ferdek"; "message", `String msg]) found in
-  notify "textDocument/publishDiagnostics" (`Assoc ["uri", `String uri; "diagnostics", `List diags])
+  notify "textDocument/publishDiagnostics" (`Assoc ["uri", `String uri; "diagnostics", `List (diags @ warn_diags)])
 
 (* Uzupełnianie: słowa kluczowe, wbudowane, nazwy z pliku i z modułów JAKO.
    Słowa wielowyrazowe podmieniają to, co już napisano ("W MO" -> "W MORDĘ JEŻA"). *)
