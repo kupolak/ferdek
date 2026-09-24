@@ -699,11 +699,15 @@ and compile_stmt ctx indent stmt =
 
 (* ============ FUNCTIONS ============ *)
 
+(* setjmp: zmienne i parametry zmieniane w try muszą być volatile, inaczej po longjmp (catch)
+   mogą mieć wartość sprzed try - trzymane w rejestrze, który longjmp przywraca *)
+let volatile_if_try (f : function_decl) = if has_try f.body then "volatile " else ""
+
 (* Funkcja wyspecjalizowana: parametry i wynik long long tam, gdzie infer_ints na to pozwolił *)
 let fun_proto ctx (f : function_decl) =
   let ps, r = match Hashtbl.find_opt ctx.sigs f.name with
     | Some (ps, r) -> ps, r | None -> List.map (fun _ -> false) (all_params f), false in
-  let params = List.map2 (fun p is_i -> (if is_i then "long long " else "FerdekValue ") ^ var_c p)
+  let params = List.map2 (fun p is_i -> volatile_if_try f ^ (if is_i then "long long " else "FerdekValue ") ^ var_c p)
       (all_params f) (ps @ List.init (List.length (all_params f) - List.length ps) (fun _ -> false)) in
   let params = if f.defaults = [] then params else "int argc" :: params in
   Printf.sprintf "%s %s(%s)" (if r then "long long" else "FerdekValue") (fun_c f.name)
@@ -727,9 +731,7 @@ let compile_body ?(own_ints = []) ?(own_floats = []) ?(ret_int = false) ?display
   ctx.ints <- own_ints @ List.filter (fun n -> not (List.mem n ctx.locals || List.mem n members)) (global_ints ctx);
   ctx.floats <- own_floats @ List.filter (fun n -> not (List.mem n ctx.locals || List.mem n members)) (global_floats ctx);
   ctx.ret_int <- ret_int;
-  (* setjmp: lokalne zmieniane w try muszą być volatile, inaczej po longjmp mają śmieci.
-     ponytail: parametry nie są volatile - przypisanie do parametru w try i odczyt w catch to UB *)
-  let qual = if has_try f.body then "volatile " else "" in
+  let qual = volatile_if_try f in
   (* Bez try funkcja nie zmienia handlera (wołane funkcje przywracają swój) - nie trzeba go pilnować *)
   ctx.fn_has_try <- has_try f.body;
   let saved_unwind = ctx.unwind in
@@ -770,7 +772,7 @@ let () = compile_lambda := fun ctx name params caps body ->
   let f = { name; params = params @ caps; is_variadic = false; has_return = true; body; defaults = [] } in
   let proto = Printf.sprintf "static FerdekValue %s_body(%s)" name
       (if f.params = [] then "void"
-       else String.concat ", " (List.map (fun p -> "FerdekValue " ^ var_c p) f.params)) in
+       else String.concat ", " (List.map (fun p -> volatile_if_try f ^ "FerdekValue " ^ var_c p) f.params)) in
   let code = compile_body ~display:"anonimowa" ctx ~proto ~members:[] f in
   String.concat "\n" [
     code;
@@ -782,7 +784,7 @@ let () = compile_lambda := fun ctx name params caps body ->
 
 (* Metoda: jak funkcja, z obiektem (self) jako pierwszym parametrem *)
 let method_proto cls (m : function_decl) =
-  let params = List.map (fun p -> "FerdekValue " ^ var_c p) (all_params m) in
+  let params = List.map (fun p -> volatile_if_try m ^ "FerdekValue " ^ var_c p) (all_params m) in
   let params = if m.defaults = [] then params else "int argc" :: params in
   Printf.sprintf "FerdekValue %s(%s)" (method_c cls m.name) (String.concat ", " ("FerdekMap* self" :: params))
 

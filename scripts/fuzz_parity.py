@@ -220,6 +220,14 @@ class Gen:
                      "    A ROBIĆ NI MA KOMU"]
         if self.r.random() < 0.3:
             body.append(f"    O KURDE MAM POMYSŁA i2 A PROSZĘ BARDZO {self.expr('int', 2)} NO I GITARA")
+        if self.r.random() < 0.3:   # parametr i lokalna zmienione w try, odczytane w catch (setjmp/longjmp w C)
+            body += ["    HELENA MUSZĘ CI COŚ POWIEDZIEĆ",
+                     f"        O KURDE MAM POMYSŁA i0 A PROSZĘ BARDZO {self.expr('int', 2)} NO I GITARA",
+                     f"        O KURDE MAM POMYSŁA a0 A PROSZĘ BARDZO {self.expr('int', 2)} NO I GITARA",
+                     f"        O KARWASZ TWARZ {self.expr('str', 2)}",
+                     "    HELENA MAM ZAWAŁ blad",
+                     "        PANIE SENSACJA REWELACJA i0 BABKA DAWAJ RENTĘ \" \" BABKA DAWAJ RENTĘ a0",
+                     "    DO CHAŁUPY ALE JUŻ"]
         other = self.expr("str", 1) if kind == "mixed" else self.expr("int", 1)
         if self.r.random() < 0.6 or kind == "mixed":
             body += [f"    NO JAK NIE JAK TAK {self.expr('bool', 1)}",

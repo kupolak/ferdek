@@ -49,7 +49,7 @@ ALL_TESTS = $(STDLIB_TESTS) $(FEATURE_TESTS) $(EXAMPLE_TESTS)
 
 # Testy, które kompilator do C musi przejść z identycznym wyjściem
 COMPILED_TESTS = $(addprefix examples/,advanced_features arrays2d bitwise bubble_sort classes enums fizzbuzz framebuffer function_pointers hello io memory operations pointers selection_sort simple_compile structs types unions variadic variadic_simple) \
-	$(addprefix tests/integration/features/,array_literals arrays conditional czas else_if exceptions exceptions_nested floats for_loop objects objects_semantics function_values functions imports inheritance logic polskie_nazwy preprocessor print scopes test_interpreter types_strict variables) \
+	$(FEATURE_TESTS) \
 	$(addprefix tests/integration/stdlib/,test_bez_ogonkow test_dodaj_inline test_kanapa test_kanapa_brzegi test_kanapa_litery test_kanapa_utf8 test_kibel test_klatka_bezpieczna test_losowanie test_simple_skrzynka test_skrzynka test_skrzynka_matma test_stdlib test_szafka test_szafka_pelna test_wersalka test_wersalka_funkcje) \
 	stdlib/KLAMOTY/BABKA/przyklad_testow
 
