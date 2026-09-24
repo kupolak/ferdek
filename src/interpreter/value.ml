@@ -285,12 +285,28 @@ let string_of_float_ferdek f =
   let s = Printf.sprintf "%.15g" f in
   if String.exists (fun c -> c = '.' || c = 'e' || c = 'n') s then s else s ^ ".0"
 
+(* Liczba całkowita jako tekst - to samo co string_of_int, ale bez printf z biblioteki C (przy
+   sklejaniu tekstu z liczbą w pętli to była większość czasu). Na ujemnych, żeby min_int też działał. *)
+let int_to_string n =
+  if n >= 0 && n < 10 then String.make 1 (Char.unsafe_chr (48 + n))
+  else begin
+    let buf = Bytes.create 20 in
+    let pos = ref 20 and m = ref (if n < 0 then n else - n) in
+    while !m <> 0 do
+      decr pos;
+      Bytes.unsafe_set buf !pos (Char.unsafe_chr (48 - (!m mod 10)));
+      m := !m / 10
+    done;
+    if n < 0 then (decr pos; Bytes.unsafe_set buf !pos '-');
+    Bytes.sub_string buf !pos (20 - !pos)
+  end
+
 let rec string_of_value = function
   | VFloat f -> string_of_float_ferdek f
-  | VInt n -> string_of_int n
-  | VByte n -> string_of_int n
-  | VShort n -> string_of_int n
-  | VFixed n -> string_of_int n
+  | VInt n -> int_to_string n
+  | VByte n -> int_to_string n
+  | VShort n -> int_to_string n
+  | VFixed n -> int_to_string n
   | VString s -> s
   | VBool true -> "true"
   | VBool false -> "false"
@@ -371,10 +387,10 @@ let to_float = function VFloat f -> f | v -> float_of_int (to_int v)
 
 (* Convert value to string for concatenation *)
 let to_string = function
-  | VInt n -> string_of_int n
-  | VByte n -> string_of_int n
-  | VShort n -> string_of_int n
-  | VFixed n -> string_of_int n  (* Show raw fixed value *)
+  | VInt n -> int_to_string n
+  | VByte n -> int_to_string n
+  | VShort n -> int_to_string n
+  | VFixed n -> int_to_string n  (* Show raw fixed value *)
   | VFloat f -> string_of_float_ferdek f
   | VString s -> s
   | VBool true -> "true"

@@ -23,7 +23,7 @@ let pack v =
   let rec go = function
     | VNull -> Buffer.add_string b "null"
     | VBool x -> Buffer.add_string b (if x then "true" else "false")
-    | VInt n | VByte n | VShort n | VFixed n -> Buffer.add_string b (string_of_int n)
+    | VInt n | VByte n | VShort n | VFixed n -> Buffer.add_string b (int_to_string n)
     | VFloat f ->
         if Float.is_nan f || Float.abs f = Float.infinity then fail "liczba bez końca (nan/inf)";
         Buffer.add_string b (string_of_float_ferdek f)

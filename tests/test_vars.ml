@@ -14,3 +14,10 @@ let () =
   Vars.replace c "nowa" 1;
   assert (Vars.find_opt t "x5" = Some 42 && not (Vars.mem t "nowa"));
   print_endline "--- vars: OK"
+
+(* Liczba jako tekst (Value.int_to_string) - to samo co string_of_int, też na krańcach *)
+let () =
+  List.iter (fun n -> assert (Value.int_to_string n = string_of_int n))
+    [0; 7; 9; 10; -1; -9; -10; 123456789; -987654321; max_int; min_int];
+  for n = -2000 to 2000 do assert (Value.int_to_string n = string_of_int n) done;
+  print_endline "--- int_to_string: OK"
