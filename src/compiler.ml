@@ -443,7 +443,8 @@ let rec compile_expr ctx expr =
   | Identifier name ->
       if is_var ctx name then var_c name
       else if is_type_name ctx name then unsupported "nazwa klasy/struktury jako wartość"
-      else error (Printf.sprintf "Nieznana zmienna: %s" name)
+      else error (Errors.unknown "zmienna" name
+                    (ctx.locals @ ctx.members @ Hashtbl.fold (fun n () acc -> n :: acc) ctx.globals []))
   | BinaryOp (e1, op, e2) ->
       Printf.sprintf "%s(%s, %s)" (arith_c op) (compile_expr ctx e1) (compile_expr ctx e2)
   | ComparisonOp (e1, op, e2) ->
@@ -580,7 +581,9 @@ and compile_call_generic ctx name args =
       Printf.sprintf "call_value(field_get(self, %s), %s, %d, %s)" (c_string_literal name)
         (c_string_literal name) (List.length args) (argv_c c_args)
   | None, _ ->
-      error (Printf.sprintf "Nieznana funkcja: %s (albo wbudowana, której kompilator nie zna)" name)
+      error (Errors.unknown "funkcja" name
+               (ctx.locals @ ctx.members @ Hashtbl.fold (fun n _ acc -> n :: acc) ctx.funcs []
+                @ List.concat_map fst builtins))
 
 (* Przypisanie: zmienna lokalna/globalna albo - w metodzie - pole obiektu *)
 let assign ctx name value =

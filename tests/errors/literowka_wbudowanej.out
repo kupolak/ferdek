@@ -1,0 +1,3 @@
+A fe! Błąd Parsowania! Walduś, coś tu jest pokręcone! W tests/errors/literowka_wbudowanej.ferdek, linia 2, kolumna 45, przy 'MIEJSCA'. Spodziewałem się wyrażenia (liczby, tekstu, nazwy...). Może chodziło o 'ILE MIEJSCA NA KANAPIE'?
+    2 | PANIE SENSACJA REWELACJA W MORDĘ JEŻA ILE MIEJSCA NA KANAPE("a")
+      |                                           ^

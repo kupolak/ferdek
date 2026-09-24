@@ -153,7 +153,11 @@ and eval_function_call env name args =
       impl env args
   | None ->
       (* Funkcja użytkownika (także trzymana w zmiennej) *)
-      (match get_var env name with
+      let f = try get_var env name with RuntimeError _ ->
+        (* nieznana nazwa: podpowiedź z funkcji i zmiennych programu oraz wbudowanych *)
+        raise (RuntimeError (Errors.unknown "funkcja" name
+          (visible_names env @ Hashtbl.fold (fun n _ acc -> n :: acc) builtins []))) in
+      (match f with
        | VFunction (fdecl, closure_env) ->
            apply_function name fdecl closure_env (List.map (eval_expr env) args)
        | _ -> raise (RuntimeError (Printf.sprintf "%s to nie funkcja" name)))

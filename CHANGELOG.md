@@ -65,6 +65,8 @@
   statement is cut short, at the end of that line instead of the start of the next one. Runtime
   errors show the call path (`w funkcji dziel, wywołanej w linii 10`, recursion folded into
   `(12 razy)`), the same in the interpreter and compiled programs.
+- Unknown names get a suggestion: `Nieznana zmienna: licnzik. Może chodziło o 'licznik'?`, also for
+  misspelled multi-word builtins (`ILE MIEJSCA NA KANAPE` -> `ILE MIEJSCA NA KANAPIE`).
 - Several syntax errors are reported at once (up to 10): the broken statement is skipped and
   parsing goes on, stopping early where a block is broken to avoid made-up follow-up errors.
 - The REPL keeps state between lines and accepts multi-line statements.

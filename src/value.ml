@@ -76,13 +76,20 @@ let global_env () =
 let lambda_marker = "(lambda)"
 
 (* Get variable from environment *)
-let rec get_var env name =
-  try
-    Hashtbl.find env.vars name
-  with Not_found ->
-    match env.parent with
-    | Some parent -> get_var parent name
-    | None -> raise (RuntimeError (Printf.sprintf "Nieznana zmienna: %s" name))
+(* Wszystkie nazwy widoczne ze środowiska - do podpowiedzi przy literówce *)
+let rec visible_names env =
+  Hashtbl.fold (fun n _ acc -> if n = "(lambda)" then acc else n :: acc) env.vars
+    (match env.parent with Some p -> visible_names p | None -> [])
+
+let get_var env name =
+  let rec go e =
+    match Hashtbl.find_opt e.vars name with
+    | Some v -> v
+    | None ->
+        match e.parent with
+        | Some parent -> go parent
+        | None -> raise (RuntimeError (Errors.unknown "zmienna" name (visible_names env))) in
+  go env
 
 (* Set variable in environment *)
 let rec set_var env name value =

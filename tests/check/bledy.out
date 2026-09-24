@@ -1,7 +1,7 @@
 Paździoch znalazł: tests/check/bledy.ferdek, linia 6: Nieznana zmienna: c
-Paździoch znalazł: tests/check/bledy.ferdek, linia 11: Nieznana zmienna: piwo
+Paździoch znalazł: tests/check/bledy.ferdek, linia 11: Nieznana zmienna: piwo. Może chodziło o 'piwa'?
 Paździoch znalazł: tests/check/bledy.ferdek, linia 12: dodaj oczekuje 2 argumentów, podano 1
-Paździoch znalazł: tests/check/bledy.ferdek, linia 13: Nieznana funkcja: dodja
+Paździoch znalazł: tests/check/bledy.ferdek, linia 13: Nieznana funkcja: dodja. Może chodziło o 'dodaj'?
 Paździoch znalazł: tests/check/bledy.ferdek, linia 14: ILE MIEJSCA NA KANAPIE oczekuje 1 argumentu, podano 2
 Paździoch znalazł: tests/check/bledy.ferdek, linia 15: Nieznana klasa: Nieistniejaca
 Paździoch znalazł: tests/check/bledy.ferdek, linia 17: Nieznana zmienna: granica

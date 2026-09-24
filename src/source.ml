@@ -13,6 +13,17 @@ let resolve_local_imports filename (prog : Ast.program) =
       | Ast.ImportAs (name, alias) -> Ast.ImportAs (local name, alias)
       | d -> d) prog.declarations }
 
+(* Literówka w wielowyrazowej funkcji wbudowanej (W MORDĘ JEŻA ILE MIEJSCA NA KANAPE(...)) rozpada
+   się w lekserze na osobne słowa i kończy błędem składni - podpowiadamy najbliższą nazwę *)
+let call_re = Str.regexp "W MORD[EĘ]* JE[ZŻ]*A \\([^(]*[^( ]\\) *("
+let builtin_typo line_text =
+  match Str.search_forward call_re line_text 0 with
+  | exception Not_found -> ""
+  | _ ->
+      let name = Str.matched_group 1 line_text in
+      let fns = List.filter_map (fun (w, _, _, f) -> if f then Some w else None) Keyword_docs.entries in
+      if String.contains name ' ' && not (List.mem name fns) then Errors.suggest name fns else ""
+
 (* Jeden przebieg parsera; przy błędzie: linia, komunikat i token, na którym się wyłożył *)
 let parse_text filename text =
   let lexbuf = Lexing.from_string text in
@@ -30,7 +41,8 @@ let parse_text filename text =
     let p = lexbuf.Lexing.lex_start_p in
     let tok = Lexing.lexeme lexbuf in
     let line = p.Lexing.pos_lnum and col = p.Lexing.pos_cnum - p.Lexing.pos_bol + 1 in
-    let hint = Syntax_errors.hint text filename in
+    let error_line = List.nth_opt (String.split_on_char '\n' text) (line - 1) |> Option.value ~default:"" in
+    let hint = Syntax_errors.hint text filename ^ builtin_typo error_line in
     (* Token zaczyna nową linię: instrukcja urwała się na końcu poprzedniej - tam pokazujemy *)
     if !prev_line < line && tok <> "" then
       Error ((!prev_line, line, col), (!prev_line, !prev_end),

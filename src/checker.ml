@@ -52,10 +52,12 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
         report (Printf.sprintf "%s oczekuje %s, podano %d" name (Errors.argumentow n) given)
     | _ -> ()
   in
+  let names sc = Hashtbl.fold (fun n _ acc -> n :: acc) sc.vars (Hashtbl.fold (fun n _ acc -> n :: acc) sc.funcs []) in
+  let builtin_names = Hashtbl.fold (fun n _ acc -> n :: acc) builtin_arity [] in
   let rec expr sc = function
     | Identifier n ->
         if not (is_var sc n || Hashtbl.mem sc.funcs n || Hashtbl.mem sc.types n) then
-          report ("Nieznana zmienna: " ^ n)
+          report (Errors.unknown "zmienna" n (names sc))
     | FunctionCall (name, args) ->
         List.iter (expr sc) args;
         let given = List.length args in
@@ -68,7 +70,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
                (if given < n then
                   report (Printf.sprintf "%s oczekuje co najmniej %s, podano %d" name (Errors.argumentow n) given))
              else check_arity name (Some n) given
-         | None, None -> report ("Nieznana funkcja: " ^ name))
+         | None, None -> report (Errors.unknown "funkcja" name (names sc @ builtin_names)))
     | NewObject (c, args) ->
         List.iter (expr sc) args;
         if not (Hashtbl.mem sc.types c) then report ("Nieznana klasa: " ^ c)
