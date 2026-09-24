@@ -121,7 +121,10 @@
 - `ferdek --lsp`: Language Server with errors as you type (syntax and `--check`), hover docs for
   keywords, builtins and your names, completion (multi-word keywords too), go to definition
   (also into imported modules, any number of import levels deep), find references and rename -
-  across all files of the workspace that import the module. Needs the `yojson` opam package.
+  across all files of the workspace that import the module. Also argument hints while typing a call,
+  document formatting (as `ferdek --fmt`) and semantic colouring by the real lexer (multi-word
+  keywords, spellings without Polish letters, builtins, your functions, parameters and variables).
+  Needs the `yojson` opam package.
 - Lexer and preprocessor messages are in Polish too.
 - Errors show the program line they are about. Syntax errors point with `^` at the spot, and when a
   statement is cut short, at the end of that line instead of the start of the next one. Runtime
