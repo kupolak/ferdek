@@ -189,6 +189,16 @@ w = [i for i in items if i["label"] == "W MORDĘ JEŻA"]
 check("uzupełnianie słowa", [i["textEdit"]["range"]["start"]["character"] for i in w], [len("PANIE SENSACJA REWELACJA ")])
 check("uzupełnianie nazw z pliku", {"f", "Licznik", "g"} <= {i["label"] for i in items}, True)
 
+# Formatowanie: jak ferdek --fmt, jedna zmiana na cały dokument
+FURI = "file:///fmt.ferdek"
+UGLY = "CO JEST KURDE\nNO JAK NIE JAK TAK 1 ŁYSA PAŁA 2\nPANIE SENSACJA REWELACJA 1\nDO CHAŁUPY ALE JUŻ\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n"
+send("textDocument/didOpen", {"textDocument": {"uri": FURI, "text": UGLY}}, request=False)
+edits = send("textDocument/formatting", {"textDocument": {"uri": FURI}, "options": {"tabSize": 4, "insertSpaces": True}})["result"]
+check("formatowanie", [e["newText"].split("\n")[2] for e in edits], ["    PANIE SENSACJA REWELACJA 1"])
+check("formatowanie - zakres", [e["range"]["end"] for e in edits], [{"line": 5, "character": 0}])
+send("textDocument/didChange", {"textDocument": {"uri": FURI}, "contentChanges": [{"text": edits[0]["newText"]}]}, request=False)
+check("formatowanie gotowego", send("textDocument/formatting", {"textDocument": {"uri": FURI}, "options": {}})["result"], [])
+
 # Import JAKO: definicja l.dodaj w pliku modułu, uzupełnianie l.nazw
 here = os.path.abspath("tests/integration/features/lsp_import.ferdek")
 MURI = "file://" + here

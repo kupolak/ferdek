@@ -572,6 +572,7 @@ let run ~diagnose ~find_module () =
                   "referencesProvider", `Bool true;
                   "renameProvider", `Bool true;
                   "hoverProvider", `Bool true;
+                  "documentFormattingProvider", `Bool true;
                   "completionProvider", `Assoc []];
                 "serverInfo", `Assoc ["name", `String "ferdek"; "version", `String "2.0"]])
           | "shutdown" -> reply id `Null
@@ -620,6 +621,17 @@ let run ~diagnose ~find_module () =
                                      markdown (describe mtoks i name ^ " - z modułu " ^ Filename.basename f)
                                  | None -> `Null)
                             | _ -> `Null)
+          | "textDocument/formatting" ->
+              (* jak ferdek --fmt; jedna zmiana na cały dokument, brak zmian - pusta lista *)
+              let uri = doc_uri () in
+              let text = Option.value (Hashtbl.find_opt docs uri) ~default:"" in
+              let formatted = Formatter.format text in
+              reply id (if formatted = text then `List [] else
+                let lines = Array.of_list (String.split_on_char '\n' text) in
+                let last = Array.length lines - 1 in
+                `List [`Assoc ["range", `Assoc ["start", pos 0 0;
+                                                "end", pos last (utf16_of_bytes lines.(last) (String.length lines.(last)))];
+                               "newText", `String formatted]])
           | "textDocument/completion" ->
               let uri, lines, toks, line, ch = at_cursor () in
               reply id (completion ~find_module (dir_of uri) toks lines line ch)
