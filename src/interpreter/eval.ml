@@ -415,8 +415,8 @@ and eval_stmt env = function
          (posortowane), tekst - znaki *)
       let items = match eval_expr env coll with
         | VArray a -> Array.to_list a
-        | VHashMap tbl -> List.map (fun k -> VString k) (Builtins_hashmap.szafka_wszystkie_szufladki tbl)
-        | VString s -> List.map (fun c -> VString c) (Array.to_list (Builtins_string.utf8_chars s))
+        | VHashMap tbl -> List.map (fun k -> VString k) (Map_utils.szafka_wszystkie_szufladki tbl)
+        | VString s -> List.map (fun c -> VString c) (Array.to_list (Text_utils.utf8_chars s))
         | _ -> raise (RuntimeError "KRĘCI CEMENT BETONIARA ... Z: po tym nie da się przejść (tablica, szafka albo tekst)")
       in
       (try

@@ -36,7 +36,7 @@ let pack v =
         Buffer.add_char b '{';
         List.iteri (fun i k ->
           if i > 0 then Buffer.add_char b ',';
-          str k; Buffer.add_char b ':'; go (Hashtbl.find t k)) (Builtins_hashmap.szafka_wszystkie_szufladki t);
+          str k; Buffer.add_char b ':'; go (Hashtbl.find t k)) (Map_utils.szafka_wszystkie_szufladki t);
         Buffer.add_char b '}'
     | v -> fail (value_kind v) in
   go v;

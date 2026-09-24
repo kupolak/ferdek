@@ -158,7 +158,7 @@ let rec string_of_value = function
       "[" ^ String.concat ", " (Array.to_list (Array.map string_of_value arr)) ^ "]"
   | VHashMap tbl ->
       (* Klucze posortowane: kolejność z Hashtbl zależy od hasza i nie da się jej powtórzyć w C *)
-      let keys = Builtins_hashmap.szafka_wszystkie_szufladki tbl in
+      let keys = Map_utils.szafka_wszystkie_szufladki tbl in
       let pairs = List.map (fun k -> k ^ ": " ^ string_of_value (Hashtbl.find tbl k)) keys in
       "{" ^ String.concat ", " pairs ^ "}"
   | VFunction (fdecl, _) ->

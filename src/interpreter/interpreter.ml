@@ -1,11 +1,15 @@
 (* Interpreter for Ferdek Programming Language: moduły, deklaracje i uruchamianie programu.
-   Wartości - Value, wyrażenia i instrukcje - Eval, wbudowane funkcje - Interp_builtins. *)
+   Wartości - Value, wyrażenia i instrukcje - Eval, wbudowane funkcje - builtins/Builtins_*. *)
 
 open Ast
 include Value
 open Eval
 
-let () = Interp_builtins.register (); Interp_builtins_doom.register ()
+let () =
+  List.iter (fun register -> register ()) [
+    Builtins_text.register; Builtins_arrays.register; Builtins_maps.register; Builtins_files.register;
+    Builtins_numbers.register; Builtins_dates.register; Builtins_json.register; Builtins_system.register;
+    Builtins_doom.register ]
 
 (* ============ MODULE LOADING ============ *)
 
