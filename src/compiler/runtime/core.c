@@ -385,12 +385,24 @@ static char** map_sorted_keys(FerdekMap* m) {
     return keys;
 }
 
+/* Liczba całkowita jako tekst do bufora (co najmniej 21 bajtów) - bez snprintf, który przy
+   sklejaniu tekstu z liczbą w pętli był większością czasu. Na ujemnych, żeby LLONG_MIN też działał. */
+static void int_str(long long n, char* out) {
+    char tmp[21];
+    int k = 0;
+    long long m = n < 0 ? n : -n;
+    do { tmp[k++] = (char)('0' - (m % 10)); m /= 10; } while (m != 0);
+    if (n < 0) *out++ = '-';
+    while (k > 0) *out++ = tmp[--k];
+    *out = '\0';
+}
+
 /* Tekstowa postać wartości - identyczna jak string_of_value w interpreterze */
 static char* to_str(FerdekValue v) {
     char num[32];
     switch (v.type) {
         case TYPE_INT: case TYPE_BYTE: case TYPE_SHORT: case TYPE_FIXED:
-            snprintf(num, sizeof num, "%lld", v.value.int_val);
+            int_str(v.value.int_val, num);
             return fx_strdup(num);
         case TYPE_STRING: return fx_strdup(v.value.string_val);
         case TYPE_FLOAT:
@@ -456,7 +468,8 @@ static const char* str_view(FerdekValue v, char* num, size_t n, char** owned) {
     *owned = NULL;
     if (v.type == TYPE_STRING) return v.value.string_val;
     if (v.type == TYPE_INT || v.type == TYPE_BYTE || v.type == TYPE_SHORT || v.type == TYPE_FIXED) {
-        snprintf(num, n, "%lld", v.value.int_val);
+        (void)n;   /* num ma co najmniej 21 bajtów u każdego wołającego */
+        int_str(v.value.int_val, num);
         return num;
     }
     return *owned = to_str(v);
