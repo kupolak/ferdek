@@ -161,6 +161,15 @@ test-compiled: build
 test-lsp: build
 	python3 scripts/test_lsp.py $(FERDEK)
 
+# Plac zabaw w przeglądarce (wymaga: opam install js_of_ocaml js_of_ocaml-compiler).
+# Gotowa strona w _build/playground/ - index.html + ferdek_web.js, wystarczy dowolny serwer plików.
+playground:
+	dune build --profile release ./playground/ferdek_web.bc.js
+	rm -rf _build/playground && mkdir -p _build/playground
+	cp _build/default/playground/ferdek_web.bc.js _build/playground/ferdek_web.js
+	{ printf '<!doctype html>\n<html lang="pl">\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'; cat playground/index.html; } > _build/playground/index.html
+	@echo "--- plac zabaw: _build/playground (np. python3 -m http.server -d _build/playground)"
+
 test-network: build
 	$(call run_ferdek,tests/integration/stdlib/test_klatka)
 
@@ -189,4 +198,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: playground all build clean distclean test test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

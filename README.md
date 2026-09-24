@@ -62,6 +62,13 @@ completion, go to definition (also into imported modules), find references and r
 vim.lsp.start({ name = "ferdek", cmd = { "ferdek", "--lsp" } })
 ```
 
+## Playground
+
+Ferdek in the browser: the interpreter compiled to JavaScript (js_of_ocaml), running in a Web Worker,
+with examples and the stdlib built in. Build it with `make playground` (needs
+`opam install js_of_ocaml js_of_ocaml-compiler`) and serve `_build/playground/` with any static
+file server. Everything works except X11 graphics, networking and files.
+
 ## Installation
 
 ### Quick install

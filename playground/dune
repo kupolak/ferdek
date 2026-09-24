@@ -1,0 +1,26 @@
+; Plac zabaw: interpreter Ferdka jako Web Worker (js_of_ocaml).
+; optional - bez js_of_ocaml zwykły build i CI go pomijają. Budowanie: make playground
+
+(rule
+ (targets embedded.ml)
+ (deps
+  embed.py
+  (glob_files_rec %{project_root}/stdlib/**.ferdek)
+  (glob_files przyklady/*.ferdek)
+  (glob_files %{project_root}/examples/*.ferdek))
+ (action
+  (with-stdout-to
+   %{targets}
+   (run python3 embed.py %{project_root}
+    playground/przyklady/witaj.ferdek
+    examples/hello.ferdek examples/fizzbuzz.ferdek examples/bubble_sort.ferdek
+    examples/classes.ferdek examples/enums.ferdek examples/structs.ferdek
+    examples/function_pointers.ferdek examples/variadic.ferdek examples/bitwise.ferdek))))
+
+(executable
+ (name ferdek_web)
+ (optional)
+ (modes js)
+ (modules ferdek_web embedded)
+ (libraries ferdek_lib js_of_ocaml)
+ (js_of_ocaml (flags (:standard --opt 3))))

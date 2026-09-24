@@ -48,6 +48,8 @@
   of 32 MB and growing).
 
 ### Tools
+- Browser playground (`make playground`): the interpreter as JavaScript in a Web Worker, with
+  examples, stdlib, program input and a formatter button.
 - `ferdek --check` (unknown names, wrong argument counts), `ferdek test` (runs `*_test.ferdek`),
   `ferdek --fmt` (indentation).
 - Errors report file and line; syntax errors say what was expected; all messages in Polish.
