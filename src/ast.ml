@@ -372,6 +372,49 @@ let rec targets_stmt (decl, assigned) = function
   | _ -> (decl, assigned)
 and targets_block acc stmts = List.fold_left targets_stmt acc stmts
 
+(* Przekształcenie bezpośrednich podwyrażeń (f nie schodzi sama głębiej - robi to wołający) *)
+let map_subexprs f = function
+  | FunctionCall (n, es) -> FunctionCall (n, List.map f es)
+  | NewObject (c, es) -> NewObject (c, List.map f es)
+  | ArrayLiteral es -> ArrayLiteral (List.map f es)
+  | BinaryOp (a, o, b) -> BinaryOp (f a, o, f b)
+  | ComparisonOp (a, o, b) -> ComparisonOp (f a, o, f b)
+  | LogicalOp (a, o, b) -> LogicalOp (f a, o, f b)
+  | BitwiseOp (a, o, b) -> BitwiseOp (f a, o, f b)
+  | ArrayAccess (a, b) -> ArrayAccess (f a, f b)
+  | PointerArithmetic (a, o, b) -> PointerArithmetic (f a, o, f b)
+  | BitwiseNot e -> BitwiseNot (f e)
+  | LogicalNot e -> LogicalNot (f e)
+  | ToFixed e -> ToFixed (f e)
+  | FromFixed e -> FromFixed (f e)
+  | Reference e -> Reference (f e)
+  | Dereference e -> Dereference (f e)
+  | Parenthesized e -> Parenthesized (f e)
+  | Checked (e, t, w) -> Checked (f e, t, w)
+  | e -> e
+
+(* Wyrażenia instrukcji (także zagnieżdżonych instrukcji) przepuszczone przez f *)
+let rec map_stmt_exprs f = function
+  | VarDecl (n, e) -> VarDecl (n, f e)
+  | ConstDecl (n, e) -> ConstDecl (n, f e)
+  | Assign (n, e) -> Assign (n, f e)
+  | ArrayDecl (n, es) -> ArrayDecl (n, List.map f es)
+  | Print e -> Print (f e)
+  | PrintInline e -> PrintInline (f e)
+  | Throw e -> Throw (f e)
+  | ArrayAssign (a, v) -> ArrayAssign (f a, f v)
+  | If (c, a, b) -> If (f c, List.map (map_stmt_exprs f) a, Option.map (List.map (map_stmt_exprs f)) b)
+  | While (c, b) -> While (f c, List.map (map_stmt_exprs f) b)
+  | For (v, a, b, k, body) -> For (v, f a, f b, Option.map f k, List.map (map_stmt_exprs f) body)
+  | ForEach (v, c, b) -> ForEach (v, f c, List.map (map_stmt_exprs f) b)
+  | FunctionCallStmt (n, args) -> FunctionCallStmt (n, List.map f args)
+  | FunctionCallWithAssign (v, n, args) -> FunctionCallWithAssign (v, n, List.map f args)
+  | Return e -> Return (Option.map f e)
+  | Try (a, v, b, fin) -> Try (List.map (map_stmt_exprs f) a, v, List.map (map_stmt_exprs f) b,
+                               List.map (map_stmt_exprs f) fin)
+  | Located (file, l, s) -> Located (file, l, map_stmt_exprs f s)
+  | s -> s
+
 let string_of_function_decl indent fdecl =
   let params_str = String.concat ", " fdecl.params in
   let body_str = String.concat "\n" (List.map (string_of_stmt (indent ^ "  ")) fdecl.body) in

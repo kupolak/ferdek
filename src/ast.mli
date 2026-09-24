@@ -181,6 +181,10 @@ val stmt_names : stmt -> string list
 (* Zmienne deklarowane w bloku: CYCU PRZYNIEŚ NO, tablice, zmienna z HELENA MAM ZAWAŁ *)
 val block_decls : stmt list -> string list
 
+(* Przekształcenia: bezpośrednie podwyrażenia; wszystkie wyrażenia instrukcji (z zagnieżdżonymi) *)
+val map_subexprs : (expr -> expr) -> expr -> expr
+val map_stmt_exprs : (expr -> expr) -> stmt -> stmt
+
 (* (zadeklarowane, przypisane) w bloku - nazwy, które instrukcje tworzą albo zmieniają *)
 val targets_stmt : string list * string list -> stmt -> string list * string list
 val targets_block : string list * string list -> stmt list -> string list * string list

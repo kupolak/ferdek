@@ -46,14 +46,23 @@ let rec rewrite types stmt =
 let apply (prog : program) =
   let top = List.concat_map (function Statement s -> [s] | _ -> []) prog.declarations in
   let globals = List.fold_left typed_decls [] top in
+  (* Lambdy w wyrażeniach: w ich ciele obowiązują typy z otoczenia (bez przesłoniętych przez parametry
+     i deklaracje lambdy) plus jej własne - przypisanie w lambdzie sięga do globalnych jak w funkcji *)
+  let rec lambdas types e =
+    match e with
+    | Lambda (ps, b) ->
+        let local = ps @ block_decls b in
+        let inner = List.fold_left typed_decls [] b
+                    @ List.filter (fun (n, _) -> not (List.mem n local)) types in
+        Lambda (ps, List.map (fun s -> map_stmt_exprs (lambdas inner) (rewrite inner s)) b)
+    | e -> map_subexprs (lambdas types) e in
+  let rewrite types s = map_stmt_exprs (lambdas types) (rewrite types s) in
   let body ~params ~members stmts =
     let own = List.fold_left typed_decls [] stmts in
     let local = params @ block_decls stmts in
     (* w metodzie przypisanie do nie-pola tworzy lokalną - globalne typy tam nie sięgają *)
     let visible = if members <> [] then [] else List.filter (fun (n, _) -> not (List.mem n local)) globals in
     List.map (rewrite (own @ visible)) stmts in
-  (* ponytail: przypisania wewnątrz lambd nie są sprawdzane (lambda to wyrażenie - trzeba by przejść
-     po wszystkich wyrażeniach). Kompilator i tak nie ufa typom zmiennych zmienianych w lambdach. *)
   let fn ?(members = []) (f : function_decl) =
     { f with body = body ~params:(f.params @ (if f.is_variadic then ["varargs"] else [])) ~members f.body } in
   { declarations = List.map (function
