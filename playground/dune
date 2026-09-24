@@ -12,7 +12,8 @@
   (with-stdout-to
    %{targets}
    (run python3 embed.py %{project_root}
-    playground/przyklady/witaj.ferdek
+    playground/przyklady/witaj.ferdek playground/przyklady/lodowka.ferdek
+    playground/przyklady/kalendarz.ferdek playground/przyklady/bledy.ferdek
     examples/hello.ferdek examples/fizzbuzz.ferdek examples/bubble_sort.ferdek
     examples/classes.ferdek examples/enums.ferdek examples/structs.ferdek
     examples/function_pointers.ferdek examples/variadic.ferdek examples/bitwise.ferdek))))

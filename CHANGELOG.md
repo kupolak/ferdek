@@ -26,6 +26,7 @@
 - Modules with a namespace: `O KOGO MOJE PIĘKNE OCZY WIDZĄ matma JAKO m`, then `m.dodaj(1, 2)`,
   `m.PI`. The module's top-level names get the `m.` prefix, so they cannot clash with yours;
   the plain import works as before. `JAKO` is now a keyword.
+  Multi-word names work after the dot too: `s.OTWÓRZ SKRZYNKĘ(2, 10)`.
 - Standard library, built in (no import), same in both modes:
   - arrays: `WYTNIJ Z WERSALKI`, `GDZIE LEŻY NA WERSALCE`, `ZESTAW WERSALKI`, `ZSUMUJ WERSALKĘ`,
     `NAJMNIEJSZY/NAJWIĘKSZY NA WERSALCE`, `ZWIŃ WERSALKĘ` (reduce), `BEZ POWTÓREK`, `ZRÓB KOLEJKĘ`,
@@ -77,6 +78,8 @@
   of 32 MB and growing).
 
 ### Tools
+- Tutorial `docs/SAMOUCZEK.md` ("Ferdek w 15 minut"): every program in it is run in both modes by
+  `make test` and must print what the tutorial shows.
 - Browser playground (`make playground`): the interpreter as JavaScript in a Web Worker, with
   examples, stdlib, program input and a formatter button.
 - `ferdek --check` (unknown names, wrong argument counts), `ferdek test` (runs `*_test.ferdek`),

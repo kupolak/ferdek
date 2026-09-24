@@ -6,6 +6,8 @@ A humorous programming language based on the Polish sitcom "Świat według Kieps
 
 There's a [VS Code extension](https://github.com/kupolak/ferdek-vscode) with syntax highlighting, auto-completion, and snippets. Get it from the [marketplace](https://marketplace.visualstudio.com/items?itemName=JakubPolak.vscode-ferdek).
 
+New to Ferdek? Start with the tutorial: [Ferdek w 15 minut](docs/SAMOUCZEK.md) (Polish).
+
 ## What's This?
 
 Ferdek uses quotes from the TV show as keywords. Instead of boring `while` you write `CHLUŚNIEM BO UŚNIEM`, and instead of `print` you get `PANIE SENSACJA REWELACJA`.

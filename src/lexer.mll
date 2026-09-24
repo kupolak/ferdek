@@ -405,8 +405,15 @@ rule token = parse
   | '-' (digit+ as num) { INTEGER (- (int_of_string num)) }
 
   (* Identifiers *)
-  (* m.nazwa - nazwa z modułu zaimportowanego JAKO m *)
-  | (letter | utf8_letter) identifier_char* ('.' (letter | utf8_letter) identifier_char*)* as id { IDENTIFIER id }
+  (* m.nazwa - nazwa z modułu zaimportowanego JAKO m. Po kropce czytamy cały następny token, więc
+     działa też nazwa wielowyrazowa: s.OTWÓRZ SKRZYNKĘ *)
+  | (letter | utf8_letter) identifier_char* as alias '.' {
+      let start = lexbuf.lex_start_p in
+      match token lexbuf with
+      | IDENTIFIER name -> lexbuf.lex_start_p <- start; IDENTIFIER (alias ^ "." ^ name)
+      | _ -> raise (LexError (Printf.sprintf "Po '%s.' musi być nazwa (linia %d)" alias start.pos_lnum))
+    }
+  | (letter | utf8_letter) identifier_char* as id { IDENTIFIER id }
 
   (* End of file *)
   | eof { EOF }
