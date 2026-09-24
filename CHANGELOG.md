@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.0 (unreleased)
+## Unreleased
 
 ### Breaking changes
 - `HELENA MAM ZAWAŁ` (catch) now ends with `DO CHAŁUPY ALE JUŻ`. Before, the catch block swallowed

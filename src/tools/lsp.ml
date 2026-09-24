@@ -704,7 +704,7 @@ let run ~diagnose ~find_module () =
                                       "tokenModifiers", `List (List.map (fun s -> `String s) token_modifiers)];
                     "full", `Bool true];
                   "completionProvider", `Assoc []];
-                "serverInfo", `Assoc ["name", `String "ferdek"; "version", `String "2.0"]])
+                "serverInfo", `Assoc ["name", `String "ferdek"; "version", `String "1.0"]])
           | "shutdown" -> reply id `Null
           | "exit" -> exit (if shutdown then 0 else 1)
           | "textDocument/didOpen" ->
