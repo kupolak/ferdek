@@ -117,6 +117,9 @@ test-runner: build
 	@$(FERDEK) test tests/ferdek_test/dobre > _build/ferdek_runner.log 2>&1 || { cat _build/ferdek_runner.log; exit 1; }
 	@! $(FERDEK) test tests/ferdek_test/zle > _build/ferdek_runner.log 2>&1 || { echo "ferdek test nie wykrył oblanego testu"; exit 1; }
 	@echo "--- ferdek test: OK"
+	@rm -rf _build/nowy_projekt && cd _build && $(FERDEK_ROOT)/$(FERDEK) nowy nowy_projekt > /dev/null \
+	  && cd nowy_projekt && $(FERDEK_ROOT)/$(FERDEK) nowy_projekt.ferdek | grep -q "to jest Ferdek" \
+	  && $(FERDEK_ROOT)/$(FERDEK) test > /dev/null && echo "--- ferdek nowy: OK"
 
 # docs/JEZYK.md i opisy słów muszą nadążać za lekserem
 test-docs:

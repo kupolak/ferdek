@@ -475,6 +475,7 @@ Wynik:
 
 ## Co dalej
 
+- `ferdek nowy moj_projekt` - nowy projekt: program, moduł, test i README.
 - `ferdek -c program.ferdek -o program` - kompilacja do C i gotowy plik wykonywalny (dużo szybszy).
 - `ferdek --check program.ferdek` - sprawdzenie bez uruchamiania: literówki, nieznane nazwy, liczba argumentów.
 - `ferdek --fmt program.ferdek` - uporządkowane wcięcia.

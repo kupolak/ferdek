@@ -61,6 +61,7 @@ let print_help () =
   Printf.printf "  -r, --run               Szybki szlag! Kompiluj i odpal (tryb testowy).\n";
   Printf.printf "  --check <plik>          Sprawdź bez uruchamiania: nieznane zmienne, funkcje, liczba argumentów.\n";
   Printf.printf "  test [katalog]          Uruchom wszystkie pliki *_test.ferdek (np. z BABKĄ) i podsumuj.\n";
+  Printf.printf "  nowy <nazwa>            Nowy projekt: program, moduł, test BABKI i README.\n";
   Printf.printf "  --fmt <plik>            Wypisz program z uporządkowanymi wcięciami.\n";
   Printf.printf "  --fmt-check <plik>      Sprawdź, że formatowanie nie zmienia programu i jest stabilne.\n";
   Printf.printf "  --repl                  Pogadaj sobie z Ferdkiem (tryb interaktywny).\n";
@@ -178,6 +179,56 @@ let run_tests dir =
       Printf.printf "Zaliczone: %d/%d%s\n" (total - bad) total
         (if bad = 0 then " - Babka zadowolona!" else " - Babka niezadowolona.");
       if bad = 0 then 0 else 1
+
+(* ferdek nowy nazwa: szkielet projektu - program, moduł z funkcją, test BABKI, README *)
+let new_project name =
+  let valid = name <> "" && String.for_all (fun c -> match c with
+    | 'a'..'z' | 'A'..'Z' | '0'..'9' | '_' | '-' -> true | _ -> false) name in
+  if not valid then (Printf.eprintf "A fe! Nazwa projektu: litery, cyfry, _ i - (bez polskich znaków i spacji)\n"; 1)
+  else if Sys.file_exists name then (Printf.eprintf "A fe! %s już istnieje - nie ruszam\n" name; 1)
+  else begin
+    Sys.mkdir name 0o755;
+    let write file text = Out_channel.with_open_bin (Filename.concat name file) (fun oc -> output_string oc text) in
+    write (name ^ ".ferdek") (Printf.sprintf {|CO JEST KURDE
+RYM CYM CYM %s - uruchom: ferdek %s.ferdek
+O KOGO MOJE PIĘKNE OCZY WIDZĄ pomocnik
+
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA powitanie("Ferdek")
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
+|} name name);
+    write "pomocnik.ferdek" {|CO JEST KURDE
+RYM CYM CYM Moduł projektu - funkcje do użycia w programie i w testach
+
+ALE WIE PAN JA ZASADNICZO powitanie
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ TO SĄ STRINGI
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO kto TO SĄ STRINGI
+    I JA INFORMUJĘ ŻE WYCHODZĘ "Walduś, to jest " BABKA DAWAJ RENTĘ kto BABKA DAWAJ RENTĘ "!"
+DO WIDZENIA PANU
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
+|};
+    write "pomocnik_test.ferdek" {|CO JEST KURDE
+RYM CYM CYM Testy - uruchom: ferdek test
+O KOGO MOJE PIĘKNE OCZY WIDZĄ BABKA
+O KOGO MOJE PIĘKNE OCZY WIDZĄ pomocnik
+
+W MORDĘ JEŻA MA BYĆ RÓWNE("Walduś, to jest Boczek!", W MORDĘ JEŻA powitanie("Boczek"))
+W MORDĘ JEŻA BABKA PODSUMUJ
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
+|};
+    write "README.md" (Printf.sprintf {|# %s
+
+Projekt w języku Ferdek.
+
+- `ferdek %s.ferdek` - uruchom
+- `ferdek test` - testy (pliki `*_test.ferdek`, asercje z modułu BABKA)
+- `ferdek -c %s.ferdek -o %s` - skompiluj do pliku wykonywalnego
+- `ferdek --check %s.ferdek` - sprawdź bez uruchamiania
+- `ferdek --debug %s.ferdek` - krok po kroku
+|} name name name name name name);
+    write ".gitignore" (name ^ "\n");
+    Printf.printf "Zrobione! Projekt %s:\n  cd %s\n  ferdek %s.ferdek\n  ferdek test\n" name name name;
+    0
+  end
 
 (* --fmt i --fmt-check *)
 let read_file path = In_channel.with_open_bin path In_channel.input_all
@@ -356,6 +407,9 @@ let () =
       | "-v" | "--version" ->
           print_version ();
           exit 0
+      | "nowy" when input_file = None && i = 1 ->
+          if i + 1 >= argc then (Printf.eprintf "Użycie: ferdek nowy nazwa_projektu\n"; exit 1);
+          exit (new_project Sys.argv.(i + 1))
       | "test" when input_file = None && i = 1 ->
           let dir = if i + 1 < argc then Sys.argv.(i + 1) else "." in
           exit (run_tests dir)

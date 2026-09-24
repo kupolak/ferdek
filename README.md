@@ -40,6 +40,8 @@ Some examples:
   `ODWRÓĆ KANAPĘ`...), maps and dates (`JAKI DZIŚ DZIEŃ`, `DODAJ DNI`, `DZIEŃ TYGODNIA`) - see `docs/JEZYK.md`
 - `ZNAK Z KANAPY(s, i)`, `KANAPA DO GÓRY(s)`, `KANAPA W DÓŁ(s)` - character at position, upper/lower case (Polish letters too)
 
+Start a project: `ferdek nowy moj_projekt` (program, module, test and README).
+
 Run your tests - every `*_test.ferdek` file under a directory (use BABKA for assertions):
 
 ```bash
