@@ -51,6 +51,8 @@ Tidy up indentation (4 spaces per block; comments and strings untouched):
 ferdek --fmt program.ferdek > program_ladny.ferdek
 ```
 
+Pick the C compiler with `FERDEK_CC` (default `cc`), e.g. `FERDEK_CC=gcc-15 ferdek -c program.ferdek -o app`.
+
 Check a program without running it (unknown names, wrong argument counts):
 
 ```bash

@@ -246,7 +246,9 @@ let cc c_file exe =
   (* -w: ostrzeżenia o wygenerowanym kodzie (np. x == x z programu) nic nie mówią użytkownikowi.
      -ffp-contract=off: bez łączenia a*b+c w jedno działanie (FMA) - inaczej ostatnie cyfry
      liczb z przecinkiem różniłyby się od interpretera *)
-  Sys.command (Printf.sprintf "cc -std=c99 -O2 -ffp-contract=off -w -o %s %s -lm%s%s" (Filename.quote exe) (Filename.quote c_file) x11 gc)
+  (* FERDEK_CC: inny kompilator C (np. gcc-15), domyślnie systemowe cc *)
+  let compiler = match Sys.getenv_opt "FERDEK_CC" with Some c when c <> "" -> c | _ -> "cc" in
+  Sys.command (Printf.sprintf "%s -std=c99 -O2 -ffp-contract=off -w -o %s %s -lm%s%s" compiler (Filename.quote exe) (Filename.quote c_file) x11 gc)
 
 (* -c: plik .c albo (inne rozszerzenie) gotowa binarka *)
 let compile_file input_file output_file =

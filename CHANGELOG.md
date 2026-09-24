@@ -65,6 +65,8 @@
   an error, and text with a number outside that range is not a number.
 - `ZRÓB DŁUGI` / `ZAMIEŃ NA FIXED` on a number too big for a whole number (or NaN) is an error
   in both modes; before, the result depended on the mode and the processor.
+- `FERDEK_CC` picks the C compiler for `ferdek -c`/`-r`. The whole test suite and the fuzzer also
+  pass with GCC 15, not only clang.
 - C compiler warnings about the generated code are no longer shown.
 - Compiled programs evaluate operands, function arguments and array elements left to right, like
   the interpreter (C leaves the order open; with gcc a function changing a variable used in the
