@@ -55,3 +55,6 @@ pomysl.c
 /boczek/
 /ferdek-vscode/
 /kupolak.github.io/
+
+# Python
+__pycache__/
