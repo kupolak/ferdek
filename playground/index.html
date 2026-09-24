@@ -304,6 +304,7 @@
 (() => {
   const WORKER = "ferdek_web.js";
   const LIMIT_MS = 20000;   // potem ubijamy - pewnie pętla bez końca
+  const SHARE_BASE = "";    // adres do linków "Udostępnij"; pusty = adres tej strony
   const $ = id => document.getElementById(id);
   const code = $("code"), screen = $("screen"), lamp = $("lamp"), input = $("input");
   const runBtn = $("run"), stopBtn = $("stop"), fmtBtn = $("fmt"), examples = $("examples");
@@ -427,7 +428,7 @@
     return new TextDecoder().decode(raw);
   }
   shareBtn.addEventListener("click", async () => {
-    const link = location.href.split("#")[0] + "#" + await encode(code.value);
+    const link = (SHARE_BASE || location.href.split("#")[0]) + "#" + await encode(code.value);
     share.hidden = false;
     shareLink.value = link;
     shareLink.focus(); shareLink.select();
