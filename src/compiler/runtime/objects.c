@@ -3,13 +3,7 @@
 static void map_put(FerdekMap* m, const char* key, FerdekValue v) {
     int i = map_find(m, key);
     if (i >= 0) { m->vals[i] = v; return; }
-    if (m->len == m->cap) {
-        m->cap = m->cap ? m->cap * 2 : 8;
-        m->keys = fx_realloc(m->keys, sizeof(char*) * m->cap);
-        m->vals = fx_realloc(m->vals, sizeof(FerdekValue) * m->cap);
-    }
-    m->keys[m->len] = fx_strdup(key);
-    m->vals[m->len++] = v;
+    map_append(m, fx_strdup(key), v);
 }
 
 static FerdekValue make_object(void) {

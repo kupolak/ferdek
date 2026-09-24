@@ -23,13 +23,7 @@ static FerdekValue b_szafka_wloz(int argc, FerdekValue* argv) {
     char* key = to_str(argv[1]);
     int i = map_find(m, key);
     if (i >= 0) { m->vals[i] = argv[2]; fx_free(key); return make_null(); }
-    if (m->len == m->cap) {
-        m->cap = m->cap ? m->cap * 2 : 8;
-        m->keys = fx_realloc(m->keys, sizeof(char*) * m->cap);
-        m->vals = fx_realloc(m->vals, sizeof(FerdekValue) * m->cap);
-    }
-    m->keys[m->len] = key;
-    m->vals[m->len++] = argv[2];
+    map_append(m, key, argv[2]);
     return make_null();
 }
 
@@ -46,12 +40,7 @@ static FerdekValue b_szafka_wyrzuc(int argc, FerdekValue* argv) {
     char* key = to_str(argv[1]);
     int i = map_find(m, key);
     fx_free(key);
-    if (i >= 0) {
-        fx_free(m->keys[i]);
-        m->keys[i] = m->keys[m->len - 1];   /* kolejność w środku bez znaczenia - wypisujemy posortowane */
-        m->vals[i] = m->vals[m->len - 1];
-        m->len--;
-    }
+    if (i >= 0) map_remove_at(m, i);   /* kolejność w środku bez znaczenia - wypisujemy posortowane */
     return make_null();
 }
 

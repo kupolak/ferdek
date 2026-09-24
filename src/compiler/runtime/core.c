@@ -61,8 +61,9 @@ typedef enum {
 
 typedef struct FerdekValue FerdekValue;
 typedef struct { FerdekValue* data; int length; } FerdekArray;
-/* ponytail: mapa jako tablica par z wyszukiwaniem liniowym; hash, gdy mapy urosną do tysięcy kluczy */
-typedef struct { char** keys; FerdekValue* vals; int len, cap; } FerdekMap;
+/* Mapa: pary w tablicach keys/vals; od MAP_LINEAR kluczy dochodzi indeks haszujący
+   (index[slot] = pozycja + 1, 0 = puste; icap to potęga dwójki) */
+typedef struct { char** keys; FerdekValue* vals; int len, cap; int* index; int icap; } FerdekMap;
 
 struct FerdekValue {
     ValueType type;
@@ -290,9 +291,88 @@ static void buf_add(StrBuf* b, const char* t) {
     b->len += n;
 }
 
+#define MAP_LINEAR 8   /* małe mapy (i pola obiektów) - szukanie po kolei jest szybsze od haszowania */
+
+static unsigned map_hash(const char* s) {
+    unsigned h = 2166136261u;
+    for (; *s; s++) h = (h ^ (unsigned char)*s) * 16777619u;
+    return h;
+}
+
+static void map_index_add(FerdekMap* m, int pos) {
+    unsigned slot = map_hash(m->keys[pos]) & (unsigned)(m->icap - 1);
+    while (m->index[slot]) slot = (slot + 1) & (unsigned)(m->icap - 1);
+    m->index[slot] = pos + 1;
+}
+
+static void map_reindex(FerdekMap* m) {
+    if (m->index) fx_free(m->index);
+    m->icap = 16;
+    while (m->icap < 2 * m->len) m->icap *= 2;
+    m->index = fx_calloc(m->icap, sizeof(int));
+    for (int i = 0; i < m->len; i++) map_index_add(m, i);
+}
+
 static int map_find(FerdekMap* m, const char* key) {
-    for (int i = 0; i < m->len; i++) if (strcmp(m->keys[i], key) == 0) return i;
+    if (m->len <= MAP_LINEAR && !m->index) {
+        for (int i = 0; i < m->len; i++) if (strcmp(m->keys[i], key) == 0) return i;
+        return -1;
+    }
+    if (!m->index) map_reindex(m);
+    unsigned slot = map_hash(key) & (unsigned)(m->icap - 1);
+    for (int p; (p = m->index[slot]); slot = (slot + 1) & (unsigned)(m->icap - 1))
+        if (strcmp(m->keys[p - 1], key) == 0) return p - 1;
     return -1;
+}
+
+/* Nowy klucz na końcu (key przechodzi na własność mapy); wołający sprawdził, że go nie ma */
+static void map_append(FerdekMap* m, char* key, FerdekValue v) {
+    if (m->len == m->cap) {
+        m->cap = m->cap ? m->cap * 2 : 8;
+        m->keys = fx_realloc(m->keys, sizeof(char*) * m->cap);
+        m->vals = fx_realloc(m->vals, sizeof(FerdekValue) * m->cap);
+    }
+    m->keys[m->len] = key;
+    m->vals[m->len++] = v;
+    if (m->index) {
+        if (2 * m->len > m->icap) map_reindex(m);
+        else map_index_add(m, m->len - 1);
+    }
+}
+
+/* Slot indeksu, w którym stoi para z pozycji pos */
+static unsigned map_slot_of(FerdekMap* m, int pos) {
+    unsigned slot = map_hash(m->keys[pos]) & (unsigned)(m->icap - 1);
+    while (m->index[slot] != pos + 1) slot = (slot + 1) & (unsigned)(m->icap - 1);
+    return slot;
+}
+
+/* Usunięcie ze slotu przy próbkowaniu liniowym: kolejne wpisy przesuwamy w lukę, jeśli ich
+   miejsce docelowe nie leży między luką a nimi - inaczej szukanie urwałoby się na luce */
+static void map_index_del(FerdekMap* m, unsigned hole) {
+    unsigned mask = (unsigned)(m->icap - 1), j = hole;
+    for (;;) {
+        j = (j + 1) & mask;
+        if (!m->index[j]) break;
+        unsigned home = map_hash(m->keys[m->index[j] - 1]) & mask;
+        if (hole <= j ? (hole < home && home <= j) : (hole < home || home <= j)) continue;
+        m->index[hole] = m->index[j];
+        hole = j;
+    }
+    m->index[hole] = 0;
+}
+
+/* Usunięcie: ostatnia para na miejsce usuniętej (kolejność w środku bez znaczenia) */
+static void map_remove_at(FerdekMap* m, int i) {
+    int last = m->len - 1;
+    if (m->index) {
+        map_index_del(m, map_slot_of(m, i));
+        if (i != last) m->index[map_slot_of(m, last)] = i + 1;
+    }
+    fx_free(m->keys[i]);
+    m->keys[i] = m->keys[last];
+    m->vals[i] = m->vals[last];
+    m->len--;
 }
 
 static int cmp_key_ptr(const void* a, const void* b) { return strcmp(*(char* const*)a, *(char* const*)b); }
