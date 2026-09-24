@@ -189,6 +189,25 @@ w = [i for i in items if i["label"] == "W MORDĘ JEŻA"]
 check("uzupełnianie słowa", [i["textEdit"]["range"]["start"]["character"] for i in w], [len("PANIE SENSACJA REWELACJA ")])
 check("uzupełnianie nazw z pliku", {"f", "Licznik", "g"} <= {i["label"] for i in items}, True)
 
+# Kolorowanie: tokeny (linia, kolumna, długość, typ, modyfikatory) odkodowane z różnic
+send("textDocument/didChange", {"textDocument": {"uri": URI}, "contentChanges": [{"text": PROGRAM}]}, request=False)
+legend = caps["semanticTokensProvider"]["legend"]
+data = send("textDocument/semanticTokens/full", {"textDocument": {"uri": URI}})["result"]["data"]
+toks, line, col = {}, 0, 0
+for k in range(0, len(data), 5):
+    dl, dc, ln, typ, mods = data[k:k + 5]
+    line, col = line + dl, (col + dc if dl == 0 else dc)
+    toks[(line, col)] = (LINES[line][col:col + ln], legend["tokenTypes"][typ],
+                         [m for b, m in enumerate(legend["tokenModifiers"]) if mods >> b & 1])
+def tok(spot): return toks.get(spot)
+check("kolor: słowo kluczowe", tok((0, 0)), ("CO JEST KURDE", "keyword", []))
+check("kolor: deklaracja funkcji", tok(find(3, "f")), ("f", "function", ["declaration"]))
+check("kolor: parametr", tok(find(7, "żółw")), ("żółw", "parameter", []))
+check("kolor: klasa", tok(find(10, "Licznik")), ("Licznik", "class", ["declaration"]))
+check("kolor: wbudowana", tok(find(20, "ILE MIEJSCA NA KANAPIE")), ("ILE MIEJSCA NA KANAPIE", "function", ["defaultLibrary"]))
+check("kolor: tekst", tok((20, LINES[20].index('"a"'))), ('"a"', "string", []))
+check("kolor: liczba", tok((2, LINES[2].index("1"))), ("1", "number", []))
+
 # Formatowanie: jak ferdek --fmt, jedna zmiana na cały dokument
 FURI = "file:///fmt.ferdek"
 UGLY = "CO JEST KURDE\nNO JAK NIE JAK TAK 1 ŁYSA PAŁA 2\nPANIE SENSACJA REWELACJA 1\nDO CHAŁUPY ALE JUŻ\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n"

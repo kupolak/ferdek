@@ -400,6 +400,74 @@ let valid_name s =
    | IDENTIFIER n -> n = s && (match Lexer.token lb with EOF -> true | _ -> false)
    | _ | exception _ -> false)
 
+(* ---- kolorowanie (semantic tokens): lekser jak na placu zabaw + nazwy z analizy zasięgów ---- *)
+
+let token_types = ["keyword"; "function"; "string"; "number"; "comment"; "macro";
+                   "class"; "struct"; "enum"; "parameter"; "variable"]
+let token_modifiers = ["defaultLibrary"; "declaration"]
+
+let type_index name =
+  let rec go i = function x :: r -> if x = name then i else go (i + 1) r | [] -> 0 in
+  go 0 token_types
+
+(* Rodzaj nazwy po tokenie przed jej deklaracją *)
+let ident_kind toks d =
+  match if d > 0 then Some toks.(d - 1).t else None with
+  | Some FUNC_DECL -> "function"
+  | Some CLASS -> "class"
+  | Some (STRUCT | UNION) -> "struct"
+  | Some ENUM -> "enum"
+  | Some (FUNC_PARAMS | COMMA | LPAREN) when toks.(d).scope.parent <> None -> "parameter"
+  | _ -> "variable"
+
+(* Dane w formacie LSP: dla każdego tokenu (różnica linii, różnica kolumny, długość, typ, modyfikatory);
+   kolumny i długości w UTF-16, token nie przechodzi przez koniec linii *)
+let semantic_tokens text =
+  let lines = Array.of_list (String.split_on_char '\n' text) in
+  let starts = Array.make (Array.length lines) 0 in
+  Array.iteri (fun i l -> if i + 1 < Array.length lines then starts.(i + 1) <- starts.(i) + String.length l + 1) lines;
+  let line_of byte =
+    let rec go lo hi = if lo >= hi then lo else
+      let mid = (lo + hi + 1) / 2 in if starts.(mid) <= byte then go mid hi else go lo (mid - 1) in
+    go 0 (Array.length lines - 1) in
+  let items = ref [] in
+  (* fragment w bajtach [a, b), dzielony na linie *)
+  let add_bytes a b typ mods =
+    let rec go a =
+      if a < b then begin
+        let l = line_of a in
+        let line_end = starts.(l) + String.length lines.(l) in
+        let e = min b line_end in
+        let u x = utf16_of_bytes lines.(l) (x - starts.(l)) in
+        if e > a then items := (l, u a, u e - u a, typ, mods) :: !items;
+        go (line_end + 1)
+      end in
+    go a in
+  let is_builtin n = Value.Vars.mem Value.builtins n in
+  List.iter (fun (a, b, k) ->
+    let typ, mods = match k with
+      | Highlight.Keyword | Highlight.Constant -> "keyword", 0
+      | Highlight.Builtin -> "function", 1
+      | Highlight.String -> "string", 0
+      | Highlight.Number -> "number", 0
+      | Highlight.Comment -> "comment", 0
+      | Highlight.Directive -> "macro", 0 in
+    add_bytes a b (type_index typ) mods) (Highlight.spans ~is_builtin text);
+  let toks = analyze text in
+  Array.iteri (fun i tk -> match tk.t with
+    | IDENTIFIER n when not (is_builtin n) ->
+        (match resolve tk.scope n with
+         | Some (_, d) ->
+             let a = starts.(tk.line - 1) + tk.col in
+             add_bytes a (a + tk.len) (type_index (ident_kind toks d)) (if d = i then 2 else 0)
+         | None -> ())
+    | _ -> ()) toks;
+  let sorted = List.sort_uniq (fun (l1, c1, _, _, _) (l2, c2, _, _, _) -> compare (l1, c1) (l2, c2)) !items in
+  let _, _, data = List.fold_left (fun (pl, pc, acc) (l, c, len, typ, mods) ->
+    let dc = if l = pl then c - pc else c in
+    (l, c, List.rev_append [l - pl; dc; len; typ; mods] acc)) (0, 0, []) sorted in
+  List.rev data
+
 (* ---- JSON-RPC ---- *)
 
 let send json =
@@ -573,6 +641,10 @@ let run ~diagnose ~find_module () =
                   "renameProvider", `Bool true;
                   "hoverProvider", `Bool true;
                   "documentFormattingProvider", `Bool true;
+                  "semanticTokensProvider", `Assoc [
+                    "legend", `Assoc ["tokenTypes", `List (List.map (fun s -> `String s) token_types);
+                                      "tokenModifiers", `List (List.map (fun s -> `String s) token_modifiers)];
+                    "full", `Bool true];
                   "completionProvider", `Assoc []];
                 "serverInfo", `Assoc ["name", `String "ferdek"; "version", `String "2.0"]])
           | "shutdown" -> reply id `Null
@@ -621,6 +693,9 @@ let run ~diagnose ~find_module () =
                                      markdown (describe mtoks i name ^ " - z modułu " ^ Filename.basename f)
                                  | None -> `Null)
                             | _ -> `Null)
+          | "textDocument/semanticTokens/full" ->
+              let text = Option.value (Hashtbl.find_opt docs (doc_uri ())) ~default:"" in
+              reply id (`Assoc ["data", `List (List.map (fun n -> `Int n) (semantic_tokens text))])
           | "textDocument/formatting" ->
               (* jak ferdek --fmt; jedna zmiana na cały dokument, brak zmian - pusta lista *)
               let uri = doc_uri () in
