@@ -1,7 +1,6 @@
 (* Wbudowane funkcje: SZAFKA - mapy *)
 
 open Value
-open Eval
 open Builtins_common
 
 let register () = add [

@@ -1,7 +1,6 @@
 (* Wbudowane funkcje: KIBEL - pliki i niskopoziomowe wejście/wyjście *)
 
 open Value
-open Eval
 open Builtins_common
 
 let register () = add [

@@ -1,7 +1,6 @@
 (* Wbudowane funkcje: liczby - typy liczbowe, losowanie, matematyka *)
 
 open Value
-open Eval
 open Builtins_common
 
 let register () = add [

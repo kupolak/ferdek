@@ -27,3 +27,6 @@ let same_element a b =
   | VString x, VString y -> x = y
   | VBool x, VBool y -> x = y
   | _ -> false
+
+(* Argumenty builtinów przychodzą skompilowane (Value.code) - obliczenie to wywołanie *)
+let eval_expr env (c : code) = c env

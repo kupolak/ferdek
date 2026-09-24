@@ -48,20 +48,19 @@ let list_around file line =
   flush stdout
 
 let print_vars env =
-  let show title tbl =
-    let vars = Vars.fold (fun n v acc ->
+  let show title e =
+    let vars = List.filter (fun (n, v) ->
       match v with
-      | VFunction _ | VClass _ | VStruct _ | VUnion _ | VEnum _ -> acc
-      | _ when n = lambda_marker -> acc
-      | _ -> (n, v) :: acc) tbl [] |> List.sort compare in
+      | VFunction _ | VClass _ | VStruct _ | VUnion _ | VEnum _ -> false
+      | _ -> n <> lambda_marker) (local_bindings e) |> List.sort compare in
     if vars <> [] then begin
       Printf.printf "%s:\n" title;
       List.iter (fun (n, v) -> Printf.printf "  %s = %s\n" n (string_of_value v)) vars
     end in
   let rec root e = match e.parent with Some p -> root p | None -> e in
   let g = root env in
-  if env != g then show "lokalne" env.vars;
-  show "globalne" g.vars;
+  if env != g then show "lokalne" env;
+  show "globalne" g;
   flush stdout
 
 let run ~main_file prog =

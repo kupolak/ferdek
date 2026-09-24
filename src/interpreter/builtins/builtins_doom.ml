@@ -2,7 +2,7 @@
    bezpośredni dostęp do pamięci, okno X11 i UDP. Rejestruje je Interpreter przy starcie. *)
 
 open Value
-open Eval
+open Builtins_common
 
 (* ============ EXTERNAL BINDINGS FOR GRAPHICS (X11) ============ *)
 

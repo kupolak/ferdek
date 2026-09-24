@@ -73,11 +73,10 @@ let run ~parse ~load_module () =
     let names = List.map fst !call_stack @ ["program"] in
     let locs = !current_loc :: List.map snd !call_stack in
     List.map2 (fun n (f, l) -> (n, f, l)) names locs in
-  let vars_of tbl =
-    Vars.fold (fun n v acc -> match v with
-      | VFunction _ | VClass _ | VStruct _ | VUnion _ | VEnum _ -> acc
-      | _ when n = lambda_marker -> acc
-      | _ -> (n, v) :: acc) tbl [] |> List.sort compare
+  let vars_of e =
+    List.filter (fun (n, v) -> match v with
+      | VFunction _ | VClass _ | VStruct _ | VUnion _ | VEnum _ -> false
+      | _ -> n <> lambda_marker) (local_bindings e) |> List.sort compare
     |> List.map (fun (n, v) -> `Assoc ["name", `String n; "value", `String (string_of_value v);
                                         "variablesReference", `Int 0]) in
   let rec root e = match e.parent with Some p -> root p | None -> e in
@@ -120,8 +119,8 @@ let run ~parse ~load_module () =
         respond req true ~body:(`Assoc ["scopes", `List scopes]); false
     | "variables" ->
         let vars = match !current_env, args |> member "variablesReference" |> to_int with
-          | Some env, 1 -> if env == root env then [] else vars_of env.vars
-          | Some env, 2 -> vars_of (root env).vars
+          | Some env, 1 -> if env == root env then [] else vars_of env
+          | Some env, 2 -> vars_of (root env)
           | _ -> [] in
         respond req true ~body:(`Assoc ["variables", `List vars]); false
     | "evaluate" ->

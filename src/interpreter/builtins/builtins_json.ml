@@ -1,7 +1,6 @@
 (* Wbudowane funkcje: SŁOIK - JSON *)
 
 open Value
-open Eval
 open Builtins_common
 
 let register () = add [

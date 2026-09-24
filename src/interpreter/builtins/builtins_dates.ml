@@ -1,7 +1,6 @@
 (* Wbudowane funkcje: KALENDARZ - daty RRRR-MM-DD *)
 
 open Value
-open Eval
 open Builtins_common
 
 (* ---- KALENDARZ: daty jako teksty RRRR-MM-DD, dni liczone od 1970-01-01 (jak kalendarz_* w C) ---- *)

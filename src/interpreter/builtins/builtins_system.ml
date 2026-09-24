@@ -1,7 +1,6 @@
 (* Wbudowane funkcje: polecenia systemu, czas, pauza, POLAŁA SIĘ KREW *)
 
 open Value
-open Eval
 open Builtins_common
 
 let register () = add [

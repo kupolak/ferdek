@@ -8,7 +8,10 @@ open Ast
    liczymy raz i używamy go na każdym poziomie środowiska (Hashtbl liczyłby go od nowa, a do tego
    porównuje klucze polimorficznym compare). Ta sama tablica służy za pola obiektu. *)
 module Vars = struct
-  type 'a bucket = Empty | Cons of { key : string; hash : int; mutable data : 'a; next : 'a bucket }
+  (* cell: jeden wpis; przy powiększaniu tablicy przepinamy te same komórki, więc skompilowany
+     kod (Eval) może trzymać komórkę zmiennej i czytać ją bez szukania *)
+  type 'a bucket = Empty | Cons of 'a cell
+  and 'a cell = { key : string; hash : int; mutable data : 'a; mutable next : 'a bucket }
   type 'a t = { mutable size : int; mutable buckets : 'a bucket array }
 
   (* nazwy są krótkie - pętla w OCamlu jest tańsza niż wywołanie caml_hash *)
@@ -19,8 +22,17 @@ module Vars = struct
     done;
     !h land max_int
 
-  let create n = { size = 0; buckets = Array.make (max 8 n) Empty }
+  let create n =
+    let rec pow2 k = if k >= n then k else pow2 (2 * k) in
+    { size = 0; buckets = Array.make (pow2 1) Empty }
   let index t h = h land (Array.length t.buckets - 1)
+  let is_empty t = t.size = 0
+
+  let rec cell_in key h = function
+    | Empty -> None
+    | Cons c -> if c.hash = h && String.equal c.key key then Some c else cell_in key h c.next
+
+  let find_cell_h t key h = cell_in key h t.buckets.(index t h)
 
   let rec find_in key h = function
     | Empty -> None
@@ -28,7 +40,7 @@ module Vars = struct
 
   let find_h t key h = find_in key h t.buckets.(index t h)
   let find_opt t key = find_h t key (hash key)
-  let mem_h t key h = find_h t key h <> None
+  let mem_h t key h = find_cell_h t key h <> None
   let mem t key = mem_h t key (hash key)
 
   let resize t =
@@ -36,23 +48,23 @@ module Vars = struct
     t.buckets <- Array.make (2 * Array.length old) Empty;
     let rec move = function
       | Empty -> ()
-      | Cons c ->
+      | Cons c as b ->
+          let rest = c.next in
           let i = index t c.hash in
-          t.buckets.(i) <- Cons { c with next = t.buckets.(i) };
-          move c.next in
+          c.next <- t.buckets.(i);
+          t.buckets.(i) <- b;
+          move rest in
     Array.iter move old
 
   (* Zmienia istniejący wpis albo dodaje nowy *)
   let replace_h t key h data =
-    let rec go = function
-      | Empty -> false
-      | Cons c -> if c.hash = h && String.equal c.key key then (c.data <- data; true) else go c.next in
-    if not (go t.buckets.(index t h)) then begin
-      if t.size >= 2 * Array.length t.buckets then resize t;
-      let i = index t h in
-      t.buckets.(i) <- Cons { key; hash = h; data; next = t.buckets.(i) };
-      t.size <- t.size + 1
-    end
+    match find_cell_h t key h with
+    | Some c -> c.data <- data
+    | None ->
+        if t.size >= 2 * Array.length t.buckets then resize t;
+        let i = index t h in
+        t.buckets.(i) <- Cons { key; hash = h; data; next = t.buckets.(i) };
+        t.size <- t.size + 1
 
   let replace t key data = replace_h t key (hash key) data
 
@@ -60,6 +72,7 @@ module Vars = struct
     let rec go acc = function Empty -> acc | Cons c -> go (f c.key c.data acc) c.next in
     Array.fold_left go acc t.buckets
 
+  (* Kopia z nowymi komórkami - zmiana w kopii nie rusza oryginału *)
   let copy t =
     let rec dup = function Empty -> Empty | Cons c -> Cons { c with next = dup c.next } in
     { size = t.size; buckets = Array.map dup t.buckets }
@@ -90,9 +103,15 @@ and file_handle =
   | InputHandle of in_channel
   | OutputHandle of out_channel
 
+(* Środowisko: zmienne po nazwie (vars) i - w wywołaniu funkcji - zmienne funkcji w slotach.
+   layout: nazwa -> numer slotu, wspólny dla wszystkich wywołań tej funkcji (Eval liczy go raz).
+   Pusty slot (unset) znaczy "jeszcze nie zdefiniowana tutaj" - wtedy szukamy dalej po nazwie,
+   dokładnie jak wcześniej w samych tablicach. *)
 and environment = {
   mutable vars: value Vars.t;
   parent: environment option;
+  slots: value array;
+  layout: int Vars.t;
 }
 
 (* Plik i linia wykonywanej instrukcji - doklejane do komunikatu błędu *)
@@ -128,9 +147,15 @@ let stmt_hook : (string -> int -> environment -> unit) option ref = ref None
 
 (* ============ ENVIRONMENT MANAGEMENT ============ *)
 
+(* Wartość pustego slotu - porównujemy fizycznie (==), nigdy nie wychodzi poza środowisko *)
+let unset = VString "(unset)"
+
+(* Wspólny pusty układ dla środowisk bez slotów (globalne, obiekt, catch) - nigdy nie zmieniany *)
+let no_layout : int Vars.t = Vars.create 1
+
 (* Create a new environment *)
 let create_env parent =
-  { vars = Vars.create 16; parent }
+  { vars = Vars.create 8; parent; slots = [||]; layout = no_layout }
 
 (* Create the global environment *)
 let global_env () =
@@ -163,16 +188,28 @@ let check_type v t what =
     raise (RuntimeError (Printf.sprintf "%s: %s, a jest %s" what (string_of_typ t) (value_kind v)));
   v
 
-(* Get variable from environment *)
+(* Zmienna zdefiniowana w tym środowisku (slot albo tablica), bez rodziców *)
+let local_opt_h env name h =
+  match Vars.find_h env.layout name h with
+  | Some i when env.slots.(i) != unset -> Some env.slots.(i)
+  | _ -> Vars.find_h env.vars name h
+
+let local_opt env name = local_opt_h env name (Vars.hash name)
+
+(* Zmienne tego środowiska (bez rodziców) - dla debuggera *)
+let local_bindings env =
+  Vars.fold (fun n i acc -> if env.slots.(i) != unset then (n, env.slots.(i)) :: acc else acc) env.layout
+    (Vars.fold (fun n v acc -> if Vars.mem env.layout n && env.slots.(Option.get (Vars.find_opt env.layout n)) != unset
+                               then acc else (n, v) :: acc) env.vars [])
+
 (* Wszystkie nazwy widoczne ze środowiska - do podpowiedzi przy literówce *)
 let rec visible_names env =
-  Vars.fold (fun n _ acc -> if n = "(lambda)" then acc else n :: acc) env.vars
-    (match env.parent with Some p -> visible_names p | None -> [])
+  List.filter_map (fun (n, _) -> if n = "(lambda)" then None else Some n) (local_bindings env)
+  @ (match env.parent with Some p -> visible_names p | None -> [])
 
-let get_var env name =
-  let h = Vars.hash name in
+let get_var_h env name h =
   let rec go e =
-    match Vars.find_h e.vars name h with
+    match local_opt_h e name h with
     | Some v -> v
     | None ->
         match e.parent with
@@ -180,21 +217,33 @@ let get_var env name =
         | None -> raise (RuntimeError (Errors.unknown "zmienna" name (visible_names env))) in
   go env
 
-(* Set variable in environment *)
-let set_var env name value =
-  let h = Vars.hash name in
-  let rec go env =
-    if Vars.mem_h env.vars name h then
-      Vars.replace_h env.vars name h value
-    else
-      match env.parent with
-      | Some parent when Vars.mem_h parent.vars name h -> go parent
-      | _ -> Vars.replace_h env.vars name h value in
-  go env
+let get_var env name = get_var_h env name (Vars.hash name)
 
 (* Define variable in current scope *)
-let define_var env name value =
-  Vars.replace env.vars name value
+let define_var_h env name h value =
+  match Vars.find_h env.layout name h with
+  | Some i -> env.slots.(i) <- value
+  | None -> Vars.replace_h env.vars name h value
+
+let define_var env name value = define_var_h env name (Vars.hash name) value
+
+(* Zmiana wartości już zdefiniowanej tutaj zmiennej; false, gdy jej tu nie ma *)
+let update_local_h env name h value =
+  match Vars.find_h env.layout name h with
+  | Some i when env.slots.(i) != unset -> env.slots.(i) <- value; true
+  | _ ->
+      match Vars.find_cell_h env.vars name h with
+      | Some c -> c.data <- value; true
+      | None -> false
+
+(* Set variable in environment: tutaj, jeśli jest; u rodzica, jeśli tam jest; inaczej nowa tutaj *)
+let set_var_h env name h value =
+  if not (update_local_h env name h value) then
+    match env.parent with
+    | Some parent when update_local_h parent name h value -> ()
+    | _ -> define_var_h env name h value
+
+let set_var env name value = set_var_h env name (Vars.hash name) value
 
 (* ============ VALUE OPERATIONS ============ *)
 
@@ -385,7 +434,10 @@ let eval_bitwise_op op v1 v2 =
   )
 
 (* Tabela wbudowanych funkcji - wypełniana po definicji eval_expr (sekcja BUILTINS) *)
-let builtins : (int option * (environment -> expr list -> value)) Vars.t = Vars.create 128
+(* Skompilowane wyrażenie (Eval): wartość w danym środowisku. Builtiny dostają argumenty w tej postaci. *)
+type code = environment -> value
+
+let builtins : (int option * (environment -> code list -> value)) Vars.t = Vars.create 128
 
 (* Nazwy i liczba argumentów wszystkich builtinów - dla ferdek --check *)
 let builtin_arities () = Vars.fold (fun n (a, _) acc -> (n, a) :: acc) builtins []
