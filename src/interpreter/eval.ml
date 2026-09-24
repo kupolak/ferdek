@@ -472,8 +472,10 @@ and compile_stmt cx : stmt -> scode = function
   | Read name ->
       let w = writer cx name in
       fun env ->
-        let line = !read_input () in
-        w env (match decimal_of_string line with Some n -> VInt n | None -> VString line)
+        (* koniec wejścia - nic (jak w C) *)
+        w env (match !read_input () with
+          | line -> (match decimal_of_string line with Some n -> VInt n | None -> VString line)
+          | exception End_of_file -> VNull)
 
   | Assign (name, expr) ->
       let w = writer cx name and c = compile_expr cx expr in

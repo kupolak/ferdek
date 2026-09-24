@@ -267,6 +267,8 @@ SECTIONS = [
     "TRZEBA SPAĆ(ms)": "Uśpij program na podaną liczbę milisekund",
     "CO PAN PRZYNIÓSŁ()": "Argumenty programu (ferdek program.ferdek a b) jako tablica tekstów",
     "CO MÓWI SĄSIAD(nazwa)": "Zmienna środowiska (tekst) albo null, gdy jej nie ma",
+    "NASTĘPNA LINIJKA()": "Następna linia wejścia jako tekst albo null na końcu wejścia (do czytania w pętli)",
+    "CAŁE WEJŚCIE()": "Reszta wejścia jako jeden tekst (każda linia zakończona nową linią)",
     "ZAMYKAM INTERES(kod)": "Zakończ program od razu z kodem wyjścia 0-255 (bez sprzątania, jak exit)",
     "JEST TRZECIA W NOCY()": "Milisekundy od startu programu (do mierzenia czasu)",
     "PIERWIASTEK ZE SKRZYNKI(x)": "Pierwiastek kwadratowy (wbudowana, bez importu)",

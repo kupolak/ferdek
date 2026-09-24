@@ -91,7 +91,7 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime test-args
+test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime test-args test-input
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
 
@@ -187,6 +187,15 @@ test-args: build
 	  if [ "$$out" != "$$exp" ] || [ $$rc -ne 3 ]; then echo "FAIL test-args $$mode (kod $$rc):"; echo "$$out"; exit 1; fi; \
 	done; echo "--- argumenty programu: OK"
 
+# Wejście: linia dłuższa niż 1024 bajty, NASTĘPNA LINIJKA, CAŁE WEJŚCIE, koniec wejścia - oba tryby
+test-input: build
+	@long=$$(python3 -c "print('ż'*1500)"); \
+	exp=$$(printf '42\n1500\n[zółw]\nraz\ndwa\nnull\nnull\n'); \
+	for mode in "" "-r"; do \
+	  out=$$(printf '41\n%s\nzółw\nraz\ndwa' "$$long" | $(FERDEK) $$mode tests/program/wejscie.ferdek | grep -v "Piwo dla Pana"); \
+	  if [ "$$out" != "$$exp" ]; then echo "FAIL test-input $$mode:"; echo "$$out"; exit 1; fi; \
+	done; echo "--- wejście programu: OK"
+
 test-lsp: build
 	python3 scripts/test_lsp.py $(FERDEK)
 
@@ -227,4 +236,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: playground all build clean distclean test test-args test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: playground all build clean distclean test test-args test-input test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

@@ -117,9 +117,32 @@ static void print_inline(FerdekValue v) {
     fx_free(s);
 }
 
+/* Linia wejścia dowolnej długości bez znaku nowej linii (jak read_line); NULL na końcu wejścia */
+static char* read_line_raw(void) {
+    char* line = NULL;
+    size_t cap = 0;
+    ssize_t n = getline(&line, &cap, stdin);
+    if (n == -1) { free(line); return NULL; }
+    if (n > 0 && line[n - 1] == '\n') line[n - 1] = 0;
+    char* out = fx_strdup(line);
+    free(line);   /* bufor z getline - systemowy malloc */
+    return out;
+}
+
 static FerdekValue read_value(void) {
-    char buffer[1024];
-    if (fgets(buffer, sizeof(buffer), stdin) == NULL) return make_null();
-    buffer[strcspn(buffer, "\n")] = 0;
-    return is_decimal(buffer) ? make_int(strtoll(buffer, NULL, 10)) : make_string(buffer);
+    char* line = read_line_raw();
+    if (!line) return make_null();
+    return is_decimal(line) ? make_int(strtoll(line, NULL, 10)) : own_string(line);
+}
+
+static FerdekValue b_nastepna_linijka(int argc, FerdekValue* argv) {
+    char* line = read_line_raw();
+    return line ? own_string(line) : make_null();
+}
+
+static FerdekValue b_cale_wejscie(int argc, FerdekValue* argv) {
+    StrBuf b = {0};
+    buf_add(&b, "");
+    for (char* line; (line = read_line_raw()); fx_free(line)) { buf_add(&b, line); buf_add(&b, "\n"); }
+    return own_string(b.s);
 }

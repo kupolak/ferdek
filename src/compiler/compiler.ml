@@ -113,6 +113,8 @@ let builtins = [
   ["CO PAN PRZYNIÓSŁ"], ("b_co_pan_przyniosl", Some 0);
   ["CO MÓWI SĄSIAD"], ("b_co_mowi_sasiad", Some 1);
   ["ZAMYKAM INTERES"], ("b_zamykam_interes", Some 1);
+  ["NASTĘPNA LINIJKA"], ("b_nastepna_linijka", Some 0);
+  ["CAŁE WEJŚCIE"], ("b_cale_wejscie", Some 0);
   ["OPAKUJ W GAZETĘ"], ("b_opakuj", Some 1);
   ["DAJ MI HAJS"], ("b_daj_hajs", Some 2);
   ["ODDAJ WSZYSTKO"], ("b_oddaj_wszystko", Some 1);

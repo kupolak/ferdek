@@ -14,6 +14,19 @@ let register () = add [
       | Some v -> VString v
       | None -> VNull);
 
+  (* NASTĘPNA LINIJKA() - linia wejścia jako tekst (bez zamiany na liczbę), nic na końcu wejścia *)
+  ["NASTĘPNA LINIJKA"], Some 0, (fun _ _ ->
+      match !read_input () with
+      | line -> VString line
+      | exception End_of_file -> VNull);
+
+  (* CAŁE WEJŚCIE() - reszta wejścia jako tekst; każda linia kończy się znakiem nowej linii *)
+  ["CAŁE WEJŚCIE"], Some 0, (fun _ _ ->
+      let b = Buffer.create 256 in
+      (try while true do Buffer.add_string b (!read_input ()); Buffer.add_char b '\n' done
+       with End_of_file -> ());
+      VString (Buffer.contents b));
+
   (* ZAMYKAM INTERES(kod) - koniec programu z kodem wyjścia, od razu (bez sprzątania, jak exit w C) *)
   ["ZAMYKAM INTERES"], Some 1, (fun env args ->
       let code = to_int (eval_expr env (List.hd args)) in

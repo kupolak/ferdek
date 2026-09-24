@@ -17,6 +17,7 @@ let entries = [
   "BABKA DAWAJ RENTĘ", "BABKA DAWAJ RENTĘ", "+ (z tekstem skleja)", false;
   "BABKA PODSUMUJ", "BABKA PODSUMUJ()", "BABKA: raport; błąd, jeśli coś oblano", true;
   "BEZ POWTÓREK", "BEZ POWTÓREK(tablica)", "Tablica bez powtórzonych elementów, w kolejności pierwszego wystąpienia", true;
+  "CAŁE WEJŚCIE", "CAŁE WEJŚCIE()", "Reszta wejścia jako jeden tekst (każda linia zakończona nową linią)", true;
   "CHLUŚNIEM BO UŚNIEM", "CHLUŚNIEM BO UŚNIEM", "Pętla while", false;
   "CO", "CO", "Krok pętli for (domyślnie 1, ujemny liczy w dół)", false;
   "CO JEST KURDE", "CO JEST KURDE", "Początek programu", false;
@@ -101,6 +102,7 @@ let entries = [
   "NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO", "NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO", "Parametry funkcji (a, b albo a, ... dla zmiennej liczby)", false;
   "NAJMNIEJSZY NA WERSALCE", "NAJMNIEJSZY NA WERSALCE(tablica)", "Najmniejszy element (liczby albo teksty)", true;
   "NAJWIĘKSZY NA WERSALCE", "NAJWIĘKSZY NA WERSALCE(tablica)", "Największy element (liczby albo teksty)", true;
+  "NASTĘPNA LINIJKA", "NASTĘPNA LINIJKA()", "Następna linia wejścia jako tekst albo null na końcu wejścia (do czytania w pętli)", true;
   "NIKT LEPIEJ ODE MNIE", "NIKT LEPIEJ ODE MNIE(wynik)", "BABKA: zaprzeczenie wyniku operacji", true;
   "NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ", "NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ", "Funkcja zwraca wartość", false;
   "NO I GITARA", "NO I GITARA", "Koniec przypisania", false;
