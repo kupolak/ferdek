@@ -40,7 +40,13 @@ let reader cx name : code =
   let h = Vars.hash name in
   let cache = new_cache () in
   match cx.layout, slot_of cx name h with
-  | _, Some i -> fun env -> let v = env.slots.(i) in if v != unset then v else get_var_h env name h
+  | _, Some i ->
+      (* pusty slot: zmienna jeszcze nie lokalna - np. pole obiektu albo globalna zmieniana w funkcji *)
+      fun env -> let v = env.slots.(i) in
+        if v != unset then v
+        else (match env.parent with
+          | Some p when Vars.is_empty env.vars -> read_in cache name h p env
+          | _ -> get_var_h env name h)
   | Some _, None ->
       (* nazwa spoza funkcji (globalna, funkcja, pole obiektu): od rodzica, jeśli tu nic nie ma *)
       fun env -> (match env.parent with
@@ -53,7 +59,16 @@ let writer cx name : environment -> value -> unit =
   let h = Vars.hash name in
   let cache = new_cache () in
   match cx.layout, slot_of cx name h with
-  | _, Some i -> fun env v -> if env.slots.(i) != unset then env.slots.(i) <- v else set_var_h env name h v
+  | _, Some i -> fun env v ->
+      if env.slots.(i) != unset then env.slots.(i) <- v
+      else (match env.parent with
+        (* tu jej nie ma: u rodzica (pole obiektu, globalna) przez zapamiętaną komórkę *)
+        | Some p when Vars.is_empty env.vars && p.layout == no_layout ->
+            if p == cache.env then cache.cell.data <- v
+            else (match Vars.find_cell_h p.vars name h with
+              | Some cl -> cache.env <- p; cache.cell <- cl; cl.data <- v
+              | None -> set_var_h env name h v)
+        | _ -> set_var_h env name h v)
   | Some _, None -> fun env v -> set_var_h env name h v
   | None, None -> fun env v ->
       if env == cache.env then cache.cell.data <- v
