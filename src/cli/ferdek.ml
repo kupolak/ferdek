@@ -1,6 +1,6 @@
 (* Ferdek - główna komenda CLI *)
 
-open Source
+open Loader
 
 (* Katalog pliku źródłowego - do szukania stdlib *)
 let source_file_dir = ref ""
@@ -84,13 +84,13 @@ let print_version () =
 
 (* Parse a file *)
 let parse_file filename =
-  (try Sources.register filename (In_channel.with_open_bin filename In_channel.input_all) with Sys_error _ -> ());
+  (try Source_texts.register filename (In_channel.with_open_bin filename In_channel.input_all) with Sys_error _ -> ());
   match String.concat "\n" (Preprocessor.preprocess_file filename) with
   | text ->
       (match parse_source ~preprocessed:true filename text with
        | Ok prog -> Ok prog
        | Error errs ->
-           Error (String.concat "\nA fe! " (List.map (fun (l, c, m) -> m ^ Sources.caret filename l c) errs)))
+           Error (String.concat "\nA fe! " (List.map (fun (l, c, m) -> m ^ Source_texts.caret filename l c) errs)))
   | exception Failure msg -> Error (Printf.sprintf "Błąd Preprocesora w %s: %s" filename msg)
   | exception Lexer.LexError msg ->
       Error (Printf.sprintf "Błąd Leksera! Ktoś tu namieszał w słowach! W %s: %s (Paździoch ukradł słowa)." filename msg)

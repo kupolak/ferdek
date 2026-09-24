@@ -96,7 +96,7 @@ static void print_loc(void) {
 typedef struct Frame { const char* name; const char* file; int line; struct Frame* prev; } Frame;
 static Frame* ferdek_top = NULL;
 
-/* Linia z błędem (wbudowane źródła) i ścieżka wywołań - ten sam tekst co Sources.context */
+/* Linia z błędem (wbudowane źródła) i ścieżka wywołań - ten sam tekst co Source_texts.context */
 static const char* source_line(const char* file, int line);
 static void print_context(void) {
     const char* l = source_line(ferdek_file, ferdek_line);
@@ -1427,7 +1427,7 @@ static FerdekValue b_ile_dni(int argc, FerdekValue* argv) {
     return make_int(parse_date("ILE DNI MIĘDZY", argv[1]) - parse_date("ILE DNI MIĘDZY", argv[0]));
 }
 
-/* ---- SŁOIK: JSON - te same zasady co Sloik w interpreterze ---- */
+/* ---- SŁOIK: JSON - te same zasady co Json w interpreterze ---- */
 static void json_str(StrBuf* b, const char* s) {
     buf_add(b, "\"");
     char tmp[8];

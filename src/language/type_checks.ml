@@ -1,6 +1,6 @@
 (* Zmienna zadeklarowana z typem (CYCU PRZYNIEŚ NO x TO JE LICZBA SYNEK ...) ma go na zawsze:
    każde późniejsze ustawienie - przypisanie, wczytanie, pętla, wynik funkcji - dostaje to samo
-   sprawdzenie (Checked). Zasięg jak przy stałych (Consts): lokalna deklaracja w funkcji przesłania
+   sprawdzenie (Checked). Zasięg jak przy stałych (Constants): lokalna deklaracja w funkcji przesłania
    globalną, w metodzie przypisanie do nie-pola tworzy lokalną. *)
 
 open Ast

@@ -1007,6 +1007,6 @@ let register () =
       | _ -> VNull);
 
   (* ============ SŁOIK: JSON ============ *)
-  ["ZAPAKUJ DO SŁOIKA"], Some 1, (fun env args -> VString (Sloik.pack (eval_expr env (List.hd args))));
-  ["WYJMIJ ZE SŁOIKA"], Some 1, (fun env args -> Sloik.unpack (to_string (eval_expr env (List.hd args))));
+  ["ZAPAKUJ DO SŁOIKA"], Some 1, (fun env args -> VString (Json.pack (eval_expr env (List.hd args))));
+  ["WYJMIJ ZE SŁOIKA"], Some 1, (fun env args -> Json.unpack (to_string (eval_expr env (List.hd args))));
   ]

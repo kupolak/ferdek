@@ -35,13 +35,13 @@ let parse_expr text =
   | exception _ -> None
 
 let show_line file line =
-  match Sources.line file line with
+  match Source_texts.line file line with
   | Some l -> Printf.printf "%s:%d  %s\n%!" (Filename.basename file) line l
   | None -> Printf.printf "%s:%d\n%!" (Filename.basename file) line
 
 let list_around file line =
   for l = max 1 (line - 3) to line + 3 do
-    match Sources.line file l with
+    match Source_texts.line file l with
     | Some text -> Printf.printf "%s%4d  %s\n" (if l = line then "->" else "  ") l text
     | None -> ()
   done;

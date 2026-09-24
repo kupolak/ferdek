@@ -3,7 +3,7 @@
 
 let compile body =
   let src = "CO JEST KURDE\n" ^ body ^ "\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n" in
-  match Source.parse_source "test.ferdek" src with
+  match Loader.parse_source "test.ferdek" src with
   | Ok prog -> Compiler.compile_program prog
   | Error errs -> failwith (String.concat "\n" (List.map (fun (_, _, m) -> m) errs))
 

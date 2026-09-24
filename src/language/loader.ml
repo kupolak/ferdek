@@ -111,13 +111,13 @@ let lex_error_pos = Str.regexp "linii \\([0-9]+\\), kolumna \\([0-9]+\\)"
 
 (* Tekst (już po preprocesorze albo przed) -> program albo lista błędów z pozycjami *)
 let parse_source ?(preprocessed = false) filename text =
-  if not preprocessed then Sources.register filename text;
+  if not preprocessed then Source_texts.register filename text;
   try
     let text = if preprocessed then text else Preprocessor.preprocess_string text in
     match parse_collecting filename text with
     | Ok prog ->
-        (match Consts.check prog with
-         | [] -> Ok (resolve_local_imports filename (Typy.apply prog))
+        (match Constants.check prog with
+         | [] -> Ok (resolve_local_imports filename (Type_checks.apply prog))
          | errs ->
              let lines = Array.of_list (String.split_on_char '\n' text) in
              (* znaczek pod początkiem instrukcji, nie pod wcięciem *)

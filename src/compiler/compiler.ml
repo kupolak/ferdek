@@ -1190,9 +1190,9 @@ let compile_program ?(load_module = fun _ -> None) prog =
                      if Hashtbl.mem ctx.int_globals n then Printf.sprintf "static long long %s = 0;" (var_c n)
                      else if Hashtbl.mem ctx.float_globals n then Printf.sprintf "static double %s = 0.0;" (var_c n)
                      else Printf.sprintf "static FerdekValue %s;" (var_c n)) in
-  (* Teksty plików do pokazania linii z błędem - jak Sources.line w interpreterze *)
+  (* Teksty plików do pokazania linii z błędem - jak Source_texts.line w interpreterze *)
   let sources =
-    let files = Sources.all () in
+    let files = Source_texts.all () in
     List.mapi (fun i (_, lines) ->
       Printf.sprintf "static const char* ferdek_src_%d[] = {%s};" i
         (String.concat ", " (List.map c_string_literal (Array.to_list lines)))) files

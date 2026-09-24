@@ -14,7 +14,7 @@ let load_module name =
   let candidates = ["KLAMOTY/" ^ name ^ ".ferdek"; "KLAMOTY/" ^ name ^ "/" ^ name ^ ".ferdek"] in
   List.find_map (fun path ->
     Option.bind (List.assoc_opt path Embedded.files) (fun text ->
-      match Source.parse_source path text with
+      match Loader.parse_source path text with
       | Ok prog -> Some prog
       | Error _ -> None)) candidates
 
@@ -26,7 +26,7 @@ let run code input =
   Sys_js.set_channel_filler stdin (fun () -> let s = !pending in pending := ""; s);
   Interpreter.set_module_loader load_module;
   let code =
-    match Source.parse_source "program.ferdek" code with
+    match Loader.parse_source "program.ferdek" code with
     | Error errs ->
         List.iter (fun (_, _, m) -> prerr_endline ("A fe! " ^ m)) errs; 1
     | Ok prog ->

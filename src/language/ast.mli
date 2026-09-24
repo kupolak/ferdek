@@ -72,7 +72,7 @@ type expr =
 (* Statement type *)
 and stmt =
   | VarDecl of string * expr
-  | ConstDecl of string * expr   (* TO JE NA AMEN - jak VarDecl, ale nie wolno zmieniać (Consts.check) *)
+  | ConstDecl of string * expr   (* TO JE NA AMEN - jak VarDecl, ale nie wolno zmieniać (Constants.check) *)
   | ArrayDecl of string * expr list
   | Print of expr
   | PrintInline of expr
