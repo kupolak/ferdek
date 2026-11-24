@@ -1,0 +1,3 @@
+Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Dzielenie przez zero (tests/errors/metoda_kropka.ferdek, linia 9)
+    9 |         I JA INFORMUJĘ ŻE WYCHODZĘ wiek MUSZĘ DO SRACZA przez
+  w funkcji dziel, wywołanej w linii 15

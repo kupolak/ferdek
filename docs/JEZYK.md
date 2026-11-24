@@ -96,7 +96,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 |---|---|
 | `ALE JAJA` | Definicja klasy |
 | `RENTA BABKI` | Dziedziczenie (extends) |
-| `DZIAD ZDZIADZIAŁY JEDEN` | Nowy obiekt klasy |
+| `DZIAD ZDZIADZIAŁY JEDEN` | Nowy obiekt klasy; pola i metody przez kropkę: kot.imie, W MORDĘ JEŻA kot.miaucz(2), O KURDE MAM POMYSŁA kot.imie A PROSZĘ BARDZO ... (to samo co kot["imie"]; działa też na szafkach) |
 | `MEBEL` | Definicja struktury |
 | `KONIEC MEBLA` | Koniec struktury |
 | `ZMONTUJ MEBEL` | Nowa struktura |

@@ -48,7 +48,7 @@ let entries = [
   "DO WIDZENIA PANU", "DO WIDZENIA PANU", "Koniec funkcji / klasy", false;
   "DODAJ DNI", "DODAJ DNI(data, n)", "Data o n dni późniejsza (n ujemne - wcześniejsza)", true;
   "DOŁÓŻ SZAFKĘ", "DOŁÓŻ SZAFKĘ(a, b)", "Nowa mapa: a, nadpisane tym, co jest w b", true;
-  "DZIAD ZDZIADZIAŁY JEDEN", "DZIAD ZDZIADZIAŁY JEDEN", "Nowy obiekt klasy", false;
+  "DZIAD ZDZIADZIAŁY JEDEN", "DZIAD ZDZIADZIAŁY JEDEN", "Nowy obiekt klasy; pola i metody przez kropkę: kot.imie, W MORDĘ JEŻA kot.miaucz(2), O KURDE MAM POMYSŁA kot.imie A PROSZĘ BARDZO ... (to samo co kot[\"imie\"]; działa też na szafkach)", false;
   "DZIEŃ TYGODNIA", "DZIEŃ TYGODNIA(data)", "Nazwa dnia tygodnia (\"1999-03-16\" -> \"wtorek\")", true;
   "DZIŚ GORSZY BAJZEL", "DZIŚ GORSZY BAJZEL(a, b)", "BABKA: nie to samo", true;
   "GDZIE LEŻY NA WERSALCE", "GDZIE LEŻY NA WERSALCE(tablica, element)", "Indeks pierwszego takiego elementu albo -1", true;

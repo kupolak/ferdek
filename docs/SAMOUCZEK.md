@@ -454,7 +454,8 @@ Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Dzielenie przez zero (prog
 ## 10. Klasy
 
 `ALE JAJA Nazwa` ... `DO WIDZENIA PANU` to klasa z polami i metodami; `DZIAD ZDZIADZIAŁY JEDEN Nazwa`
-tworzy obiekt, a pola i metody wyjmuje się jak z tablicy, po nazwie.
+tworzy obiekt. Do pól i metod sięga się przez kropkę: `swinka.stan`, `W MORDĘ JEŻA swinka.wrzuc(20)`
+(to samo co `swinka["stan"]` - kropka działa też na szafkach).
 
 ```ferdek
 CO JEST KURDE
@@ -470,11 +471,9 @@ DO WIDZENIA PANU
 
 CYCU PRZYNIEŚ NO swinka
 TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Skarbonka
-CYCU PRZYNIEŚ NO wrzuc
-TO NIE SĄ TANIE RZECZY WYPIERDZIELAJ PAN NA POZYCJĘ swinka["wrzuc"]
-W MORDĘ JEŻA wrzuc(20)
-W MORDĘ JEŻA wrzuc(5)
-PANIE SENSACJA REWELACJA "W skarbonce: " BABKA DAWAJ RENTĘ WYPIERDZIELAJ PAN NA POZYCJĘ swinka["stan"]
+W MORDĘ JEŻA swinka.wrzuc(20)
+W MORDĘ JEŻA swinka.wrzuc(5)
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "W skarbonce: {swinka.stan}"
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ```
 

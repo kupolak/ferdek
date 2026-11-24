@@ -14,6 +14,12 @@ let function_arg builtin = function
   | VFunction (fdecl, closure_env) -> apply_function fdecl.name fdecl closure_env
   | _ -> raise (RuntimeError (builtin ^ ": drugi argument musi być funkcją"))
 
+(* kot.miaucz(2): Dots zamienia to na .wywołaj("kot.miaucz", kot["miaucz"], 2) *)
+let call_value name f args =
+  match f with
+  | VFunction (fdecl, closure_env) -> apply_function name fdecl closure_env args
+  | _ -> raise (RuntimeError (name ^ " to nie funkcja"))
+
 (* Generator liczb losowych - wspólny dla KARTA LUBI DYM i WYLOSUJ Z WERSALKI (jak ferdek_rng w C) *)
 let rng_next () =
   if !rng_state < 0 then rng_state := int_of_float (Unix.gettimeofday () *. 1000.) land 0x7FFFFFFF;

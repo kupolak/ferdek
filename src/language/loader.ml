@@ -114,7 +114,7 @@ let parse_source ?(preprocessed = false) filename text =
   if not preprocessed then Source_texts.register filename text;
   try
     let text = if preprocessed then text else Preprocessor.preprocess_string text in
-    match parse_collecting filename text with
+    match Result.map Dots.apply (parse_collecting filename text) with
     | Ok prog ->
         (match Constants.check prog with
          | [] -> Ok (resolve_local_imports filename (Type_checks.apply prog))

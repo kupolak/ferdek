@@ -250,6 +250,21 @@ check("definicja w module", (d["uri"].endswith("moduly/licznik.ferdek"), d["rang
 labels = {i["label"] for i in send("textDocument/completion", at((2, 38), MURI))["result"]}
 check("uzupełnianie z modułu", {"l.dodaj", "l.stan", "l.Skarbonka"} <= labels, True)
 
+# Kropka: kot.imie i kot.miaucz() to użycia zmiennej kot - użycia, zmiana nazwy, brak ostrzeżenia
+DOT = "file:///kropka.ferdek"
+send("textDocument/didOpen", {"textDocument": {"uri": DOT, "text":
+     "CO JEST KURDE\nALE WIE PAN JA ZASADNICZO f\n    CYCU PRZYNIEŚ NO kot\n"
+     "    TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Kot\n"
+     "    PANIE SENSACJA REWELACJA kot.imie\n    W MORDĘ JEŻA kot.miaucz(2)\nDO WIDZENIA PANU\n"
+     "MOJA NOGA JUŻ TUTAJ NIE POSTANIE\n"}}, request=False)
+check("kropka: bez ostrzeżenia o nieczytanej", [x["message"] for x in diagnostics(DOT) if x["severity"] == 2], [])
+decl = (2, 21)
+check("kropka: użycia", spots(send("textDocument/references", at(decl, DOT))["result"]), [(2, 21), (4, 29), (5, 17)])
+edits = send("textDocument/rename", dict(at(decl, DOT), newName="mruczek"))["result"]["changes"][DOT]
+check("kropka: zmiana nazwy rusza tylko część przed kropką",
+      sorted((e["range"]["start"]["line"], e["range"]["end"]["character"] - e["range"]["start"]["character"]) for e in edits),
+      [(2, 3), (4, 3), (5, 3)])
+
 send("shutdown", None)
 send("exit", None, request=False)
 check("kod wyjścia", proc.wait(timeout=5), 0)

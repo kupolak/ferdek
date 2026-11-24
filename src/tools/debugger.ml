@@ -29,7 +29,7 @@ exception Quit
 (* Wyrażenie wpisane w debuggerze -> AST: parsujemy je jako PANIE SENSACJA REWELACJA wyrażenie *)
 let parse_expr text =
   let code = "CO JEST KURDE\nPANIE SENSACJA REWELACJA " ^ text ^ "\nMOJA NOGA JUŻ TUTAJ NIE POSTANIE\n" in
-  match Parser.program Lexer.token (Lexing.from_string code) with
+  match Dots.apply ~session:true (Parser.program Lexer.token (Lexing.from_string code)) with
   | { Ast.declarations = [Ast.Statement (Ast.Located (_, _, Ast.Print e))] } -> Some e
   | _ -> None
   | exception _ -> None

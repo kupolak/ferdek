@@ -329,6 +329,11 @@ static FerdekValue b_zrob_krotki(int argc, FerdekValue* argv) {
     return make_typed(TYPE_SHORT, m > 0x7FFF ? m - 0x10000 : m);
 }
 
+/* kot.miaucz(2): Dots zamienia to na .wywołaj("kot.miaucz", kot["miaucz"], 2) */
+static FerdekValue b_wywolaj(int argc, FerdekValue* argv) {
+    return call_value(argv[1], argv[0].value.string_val, argc - 2, argv + 2);
+}
+
 static FerdekValue b_co_to_za_typ(int argc, FerdekValue* argv) {
     switch (argv[0].type) {
         case TYPE_BYTE: return make_string("BAJCIK");

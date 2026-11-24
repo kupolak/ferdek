@@ -41,6 +41,7 @@ let dedup l = List.sort_uniq compare l
 (* Builtiny interpretera, które zna kompilator: nazwy Ferdka -> funkcja C i liczba argumentów
    (None = dowolna). Funkcje C mają sygnaturę b_x(int argc, FerdekValue* argv). *)
 let builtins = [
+  [Dots.call], ("b_wywolaj", None);
   ["USIĄDŹ NA KANAPIE"; "USIADZ NA KANAPIE"], ("b_kanapa_usiadz", None);
   ["ROZCIĄGNIJ KANAPĘ"], ("b_kanapa_rozciagnij", Some 2);
   ["POTNIJ KANAPĘ"], ("b_kanapa_potnij", Some 3);

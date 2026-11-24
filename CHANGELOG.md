@@ -50,6 +50,12 @@
 - Square brackets on maps: `WYPIERDZIELAJ PAN NA POZYCJĘ s["piwo"]` reads (null when the key is missing, like
   `WYJMIJ Z SZAFKI`) and `O KURDE MAM POMYSŁA s["piwo"] A PROSZĘ BARDZO 6 NO I GITARA` writes; they nest with
   arrays (`dane["kto"]["piwa"][0]`), so parsed JSON can be read directly.
+- A dot after a variable reaches into an object: `kot.imie` reads a field, `W MORDĘ JEŻA kot.miaucz(2)` calls
+  a method, `O KURDE MAM POMYSŁA kot.imie A PROSZĘ BARDZO "Filemon" NO I GITARA` assigns. It is the same as
+  `kot["imie"]`, so it works on maps (`dane.kto.imie` after `WYJMIJ ZE SŁOIKA`) and chains (`kot.kolega.imie`).
+  Before, a method had to be taken out into a variable first. Names of a module imported `JAKO m` (`m.dodaj`)
+  mean what they meant; `m.burek.imie` is a field of the module's variable. The editor counts `kot.imie` as
+  a use of `kot` (find references, rename, "never read" warning).
 - Text with values put in: `POWIEM PANU TAK "Piwa: {piwa}, jutro {piwa BABKA DAWAJ RENTĘ 2}"`. Any expression
   can stand in `{}` (calls and another `POWIEM PANU TAK` too); `\{` is a plain brace. It is the same as joining
   the pieces with `BABKA DAWAJ RENTĘ`, so both modes print the same. Errors inside `{}` point at the spot,

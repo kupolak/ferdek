@@ -45,6 +45,11 @@ let register () = add [
   (* KARTA LUBI DYM(min, max) - losowa liczba; KARTA LUBI DYM(ziarno) - ustawia ziarno.
      Własny LCG zamiast Random: ten sam ciąg co w skompilowanym C *));
 
+  [Dots.call], None, (fun env args ->
+      match List.map (eval_expr env) args with
+      | name :: f :: rest -> call_value (to_string name) f rest
+      | _ -> raise (RuntimeError "Wywołanie metody bez nazwy"));
+
   ["KARTA LUBI DYM"], None, (fun env args ->
       (match List.map (eval_expr env) args with
        | [seed] -> rng_state := to_int seed land 0x7FFFFFFF; VNull

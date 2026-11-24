@@ -42,7 +42,18 @@ let tokens text =
         let s = lexbuf.Lexing.lex_start_p and e = lexbuf.Lexing.lex_curr_p in
         go ({ t; line = s.pos_lnum; col = s.pos_cnum - s.pos_bol; len = e.pos_cnum - s.pos_cnum; scope = global } :: acc)
   in
-  global, Array.of_list (go [])
+  let toks = Array.of_list (go []) in
+  (* kot.wiek, kot.miaucz(2): token to użycie zmiennej kot (pole po kropce pomijamy), chyba że
+     kot to alias modułu (JAKO kot) - wtedy kot.nazwa jest nazwą globalną modułu *)
+  let aliases = List.filter_map (fun i -> match toks.(i).t, toks.(i + 1).t with
+      | IMPORT_AS, IDENTIFIER a -> Some a
+      | _ -> None) (List.init (max 0 (Array.length toks - 1)) Fun.id) in
+  global, Array.map (fun tk -> match tk.t with
+    | IDENTIFIER n ->
+        (match String.index_opt n '.' with
+         | Some k when not (List.mem (String.sub n 0 k) aliases) -> { tk with t = IDENTIFIER (String.sub n 0 k); len = k }
+         | _ -> tk)
+    | _ -> tk) toks
 
 let rec resolve scope name =
   match Hashtbl.find_opt scope.decls name with
