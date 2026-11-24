@@ -88,6 +88,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
     | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> expr sc a; expr sc b
     | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
     | Parenthesized e -> expr sc e
+    | Conditional (c, a, b) -> expr sc c; expr sc a; expr sc b
     | Checked (e, t, what) ->
         expr sc e;
         let known = match e with

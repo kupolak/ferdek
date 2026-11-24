@@ -33,6 +33,8 @@ Some examples:
 - `3.14` - numbers with a decimal point (`7 / 2` is still `3`, `7.0 / 2` is `3.5`; `ZRÓB DŁUGI(3.9)` truncates)
 - `[1, 2, 3]` - array literals work anywhere, e.g. as function arguments
 - `"Piwa: " BABKA DAWAJ RENTĘ 6` - `+` with text concatenates; arithmetic on non-numeric text is an error
+- `NO JAK NIE JAK TAK piwa GRUBA ŚWINIA 0 A PROSZĘ BARDZO "jest" A DUPA TAM "nie ma"` - one value or the other
+  (an if as an expression; only the chosen side is evaluated)
 - `DOLEJ 2 DO piwa` / `ULEJ 1 Z piwa` - add to / take from a variable, an array element, a map key or a field
 - `POWIEM PANU TAK "Piwa: {piwa}, jutro {piwa BABKA DAWAJ RENTĘ 2}"` - text with values put in (any expression in `{}`)
 - `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2` - anonymous function (local variables captured as copies;

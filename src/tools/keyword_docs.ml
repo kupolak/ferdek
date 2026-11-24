@@ -109,7 +109,7 @@ let entries = [
   "NIKT LEPIEJ ODE MNIE", "NIKT LEPIEJ ODE MNIE(wynik)", "BABKA: zaprzeczenie wyniku operacji", true;
   "NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ", "NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ", "Funkcja zwraca wartość", false;
   "NO I GITARA", "NO I GITARA", "Koniec przypisania", false;
-  "NO JAK NIE JAK TAK", "NO JAK NIE JAK TAK", "if", false;
+  "NO JAK NIE JAK TAK", "NO JAK NIE JAK TAK", "if; jako wyrażenie - jedno albo drugie: NO JAK NIE JAK TAK piwa GRUBA ŚWINIA 0 A PROSZĘ BARDZO \"jest\" A DUPA TAM \"nie ma\" (liczona tylko wybrana gałąź; w środku działania w nawiasach)", false;
   "NO TO ENTER", "NO TO ENTER", "Zakończ linię", false;
   "O KARWASZ TWARZ", "O KARWASZ TWARZ", "Rzuć wyjątek", false;
   "O KOGO MOJE PIĘKNE OCZY WIDZĄ", "O KOGO MOJE PIĘKNE OCZY WIDZĄ", "Import: plik obok (moj_plik) albo moduł stdlib (KLAMOTY/SKRZYNKA)", false;

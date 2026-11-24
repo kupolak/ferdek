@@ -425,6 +425,10 @@ let rec compile_expr cx : expr -> code = function
          | _ -> raise (RuntimeError (Printf.sprintf "Nieznana funkcja: %s" func_name))
          | exception RuntimeError _ -> raise (RuntimeError (Printf.sprintf "Nieznana funkcja: %s" func_name)))
   | Parenthesized e -> compile_expr cx e
+  | Conditional (c, a, b) ->
+      (* liczona jest tylko wybrana gałąź *)
+      let cc = compile_expr cx c and ca = compile_expr cx a and cb = compile_expr cx b in
+      fun env -> if to_bool (cc env) then ca env else cb env
   | Checked (e, t, what) ->
       let c = compile_expr cx e in
       fun env -> check_type (c env) t what

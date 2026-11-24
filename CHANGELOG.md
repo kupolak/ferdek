@@ -58,6 +58,10 @@
 - Square brackets on maps: `WYPIERDZIELAJ PAN NA POZYCJĘ s["piwo"]` reads (null when the key is missing, like
   `WYJMIJ Z SZAFKI`) and `O KURDE MAM POMYSŁA s["piwo"] A PROSZĘ BARDZO 6 NO I GITARA` writes; they nest with
   arrays (`dane["kto"]["piwa"][0]`), so parsed JSON can be read directly.
+- One value or the other: `NO JAK NIE JAK TAK warunek A PROSZĘ BARDZO a A DUPA TAM b` is an expression -
+  after a print, in an assignment, as a function result or a lambda body; inside a larger expression it
+  goes in parentheses. Only the chosen side is evaluated. A side effect: a bare
+  `I JA INFORMUJĘ ŻE WYCHODZĘ` directly followed by an if block (code that could never run) no longer parses.
 - Short updates: `DOLEJ 2 DO x` is `x = x + 2` (text is appended), `ULEJ 1 Z x` is `x = x - 1`. The target
   can be a variable, `t[0]`, `s["klucz"]` or `kot.wiek`; types and constants are checked as for any
   assignment. `DOLEJ` and `ULEJ` are now keywords.

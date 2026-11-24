@@ -368,6 +368,8 @@ let rec compile_expr ctx expr =
         (fun c -> Printf.sprintf "index_get(%s, %s)" (List.nth c 0) (List.nth c 1))
   | FunctionCall (name, args) -> compile_call ctx name args
   | Parenthesized e -> Printf.sprintf "(%s)" (compile_expr ctx e)
+  | Conditional (c, a, b) ->
+      Printf.sprintf "(%s ? %s : %s)" (compile_cond ctx c) (compile_expr ctx a) (compile_expr ctx b)
   | Checked (e, t, what) ->
       Printf.sprintf "check_type(%s, %s, %s)" (compile_expr ctx e) (type_tag t) (c_string_literal what)
   (* Zmienna, w której leży klasa (CYCU PRZYNIEŚ NO k / TO NIE SĄ TANIE RZECZY Osoba): typ sprawdzamy

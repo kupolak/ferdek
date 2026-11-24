@@ -95,7 +95,7 @@ let typed_body name types ret body =
 /* Start symbol */
 (* "RETURN W MORDĘ JEŻA f()" = zwróć f(), a nie pusty return + wywołanie *)
 %nonassoc RETURN_BARE
-%nonassoc FUNC_CALL
+%nonassoc FUNC_CALL IF
 
 %start <Ast.program> program
 
@@ -408,6 +408,10 @@ enum_value:
 
 expression:
   | e=logical_expr { e }
+  (* Jedno albo drugie jako wartość: NO JAK NIE JAK TAK warunek A PROSZĘ BARDZO a A DUPA TAM b.
+     Gałąź "inaczej" sięga tak daleko, jak się da (jak ciało lambdy); w środku działania - w nawiasach *)
+  | IF c=logical_expr ASSIGN_OP a=expression ELSE b=expression
+    { Conditional (c, a, b) }
   (* Ciało lambdy sięga tak daleko, jak się da - jak fun w OCamlu *)
   | LAMBDA LPAREN ps=separated_list(COMMA, IDENTIFIER) RPAREN body=expression
     { Lambda (ps, [Return (Some body)]) }

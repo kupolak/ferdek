@@ -49,7 +49,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 
 | Słowo | Znaczenie |
 |---|---|
-| `NO JAK NIE JAK TAK` | if |
+| `NO JAK NIE JAK TAK` | if; jako wyrażenie - jedno albo drugie: NO JAK NIE JAK TAK piwa GRUBA ŚWINIA 0 A PROSZĘ BARDZO "jest" A DUPA TAM "nie ma" (liczona tylko wybrana gałąź; w środku działania w nawiasach) |
 | `AAA TO ZMIENIA POSTAĆ RZECZY` | else if |
 | `A DUPA TAM` | else |
 | `DO CHAŁUPY ALE JUŻ` | Koniec if / bloku catch |

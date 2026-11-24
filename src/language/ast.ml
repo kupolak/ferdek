@@ -64,6 +64,7 @@ type expr =
   | ToFixed of expr                                      (* Convert to fixed-point 16.16 (ZAMIEŃ NA FIXED) *)
   | FromFixed of expr                                    (* Convert from fixed-point 16.16 (WYJMIJ Z FIXED) *)
   | Parenthesized of expr                                (* Parenthesized expression *)
+  | Conditional of expr * expr * expr                    (* NO JAK NIE JAK TAK w A PROSZĘ BARDZO a A DUPA TAM b - jedno albo drugie jako wartość *)
   | Lambda of string list * stmt list                    (* JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x + 1  albo  (x) NO DOBRZE ... DO WIDZENIA PANU *)
   | Checked of expr * typ * string                       (* wartość musi mieć typ; napis: czego dotyczy (do błędu) *)
 
@@ -249,6 +250,8 @@ let rec string_of_expr = function
       "from_fixed(" ^ string_of_expr e ^ ")"
   | Parenthesized e ->
       "(" ^ string_of_expr e ^ ")"
+  | Conditional (c, a, b) ->
+      "(" ^ string_of_expr c ^ " ? " ^ string_of_expr a ^ " : " ^ string_of_expr b ^ ")"
   | Checked (e, t, what) -> "(" ^ string_of_expr e ^ " : " ^ string_of_typ t ^ " [" ^ what ^ "])"
   | Lambda (params, body) ->
       "fun(" ^ String.concat ", " params ^ ") {\n"
@@ -323,6 +326,7 @@ let rec expr_names = function
   | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> expr_names a @ expr_names b
   | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
   | Parenthesized e | Checked (e, _, _) -> expr_names e
+  | Conditional (c, a, b) -> expr_names c @ expr_names a @ expr_names b
   | Lambda (params, body) ->
       let own = params @ block_decls body in
       List.filter (fun n -> not (List.mem n own)) (List.concat_map stmt_names body)
@@ -379,6 +383,7 @@ let subexprs = function
   | ArrayAccess (a, b) | PointerArithmetic (a, _, b) -> [a; b]
   | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
   | Parenthesized e | Checked (e, _, _) -> [e]
+  | Conditional (c, a, b) -> [c; a; b]
   | _ -> []
 
 (* Wyrażenia instrukcji razem z zagnieżdżonymi instrukcjami *)
@@ -414,6 +419,7 @@ let map_subexprs f = function
   | Reference e -> Reference (f e)
   | Dereference e -> Dereference (f e)
   | Parenthesized e -> Parenthesized (f e)
+  | Conditional (c, a, b) -> Conditional (f c, f a, f b)
   | Checked (e, t, w) -> Checked (f e, t, w)
   | e -> e
 

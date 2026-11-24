@@ -63,6 +63,8 @@ Zostało piw: 4
 (else if) i `A DUPA TAM` (else). Porównania: `TO PANU SIĘ CHCE WTEDY KIEDY MNIE` (=),
 `PAN TU NIE MIESZKASZ` (≠), `GRUBA ŚWINIA` (>), `ŁYSA PAŁA` (<), `JA JESTEM PONAD TO` (≥);
 łączenie: `PIWO I TELEWIZOR` (i), `ALBO JUTRO U ADWOKATA` (lub), `TAK BYĆ NIE BĘDZIE` (nie).
+Gdy od warunku zależy tylko wartość, wystarczy jedna linia:
+`NO JAK NIE JAK TAK piwa GRUBA ŚWINIA 0 A PROSZĘ BARDZO "jest" A DUPA TAM "nie ma"`.
 
 ```ferdek
 CO JEST KURDE

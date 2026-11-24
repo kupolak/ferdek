@@ -78,8 +78,10 @@ let format source =
           Buffer.add_string out (String.make (4 * level) ' ');
           Buffer.add_string out trimmed;
           Buffer.add_char out '\n';
-          List.iter (fun t ->
-            if opens t || lambda_body t !prev then depth := !depth + weight t
+          (* NO JAK NIE JAK TAK w środku linii to wyrażenie warunkowe (..., A PROSZĘ BARDZO a A DUPA TAM b),
+             nie blok. ponytail: wyrażenie zaczynające linię kontynuacji policzy się jak blok *)
+          List.iteri (fun k t ->
+            if (opens t && not (t = Parser.IF && k > 0)) || lambda_body t !prev then depth := !depth + weight t
             else if closes t then depth := max 0 (!depth - weight t);
             prev := t) toks
         end
