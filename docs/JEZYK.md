@@ -127,7 +127,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `ROZDUPCĘ BANK` | * |
 | `MUSZĘ DO SRACZA` | / (na liczbach całkowitych dzielenie całkowite) |
 | `PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ` | % (reszta z dzielenia) |
-| `TO PANU SIĘ CHCE WTEDY KIEDY MNIE` | == |
+| `TO PANU SIĘ CHCE WTEDY KIEDY MNIE` | == (tablice i szafki: równa zawartość; obiekt równy tylko sobie; funkcje zawsze różne) |
 | `PAN TU NIE MIESZKASZ` | != |
 | `GRUBA ŚWINIA` | > |
 | `ŁYSA PAŁA` | < |

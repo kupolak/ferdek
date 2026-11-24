@@ -439,14 +439,41 @@ let eval_arith_op op v1 v2 =
 (* Evaluate comparison operator *)
 (* Porównanie trójwartościowe (<0, 0, >0). Stringi jako tekst. Tekst z liczbą: przy
    równości po prostu różne, przy porządku błąd - chyba że tekst jest liczbą ("5") *)
-let compare_values ?(equality = false) v1 v2 =
+(* Wartości, które nie są liczbą ani tekstem: przy == i != porównujemy je osobno (same_thing),
+   przy porządku (<, >) zostaje błąd z to_int *)
+let is_thing = function
+  | VArray _ | VHashMap _ | VObject _ | VFunction _ | VPointer _ | VFileHandle _
+  | VClass _ | VStruct _ | VUnion _ | VEnum _ -> true
+  | _ -> false
+
+let rec compare_values ?(equality = false) v1 v2 =
   match v1, v2 with
+  | _ when equality && (is_thing v1 || is_thing v2) -> if same_thing v1 v2 then 0 else 1
   | VString a, VString b -> compare a b
   | _ when is_numeric v1 && is_numeric v2 && (is_float v1 || is_float v2) ->
       compare (to_float v1) (to_float v2)
   | _ when is_numeric v1 && is_numeric v2 -> compare (to_int v1) (to_int v2)
   | _ when equality -> 1
   | _ -> raise (RuntimeError "Nie można porównać tekstu z liczbą")
+
+(* Tablice i szafki są równe, gdy mają równą zawartość (elementy tą samą równością co ==);
+   obiekt, wskaźnik i klasa - gdy to ta sama rzecz. Wszystko inne jest różne, także tablica i null.
+   ponytail: funkcje zawsze różne - "ta sama funkcja" znaczy co innego w interpreterze i w C
+   (lambda bez złapanych zmiennych); tożsamość do dodania, gdy oba tryby dostaną wspólny znacznik.
+   ponytail: tablica zawierająca samą siebie zapętli porównanie. *)
+and same_thing v1 v2 =
+  let equal a b = compare_values ~equality:true a b = 0 in
+  match v1, v2 with
+  | VArray a, VArray b -> Array.length a = Array.length b && Array.for_all2 equal a b
+  | VHashMap a, VHashMap b ->
+      Hashtbl.length a = Hashtbl.length b
+      && Hashtbl.fold (fun k v ok -> ok && (match Hashtbl.find_opt b k with Some w -> equal v w | None -> false)) a true
+  | VObject a, VObject b -> a == b
+  | VPointer a, VPointer b -> a == b
+  | VClass (a, _), VClass (b, _) -> a == b
+  | VStruct (a, _), VStruct (b, _) -> a == b
+  | VUnion (a, _), VUnion (b, _) -> a == b
+  | _ -> false
 
 let eval_comparison_op op v1 v2 =
   let c = match v1, v2 with

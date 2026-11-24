@@ -63,6 +63,11 @@
   can stand in `{}` (calls and another `POWIEM PANU TAK` too); `\{` is a plain brace. It is the same as joining
   the pieces with `BABKA DAWAJ RENTĘ`, so both modes print the same. Errors inside `{}` point at the spot,
   and the editor colours, completes and renames names there like anywhere else.
+- `TO PANU SIĘ CHCE WTEDY KIEDY MNIE` / `PAN TU NIE MIESZKASZ` work on everything: arrays and maps are
+  equal when their contents are (`[1, 2]` and `[1, 2]`, maps whatever the order of keys, nested too), an
+  object is equal only to itself, and an array, map, object or function compared with a number, text or
+  null is simply different - so `kot.kolega PAN TU NIE MIESZKASZ null` works. Before, all of these stopped
+  the program with "Tego nie da się zamienić na liczbę". Two functions are always different.
 - Square brackets on text and on results: `tekst[0]` is the character at a position (`tekst[-1]` the last one,
   Polish letters count as one; text cannot be assigned to this way), and the thing before `[` can be a call
   or an expression in parentheses: `WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA f()[0]`,

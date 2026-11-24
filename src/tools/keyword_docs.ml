@@ -178,7 +178,7 @@ let entries = [
   "TO JE TAK ALBO NIE", "TO JE TAK ALBO NIE", "Typ: prawda albo fałsz", false;
   "TO JE WERSALKA", "TO JE WERSALKA", "Typ: tablica", false;
   "TO NIE SĄ TANIE RZECZY", "TO NIE SĄ TANIE RZECZY", "Wartość początkowa w deklaracji; w liście parametrów - wartość domyślna (ile TO NIE SĄ TANIE RZECZY 1)", false;
-  "TO PANU SIĘ CHCE WTEDY KIEDY MNIE", "TO PANU SIĘ CHCE WTEDY KIEDY MNIE", "==", false;
+  "TO PANU SIĘ CHCE WTEDY KIEDY MNIE", "TO PANU SIĘ CHCE WTEDY KIEDY MNIE", "== (tablice i szafki: równa zawartość; obiekt równy tylko sobie; funkcje zawsze różne)", false;
   "TO SĄ STRINGI", "TO SĄ STRINGI", "Typ: tekst", false;
   "TRZEBA SPAĆ", "TRZEBA SPAĆ(ms)", "Uśpij program na podaną liczbę milisekund", true;
   "TYLKO JEDNO Z TEGO", "TYLKO JEDNO Z TEGO", "^ (bitowe)", false;

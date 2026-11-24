@@ -112,6 +112,13 @@ class Gen:
         op = self.pick(["TO PANU SIĘ CHCE WTEDY KIEDY MNIE", "PAN TU NIE MIESZKASZ", "GRUBA ŚWINIA",
                         "ŁYSA PAŁA", "JA JESTEM PONAD TO"])
         cmp = f"({self.expr(t, d)} {op} {self.expr(t, d)})"
+        if self.r.random() < 0.15:   # równość po zawartości: tablice, szafka, tablica z czymś innym
+            eq = self.pick(["TO PANU SIĘ CHCE WTEDY KIEDY MNIE", "PAN TU NIE MIESZKASZ"])
+            cmp = self.pick([
+                f"({self.expr('arr', d)} {eq} {self.expr('arr', d)})",
+                f'(m0 {eq} W MORDĘ JEŻA OTWÓRZ SZAFKĘ("piwo", 1, "wódka", {self.expr("int", d)}))',
+                f"({self.expr('arr', d)} {eq} {self.expr(self.pick(['int', 'str']), d)})",
+            ])
         if leaf:
             return cmp
         return self.pick([cmp, f"(TAK BYĆ NIE BĘDZIE {cmp})",

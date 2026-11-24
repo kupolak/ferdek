@@ -558,7 +558,19 @@ static FerdekValue op_mod(FerdekValue a, FerdekValue b) {
 enum { CMP_EQ, CMP_NE, CMP_GT, CMP_LT, CMP_GE };
 
 /* Trójwartościowe porównanie - jak compare_values w interpreterze */
+static bool same_thing(FerdekValue a, FerdekValue b);
+
+/* Wartości, które nie są liczbą ani tekstem - jak is_thing w interpreterze */
+static bool is_thing(FerdekValue v) {
+    switch (v.type) {
+        case TYPE_ARRAY: case TYPE_MAP: case TYPE_OBJECT: case TYPE_FUNCTION:
+        case TYPE_POINTER: case TYPE_FILE: case TYPE_DEF: return true;
+        default: return false;
+    }
+}
+
 static int compare3(FerdekValue a, FerdekValue b, bool equality) {
+    if (equality && (is_thing(a) || is_thing(b))) return same_thing(a, b) ? 0 : 1;
     if (a.type == TYPE_STRING && b.type == TYPE_STRING) {
         int c = strcmp(a.value.string_val, b.value.string_val);
         return (c > 0) - (c < 0);
@@ -577,6 +589,30 @@ static int compare3(FerdekValue a, FerdekValue b, bool equality) {
 }
 
 /* Porównanie od razu jako bool - w warunkach if/while bez make_bool/to_bool */
+/* Tablice i szafki: równa zawartość; obiekt, wskaźnik, klasa: ta sama rzecz; reszta różna
+   (funkcje też - patrz same_thing w interpreterze) */
+static bool same_thing(FerdekValue a, FerdekValue b) {
+    if (a.type != b.type) return false;
+    switch (a.type) {
+        case TYPE_ARRAY:
+            if (a.value.array_val->length != b.value.array_val->length) return false;
+            for (int i = 0; i < a.value.array_val->length; i++)
+                if (compare3(a.value.array_val->data[i], b.value.array_val->data[i], true) != 0) return false;
+            return true;
+        case TYPE_MAP:
+            if (a.value.map_val->len != b.value.map_val->len) return false;
+            for (int i = 0; i < a.value.map_val->len; i++) {
+                int j = map_find(b.value.map_val, a.value.map_val->keys[i]);
+                if (j < 0 || compare3(a.value.map_val->vals[i], b.value.map_val->vals[j], true) != 0) return false;
+            }
+            return true;
+        case TYPE_OBJECT: return a.value.map_val == b.value.map_val;
+        case TYPE_POINTER: return a.value.ptr_val == b.value.ptr_val;
+        case TYPE_DEF: return a.value.def_val == b.value.def_val;
+        default: return false;
+    }
+}
+
 static inline bool compare_bool(FerdekValue a, FerdekValue b, int op) {
     int c;
     if (a.type == TYPE_INT && b.type == TYPE_INT) {
