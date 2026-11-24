@@ -13,6 +13,19 @@ static FerdekValue make_object(void) {
     return v;
 }
 
+static FerdekValue make_def(const FerdekDef* d) {
+    FerdekValue v;
+    v.type = TYPE_DEF;
+    v.value.def_val = d;
+    return v;
+}
+
+/* DZIAD ZDZIADZIAŁY JEDEN k, gdy k to zmienna: musi w niej leżeć typ właściwego rodzaju (c/s/u) */
+static FerdekValue new_from(FerdekValue v, char kind, const char* err) {
+    if (v.type != TYPE_DEF || v.value.def_val->kind[0] != kind) ferdek_die("%s", err);
+    return v.value.def_val->make();
+}
+
 /* Pole obiektu w metodzie (nazwa znana z deklaracji klasy) */
 static FerdekValue field_get(FerdekMap* self, const char* name) {
     int i = map_find(self, name);
@@ -174,6 +187,7 @@ static const char* value_kind(FerdekValue v) {
         case TYPE_FIXED: return "ułamek";
         case TYPE_OBJECT: return "obiekt";
         case TYPE_POINTER: return "wskaźnik";
+        case TYPE_DEF: return "definicja typu";
         default: return "kibel (plik)";
     }
 }

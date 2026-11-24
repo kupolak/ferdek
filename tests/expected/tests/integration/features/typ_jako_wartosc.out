@@ -1,0 +1,18 @@
+<class Kot>
+[<class Kot>, <struct Punkt>, <union Liczba>]
+to jest <struct Punkt>
+<class Kot> i <union Liczba>
+[KLASA, MEBEL, UNIA]
+prawda
+miau
+hau
+7
+3
+złapane: Nieznana klasa: p
+złapane: Nieznana struktura: nic
+złapane: Nieznana unia: p
+złapane: Tego nie da się zamienić na liczbę
+złapane: ZAPAKUJ DO SŁOIKA: tego nie zapakujesz: definicja typu
+złapane: KRĘCI CEMENT BETONIARA ... Z: po tym nie da się przejść (tablica, szafka albo tekst)
+złapane: Tego nie da się zamienić na liczbę
+Program zakończony pomyślnie. Piwo dla Pana!

@@ -87,6 +87,10 @@
 - Handles the whole language, including classes, structs, unions, pointers, exceptions, files,
   memory, maps, UDP and X11 graphics. Compiled programs print exactly what the interpreter prints,
   error messages included (checked by tests and a fuzzer).
+- Nothing is left for the interpreter only: an object field can be the counter of a `KRĘCI CEMENT BETONIARA`
+  loop in a method, and a class, struct or union name can be used as a value - printed, kept in a variable
+  or an array, passed to a function and used there with `DZIAD ZDZIADZIAŁY JEDEN` / `ZMONTUJ MEBEL` /
+  `WEJDŹ DO UNII`. `--check` and the editor no longer call such a variable an unknown class.
 - Compiled programs are optimized (`-O2`, fast paths for integers, string literals without copying):
   8-43x faster than the interpreter on `make bench` (was 2-4x).
 - Variables that always hold whole numbers compile to plain C `long long`, and so do the parameters

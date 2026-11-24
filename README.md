@@ -176,8 +176,7 @@ ferdek -c examples/hello.ferdek -o hello.c
 The compiler (needs `cc` on your PATH) handles the whole language: classes, structs, unions,
 pointers, files, memory, maps, UDP networking and X11 graphics included (graphics programs are
 linked with `-lX11`). Compiled programs print exactly what the interpreter prints, including
-error messages - `make test` and a fuzzer check this. The only things it still rejects are a
-class name used as a value and an object field used as a loop counter.
+error messages - `make test` and a fuzzer check this.
 
 Compiled programs are optimized (`-O2`, 7-23x faster than the interpreter on `make bench`). If the
 Boehm garbage collector is installed (`brew install bdw-gc`, `apt install libgc-dev`), `ferdek -c`

@@ -1,6 +1,6 @@
 (* Compiler for Ferdek Programming Language - Compiles to C *)
-(* Kompilator obsługuje rdzeń języka. Wszystko inne kończy się Compile_error
-   z czytelnym komunikatem - nigdy po cichu zepsutym kodem C. *)
+(* Kompilator obsługuje cały język. Błąd w programie (np. nieznana zmienna) kończy się
+   Compile_error z czytelnym komunikatem - nigdy po cichu zepsutym kodem C. *)
 
 open Ast
 open Infer
@@ -17,8 +17,6 @@ let error msg =
     | (f, l) -> Printf.sprintf " (%s, linia %d)" f l
   in
   raise (Compile_error (msg ^ suffix))
-let unsupported what =
-  error (Printf.sprintf "Kompilator nie obsługuje: %s. Odpal to interpreterem (ferdek plik.ferdek)." what)
 
 (* ============ NAMES ============ *)
 
@@ -237,6 +235,7 @@ let is_function_name ctx name =
 let is_type_name ctx name = Hashtbl.mem ctx.classes name || Hashtbl.mem ctx.records name
 
 let class_c cls = mangle "nc_" cls                       (* konstruktor obiektu klasy / struktury / unii *)
+let def_c name = mangle "def_" name                      (* opis klasy / struktury / unii użytej jako wartość *)
 let method_c cls m = mangle "m_" (cls ^ "__" ^ m)
 let method_wrap_c cls m = mangle "wm_" (cls ^ "__" ^ m)
 
@@ -344,7 +343,7 @@ let rec compile_expr ctx expr =
       function_value ctx name
   | Identifier name ->
       if is_var ctx name then var_c name
-      else if is_type_name ctx name then unsupported "nazwa klasy/struktury jako wartość"
+      else if is_type_name ctx name then Printf.sprintf "make_def(&%s)" (def_c name)
       else error (Errors.unknown "zmienna" name
                     (ctx.locals @ ctx.members @ Hashtbl.fold (fun n () acc -> n :: acc) ctx.globals []))
   | BinaryOp (e1, op, e2) ->
@@ -374,6 +373,14 @@ let rec compile_expr ctx expr =
   | Checked (e, t, what) ->
       Printf.sprintf "check_type(%s, %s, %s)" (compile_expr ctx e) (type_tag t) (c_string_literal what)
   (* Argumenty konstruktora interpreter ignoruje (nawet ich nie liczy) - tu też *)
+  (* Zmienna, w której leży klasa (CYCU PRZYNIEŚ NO k / TO NIE SĄ TANIE RZECZY Osoba): typ sprawdzamy
+     w czasie działania, z tym samym komunikatem co interpreter *)
+  | NewObject (cls, _) when not (Hashtbl.mem ctx.classes cls) && is_var ctx cls ->
+      Printf.sprintf "new_from(%s, 'c', %s)" (compile_expr ctx (Identifier cls)) (c_string_literal ("Nieznana klasa: " ^ cls))
+  | NewStruct name when not (Hashtbl.mem ctx.records name) && is_var ctx name ->
+      Printf.sprintf "new_from(%s, 's', %s)" (compile_expr ctx (Identifier name)) (c_string_literal ("Nieznana struktura: " ^ name))
+  | NewUnion name when not (Hashtbl.mem ctx.records name) && is_var ctx name ->
+      Printf.sprintf "new_from(%s, 'u', %s)" (compile_expr ctx (Identifier name)) (c_string_literal ("Nieznana unia: " ^ name))
   | NewObject (cls, _) ->
       if not (Hashtbl.mem ctx.classes cls) then error (Printf.sprintf "Nieznana klasa: %s" cls);
       class_c cls ^ "()"
@@ -607,13 +614,17 @@ and compile_stmt ctx indent stmt =
   | For (var, from_e, to_e, step_e, body) ->
       (* Kolejność jak w interpreterze: od, do, krok; C-owe for robi krok także po continue *)
       let n = fresh ctx "" in
-      if is_member ctx var then unsupported "pole obiektu jako licznik pętli";
       let v = var_c var in
       let int_of e = if is_int (tenv ctx) e then compile_int ctx e else Printf.sprintf "to_int(%s)" (compile_expr ctx e) in
       let step = match step_e with None -> "1" | Some e -> int_of e in
       let setup, body_code = loop_body ctx indent body in
       let loop =
-        if List.mem var ctx.ints then
+        if is_member ctx var then
+          (* licznik to pole obiektu: czytany i zapisywany w obiekcie przy każdym obrocie *)
+          let f = c_string_literal var in
+          Printf.sprintf "%sfor (field_set(self, %s, make_int(for_start%s)); for_step%s > 0 ? to_int(field_get(self, %s)) <= for_stop%s : to_int(field_get(self, %s)) >= for_stop%s; field_set(self, %s, make_int(iadd(to_int(field_get(self, %s)), for_step%s)))) {"
+            ind f n n f n f n f f n
+        else if List.mem var ctx.ints then
           Printf.sprintf "%sfor (%s = for_start%s; for_step%s > 0 ? %s <= for_stop%s : %s >= for_stop%s; %s = iadd(%s, for_step%s)) {"
             ind v n n v n v n v v n
         else
@@ -631,7 +642,6 @@ and compile_stmt ctx indent stmt =
         ind ^ "}" ]
   | ForEach (var, coll, body) ->
       let n = fresh ctx "" in
-      if is_member ctx var then unsupported "pole obiektu jako zmienna pętli";
       let setup, body_code = loop_body ctx indent body in
       String.concat "\n" [
         ind ^ "{";
@@ -960,7 +970,16 @@ let compile_program ?(load_module = fun _ -> None) prog =
   let object_protos = List.map (fun ((c : class_decl), m) -> method_proto c.name m ^ ";") methods
                       @ List.map (fun ((c : class_decl), m) -> method_wrap_proto c.name m ^ ";") methods
                       @ List.map (fun (c : class_decl) -> constructor_proto c.name ^ ";") classes
-                      @ Hashtbl.fold (fun n _ acc -> (constructor_proto n ^ ";") :: acc) ctx.records [] in
+                      @ Hashtbl.fold (fun n _ acc -> (constructor_proto n ^ ";") :: acc) ctx.records []
+                      (* Opisy typów - wartość, gdy nazwa klasy stoi w wyrażeniu *)
+                      @ List.filter_map (fun d ->
+                          let def kind name = Some (Printf.sprintf "static const FerdekDef %s = { \"%s\", %s, %s };"
+                                                      (def_c name) kind (c_string_literal name) (class_c name)) in
+                          match d with
+                          | ClassDecl c -> def "class" c.name
+                          | StructDecl s -> def "struct" s.name
+                          | UnionDecl u -> def "union" u.name
+                          | _ -> None) prog.declarations in
   let main_body = List.map (compile_top_level ctx) prog.declarations
                   |> List.filter (fun s -> s <> "") in
   let globals = Hashtbl.fold (fun n () acc -> n :: acc) ctx.globals [] |> dedup

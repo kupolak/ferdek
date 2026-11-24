@@ -56,10 +56,13 @@ typedef enum {
     TYPE_FLOAT,
     TYPE_OBJECT,     /* obiekt klasy / struktury / unii: pola w FerdekMap */
     TYPE_POINTER,
-    TYPE_FILE
+    TYPE_FILE,
+    TYPE_DEF         /* klasa / struktura / unia jako wartość (nazwa typu użyta w wyrażeniu) */
 } ValueType;
 
 typedef struct FerdekValue FerdekValue;
+/* kind: "class" / "struct" / "union"; make: konstruktor obiektu */
+typedef struct { const char* kind; const char* name; FerdekValue (*make)(void); } FerdekDef;
 typedef struct { FerdekValue* data; int length; } FerdekArray;
 /* Mapa: pary w tablicach keys/vals; od MAP_LINEAR kluczy dochodzi indeks haszujący
    (index[slot] = pozycja + 1, 0 = puste; icap to potęga dwójki) */
@@ -78,6 +81,7 @@ struct FerdekValue {
         FerdekValue* ptr_val;     /* wskaźnik: kopia wartości na stercie, jak ref w interpreterze */
         struct { FILE* f; bool input; } file_val;
         FerdekMap* map_val;       /* wskaźnik: kopia wartości współdzieli mapę, jak w interpreterze */
+        const FerdekDef* def_val;
     } value;
 };
 
@@ -431,6 +435,15 @@ static char* to_str(FerdekValue v) {
         }
         case TYPE_OBJECT: return fx_strdup("<object>");
         case TYPE_FILE: return fx_strdup("<file handle>");
+        case TYPE_DEF: {
+            StrBuf b = {0};
+            buf_add(&b, "<");
+            buf_add(&b, v.value.def_val->kind);
+            buf_add(&b, " ");
+            buf_add(&b, v.value.def_val->name);
+            buf_add(&b, ">");
+            return b.s;
+        }
         case TYPE_POINTER: {
             StrBuf b = {0};
             char* inner = to_str(*v.value.ptr_val);

@@ -2,7 +2,7 @@
 
 open Ast
 
-(* Nieobsługiwana konstrukcja albo błąd w programie (np. nieznana zmienna) *)
+(* Błąd w programie (np. nieznana zmienna) *)
 exception Compile_error of string
 
 (* Wklejenie importowanych modułów w miejscu importu; brak modułu -> Compile_error *)

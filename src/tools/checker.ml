@@ -77,9 +77,10 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
          | None, None -> report (Errors.unknown "funkcja" name (names sc @ builtin_names)))
     | NewObject (c, args) ->
         List.iter (expr sc) args;
-        if not (Hashtbl.mem sc.types c) then report ("Nieznana klasa: " ^ c)
+        (* zmienna, w której leży klasa, też się nadaje - co w niej jest, okaże się w biegu *)
+        if not (Hashtbl.mem sc.types c || is_var sc c) then report ("Nieznana klasa: " ^ c)
     | NewStruct t | NewUnion t ->
-        if not (Hashtbl.mem sc.types t) then report ("Nieznany typ: " ^ t)
+        if not (Hashtbl.mem sc.types t || is_var sc t) then report ("Nieznany typ: " ^ t)
     | AddressOf n -> expr sc (Identifier n)
     | FunctionRef n ->
         if not (Hashtbl.mem sc.funcs n || is_var sc n) then report ("Nieznana funkcja: " ^ n)

@@ -345,6 +345,12 @@ static FerdekValue b_co_to_za_typ(int argc, FerdekValue* argv) {
         case TYPE_OBJECT: return make_string("OBIEKT");
         case TYPE_POINTER: return make_string("WSKAŹNIK");
         case TYPE_FILE: return make_string("KIBEL");
+        case TYPE_DEF:
+            switch (argv[0].value.def_val->kind[0]) {
+                case 'c': return make_string("KLASA");
+                case 's': return make_string("MEBEL");
+                default: return make_string("UNIA");
+            }
     }
     return make_string("?");
 }
