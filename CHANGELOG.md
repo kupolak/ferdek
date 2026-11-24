@@ -14,6 +14,9 @@
 - `OD`, `DO`, `CO` are keywords (for loops) and cannot be variable names.
 - Maps print, and `WSZYSTKIE SZUFLADKI` returns, keys in sorted order.
 - KANAPA counts characters, not bytes (`"żółw"` has length 4).
+- `PIWO I TELEWIZOR` and `ALBO JUTRO U ADWOKATA` evaluate the right side only when the left one does not
+  decide (`ILE NA WERSALCE(t) GRUBA ŚWINIA 0 PIWO I TELEWIZOR t[0] ...` is safe on an empty array). Before,
+  both sides were always evaluated, so a call on the right side always ran.
 - `ferdecc` is gone - use `ferdek -c`. `ferdek -c x -o app` builds an executable, `-o x.c` writes C.
 
 ### Language

@@ -11,7 +11,7 @@ let entries = [
   "AAA TO ZMIENIA POSTAĆ RZECZY", "AAA TO ZMIENIA POSTAĆ RZECZY", "else if", false;
   "AFERA JEST", "AFERA JEST", "Wynik funkcji do zmiennej: AFERA JEST x W MORDĘ JEŻA f()", false;
   "AKUKARACZA", "AKUKARACZA", "continue", false;
-  "ALBO JUTRO U ADWOKATA", "ALBO JUTRO U ADWOKATA", "or", false;
+  "ALBO JUTRO U ADWOKATA", "ALBO JUTRO U ADWOKATA", "or - prawa strona liczona tylko wtedy, gdy lewa jest fałszem", false;
   "ALE JAJA", "ALE JAJA", "Definicja klasy", false;
   "ALE WIE PAN JA ZASADNICZO", "ALE WIE PAN JA ZASADNICZO", "Definicja funkcji", false;
   "BABKA DAWAJ RENTĘ", "BABKA DAWAJ RENTĘ", "+ (z tekstem skleja)", false;
@@ -131,7 +131,7 @@ let entries = [
   "PIENIĄDZE SĄ", "PIENIĄDZE SĄ(wartość)", "BABKA: asercja nie-null", true;
   "PIERWIASTEK ZE SKRZYNKI", "PIERWIASTEK ZE SKRZYNKI(x)", "Pierwiastek kwadratowy (wbudowana, bez importu)", true;
   "PISZ BAJT", "PISZ BAJT(blok, indeks, bajt)", "Zapisz bajt", true;
-  "PIWO I TELEWIZOR", "PIWO I TELEWIZOR", "and", false;
+  "PIWO I TELEWIZOR", "PIWO I TELEWIZOR", "and - prawa strona liczona tylko wtedy, gdy lewa jest prawdą", false;
   "PO PIERWSZE PRIMO", "PO PIERWSZE PRIMO(liczba, miejsca)", "Liczba jako tekst z podaną liczbą miejsc po przecinku (3.14159, 2 -> \"3.14\")", true;
   "PODMIEŃ NA KANAPIE", "PODMIEŃ NA KANAPIE(tekst, wzór, na)", "Każdy fragment pasujący do wzoru zamieniony na tekst na", true;
   "PODZIEL SKRZYNKI", "PODZIEL SKRZYNKI(a, b)", "SKRZYNKA: dzielenie całkowite", true;

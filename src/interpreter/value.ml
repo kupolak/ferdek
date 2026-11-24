@@ -460,15 +460,6 @@ let eval_comparison_op op v1 v2 =
     | GreaterEqual -> c >= 0
   )
 
-(* Evaluate logical operator *)
-let eval_logical_op op v1 v2 =
-  let b1 = to_bool v1 in
-  let b2 = to_bool v2 in
-  VBool (match op with
-    | And -> b1 && b2
-    | Or -> b1 || b2
-  )
-
 (* Evaluate bitwise operator *)
 let eval_bitwise_op op v1 v2 =
   let n1 = to_int v1 in

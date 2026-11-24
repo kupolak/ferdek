@@ -298,9 +298,12 @@ let rec compile_expr cx : expr -> code = function
       let a = compile_expr cx e1 and b = compile_expr cx e2 in
       fun env -> let v1 = a env in let v2 = b env in eval_comparison_op op v1 v2
   | LogicalOp (e1, op, e2) ->
-      (* obie strony zawsze - bez skracania, jak w C *)
+      (* prawa strona tylko wtedy, gdy lewa nie rozstrzyga: fałsz PIWO I TELEWIZOR ... to fałsz,
+         prawda ALBO JUTRO U ADWOKATA ... to prawda *)
       let a = compile_expr cx e1 and b = compile_expr cx e2 in
-      fun env -> let v1 = a env in let v2 = b env in eval_logical_op op v1 v2
+      (match op with
+       | And -> fun env -> VBool (to_bool (a env) && to_bool (b env))
+       | Or -> fun env -> VBool (to_bool (a env) || to_bool (b env)))
   | BitwiseOp (e1, op, e2) ->
       let a = compile_expr cx e1 and b = compile_expr cx e2 in
       fun env -> let v1 = a env in let v2 = b env in eval_bitwise_op op v1 v2

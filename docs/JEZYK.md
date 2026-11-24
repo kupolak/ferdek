@@ -133,8 +133,8 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `ŁYSA PAŁA` | < |
 | `ŚWINIA` | < |
 | `JA JESTEM PONAD TO` | >= |
-| `PIWO I TELEWIZOR` | and |
-| `ALBO JUTRO U ADWOKATA` | or |
+| `PIWO I TELEWIZOR` | and - prawa strona liczona tylko wtedy, gdy lewa jest prawdą |
+| `ALBO JUTRO U ADWOKATA` | or - prawa strona liczona tylko wtedy, gdy lewa jest fałszem |
 | `TAK BYĆ NIE BĘDZIE` | not |
 | `WSZYSTKO MUSI BYĆ` | & (bitowe) |
 | `COKOLWIEK MOŻE BYĆ` | \| (bitowe) |

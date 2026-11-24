@@ -596,9 +596,6 @@ static inline bool compare_bool(FerdekValue a, FerdekValue b, int op) {
 
 static FerdekValue compare_op(FerdekValue a, FerdekValue b, int op) { return make_bool(compare_bool(a, b, op)); }
 
-/* Interpreter liczy obie strony (bez short-circuit) - funkcja robi to samo */
-static FerdekValue logic_and(FerdekValue a, FerdekValue b) { return make_bool(to_bool(a) && to_bool(b)); }
-static FerdekValue logic_or(FerdekValue a, FerdekValue b) { return make_bool(to_bool(a) || to_bool(b)); }
 
 /* "1 argumentu", "2 argumentów" - jak Errors.argumentow */
 #define ARGUMENTOW(n) ((n) == 1 ? "argumentu" : "argumentów")

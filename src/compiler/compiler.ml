@@ -353,10 +353,7 @@ let rec compile_expr ctx expr =
   | ComparisonOp (e1, op, e2) ->
       in_order ctx [e1, fv, compile_expr ctx e1; e2, fv, compile_expr ctx e2]
         (fun c -> Printf.sprintf "compare_op(%s, %s, %s)" (List.nth c 0) (List.nth c 1) (comparison_c op))
-  | LogicalOp (e1, op, e2) ->
-      in_order ctx [e1, fv, compile_expr ctx e1; e2, fv, compile_expr ctx e2]
-        (fun c -> Printf.sprintf "%s(%s, %s)" (match op with And -> "logic_and" | Or -> "logic_or")
-                    (List.nth c 0) (List.nth c 1))
+  | LogicalOp _ -> Printf.sprintf "make_bool(%s)" (compile_cond ctx expr)
   | BitwiseOp _ -> Printf.sprintf "make_int(%s)" (compile_int ctx expr)
   | BitwiseNot e -> Printf.sprintf "make_int(~to_int(%s))" (compile_expr ctx e)
   | LogicalNot e -> Printf.sprintf "make_bool(!to_bool(%s))" (compile_expr ctx e)
@@ -476,6 +473,9 @@ and compile_cond ctx e =
   | ComparisonOp (a, op, b) ->
       in_order ctx [a, fv, compile_expr ctx a; b, fv, compile_expr ctx b]
         (fun x -> Printf.sprintf "compare_bool(%s, %s, %s)" (List.nth x 0) (List.nth x 1) (comparison_c op))
+  (* && i || w C liczą prawą stronę tylko wtedy, gdy lewa nie rozstrzyga - jak interpreter *)
+  | LogicalOp (a, op, b) ->
+      Printf.sprintf "(%s %s %s)" (compile_cond ctx a) (match op with And -> "&&" | Or -> "||") (compile_cond ctx b)
   | Parenthesized e -> compile_cond ctx e
   | e -> Printf.sprintf "to_bool(%s)" (compile_expr ctx e)
 
