@@ -172,6 +172,12 @@ class Gen:
         if k == "print":
             return [f"{ind}PANIE SENSACJA REWELACJA {self.expr(self.pick(['int', 'float', 'str', 'arr', 'bool']), 0)}"]
         if k == "assign":
+            if self.r.random() < 0.3:   # DOLEJ / ULEJ: zmienna, tekst, element tablicy, klucz szafki
+                return [self.pick([
+                    f"{ind}DOLEJ {self.expr('int', 1)} DO i2", f"{ind}ULEJ {self.expr('int', 1)} Z i2",
+                    f"{ind}DOLEJ {self.expr('str', 1)} DO s0", f"{ind}DOLEJ {self.expr('float', 1)} DO f0",
+                    f"{ind}DOLEJ {self.expr('int', 1)} DO t0[{self.r.randint(-1, 0)}]",
+                    f'{ind}ULEJ {self.expr("int", 1)} Z m0["piwo"]'])]
             return [f"{ind}O KURDE MAM POMYSŁA {self.pick(self.assignable[t])} A PROSZĘ BARDZO {self.expr(t, 0)} NO I GITARA"]
         if k == "map":
             return self.pick([

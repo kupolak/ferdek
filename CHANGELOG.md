@@ -58,6 +58,9 @@
 - Square brackets on maps: `WYPIERDZIELAJ PAN NA POZYCJĘ s["piwo"]` reads (null when the key is missing, like
   `WYJMIJ Z SZAFKI`) and `O KURDE MAM POMYSŁA s["piwo"] A PROSZĘ BARDZO 6 NO I GITARA` writes; they nest with
   arrays (`dane["kto"]["piwa"][0]`), so parsed JSON can be read directly.
+- Short updates: `DOLEJ 2 DO x` is `x = x + 2` (text is appended), `ULEJ 1 Z x` is `x = x - 1`. The target
+  can be a variable, `t[0]`, `s["klucz"]` or `kot.wiek`; types and constants are checked as for any
+  assignment. `DOLEJ` and `ULEJ` are now keywords.
 - Constructors: a class method named `NA DZIEŃ DOBRY` runs on every new object and gets the arguments of
   `DZIAD ZDZIADZIAŁY JEDEN Kot("Mruczek", 3)` - after the arguments are evaluated and the fields set.
   Default parameter values and inheritance work as for any method; a class kept in a variable takes

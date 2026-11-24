@@ -47,6 +47,7 @@ let entries = [
   "DO CHAŁUPY ALE JUŻ", "DO CHAŁUPY ALE JUŻ", "Koniec if / bloku catch", false;
   "DO WIDZENIA PANU", "DO WIDZENIA PANU", "Koniec funkcji / klasy", false;
   "DODAJ DNI", "DODAJ DNI(data, n)", "Data o n dni późniejsza (n ujemne - wcześniejsza)", true;
+  "DOLEJ", "DOLEJ", "Zwiększ: DOLEJ 2 DO x to x = x + 2 (do tekstu dokleja); cel to zmienna, t[0], s[\"klucz\"] albo kot.wiek", false;
   "DOŁÓŻ SZAFKĘ", "DOŁÓŻ SZAFKĘ(a, b)", "Nowa mapa: a, nadpisane tym, co jest w b", true;
   "DZIAD ZDZIADZIAŁY JEDEN", "DZIAD ZDZIADZIAŁY JEDEN", "Nowy obiekt klasy, z argumentami dla metody NA DZIEŃ DOBRY: DZIAD ZDZIADZIAŁY JEDEN Kot(\"Mruczek\", 3); pola i metody przez kropkę: kot.imie, W MORDĘ JEŻA kot.miaucz(2), O KURDE MAM POMYSŁA kot.imie A PROSZĘ BARDZO ... (to samo co kot[\"imie\"]; działa też na szafkach)", false;
   "DZIEŃ TYGODNIA", "DZIEŃ TYGODNIA(data)", "Nazwa dnia tygodnia (\"1999-03-16\" -> \"wtorek\")", true;
@@ -183,6 +184,7 @@ let entries = [
   "TO SĄ STRINGI", "TO SĄ STRINGI", "Typ: tekst", false;
   "TRZEBA SPAĆ", "TRZEBA SPAĆ(ms)", "Uśpij program na podaną liczbę milisekund", true;
   "TYLKO JEDNO Z TEGO", "TYLKO JEDNO Z TEGO", "^ (bitowe)", false;
+  "ULEJ", "ULEJ", "Zmniejsz: ULEJ 1 Z x to x = x - 1", false;
   "USIĄDŹ NA KANAPIE", "USIĄDŹ NA KANAPIE(a, b, ...)", "Sklej teksty", true;
   "W MORDĘ JEŻA", "W MORDĘ JEŻA", "Wywołanie funkcji: W MORDĘ JEŻA f(1, 2)", false;
   "W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM", "W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM", "null", false;

@@ -76,6 +76,9 @@ rule token = parse
   | "NO TO ENTER" { PRINT_NEWLINE }
   | "CO TAM U PANA SŁYCHAĆ" { READ }
   | "O KURDE MAM POMYSŁA" { ASSIGN_START }
+  (* DOLEJ 2 DO x: x = x + 2 (tekst dokleja); ULEJ 1 Z x: x = x - 1 *)
+  | "DOLEJ" { INCREMENT }
+  | "ULEJ" { DECREMENT }
   | "A PROSZĘ BARDZO" { ASSIGN_OP }
   | "NO I GITARA" { ASSIGN_END }
 

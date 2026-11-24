@@ -35,6 +35,8 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `PANIE TO JEST PRYWATNA PUBLICZNA TABLICA` | Deklaracja tablicy |
 | `O KURDE MAM POMYSŁA` | Przypisanie: O KURDE MAM POMYSŁA x A PROSZĘ BARDZO 5 NO I GITARA |
 | `A PROSZĘ BARDZO` | Nowa wartość w przypisaniu |
+| `DOLEJ` | Zwiększ: DOLEJ 2 DO x to x = x + 2 (do tekstu dokleja); cel to zmienna, t[0], s["klucz"] albo kot.wiek |
+| `ULEJ` | Zmniejsz: ULEJ 1 Z x to x = x - 1 |
 | `NO I GITARA` | Koniec przypisania |
 | `PANIE SENSACJA REWELACJA` | Wypisz wartość i zakończ linię |
 | `JEDZIEM Z TYM ŚLEDZIEM` | Wypisz wartość bez końca linii |

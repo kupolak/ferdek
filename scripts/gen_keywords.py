@@ -27,7 +27,7 @@ SCOPES = {
         TRY CATCH THROW BREAK CONTINUE RETURN PROGRAM_START PROGRAM_END""",
     "storage.type.ferdek": """VAR_DECL CONST VAR_INIT ARRAY_DECL FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END
         CLASS EXTENDS STRUCT END_STRUCT UNION END_UNION ENUM END_ENUM IMPORT IMPORT_AS""",
-    "keyword.other.ferdek": """PRINT PRINT_INLINE PRINT_NEWLINE READ ASSIGN_START ASSIGN_OP ASSIGN_END
+    "keyword.other.ferdek": """PRINT PRINT_INLINE PRINT_NEWLINE READ ASSIGN_START ASSIGN_OP ASSIGN_END INCREMENT DECREMENT
         FUNC_CALL FUNC_CALL_ASSIGN LAMBDA ARRAY_INDEX NEW NEW_STRUCT NEW_UNION POINTER_REF POINTER_DEREF
         POINTER_ADDR POINTER_STEP_FORWARD POINTER_STEP_BACK TO_FIXED FROM_FIXED""",
     "keyword.operator.arithmetic.ferdek": "PLUS MINUS MULTIPLY DIVIDE MODULO",
@@ -105,6 +105,8 @@ SECTIONS = [
         "PANIE TO JEST PRYWATNA PUBLICZNA TABLICA": "Deklaracja tablicy",
         "O KURDE MAM POMYSŁA": "Przypisanie: O KURDE MAM POMYSŁA x A PROSZĘ BARDZO 5 NO I GITARA",
         "A PROSZĘ BARDZO": "Nowa wartość w przypisaniu",
+        "DOLEJ": "Zwiększ: DOLEJ 2 DO x to x = x + 2 (do tekstu dokleja); cel to zmienna, t[0], s[\"klucz\"] albo kot.wiek",
+        "ULEJ": "Zmniejsz: ULEJ 1 Z x to x = x - 1",
         "NO I GITARA": "Koniec przypisania",
         "PANIE SENSACJA REWELACJA": "Wypisz wartość i zakończ linię",
         "JEDZIEM Z TYM ŚLEDZIEM": "Wypisz wartość bez końca linii",

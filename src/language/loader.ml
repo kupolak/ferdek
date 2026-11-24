@@ -67,7 +67,7 @@ let line_is_structural line =
 (* Pierwszy token linii zaczyna instrukcję *)
 let starts_statement line =
   match Lexer.token (Lexing.from_string line) with
-  | Parser.VAR_DECL | ARRAY_DECL | PRINT | PRINT_INLINE | PRINT_NEWLINE | READ | ASSIGN_START
+  | Parser.VAR_DECL | ARRAY_DECL | PRINT | PRINT_INLINE | PRINT_NEWLINE | READ | ASSIGN_START | INCREMENT | DECREMENT
   | IF | ELSE | ELSE_IF | END_IF | WHILE | END_WHILE | FOR | FUNC_CALL | FUNC_CALL_ASSIGN | RETURN
   | TRY | CATCH | THROW | BREAK | CONTINUE | FUNC_DECL | FUNC_END | CLASS | STRUCT | END_STRUCT
   | UNION | END_UNION | ENUM | END_ENUM | IMPORT | PROGRAM_START | PROGRAM_END

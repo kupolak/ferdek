@@ -104,6 +104,8 @@ let string_of_token = function
   | INTERP_HEAD s -> sprintf "INTERP_HEAD(\"%s\")" s
   | INTERP_PART s -> sprintf "INTERP_PART(\"%s\")" s
   | INTERP_END s -> sprintf "INTERP_END(\"%s\")" s
+  | INCREMENT -> "INCREMENT"
+  | DECREMENT -> "DECREMENT"
   | ELLIPSIS -> "ELLIPSIS"
   | EOF -> "EOF"
 

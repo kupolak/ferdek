@@ -33,7 +33,7 @@ let typed_body name types ret body =
 %token PROGRAM_START PROGRAM_END
 %token VAR_DECL VAR_INIT
 %token PRINT PRINT_INLINE PRINT_NEWLINE READ
-%token ASSIGN_START ASSIGN_OP ASSIGN_END
+%token ASSIGN_START ASSIGN_OP ASSIGN_END INCREMENT DECREMENT
 %token IF ELSE ELSE_IF END_IF SWITCH CASE DEFAULT END_SWITCH CONST FINALLY
 %token WHILE END_WHILE FOR FOR_FROM FOR_TO FOR_STEP FOR_IN
 %token FUNC_DECL FUNC_RETURNS FUNC_PARAMS FUNC_END ELLIPSIS
@@ -184,6 +184,16 @@ assign_stmt:
     { ArrayAssign (arr, e) }
   | ASSIGN_START id=IDENTIFIER ASSIGN_OP e=expression ASSIGN_END
     { Assign (id, e) }
+  (* DOLEJ 2 DO x / ULEJ 1 Z x - to samo co przypisanie x + 2 / x - 1.
+     ponytail: przy t[indeks] indeks liczy się dwa razy (odczyt i zapis); osobna instrukcja w AST,
+     gdy ktoś wstawi tam wywołanie ze skutkiem ubocznym *)
+  | INCREMENT e=expression FOR_TO t=update_target { t Plus e }
+  | DECREMENT e=expression FOR_IN t=update_target { t Minus e }
+  ;
+
+update_target:
+  | id=IDENTIFIER { fun op e -> Assign (id, BinaryOp (Identifier id, op, e)) }
+  | arr=array_access_expr { fun op e -> ArrayAssign (arr, BinaryOp (arr, op, e)) }
   ;
 
 array_access_expr:

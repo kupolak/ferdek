@@ -305,7 +305,8 @@ Wynik:
 ```
 
 Lambda łapie zmienne lokalne jako kopie, więc przypisanie do takiej zmiennej nie przetrwa do następnego
-wywołania. Gdy lambda ma coś pamiętać, złap szafkę (albo tablicę) i zmieniaj to, co w niej leży:
+wywołania. Gdy lambda ma coś pamiętać, złap szafkę (albo tablicę) i zmieniaj to, co w niej leży
+(`DOLEJ 1 DO x` to krótszy zapis `x = x + 1`, `ULEJ 1 Z x` odejmuje):
 
 ```ferdek
 CO JEST KURDE
@@ -313,7 +314,7 @@ ALE WIE PAN JA ZASADNICZO licznik
 NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
     AFERA JEST stan W MORDĘ JEŻA OTWÓRZ SZAFKĘ("n", 0)
     I JA INFORMUJĘ ŻE WYCHODZĘ JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ() NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
-        O KURDE MAM POMYSŁA stan["n"] A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ stan["n"] BABKA DAWAJ RENTĘ 1 NO I GITARA
+        DOLEJ 1 DO stan["n"]
         I JA INFORMUJĘ ŻE WYCHODZĘ WYPIERDZIELAJ PAN NA POZYCJĘ stan["n"]
     DO WIDZENIA PANU
 DO WIDZENIA PANU
