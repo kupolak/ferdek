@@ -1,0 +1,18 @@
+3
+{ogórki: słoik, piwo: 6, wódka: 1}
+null
+siedem
+siedem
+siedem
+pół
+Ferdek
+6
+{kto: {imie: Waldek, piwa: [40, 5, 6]}}
+30
+10
+55
+[10, 55, 99]
+złapane: Indeks tablicy poza zakresem
+złapane: Indeks poza zakresem: -4
+złapane: To nie jest tablica, szafka ani obiekt
+Program zakończony pomyślnie. Piwo dla Pana!

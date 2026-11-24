@@ -35,6 +35,8 @@ Some examples:
 - `"Piwa: " BABKA DAWAJ RENTĘ 6` - `+` with text concatenates; arithmetic on non-numeric text is an error
 - `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2` - anonymous function (local variables captured as copies);
   with statements: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ` ... `DO WIDZENIA PANU`
+- `WYPIERDZIELAJ PAN NA POZYCJĘ t[-1]` - last array element; `s["piwo"]` reads a map (null when the key is missing),
+  `O KURDE MAM POMYSŁA s["piwo"] A PROSZĘ BARDZO 6 NO I GITARA` writes it; they nest: `dane["kto"]["piwa"][0]`
 - `OTWÓRZ SZAFKĘ("piwo", 3, "wódka", 1)` - map with initial key/value pairs; `PO PIERWSZE PRIMO(3.14159, 2)` - `"3.14"`
 - Library for arrays (`ZSUMUJ WERSALKĘ`, `WYTNIJ Z WERSALKI`, `ZWIŃ WERSALKĘ`...), text (`CZY SIEDZI NA KANAPIE`,
   `ODWRÓĆ KANAPĘ`...), maps, dates (`JAKI DZIŚ DZIEŃ`, `DODAJ DNI`, `DZIEŃ TYGODNIA`) and JSON (`ZAPAKUJ DO SŁOIKA`, `WYJMIJ ZE SŁOIKA`) - see `docs/JEZYK.md`

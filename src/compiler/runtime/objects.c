@@ -31,12 +31,19 @@ static char* field_key(FerdekValue key) {
     return NULL;
 }
 
-/* t[i] i obj["pole"] - jak ArrayAccess w interpreterze */
+/* t[i] (t[-1] to ostatni element), s["klucz"] i obj["pole"] - jak ArrayAccess w interpreterze */
 static FerdekValue index_get(FerdekValue c, FerdekValue key) {
     if (c.type == TYPE_ARRAY) {
         long long i = to_int(key);
+        if (i < 0) i += c.value.array_val->length;
         if (i < 0 || i >= c.value.array_val->length) ferdek_die("Indeks tablicy poza zakresem");
         return c.value.array_val->data[i];
+    }
+    if (c.type == TYPE_MAP) {   /* jak WYJMIJ Z SZAFKI: null, gdy klucza nie ma */
+        char num[32], *owned;
+        int i = map_find(c.value.map_val, str_view(key, num, sizeof num, &owned));
+        fx_free(owned);
+        return i >= 0 ? c.value.map_val->vals[i] : make_null();
     }
     if (c.type == TYPE_OBJECT) {
         char* k = field_key(key);
@@ -44,20 +51,24 @@ static FerdekValue index_get(FerdekValue c, FerdekValue key) {
         if (i < 0) ferdek_die("Obiekt nie ma pola: %s", k);
         return c.value.map_val->vals[i];
     }
-    ferdek_die("To nie jest tablica ani obiekt");
+    ferdek_die("To nie jest tablica, szafka ani obiekt");
     return make_null();
 }
 
 /* t[i] = v i obj["pole"] = v - jak ArrayAssign w interpreterze (indeks tablicy tylko DŁUGI) */
 static void index_set(FerdekValue c, FerdekValue key, FerdekValue v) {
     if (c.type == TYPE_ARRAY && key.type == TYPE_INT) {
-        long long i = key.value.int_val;
-        if (i < 0 || i >= c.value.array_val->length) ferdek_die("Indeks poza zakresem: %lld", i);
-        c.value.array_val->data[i] = v;
+        long long i = key.value.int_val, j = i < 0 ? i + c.value.array_val->length : i;
+        if (j < 0 || j >= c.value.array_val->length) ferdek_die("Indeks poza zakresem: %lld", i);
+        c.value.array_val->data[j] = v;
+    } else if (c.type == TYPE_MAP) {   /* jak WŁÓŻ DO SZAFKI */
+        char num[32], *owned;
+        map_put(c.value.map_val, str_view(key, num, sizeof num, &owned), v);
+        fx_free(owned);
     } else if (c.type == TYPE_OBJECT && (key.type == TYPE_STRING || key.type == TYPE_INT)) {
         map_put(c.value.map_val, field_key(key), v);
     } else if (key.type == TYPE_INT) {
-        ferdek_die("To nie jest tablica ani obiekt");
+        ferdek_die("To nie jest tablica, szafka ani obiekt");
     } else {
         ferdek_die("Indeks tablicy musi być liczbą całkowitą");
     }
@@ -66,6 +77,7 @@ static void index_set(FerdekValue c, FerdekValue key, FerdekValue v) {
 /* t[i] z indeksem, o którym kompilator wie, że jest liczbą całkowitą - bez pakowania indeksu */
 static inline FerdekValue index_get_i(FerdekValue c, long long i) {
     if (c.type == TYPE_ARRAY) {
+        if (i < 0) i += c.value.array_val->length;
         if (i < 0 || i >= c.value.array_val->length) ferdek_die("Indeks tablicy poza zakresem");
         return c.value.array_val->data[i];
     }
@@ -73,8 +85,9 @@ static inline FerdekValue index_get_i(FerdekValue c, long long i) {
 }
 static inline void index_set_i(FerdekValue c, long long i, FerdekValue v) {
     if (c.type == TYPE_ARRAY) {
-        if (i < 0 || i >= c.value.array_val->length) ferdek_die("Indeks poza zakresem: %lld", i);
-        c.value.array_val->data[i] = v;
+        long long j = i < 0 ? i + c.value.array_val->length : i;
+        if (j < 0 || j >= c.value.array_val->length) ferdek_die("Indeks poza zakresem: %lld", i);
+        c.value.array_val->data[j] = v;
         return;
     }
     index_set(c, make_int(i), v);

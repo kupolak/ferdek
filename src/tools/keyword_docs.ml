@@ -199,7 +199,7 @@ let entries = [
   "WYJMIJ ZE SŁOIKA", "WYJMIJ ZE SŁOIKA(tekst)", "JSON z tekstu: obiekty jako szafki, tablice jako wersalki", true;
   "WYKOP WSZYSTKIE KIBLE", "WYKOP WSZYSTKIE KIBLE(ścieżka)", "Usuń katalog z zawartością", true;
   "WYLOSUJ Z WERSALKI", "WYLOSUJ Z WERSALKI(tablica)", "Losowy element (ten sam generator co KARTA LUBI DYM)", true;
-  "WYPIERDZIELAJ PAN NA POZYCJĘ", "WYPIERDZIELAJ PAN NA POZYCJĘ", "Element tablicy: WYPIERDZIELAJ PAN NA POZYCJĘ t[0]", false;
+  "WYPIERDZIELAJ PAN NA POZYCJĘ", "WYPIERDZIELAJ PAN NA POZYCJĘ", "Element tablicy albo szafki: WYPIERDZIELAJ PAN NA POZYCJĘ t[0], t[-1] (ostatni), s[\"klucz\"] (null, gdy klucza nie ma)", false;
   "WYPOMPUJ", "WYPOMPUJ(uchwyt)", "Przeczytaj cały plik", true;
   "WYRZUĆ ZE SZAFKI", "WYRZUĆ ZE SZAFKI(mapa, klucz)", "Usuń klucz", true;
   "WYTNIJ Z WERSALKI", "WYTNIJ Z WERSALKI(tablica, od, do)", "Kawałek tablicy: elementy od indeksu od do indeksu do (bez niego)", true;

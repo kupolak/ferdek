@@ -236,8 +236,9 @@ Zmienna piwa: TO JE LICZBA SYNEK, a jest tekst
 
 ## 6. Tablice i szafki
 
-Tablica to `[1, 2, 3]`, element to `WYPIERDZIELAJ PAN NA POZYCJĘ t[0]` (numerowane od zera).
-Szafka to mapa: `OTWÓRZ SZAFKĘ("klucz", wartość, ...)`, `WYJMIJ Z SZAFKI`, `WŁÓŻ DO SZAFKI`.
+Tablica to `[1, 2, 3]`, element to `WYPIERDZIELAJ PAN NA POZYCJĘ t[0]` (numerowane od zera; `t[-1]` to ostatni).
+Szafka to mapa: `OTWÓRZ SZAFKĘ("klucz", wartość, ...)`, `WYJMIJ Z SZAFKI`, `WŁÓŻ DO SZAFKI`,
+albo krócej w nawiasach: `WYPIERDZIELAJ PAN NA POZYCJĘ s["klucz"]` i `O KURDE MAM POMYSŁA s["klucz"] A PROSZĘ BARDZO 5 NO I GITARA`.
 Do tablic jest cała WERSALKA funkcji: suma, najmniejszy, sortowanie, wycinanie...
 
 ```ferdek

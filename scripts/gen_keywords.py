@@ -108,7 +108,7 @@ SECTIONS = [
         "JEDZIEM Z TYM ŚLEDZIEM": "Wypisz wartość bez końca linii",
         "NO TO ENTER": "Zakończ linię",
         "CO TAM U PANA SŁYCHAĆ": "Wczytaj linię z wejścia do zmiennej",
-        "WYPIERDZIELAJ PAN NA POZYCJĘ": "Element tablicy: WYPIERDZIELAJ PAN NA POZYCJĘ t[0]",
+        "WYPIERDZIELAJ PAN NA POZYCJĘ": "Element tablicy albo szafki: WYPIERDZIELAJ PAN NA POZYCJĘ t[0], t[-1] (ostatni), s[\"klucz\"] (null, gdy klucza nie ma)",
     }),
     ("Sterowanie", {
         "NO JAK NIE JAK TAK": "if",
@@ -441,8 +441,8 @@ def docs():
         "  mapy (SZAFKA), obiekty, funkcje jako wartości, wskaźniki.",
         "- Działanie z liczbą z przecinkiem daje liczbę z przecinkiem; `7 / 2` to `3`, a `7.0 / 2` to `3.5`.",
         "- `+` z tekstem skleja (`\"Piwa: \" + 6`); inne działania na tekście, który nie jest liczbą, to błąd.",
-        "- **Zakres liczb całkowitych:** interpreter liczy na 63 bitach (OCaml), skompilowany program na 64.",
-        "  W tym zakresie wyniki są identyczne; przy przepełnieniu (powyżej ok. 4,6 · 10^18) mogą się różnić.",
+        "- **Zakres liczb całkowitych:** 63 bity (do ok. 4,6 · 10^18) w interpreterze i w skompilowanym programie;",
+        "  przy przepełnieniu liczba zawija się tak samo w obu trybach.",
         "- Tekst liczy się w znakach UTF-8 - `ż` to jeden znak.",
         "",
     ]

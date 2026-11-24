@@ -47,6 +47,11 @@
     null; strict parser, errors with the position);
   - dates (text `RRRR-MM-DD`): `JAKI DZIŚ DZIEŃ`, `KTÓRA GODZINA`, `DZIEŃ TYGODNIA`, `DODAJ DNI`,
     `ILE DNI MIĘDZY`.
+- Square brackets on maps: `WYPIERDZIELAJ PAN NA POZYCJĘ s["piwo"]` reads (null when the key is missing, like
+  `WYJMIJ Z SZAFKI`) and `O KURDE MAM POMYSŁA s["piwo"] A PROSZĘ BARDZO 6 NO I GITARA` writes; they nest with
+  arrays (`dane["kto"]["piwa"][0]`), so parsed JSON can be read directly.
+- Negative array indexes count from the end: `t[-1]` is the last element, for reading and writing. Further
+  left than the first element is still an error.
 - Choosing a variant: `CO TO JE x` / `JAK JE 1, 2` / `A JAK NIC Z TEGO` / `KONIEC GADANIA`.
 - Default parameter values: `NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO komu, ile TO NIE SĄ TANIE RZECZY 1`;
   evaluated at the call, they can use earlier parameters.

@@ -329,11 +329,17 @@ let rec compile_expr cx : expr -> code = function
       fun env ->
         (match ca env with
          | VArray arr ->
+             (* t[-1] to ostatni element *)
+             let n = Array.length arr in
              let index = to_int (ci env) in
-             if index < 0 || index >= Array.length arr then
+             let index = if index < 0 then index + n else index in
+             if index < 0 || index >= n then
                raise (RuntimeError "Indeks tablicy poza zakresem")
              else
                arr.(index)
+         | VHashMap tbl ->
+             (* s["klucz"] - jak WYJMIJ Z SZAFKI: null, gdy klucza nie ma *)
+             (match Hashtbl.find_opt tbl (to_string (ci env)) with Some v -> v | None -> VNull)
          | VObject obj ->
              (* Support object field access: obj["field_name"] *)
              let field_name = match ci env with
@@ -344,7 +350,7 @@ let rec compile_expr cx : expr -> code = function
              (match Vars.find_opt obj field_name with
               | Some v -> v
               | None -> raise (RuntimeError (Printf.sprintf "Obiekt nie ma pola: %s" field_name)))
-         | _ -> raise (RuntimeError "To nie jest tablica ani obiekt"))
+         | _ -> raise (RuntimeError "To nie jest tablica, szafka ani obiekt"))
   | FunctionCall (name, args) -> compile_call cx name args
   | NewObject (class_name, _) -> fun env -> eval_new_object env class_name
   | NewStruct struct_name -> fun env -> eval_new_struct env struct_name
@@ -491,13 +497,16 @@ and compile_stmt cx : stmt -> scode = function
         let idx = ci env in
         (match container, idx with
          | VArray arr_vals, VInt i ->
-             if i < 0 || i >= Array.length arr_vals then
+             let n = Array.length arr_vals in
+             let j = if i < 0 then i + n else i in
+             if j < 0 || j >= n then
                raise (RuntimeError (Printf.sprintf "Indeks poza zakresem: %d" i))
              else
-               arr_vals.(i) <- v
+               arr_vals.(j) <- v
+         | VHashMap tbl, k -> Hashtbl.replace tbl (to_string k) v   (* jak WŁÓŻ DO SZAFKI *)
          | VObject obj, VString s -> Vars.replace obj s v
          | VObject obj, VInt i -> Vars.replace obj (string_of_int i) v
-         | _, VInt _ -> raise (RuntimeError "To nie jest tablica ani obiekt")
+         | _, VInt _ -> raise (RuntimeError "To nie jest tablica, szafka ani obiekt")
          | _, _ -> raise (RuntimeError "Indeks tablicy musi być liczbą całkowitą"))
 
   | ArrayAssign (_, value_expr) ->
