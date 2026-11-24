@@ -337,6 +337,14 @@ let rec compile_expr cx : expr -> code = function
                raise (RuntimeError "Indeks tablicy poza zakresem")
              else
                arr.(index)
+         | VString s ->
+             (* tekst[i] - znak na pozycji, ujemna liczy od końca *)
+             let chars = Text_utils.utf8_chars s in
+             let n = Array.length chars in
+             let index = to_int (ci env) in
+             let index = if index < 0 then index + n else index in
+             if index < 0 || index >= n then raise (RuntimeError "Indeks tekstu poza zakresem")
+             else VString chars.(index)
          | VHashMap tbl ->
              (* s["klucz"] - jak WYJMIJ Z SZAFKI: null, gdy klucza nie ma *)
              (match Hashtbl.find_opt tbl (to_string (ci env)) with Some v -> v | None -> VNull)
@@ -350,7 +358,7 @@ let rec compile_expr cx : expr -> code = function
              (match Vars.find_opt obj field_name with
               | Some v -> v
               | None -> raise (RuntimeError (Printf.sprintf "Obiekt nie ma pola: %s" field_name)))
-         | _ -> raise (RuntimeError "To nie jest tablica, szafka ani obiekt"))
+         | _ -> raise (RuntimeError "To nie jest tablica, szafka, tekst ani obiekt"))
   | FunctionCall (name, args) -> compile_call cx name args
   | NewObject (class_name, _) -> fun env -> eval_new_object env class_name
   | NewStruct struct_name -> fun env -> eval_new_struct env struct_name
@@ -504,6 +512,7 @@ and compile_stmt cx : stmt -> scode = function
              else
                arr_vals.(j) <- v
          | VHashMap tbl, k -> Hashtbl.replace tbl (to_string k) v   (* jak WŁÓŻ DO SZAFKI *)
+         | VString _, _ -> raise (RuntimeError "Tekstu nie da się zmienić w miejscu - tekst[i] jest tylko do odczytu")
          | VObject obj, VString s -> Vars.replace obj s v
          | VObject obj, VInt i -> Vars.replace obj (string_of_int i) v
          | _, VInt _ -> raise (RuntimeError "To nie jest tablica, szafka ani obiekt")

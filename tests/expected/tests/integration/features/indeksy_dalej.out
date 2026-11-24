@@ -1,0 +1,23 @@
+piwo
+ogórki
+5
+12
+[
+3
+[99, 2, 3]
+ż
+w
+ś
+ż
+Ó
+c
+ł
+a
+pierwsza litera: ż
+złapane: Indeks tekstu poza zakresem
+złapane: Indeks tekstu poza zakresem
+złapane: Indeks tekstu poza zakresem
+złapane: Tekstu nie da się zmienić w miejscu - tekst[i] jest tylko do odczytu
+złapane: To nie jest tablica, szafka, tekst ani obiekt
+żółw i gęś
+Program zakończony pomyślnie. Piwo dla Pana!

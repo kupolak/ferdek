@@ -146,6 +146,17 @@ static FerdekValue b_kanapa_znak(int argc, FerdekValue* argv) {
     return make_string(s + off[i]);
 }
 
+/* tekst[i] - znak na pozycji, ujemna liczy od końca */
+static FerdekValue text_char(const char* text, long long i) {
+    char* s = fx_strdup(text);
+    long long* off;
+    long long n = utf8_index(s, &off);
+    if (i < 0) i += n;
+    if (i < 0 || i >= n) ferdek_die("Indeks tekstu poza zakresem");
+    s[off[i + 1]] = '\0';
+    return make_string(s + off[i]);
+}
+
 /* Polskie litery w UTF-8: drugi bajt małej i wielkiej, pierwszy wspólny */
 static const unsigned char polskie[][3] = {
     {0xC4, 0x85, 0x84}, {0xC4, 0x87, 0x86}, {0xC4, 0x99, 0x98}, {0xC5, 0x82, 0x81}, {0xC5, 0x84, 0x83},

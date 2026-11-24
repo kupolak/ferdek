@@ -189,6 +189,11 @@ assign_stmt:
 array_access_expr:
   | id=IDENTIFIER LBRACKET idx=expression RBRACKET
     { ArrayAccess (Identifier id, idx) }
+  (* wynik wywołania albo wyrażenie w nawiasach: W MORDĘ JEŻA f()[0], (a BABKA DAWAJ RENTĘ b)[0] *)
+  | FUNC_CALL id=IDENTIFIER LPAREN args=separated_list(COMMA, expression) RPAREN LBRACKET idx=expression RBRACKET
+    { ArrayAccess (FunctionCall (id, args), idx) }
+  | LPAREN e=expression RPAREN LBRACKET idx=expression RBRACKET
+    { ArrayAccess (Parenthesized e, idx) }
   | arr=array_access_expr LBRACKET idx=expression RBRACKET
     { ArrayAccess (arr, idx) }
   ;

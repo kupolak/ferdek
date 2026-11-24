@@ -20,5 +20,5 @@ złapane: kot.wiek to nie funkcja
 złapane: Funkcja kot.miaucz oczekuje 1 argumentu, podano 0
 złapane: Obiekt nie ma pola: ogon
 złapane: dane.nie_ma to nie funkcja
-złapane: To nie jest tablica, szafka ani obiekt
+złapane: To nie jest tablica, szafka, tekst ani obiekt
 Program zakończony pomyślnie. Piwo dla Pana!

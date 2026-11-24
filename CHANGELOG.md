@@ -60,6 +60,10 @@
   can stand in `{}` (calls and another `POWIEM PANU TAK` too); `\{` is a plain brace. It is the same as joining
   the pieces with `BABKA DAWAJ RENTĘ`, so both modes print the same. Errors inside `{}` point at the spot,
   and the editor colours, completes and renames names there like anywhere else.
+- Square brackets on text and on results: `tekst[0]` is the character at a position (`tekst[-1]` the last one,
+  Polish letters count as one; text cannot be assigned to this way), and the thing before `[` can be a call
+  or an expression in parentheses: `WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA f()[0]`,
+  `WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA WYJMIJ ZE SŁOIKA(t)["kto"]`, `(a BABKA DAWAJ RENTĘ b)[0]`.
 - Negative array indexes count from the end: `t[-1]` is the last element, for reading and writing. Further
   left than the first element is still an error.
 - Choosing a variant: `CO TO JE x` / `JAK JE 1, 2` / `A JAK NIC Z TEGO` / `KONIEC GADANIA`.

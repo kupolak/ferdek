@@ -44,8 +44,11 @@ static char* field_key(FerdekValue key) {
     return NULL;
 }
 
-/* t[i] (t[-1] to ostatni element), s["klucz"] i obj["pole"] - jak ArrayAccess w interpreterze */
+static FerdekValue text_char(const char* text, long long i);   /* builtins.c */
+
+/* t[i] (t[-1] to ostatni element), tekst[i], s["klucz"] i obj["pole"] - jak ArrayAccess w interpreterze */
 static FerdekValue index_get(FerdekValue c, FerdekValue key) {
+    if (c.type == TYPE_STRING) return text_char(c.value.string_val, to_int(key));
     if (c.type == TYPE_ARRAY) {
         long long i = to_int(key);
         if (i < 0) i += c.value.array_val->length;
@@ -64,7 +67,7 @@ static FerdekValue index_get(FerdekValue c, FerdekValue key) {
         if (i < 0) ferdek_die("Obiekt nie ma pola: %s", k);
         return c.value.map_val->vals[i];
     }
-    ferdek_die("To nie jest tablica, szafka ani obiekt");
+    ferdek_die("To nie jest tablica, szafka, tekst ani obiekt");
     return make_null();
 }
 
@@ -78,6 +81,8 @@ static void index_set(FerdekValue c, FerdekValue key, FerdekValue v) {
         char num[32], *owned;
         map_put(c.value.map_val, str_view(key, num, sizeof num, &owned), v);
         fx_free(owned);
+    } else if (c.type == TYPE_STRING) {
+        ferdek_die("Tekstu nie da się zmienić w miejscu - tekst[i] jest tylko do odczytu");
     } else if (c.type == TYPE_OBJECT && (key.type == TYPE_STRING || key.type == TYPE_INT)) {
         map_put(c.value.map_val, field_key(key), v);
     } else if (key.type == TYPE_INT) {

@@ -53,8 +53,10 @@ class Gen:
             *[f"W MORDĘ JEŻA {n}({self.expr('float', d)})" for n, rt in self.funcs if rt == "int" and self.r.random() < 0.1],
             *(["W MORDĘ JEŻA ile0()", "W MORDĘ JEŻA kasa0.ile()", "kasa0.stan"] if self.has_class else []),
             # indeksy: ujemny liczy od końca, za daleko to ten sam błąd; szafka po kluczu
-            f"WYPIERDZIELAJ PAN NA POZYCJĘ t0[{self.r.randint(-4, 3)}]",
+            f"WYPIERDZIELAJ PAN NA POZYCJĘ t0[{self.r.randint(-2, 1)}]",
             'WYPIERDZIELAJ PAN NA POZYCJĘ m0["piwo"]',
+            # indeks na wyniku wywołania
+            f"WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA ZRÓB KOLEJKĘ({self.r.randint(-3, 3)}, 5)[{self.r.randint(-2, 1)}]",
             f'W MORDĘ JEŻA ILE W SZAFCE(W MORDĘ JEŻA OTWÓRZ SZAFKĘ("a", {self.expr("int", d)}, "b", 2))',
             f"W MORDĘ JEŻA GDZIE LEŻY NA WERSALCE({self.expr('arr', d)}, {self.expr('int', d)})",
             f"W MORDĘ JEŻA ZSUMUJ WERSALKĘ({self.expr('arr', d)})",
@@ -97,6 +99,11 @@ class Gen:
             f'POWIEM PANU TAK "{self.pick(WORDS)}{{{self.expr(self.pick(["int", "float", "str", "arr", "bool"]), d)}}}'
             f' \\{{ {{{self.expr("int", d)}}}{self.pick(WORDS)}"',
             *(['("" BABKA DAWAJ RENTĘ klasa0)', "W MORDĘ JEŻA CO TO ZA TYP(Kasa)"] if self.has_class else []),
+            # znak tekstu: po nazwie (bywa poza tekstem - ten sam błąd), po nawiasie i po wywołaniu
+            # (tam tekst ma co najmniej dwa znaki, żeby błąd nie kończył co drugiego programu)
+            f"WYPIERDZIELAJ PAN NA POZYCJĘ s0[{self.r.randint(-1, 0)}]",
+            f'WYPIERDZIELAJ PAN NA POZYCJĘ ({a} BABKA DAWAJ RENTĘ "żx")[{self.r.randint(-2, 1)}]',
+            f'WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA ODWRÓĆ KANAPĘ({a} BABKA DAWAJ RENTĘ "aż")[{self.r.randint(-2, 1)}]',
         ])
 
     def e_bool(self, leaf, d):
@@ -169,7 +176,7 @@ class Gen:
                 # nawiasy kwadratowe na szafce (null, gdy klucza nie ma) i ujemny indeks w przypisaniu
                 [f"{ind}O KURDE MAM POMYSŁA m0[{self.expr('str', 1)}] A PROSZĘ BARDZO {self.expr('int', 1)} NO I GITARA",
                  f"{ind}PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ m0[{self.expr('str', 1)}]"],
-                [f"{ind}O KURDE MAM POMYSŁA t0[{self.r.randint(-3, 2)}] A PROSZĘ BARDZO {self.expr('int', 1)} NO I GITARA"],
+                [f"{ind}O KURDE MAM POMYSŁA t0[{self.r.randint(-1, 0)}] A PROSZĘ BARDZO {self.expr('int', 1)} NO I GITARA"],
                 # kropka: pole i metoda; obiekt z klasy trzymanej w zmiennej
                 [f"{ind}O KURDE MAM POMYSŁA kasa0.stan A PROSZĘ BARDZO {self.expr('int', 1)} NO I GITARA",
                  f"{ind}PANIE SENSACJA REWELACJA W MORDĘ JEŻA kasa0.ile()"]

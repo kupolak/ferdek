@@ -200,7 +200,7 @@ let entries = [
   "WYJMIJ ZE SŁOIKA", "WYJMIJ ZE SŁOIKA(tekst)", "JSON z tekstu: obiekty jako szafki, tablice jako wersalki", true;
   "WYKOP WSZYSTKIE KIBLE", "WYKOP WSZYSTKIE KIBLE(ścieżka)", "Usuń katalog z zawartością", true;
   "WYLOSUJ Z WERSALKI", "WYLOSUJ Z WERSALKI(tablica)", "Losowy element (ten sam generator co KARTA LUBI DYM)", true;
-  "WYPIERDZIELAJ PAN NA POZYCJĘ", "WYPIERDZIELAJ PAN NA POZYCJĘ", "Element tablicy albo szafki: WYPIERDZIELAJ PAN NA POZYCJĘ t[0], t[-1] (ostatni), s[\"klucz\"] (null, gdy klucza nie ma)", false;
+  "WYPIERDZIELAJ PAN NA POZYCJĘ", "WYPIERDZIELAJ PAN NA POZYCJĘ", "Element tablicy, szafki albo znak tekstu: WYPIERDZIELAJ PAN NA POZYCJĘ t[0], t[-1] (ostatni), s[\"klucz\"] (null, gdy klucza nie ma), tekst[0]; także na wyniku wywołania i nawiasie: WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA f()[0], (a BABKA DAWAJ RENTĘ b)[0]", false;
   "WYPOMPUJ", "WYPOMPUJ(uchwyt)", "Przeczytaj cały plik", true;
   "WYRZUĆ ZE SZAFKI", "WYRZUĆ ZE SZAFKI(mapa, klucz)", "Usuń klucz", true;
   "WYTNIJ Z WERSALKI", "WYTNIJ Z WERSALKI(tablica, od, do)", "Kawałek tablicy: elementy od indeksu od do indeksu do (bez niego)", true;
