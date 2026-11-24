@@ -38,6 +38,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `NO I GITARA` | Koniec przypisania |
 | `PANIE SENSACJA REWELACJA` | Wypisz wartość i zakończ linię |
 | `JEDZIEM Z TYM ŚLEDZIEM` | Wypisz wartość bez końca linii |
+| `POWIEM PANU TAK` | Tekst z wstawkami: POWIEM PANU TAK "Piwa: {piwa}, jutro {piwa BABKA DAWAJ RENTĘ 2}" - w {} dowolne wyrażenie; zwykły nawias klamrowy to \{ |
 | `NO TO ENTER` | Zakończ linię |
 | `CO TAM U PANA SŁYCHAĆ` | Wczytaj linię z wejścia do zmiennej |
 | `WYPIERDZIELAJ PAN NA POZYCJĘ` | Element tablicy albo szafki: WYPIERDZIELAJ PAN NA POZYCJĘ t[0], t[-1] (ostatni), s["klucz"] (null, gdy klucza nie ma) |

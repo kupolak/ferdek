@@ -1,0 +1,36 @@
+CO JEST KURDE
+
+RYM CYM CYM Tekst z wstawkami: POWIEM PANU TAK "... {wyrażenie} ..."
+CYCU PRZYNIEŚ NO piwa
+TO NIE SĄ TANIE RZECZY 6
+CYCU PRZYNIEŚ NO kto
+TO NIE SĄ TANIE RZECZY "Ferdek"
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "{kto} ma {piwa} piw, a jutro {piwa BABKA DAWAJ RENTĘ 2}."
+
+RYM CYM CYM Bez wstawek, pusty, wstawki obok siebie (liczby się nie dodają, tylko sklejają)
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "bez wstawek"
+PANIE SENSACJA REWELACJA POWIEM PANU TAK ""
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "{piwa}{piwa}"
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "{piwa}" BABKA DAWAJ RENTĘ 1
+
+RYM CYM CYM Zwykła klamra, cudzysłów, tekst z klamrami w środku wstawki
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "klamra \{ i } oraz \"cudzysłów\" i {W MORDĘ JEŻA KANAPA DO GÓRY("x{y}")}"
+
+RYM CYM CYM Wstawka we wstawce, różne wartości
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "w środku: {POWIEM PANU TAK "[{piwa ROZDUPCĘ BANK 2}]"} koniec"
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "różne: {3.5} {A ŻEBYŚ PAN WIEDZIAŁ} {[1, 2]} {W TYM KRAJU NIE MA PRACY DLA LUDZI Z MOIM WYKSZTAŁCENIEM}"
+AFERA JEST s W MORDĘ JEŻA OTWÓRZ SZAFKĘ("piwo", 3)
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "w szafce {WYPIERDZIELAJ PAN NA POZYCJĘ s["piwo"]} piwa, lambda: {W MORDĘ JEŻA PRZERABIAJ WERSALKĘ([1, 2], JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK piwa)}"
+
+RYM CYM CYM Kilka linii i jako argument funkcji
+AFERA JEST n W MORDĘ JEŻA ILE MIEJSCA NA KANAPIE(POWIEM PANU TAK "{kto}!")
+PANIE SENSACJA REWELACJA n
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "pierwsza {
+    piwa
+} linia
+druga"
+
+RYM CYM CYM Zwykły tekst klamer nie rusza
+PANIE SENSACJA REWELACJA "zwykły {piwa}"
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

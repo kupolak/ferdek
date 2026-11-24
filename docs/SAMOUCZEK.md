@@ -308,6 +308,8 @@ Wynik:
 
 Teksty to KANAPA: długość, wycinanie, szukanie, wielkie litery - wszystko liczy polskie znaki jak należy.
 Daty to teksty `RRRR-MM-DD`, a KALENDARZ umie dodawać dni i liczyć odstępy.
+Zamiast sklejać kawałki przez `BABKA DAWAJ RENTĘ`, można wstawić wartości prosto w tekst:
+`POWIEM PANU TAK "Mam {piwa} piw"` - w `{}` może stać dowolne wyrażenie.
 
 ```ferdek
 CO JEST KURDE
@@ -321,8 +323,8 @@ PANIE SENSACJA REWELACJA "[" BABKA DAWAJ RENTĘ W MORDĘ JEŻA ROZCIĄGNIJ Z LEW
 
 CYCU PRZYNIEŚ NO premiera
 TO NIE SĄ TANIE RZECZY "1999-03-16"
-PANIE SENSACJA REWELACJA "Premiera była we " BABKA DAWAJ RENTĘ W MORDĘ JEŻA DZIEŃ TYGODNIA(premiera)
-PANIE SENSACJA REWELACJA "Setny dzień serialu: " BABKA DAWAJ RENTĘ W MORDĘ JEŻA DODAJ DNI(premiera, 99)
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "Premiera była we {W MORDĘ JEŻA DZIEŃ TYGODNIA(premiera)}"
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "Setny dzień serialu: {W MORDĘ JEŻA DODAJ DNI(premiera, 99)}"
 PANIE SENSACJA REWELACJA W MORDĘ JEŻA ILE DNI MIĘDZY(premiera, "2000-01-01")
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ```

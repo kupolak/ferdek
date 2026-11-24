@@ -1,0 +1,3 @@
+A fe! Błąd Parsowania! Walduś, coś tu jest pokręcone! W tests/errors/wstawka_niezamknieta.ferdek, linia 4, kolumna 55, przy 'piwa'. Spodziewałem się: '}'.
+    4 | PANIE SENSACJA REWELACJA POWIEM PANU TAK "Piwa: {piwa piwa} sztuk"
+      |                                                       ^

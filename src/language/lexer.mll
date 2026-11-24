@@ -6,6 +6,14 @@ exception LexError of string
 let unescape_string s =
   (* Simple function to handle escape sequences in strings *)
   s
+
+(* Ile otwartych {wyrażeń} w tekstach POWIEM PANU TAK: tylko wtedy "}" wraca do czytania tekstu.
+   Zerowane na końcu pliku i przy niezamkniętym tekście, żeby błąd nie przeszedł do następnego pliku. *)
+let interp_depth = ref 0
+
+let unterminated () =
+  interp_depth := 0;
+  raise (LexError "Niezamknięty tekst - brakuje cudzysłowu")
 }
 
 (* Helper definitions *)
@@ -437,6 +445,24 @@ rule token = parse
   | ',' { COMMA }
   | "..." { ELLIPSIS }
 
+  (* Tekst z wstawkami: POWIEM PANU TAK "Piwa: {piwa}, razem {a} i {b}". Tokeny: INTERP_HEAD (tekst
+     przed pierwszym "{"), wyrażenie, INTERP_PART (tekst między "}" a "{"), wyrażenie, ..., INTERP_END
+     (tekst od "}" do zamykającego cudzysłowu). Bez wstawek to zwykły STRING. *)
+  | "POWIEM PANU TAK" {
+      let start = lexbuf.lex_start_p in
+      let tok = interp_start lexbuf in
+      lexbuf.lex_start_p <- start;
+      tok }
+  | '}' {
+      if !interp_depth = 0 then
+        raise (LexError (Printf.sprintf "Nieoczekiwany znak '}' w linii %d - nie ma otwartej wstawki {...}"
+          lexbuf.lex_start_p.pos_lnum));
+      decr interp_depth;
+      let start = lexbuf.lex_start_p in
+      let tok = read_interp false (Buffer.create 16) lexbuf in
+      lexbuf.lex_start_p <- start;
+      tok }
+
   (* Literals *)
   | '"' {
       (* Początek tokena = otwierający cudzysłów (read_string przesuwa lex_start_p na zamykający) *)
@@ -462,7 +488,7 @@ rule token = parse
   | (letter | utf8_letter) identifier_char* as id { IDENTIFIER id }
 
   (* End of file *)
-  | eof { EOF }
+  | eof { interp_depth := 0; EOF }
 
   (* Unknown character *)
   | _ {
@@ -488,5 +514,27 @@ and read_string buf = parse
   | newline   { Lexing.new_line lexbuf;
                 Buffer.add_char buf '\n';
                 read_string buf lexbuf }
-  | eof       { raise (LexError "Niezamknięty tekst - brakuje cudzysłowu") }
+  | eof       { unterminated () }
   | _ as c    { Buffer.add_char buf c; read_string buf lexbuf }
+
+and interp_start = parse
+  | whitespace* '"' { read_interp true (Buffer.create 16) lexbuf }
+  | ""              { raise (LexError (Printf.sprintf "Po POWIEM PANU TAK musi być tekst w cudzysłowie (linia %d)"
+                        lexbuf.lex_start_p.pos_lnum)) }
+
+(* Jak read_string, ale "{" zaczyna wstawkę; zwykły nawias klamrowy to \{.
+   first: kawałek zaraz po POWIEM PANU TAK (a nie po "}") *)
+and read_interp first buf = parse
+  | '"'       { let s = Buffer.contents buf in if first then STRING s else INTERP_END s }
+  | '{'       { incr interp_depth;
+                let s = Buffer.contents buf in if first then INTERP_HEAD s else INTERP_PART s }
+  | '\\' '{'  { Buffer.add_char buf '{'; read_interp first buf lexbuf }
+  | '\\' 'n'  { Buffer.add_char buf '\n'; read_interp first buf lexbuf }
+  | '\\' 't'  { Buffer.add_char buf '\t'; read_interp first buf lexbuf }
+  | '\\' '\\' { Buffer.add_char buf '\\'; read_interp first buf lexbuf }
+  | '\\' '"'  { Buffer.add_char buf '"'; read_interp first buf lexbuf }
+  | newline   { Lexing.new_line lexbuf;
+                Buffer.add_char buf '\n';
+                read_interp first buf lexbuf }
+  | eof       { unterminated () }
+  | _ as c    { Buffer.add_char buf c; read_interp first buf lexbuf }

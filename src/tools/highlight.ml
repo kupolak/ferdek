@@ -51,7 +51,11 @@ let spans ~is_builtin text =
         let start = skip prev and stop = lexbuf.Lexing.lex_curr_p.pos_cnum in
         (match t with
          | IDENTIFIER name -> if is_builtin name then add start stop Builtin
-         | STRING _ -> add start stop String
+         | STRING _ | INTERP_HEAD _ ->
+             (* przed cudzysłowem może stać POWIEM PANU TAK *)
+             let q = String.index_from masked start '"' in
+             add start q Keyword; add q stop String
+         | INTERP_PART _ | INTERP_END _ -> add start stop String
          | INTEGER _ | FLOAT _ -> add start stop Number
          | TRUE | FALSE | NULL -> add start stop Constant
          | _ -> add start stop Keyword);

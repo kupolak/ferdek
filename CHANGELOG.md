@@ -50,6 +50,10 @@
 - Square brackets on maps: `WYPIERDZIELAJ PAN NA POZYCJĘ s["piwo"]` reads (null when the key is missing, like
   `WYJMIJ Z SZAFKI`) and `O KURDE MAM POMYSŁA s["piwo"] A PROSZĘ BARDZO 6 NO I GITARA` writes; they nest with
   arrays (`dane["kto"]["piwa"][0]`), so parsed JSON can be read directly.
+- Text with values put in: `POWIEM PANU TAK "Piwa: {piwa}, jutro {piwa BABKA DAWAJ RENTĘ 2}"`. Any expression
+  can stand in `{}` (calls and another `POWIEM PANU TAK` too); `\{` is a plain brace. It is the same as joining
+  the pieces with `BABKA DAWAJ RENTĘ`, so both modes print the same. Errors inside `{}` point at the spot,
+  and the editor colours, completes and renames names there like anywhere else.
 - Negative array indexes count from the end: `t[-1]` is the last element, for reading and writing. Further
   left than the first element is still an error.
 - Choosing a variant: `CO TO JE x` / `JAK JE 1, 2` / `A JAK NIC Z TEGO` / `KONIEC GADANIA`.

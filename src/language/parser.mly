@@ -76,6 +76,7 @@ let typed_body name types ret body =
 %token <int> INTEGER
 %token <float> FLOAT
 %token <string> STRING
+%token <string> INTERP_HEAD INTERP_PART INTERP_END
 %token EOF
 
 /* Type declarations */
@@ -454,6 +455,11 @@ arith_expr:
   | e=term { e }
   ;
 
+interp_rest:
+  | s=INTERP_END { [StringLiteral s] }
+  | s=INTERP_PART e=expression rest=interp_rest { StringLiteral s :: Parenthesized e :: rest }
+  ;
+
 term:
   | e1=term MULTIPLY e2=factor
     { BinaryOp (e1, Multiply, e2) }
@@ -468,6 +474,10 @@ factor:
   | n=INTEGER { IntLiteral n }
   | f=FLOAT { FloatLiteral f }
   | s=STRING { StringLiteral s }
+  (* POWIEM PANU TAK "a {x} b" to "a " + (x) + " b": zaczyna się od tekstu, więc + zawsze skleja *)
+  | s=INTERP_HEAD e=expression rest=interp_rest
+    { List.fold_left (fun acc e -> if e = StringLiteral "" then acc else BinaryOp (acc, Plus, e))
+        (StringLiteral s) (Parenthesized e :: rest) }
   | TRUE { BoolLiteral true }
   | FALSE { BoolLiteral false }
   | NULL { NullLiteral }

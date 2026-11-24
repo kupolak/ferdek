@@ -101,6 +101,9 @@ let string_of_token = function
   | INTEGER n -> sprintf "INTEGER(%d)" n
   | FLOAT f -> sprintf "FLOAT(%g)" f
   | STRING s -> sprintf "STRING(\"%s\")" s
+  | INTERP_HEAD s -> sprintf "INTERP_HEAD(\"%s\")" s
+  | INTERP_PART s -> sprintf "INTERP_PART(\"%s\")" s
+  | INTERP_END s -> sprintf "INTERP_END(\"%s\")" s
   | ELLIPSIS -> "ELLIPSIS"
   | EOF -> "EOF"
 

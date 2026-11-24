@@ -43,10 +43,15 @@ let format source =
   | Some toks ->
       let per_line = Array.make (n + 2) [] in
       let raw = Array.make (n + 2) false in   (* linia wewnątrz wieloliniowego tekstu *)
+      let heads = ref [] in   (* linie, w których zaczęły się otwarte teksty POWIEM PANU TAK *)
       List.iter (fun (tok, first, last) ->
         if first <= n then per_line.(first) <- tok :: per_line.(first);
+        let keep a = for l = a + 1 to min last n do raw.(l) <- true done in
         (match tok with
-         | STRING _ -> for l = first + 1 to min last n do raw.(l) <- true done
+         | STRING _ -> keep first
+         | INTERP_HEAD _ -> heads := first :: !heads
+         (* cały tekst z wstawkami zostaje jak jest, razem z wyrażeniami w {} *)
+         | INTERP_END _ -> (match !heads with h :: t -> heads := t; keep h | [] -> ())
          | _ -> ())) toks;
       let depth = ref 0 in
       (* Poprzedni token w całym pliku: NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ po ")" to ciało lambdy -

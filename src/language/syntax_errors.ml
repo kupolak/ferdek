@@ -104,6 +104,8 @@ let keywords = [
   Parser.INTEGER 0, "liczba";
   Parser.FLOAT 0.0, "liczba z przecinkiem";
   Parser.STRING "", "tekst";
+  Parser.INTERP_PART "", "}";
+  Parser.INTERP_END "", "}";
 ]
 
 (* Operatory i początki instrukcji/wyrażeń pasują prawie wszędzie - to szum w podpowiedzi *)
@@ -119,7 +121,7 @@ let is_noise = function
   | _ -> false
 
 let starts_expression = function
-  | Parser.IDENTIFIER _ | INTEGER _ | FLOAT _ | STRING _ | TRUE | FALSE | NULL | LPAREN | LBRACKET | NOT
+  | Parser.IDENTIFIER _ | INTEGER _ | FLOAT _ | STRING _ | INTERP_HEAD _ | TRUE | FALSE | NULL | LPAREN | LBRACKET | NOT
   | BIT_NOT | TO_FIXED | FROM_FIXED | ARRAY_INDEX | NEW | NEW_STRUCT | NEW_UNION
   | POINTER_REF | POINTER_DEREF | POINTER_ADDR -> true
   | _ -> false

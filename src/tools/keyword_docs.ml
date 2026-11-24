@@ -142,6 +142,7 @@ let entries = [
   "POSKŁADAJ WERSALKĘ", "POSKŁADAJ WERSALKĘ(tablica)", "Posortowana kopia; z funkcją f(a, b) zwracającą <0, 0, >0 - własna kolejność", true;
   "POTNIJ KANAPĘ", "POTNIJ KANAPĘ(tekst, od, do)", "Fragment tekstu (znaki od..do-1)", true;
   "POTĘGA ZE SKRZYNKI", "POTĘGA ZE SKRZYNKI(a, b)", "a do potęgi b; całkowite do nieujemnej całkowitej daje całkowitą, inaczej liczbę z przecinkiem", true;
+  "POWIEM PANU TAK", "POWIEM PANU TAK", "Tekst z wstawkami: POWIEM PANU TAK \"Piwa: {piwa}, jutro {piwa BABKA DAWAJ RENTĘ 2}\" - w {} dowolne wyrażenie; zwykły nawias klamrowy to \\{", false;
   "POWTÓRZ NA KANAPIE", "POWTÓRZ NA KANAPIE(tekst, n)", "Tekst powtórzony n razy (\"la\", 3 -> \"lalala\")", true;
   "POŁÓŻ NA WERSALCE", "POŁÓŻ NA WERSALCE(tablica, element)", "Nowa tablica z elementem na końcu", true;
   "PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ", "PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ", "% (reszta z dzielenia)", false;

@@ -54,6 +54,8 @@ def keywords():
             scope = "storage.type.ferdek"
         elif tok in TOKEN_SCOPE:
             scope = TOKEN_SCOPE[tok]
+        elif "interp_start" in tok:   # POWIEM PANU TAK: tokeny robi dopiero czytanie tekstu
+            scope = "keyword.other.ferdek"
         else:
             continue  # np. "..." - znaki interpunkcyjne kolorować nie trzeba
         found.setdefault(text, scope)
@@ -106,6 +108,7 @@ SECTIONS = [
         "NO I GITARA": "Koniec przypisania",
         "PANIE SENSACJA REWELACJA": "Wypisz wartość i zakończ linię",
         "JEDZIEM Z TYM ŚLEDZIEM": "Wypisz wartość bez końca linii",
+        "POWIEM PANU TAK": "Tekst z wstawkami: POWIEM PANU TAK \"Piwa: {piwa}, jutro {piwa BABKA DAWAJ RENTĘ 2}\" - w {} dowolne wyrażenie; zwykły nawias klamrowy to \\{",
         "NO TO ENTER": "Zakończ linię",
         "CO TAM U PANA SŁYCHAĆ": "Wczytaj linię z wejścia do zmiennej",
         "WYPIERDZIELAJ PAN NA POZYCJĘ": "Element tablicy albo szafki: WYPIERDZIELAJ PAN NA POZYCJĘ t[0], t[-1] (ostatni), s[\"klucz\"] (null, gdy klucza nie ma)",
