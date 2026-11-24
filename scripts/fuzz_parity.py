@@ -190,7 +190,7 @@ class Gen:
                  f"{ind}PANIE SENSACJA REWELACJA W MORDĘ JEŻA kasa0.ile()"]
                 if self.has_class else [f"{ind}PANIE SENSACJA REWELACJA m0.piwo"],
                 [f"{ind}O KURDE MAM POMYSŁA kasa0 A PROSZĘ BARDZO DZIAD ZDZIADZIAŁY JEDEN {self.pick(['klasa0', 'Kasa'])}{self.pick(['', '(' + self.expr('int', 1) + ')'])} NO I GITARA",
-                 f"{ind}PANIE SENSACJA REWELACJA [klasa0, kasa0.stan]"]
+                 f"{ind}PANIE SENSACJA REWELACJA [klasa0, kasa0.stan, kasa0]"]
                 if self.has_class else [f"{ind}PANIE SENSACJA REWELACJA m0.nie_ma"],
             ])
         if k == "switch":

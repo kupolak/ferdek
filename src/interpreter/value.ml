@@ -304,6 +304,9 @@ let int_to_string n =
     Bytes.sub_string buf !pos (20 - !pos)
   end
 
+(* Ile obiektów w głąb jesteśmy przy wypisywaniu (patrz VObject niżej) *)
+let object_depth = ref 0
+
 let rec string_of_value = function
   | VFloat f -> string_of_float_ferdek f
   | VInt n -> int_to_string n
@@ -331,8 +334,17 @@ let rec string_of_value = function
       Printf.sprintf "<union %s>" udecl.name
   | VEnum (edecl, _) ->
       Printf.sprintf "<enum %s>" edecl.name
-  | VObject _ ->
-      "<object>"
+  | VObject fields ->
+      (* Pola posortowane po nazwie, bez metod. Obiekt w obiekcie tylko do drugiego poziomu -
+         kot i jego kolega mogą wskazywać na siebie nawzajem, a wypisywanie musi się skończyć *)
+      if !object_depth >= 2 then "<object>" else begin
+        incr object_depth;
+        let pairs = Vars.fold (fun k v acc -> match v with VFunction _ -> acc | _ -> (k, v) :: acc) fields []
+                    |> List.sort (fun (a, _) (b, _) -> compare a b)
+                    |> List.map (fun (k, v) -> k ^ ": " ^ string_of_value v) in
+        decr object_depth;
+        if pairs = [] then "<object>" else "<object " ^ String.concat ", " pairs ^ ">"
+      end
   | VPointer r ->
       Printf.sprintf "<pointer to %s>" (string_of_value !r)
   | VFileHandle _ ->

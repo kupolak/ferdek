@@ -433,7 +433,33 @@ static char* to_str(FerdekValue v) {
             fx_free(keys);
             return b.s;
         }
-        case TYPE_OBJECT: return fx_strdup("<object>");
+        case TYPE_OBJECT: {
+            /* Pola posortowane po nazwie, bez metod; obiekt w obiekcie tylko do drugiego poziomu
+               (obiekty mogą wskazywać na siebie nawzajem) - jak string_of_value w interpreterze */
+            static int object_depth = 0;
+            FerdekMap* m = v.value.map_val;
+            if (object_depth >= 2) return fx_strdup("<object>");
+            object_depth++;
+            char** keys = map_sorted_keys(m);
+            StrBuf b = {0};
+            buf_add(&b, "<object");
+            bool any = false;
+            for (int i = 0; i < m->len; i++) {
+                FerdekValue field = m->vals[map_find(m, keys[i])];
+                if (field.type == TYPE_FUNCTION) continue;
+                char* item = to_str(field);
+                buf_add(&b, any ? ", " : " ");
+                buf_add(&b, keys[i]);
+                buf_add(&b, ": ");
+                buf_add(&b, item);
+                fx_free(item);
+                any = true;
+            }
+            buf_add(&b, ">");
+            fx_free(keys);
+            object_depth--;
+            return b.s;
+        }
         case TYPE_FILE: return fx_strdup("<file handle>");
         case TYPE_DEF: {
             StrBuf b = {0};

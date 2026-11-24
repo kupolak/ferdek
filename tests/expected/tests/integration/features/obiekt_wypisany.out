@@ -1,0 +1,10 @@
+<object imie: Mruczek, kolega: null, wiek: 3, zabawki: [mysz, kłębek]>
+<object x: 1, y: 2.5>
+<object>
+w tekście: <object x: 1, y: 2.5>
+[<object x: 1, y: 2.5>, 7]
+{p: <object x: 1, y: 2.5>}
+<object imie: Mruczek, kolega: <object imie: Filemon, kolega: <object>, wiek: 3, zabawki: [mysz, kłębek]>, wiek: 3, zabawki: [mysz, kłębek]>
+<object imie: Filemon, kolega: <object imie: Mruczek, kolega: <object>, wiek: 3, zabawki: [mysz, kłębek]>, wiek: 3, zabawki: [<object imie: Mruczek, kolega: <object>, wiek: 3, zabawki: [mysz, kłębek]>, <object imie: Filemon, kolega: <object>, wiek: 3, zabawki: [<object>, <object>]>]>
+<object x: 1, y: 2.5>
+Program zakończony pomyślnie. Piwo dla Pana!

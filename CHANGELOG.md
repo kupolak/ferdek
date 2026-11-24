@@ -14,6 +14,9 @@
 - `OD`, `DO`, `CO` are keywords (for loops) and cannot be variable names.
 - Maps print, and `WSZYSTKIE SZUFLADKI` returns, keys in sorted order.
 - KANAPA counts characters, not bytes (`"żółw"` has length 4).
+- A printed object shows its fields: `<object imie: Mruczek, wiek: 3>` (sorted by name, without methods)
+  instead of `<object>`. An object inside an object is shown one level deep, deeper ones stay `<object>`,
+  so objects that point at each other still print.
 - `DZIAD ZDZIADZIAŁY JEDEN Klasa(1, 2)` with arguments is an error when the class has no `NA DZIEŃ DOBRY`
   method. Before, the arguments were dropped without a word (not even evaluated).
 - `PIWO I TELEWIZOR` and `ALBO JUTRO U ADWOKATA` evaluate the right side only when the left one does not
