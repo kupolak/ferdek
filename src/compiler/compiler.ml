@@ -981,7 +981,10 @@ let compile_program ?(load_module = fun _ -> None) prog =
                           | StructDecl s -> def "struct" s.name
                           | UnionDecl u -> def "union" u.name
                           | _ -> None) prog.declarations in
-  let main_body = List.map (compile_top_level ctx) prog.declarations
+  (* Wartości list (PANIE LISTA) są znane od początku programu, jak funkcje i klasy - interpreter
+     robi to samo (run_declarations); deklaracja w swoim miejscu ustawia je jeszcze raz *)
+  let enums_first = List.filter (function EnumDecl _ -> true | _ -> false) prog.declarations in
+  let main_body = List.map (compile_top_level ctx) (enums_first @ prog.declarations)
                   |> List.filter (fun s -> s <> "") in
   let globals = Hashtbl.fold (fun n () acc -> n :: acc) ctx.globals [] |> dedup
                 |> List.map (fun n ->

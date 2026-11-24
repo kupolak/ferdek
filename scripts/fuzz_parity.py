@@ -52,6 +52,7 @@ class Gen:
             *[f"W MORDĘ JEŻA {n}({self.expr('int', d)})" for n, rt in self.funcs if rt == "int"],
             *[f"W MORDĘ JEŻA {n}({self.expr('float', d)})" for n, rt in self.funcs if rt == "int" and self.r.random() < 0.1],
             *(["W MORDĘ JEŻA ile0()", "W MORDĘ JEŻA kasa0.ile()", "kasa0.stan"] if self.has_class else []),
+            f"W MORDĘ JEŻA na_koncu({self.expr('int', d)})",   # zdefiniowana niżej, na końcu programu
             # indeksy: ujemny liczy od końca, za daleko to ten sam błąd; szafka po kluczu
             f"WYPIERDZIELAJ PAN NA POZYCJĘ t0[{self.r.randint(-2, 1)}]",
             'WYPIERDZIELAJ PAN NA POZYCJĘ m0["piwo"]',
@@ -293,6 +294,9 @@ class Gen:
                       "CYCU PRZYNIEŚ NO klasa0", "TO NIE SĄ TANIE RZECZY Kasa"]
             self.has_class = True
         lines += self.stmts(self.r.randint(8, 16), 0, "")
+        # użycie przed deklaracją: funkcja znana od początku programu w obu trybach
+        lines += ["ALE WIE PAN JA ZASADNICZO na_koncu", "NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ",
+                  "NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO i0", "    I JA INFORMUJĘ ŻE WYCHODZĘ i0 PASZOŁ WON 1", "DO WIDZENIA PANU"]
         return "\n".join(lines + ["MOJA NOGA JUŻ TUTAJ NIE POSTANIE", ""])
 
 

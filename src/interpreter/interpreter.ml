@@ -34,7 +34,7 @@ let rec import_module ?alias env module_name =
   | Some module_ast ->
       let module_ast = match alias with Some a -> Qualify.qualify a module_ast | None -> module_ast in
       (* Execute module in current environment *)
-      List.iter (eval_top_level_decl env) module_ast.declarations
+      run_declarations env module_ast.declarations
   | None ->
       raise (RuntimeError (Printf.sprintf "Nie ma takiego modułu: %s" module_name))
   end
@@ -84,6 +84,16 @@ and eval_top_level_decl env = function
       in
       define_enum_values edecl.values 0
 
+(* Funkcje, klasy, struktury, unie i listy są znane od początku programu (modułu) - można ich użyć
+   wyżej niż stoi deklaracja, jak w skompilowanym programie i w --check. Potem wszystko po kolei;
+   deklaracja w swoim miejscu ustawia nazwę jeszcze raz (jak dotąd), więc gdy jest ich kilka albo
+   zmienna ma tę samą nazwę, wynik się nie zmienia. *)
+and run_declarations env decls =
+  List.iter (function
+    | (FunctionDecl _ | ClassDecl _ | StructDecl _ | UnionDecl _ | EnumDecl _) as d -> eval_top_level_decl env d
+    | _ -> ()) decls;
+  List.iter (eval_top_level_decl env) decls
+
 (* ============ PROGRAM EXECUTION ============ *)
 
 (* Execute program *)
@@ -96,7 +106,7 @@ let eval_in env prog =
   loc_id := 0;
   call_stack := [];
   try
-    List.iter (eval_top_level_decl env) prog.declarations;
+    run_declarations env prog.declarations;
     Ok ()
   with
   | RuntimeError msg | Fatal msg ->

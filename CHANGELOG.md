@@ -181,6 +181,9 @@
 - Full keyword reference in [docs/JEZYK.md](docs/JEZYK.md), generated from the lexer.
 
 ### Fixes
+- A function, class, struct, union or enum can be used above its declaration in the interpreter too.
+  Compiled programs and `--check` already allowed it, the interpreter stopped with "Nieznana funkcja";
+  compiled programs gave 0 for an enum value used above its `PANIE LISTA`.
 - Compiled programs: a function parameter changed inside a try block and read in the catch block
   could come back with its old value (setjmp/longjmp); parameters of functions with try are now
   `volatile`, and the fuzzer generates such cases.
