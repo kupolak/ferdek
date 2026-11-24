@@ -9,12 +9,10 @@ all: build
 build:
 	dune build
 	@mkdir -p .build
-	@ln -sf _build/default/src/ferdek.exe .build/ferdek 2>/dev/null || true
+	@ln -sf ../_build/default/src/ferdek.exe .build/ferdek 2>/dev/null || true
 
-# Create local symlinks to executables (convenience)
+# .build/ferdek is created by build; kept as a name for the README
 link: build
-	@mkdir -p .build
-	@ln -sf _build/default/src/ferdek.exe .build/ferdek 2>/dev/null || true
 
 # Install into user's PATH using the install script
 install: build
