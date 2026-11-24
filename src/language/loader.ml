@@ -106,6 +106,17 @@ let parse_collecting filename text =
         end in
   go text [] []
 
+(* Po parsowaniu (i Dots): stałe, typy, importy plików leżących obok. Błędy stałych: (linia, kolumna, komunikat).
+   history: deklaracje z wcześniejszych kawałków sesji (REPL) - stała i typ obowiązują też w następnych *)
+let prepare ?(history = []) filename (prog : Ast.program) =
+  let whole = { Ast.declarations = history @ prog.declarations } in
+  match Constants.check whole with
+  | [] ->
+      let n = List.length history in
+      Ok (resolve_local_imports filename
+            { Ast.declarations = List.filteri (fun i _ -> i >= n) (Type_checks.apply whole).declarations })
+  | errs -> Error errs
+
 (* Błąd wczytania programu: linia (0 = nieznana), kolumna, komunikat *)
 let lex_error_pos = Str.regexp "linii \\([0-9]+\\), kolumna \\([0-9]+\\)"
 
@@ -116,9 +127,9 @@ let parse_source ?(preprocessed = false) filename text =
     let text = if preprocessed then text else Preprocessor.preprocess_string text in
     match Result.map Dots.apply (parse_collecting filename text) with
     | Ok prog ->
-        (match Constants.check prog with
-         | [] -> Ok (resolve_local_imports filename (Type_checks.apply prog))
-         | errs ->
+        (match prepare filename prog with
+         | Ok prog -> Ok prog
+         | Error errs ->
              let lines = Array.of_list (String.split_on_char '\n' text) in
              (* znaczek pod początkiem instrukcji, nie pod wcięciem *)
              let col l = if l < 1 || l > Array.length lines then 1 else

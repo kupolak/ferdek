@@ -8,4 +8,10 @@ Instrukcje na kilka linii zbieram, aż będą kompletne. Pusta linia = porzuć.
 (Ferdek)> Błąd: Nieznana zmienna: niema (linia 1)
 (Ferdek)>       ...> Porzucam niedokończoną instrukcję.
 (Ferdek)> dalej dziala
+(Ferdek)>       ...> (Ferdek)> A to nie tak! Stała 'stala' to TO JE NA AMEN - nie wolno jej zmieniać.
+(Ferdek)> 5
+(Ferdek)>       ...> (Ferdek)> Błąd: Zmienna licznik: TO JE LICZBA SYNEK, a jest tekst (linia 1)
+(Ferdek)> 1
+(Ferdek)> (Ferdek)> 5
+(Ferdek)> (Ferdek)> 6
 (Ferdek)> Trzeba kończyć, robota czeka... (na kanapie)

@@ -380,6 +380,14 @@ let repl () =
         else Error ("Błąd parsowania. Jak ten Walduś w szkole!" ^ Syntax_errors.hint code "")
   in
 
+  (* Deklaracje zmiennych i stałych z wykonanych już kawałków: stała (TO JE NA AMEN) i typ
+     (TO JE LICZBA SYNEK) obowiązują także w następnych liniach *)
+  let history = ref [] in
+  let declarations (prog : Ast.program) =
+    List.filter (function
+      | Ast.Statement (Ast.Located (_, _, (Ast.VarDecl _ | Ast.ConstDecl _ | Ast.ArrayDecl _))) -> true
+      | _ -> false) prog.declarations in
+
   let rec loop buf =
     Printf.printf "%s" (if buf = "" then "(Ferdek)> " else "      ...> ");
     flush stdout;
@@ -395,9 +403,13 @@ let repl () =
         (match try_parse buf with
          | Ok None -> loop buf
          | Ok (Some ast) ->
-             (match Interpreter.eval_in session ast with
-              | Ok () -> ()
-              | Error msg -> Printf.eprintf "Błąd: %s\n%!" msg);
+             (* to samo co przy wczytaniu pliku: stałe, typy, importy plików z bieżącego katalogu *)
+             (match Loader.prepare ~history:!history "repl.ferdek" ast with
+              | Error errs -> List.iter (fun (_, _, m) -> Printf.eprintf "A to nie tak! %s.\n%!" m) errs
+              | Ok prog ->
+                  (match Interpreter.eval_in session prog with
+                   | Ok () -> history := !history @ declarations ast
+                   | Error msg -> Printf.eprintf "Błąd: %s\n%!" msg));
              loop ""
          | Error msg -> Printf.eprintf "%s\n%!" msg; loop "")
   in

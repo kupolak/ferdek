@@ -175,7 +175,9 @@
   misspelled multi-word builtins (`ILE MIEJSCA NA KANAPE` -> `ILE MIEJSCA NA KANAPIE`).
 - Several syntax errors are reported at once (up to 10): the broken statement is skipped and
   parsing goes on, stopping early where a block is broken to avoid made-up follow-up errors.
-- The REPL keeps state between lines and accepts multi-line statements.
+- The REPL keeps state between lines and accepts multi-line statements. Constants (`TO JE NA AMEN`) and
+  types (`TO JE LICZBA SYNEK`...) declared on one line hold on the next ones, and a file next to you can
+  be imported - before, the REPL skipped those steps.
 - Full keyword reference in [docs/JEZYK.md](docs/JEZYK.md), generated from the lexer.
 
 ### Fixes
