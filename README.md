@@ -40,6 +40,7 @@ Some examples:
 - `WYPIERDZIELAJ PAN NA POZYCJĘ t[-1]` - last array element; `s["piwo"]` reads a map (null when the key is missing),
   `O KURDE MAM POMYSŁA s["piwo"] A PROSZĘ BARDZO 6 NO I GITARA` writes it; they nest: `dane["kto"]["piwa"][0]`;
   `tekst[0]` is a character; a call result can be indexed too: `WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA f()[0]`
+- `DZIAD ZDZIADZIAŁY JEDEN Kot("Mruczek", 3)` - the arguments go to the class's `NA DZIEŃ DOBRY` method (its constructor)
 - `kot.imie`, `W MORDĘ JEŻA kot.miaucz(2)`, `O KURDE MAM POMYSŁA kot.imie A PROSZĘ BARDZO "Filemon" NO I GITARA` - fields and
   methods of an object with a dot (the same as `kot["imie"]`; works on maps too: `dane.kto.imie`)
 - `OTWÓRZ SZAFKĘ("piwo", 3, "wódka", 1)` - map with initial key/value pairs; `PO PIERWSZE PRIMO(3.14159, 2)` - `"3.14"`

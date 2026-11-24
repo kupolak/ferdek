@@ -9,6 +9,10 @@ open Ast
 (* Wbudowana funkcja "wywołaj wartość"; nazwy z kropką na początku nie da się wpisać w programie *)
 let call = ".wywołaj"
 
+(* Metoda startowa klasy: DZIAD ZDZIADZIAŁY JEDEN Kot("Mruczek") woła ją z argumentami na nowym
+   obiekcie. Lekser oddaje te trzy słowa jako jedną nazwę. *)
+let start_method = "NA DZIEŃ DOBRY"
+
 (* Aliasy modułów widziane dotąd w tym procesie - dla REPL-a i debuggera, gdzie import jest
    w innym kawałku tekstu niż użycie *)
 let seen : (string, unit) Hashtbl.t = Hashtbl.create 8

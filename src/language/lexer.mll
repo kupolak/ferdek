@@ -38,6 +38,10 @@ rule token = parse
   | "MOJA NOGA JUŻ TUTAJ NIE POSTANIE" { PROGRAM_END }
   | "MOJA NOGA JUZ TUTAJ NIE POSTANIE" { PROGRAM_END }
 
+  (* Nazwa metody startowej klasy: dostaje argumenty z DZIAD ZDZIADZIAŁY JEDEN Klasa(...) *)
+  | "NA DZIEŃ DOBRY" { IDENTIFIER "NA DZIEŃ DOBRY" }
+  | "NA DZIEN DOBRY" { IDENTIFIER "NA DZIEŃ DOBRY" }
+
   (* Keywords - BABKA (testing framework) *)
   | "TAK JEST I KROPKA" { IDENTIFIER "TAK JEST I KROPKA" }
   | "MA BYĆ RÓWNE" { IDENTIFIER "MA BYĆ RÓWNE" }

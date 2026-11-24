@@ -370,18 +370,24 @@ let rec compile_expr ctx expr =
   | Parenthesized e -> Printf.sprintf "(%s)" (compile_expr ctx e)
   | Checked (e, t, what) ->
       Printf.sprintf "check_type(%s, %s, %s)" (compile_expr ctx e) (type_tag t) (c_string_literal what)
-  (* Argumenty konstruktora interpreter ignoruje (nawet ich nie liczy) - tu też *)
   (* Zmienna, w której leży klasa (CYCU PRZYNIEŚ NO k / TO NIE SĄ TANIE RZECZY Osoba): typ sprawdzamy
      w czasie działania, z tym samym komunikatem co interpreter *)
-  | NewObject (cls, _) when not (Hashtbl.mem ctx.classes cls) && is_var ctx cls ->
-      Printf.sprintf "new_from(%s, 'c', %s)" (compile_expr ctx (Identifier cls)) (c_string_literal ("Nieznana klasa: " ^ cls))
+  | NewObject (cls, args) ->
+      (* Jak w interpreterze: argumenty, nowy obiekt, metoda startowa (construct). Klasa może leżeć
+         w zmiennej - wtedy typ sprawdzamy w czasie działania (new_from). *)
+      let fresh_object =
+        if Hashtbl.mem ctx.classes cls then class_c cls ^ "()"
+        else if is_var ctx cls then
+          Printf.sprintf "new_from(%s, 'c', %s)" (compile_expr ctx (Identifier cls)) (c_string_literal ("Nieznana klasa: " ^ cls))
+        else error (Printf.sprintf "Nieznana klasa: %s" cls) in
+      in_order ctx (List.map (fun a -> a, fv, compile_expr ctx a) args) (fun c_args ->
+        Printf.sprintf "({ FerdekValue ctor_args[] = {%s}; construct(%s, %s, %d, ctor_args); })"
+          (if c_args = [] then "make_null()" else String.concat ", " c_args)
+          fresh_object (c_string_literal cls) (List.length args))
   | NewStruct name when not (Hashtbl.mem ctx.records name) && is_var ctx name ->
       Printf.sprintf "new_from(%s, 's', %s)" (compile_expr ctx (Identifier name)) (c_string_literal ("Nieznana struktura: " ^ name))
   | NewUnion name when not (Hashtbl.mem ctx.records name) && is_var ctx name ->
       Printf.sprintf "new_from(%s, 'u', %s)" (compile_expr ctx (Identifier name)) (c_string_literal ("Nieznana unia: " ^ name))
-  | NewObject (cls, _) ->
-      if not (Hashtbl.mem ctx.classes cls) then error (Printf.sprintf "Nieznana klasa: %s" cls);
-      class_c cls ^ "()"
   | NewStruct name | NewUnion name ->
       if not (Hashtbl.mem ctx.records name) then error (Printf.sprintf "Nieznany typ: %s" name);
       class_c name ^ "()"

@@ -14,6 +14,8 @@
 - `OD`, `DO`, `CO` are keywords (for loops) and cannot be variable names.
 - Maps print, and `WSZYSTKIE SZUFLADKI` returns, keys in sorted order.
 - KANAPA counts characters, not bytes (`"żółw"` has length 4).
+- `DZIAD ZDZIADZIAŁY JEDEN Klasa(1, 2)` with arguments is an error when the class has no `NA DZIEŃ DOBRY`
+  method. Before, the arguments were dropped without a word (not even evaluated).
 - `PIWO I TELEWIZOR` and `ALBO JUTRO U ADWOKATA` evaluate the right side only when the left one does not
   decide (`ILE NA WERSALCE(t) GRUBA ŚWINIA 0 PIWO I TELEWIZOR t[0] ...` is safe on an empty array). Before,
   both sides were always evaluated, so a call on the right side always ran.
@@ -53,6 +55,10 @@
 - Square brackets on maps: `WYPIERDZIELAJ PAN NA POZYCJĘ s["piwo"]` reads (null when the key is missing, like
   `WYJMIJ Z SZAFKI`) and `O KURDE MAM POMYSŁA s["piwo"] A PROSZĘ BARDZO 6 NO I GITARA` writes; they nest with
   arrays (`dane["kto"]["piwa"][0]`), so parsed JSON can be read directly.
+- Constructors: a class method named `NA DZIEŃ DOBRY` runs on every new object and gets the arguments of
+  `DZIAD ZDZIADZIAŁY JEDEN Kot("Mruczek", 3)` - after the arguments are evaluated and the fields set.
+  Default parameter values and inheritance work as for any method; a class kept in a variable takes
+  arguments too.
 - A dot after a variable reaches into an object: `kot.imie` reads a field, `W MORDĘ JEŻA kot.miaucz(2)` calls
   a method, `O KURDE MAM POMYSŁA kot.imie A PROSZĘ BARDZO "Filemon" NO I GITARA` assigns. It is the same as
   `kot["imie"]`, so it works on maps (`dane.kto.imie` after `WYJMIJ ZE SŁOIKA`) and chains (`kot.kolega.imie`).

@@ -95,8 +95,9 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | Słowo | Znaczenie |
 |---|---|
 | `ALE JAJA` | Definicja klasy |
+| `NA DZIEŃ DOBRY` | Nazwa metody startowej klasy: ALE WIE PAN JA ZASADNICZO NA DZIEŃ DOBRY / NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO nowe_imie - dostaje argumenty z DZIAD ZDZIADZIAŁY JEDEN Kot("Mruczek") i ustawia pola nowego obiektu |
 | `RENTA BABKI` | Dziedziczenie (extends) |
-| `DZIAD ZDZIADZIAŁY JEDEN` | Nowy obiekt klasy; pola i metody przez kropkę: kot.imie, W MORDĘ JEŻA kot.miaucz(2), O KURDE MAM POMYSŁA kot.imie A PROSZĘ BARDZO ... (to samo co kot["imie"]; działa też na szafkach) |
+| `DZIAD ZDZIADZIAŁY JEDEN` | Nowy obiekt klasy, z argumentami dla metody NA DZIEŃ DOBRY: DZIAD ZDZIADZIAŁY JEDEN Kot("Mruczek", 3); pola i metody przez kropkę: kot.imie, W MORDĘ JEŻA kot.miaucz(2), O KURDE MAM POMYSŁA kot.imie A PROSZĘ BARDZO ... (to samo co kot["imie"]; działa też na szafkach) |
 | `MEBEL` | Definicja struktury |
 | `KONIEC MEBLA` | Koniec struktury |
 | `ZMONTUJ MEBEL` | Nowa struktura |

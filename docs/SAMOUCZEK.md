@@ -455,13 +455,19 @@ Błąd Wykonania: 'W mordę jeża!'. Nie działa, bo: Dzielenie przez zero (prog
 
 `ALE JAJA Nazwa` ... `DO WIDZENIA PANU` to klasa z polami i metodami; `DZIAD ZDZIADZIAŁY JEDEN Nazwa`
 tworzy obiekt. Do pól i metod sięga się przez kropkę: `swinka.stan`, `W MORDĘ JEŻA swinka.wrzuc(20)`
-(to samo co `swinka["stan"]` - kropka działa też na szafkach).
+(to samo co `swinka["stan"]` - kropka działa też na szafkach). Metoda o nazwie `NA DZIEŃ DOBRY` dostaje
+argumenty podane przy tworzeniu obiektu; jej parametr nie może nazywać się jak pole, bo by je zasłonił.
 
 ```ferdek
 CO JEST KURDE
 ALE JAJA Skarbonka
     CYCU PRZYNIEŚ NO stan
     TO NIE SĄ TANIE RZECZY 0
+
+    ALE WIE PAN JA ZASADNICZO NA DZIEŃ DOBRY
+    NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO na_start
+        O KURDE MAM POMYSŁA stan A PROSZĘ BARDZO na_start NO I GITARA
+    DO WIDZENIA PANU
 
     ALE WIE PAN JA ZASADNICZO wrzuc
     NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO ile
@@ -470,7 +476,7 @@ ALE JAJA Skarbonka
 DO WIDZENIA PANU
 
 CYCU PRZYNIEŚ NO swinka
-TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Skarbonka
+TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Skarbonka(100)
 W MORDĘ JEŻA swinka.wrzuc(20)
 W MORDĘ JEŻA swinka.wrzuc(5)
 PANIE SENSACJA REWELACJA POWIEM PANU TAK "W skarbonce: {swinka.stan}"
@@ -480,7 +486,7 @@ MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 Wynik:
 
 ```
-W skarbonce: 25
+W skarbonce: 125
 ```
 
 ## 11. Moduły

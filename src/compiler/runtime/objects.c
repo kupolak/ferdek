@@ -26,6 +26,16 @@ static FerdekValue new_from(FerdekValue v, char kind, const char* err) {
     return v.value.def_val->make();
 }
 
+/* Nowy obiekt: metoda startowa NA DZIEŃ DOBRY dostaje argumenty; bez niej argumentów podać nie wolno */
+static FerdekValue construct(FerdekValue o, const char* cls, int argc, FerdekValue* argv) {
+    int i = map_find(o.value.map_val, "NA DZIEŃ DOBRY");
+    if (i >= 0 && o.value.map_val->vals[i].type == TYPE_FUNCTION)
+        call_value(o.value.map_val->vals[i], "NA DZIEŃ DOBRY", argc, argv);
+    else if (argc > 0)
+        ferdek_die("Klasa %s nie ma metody NA DZIEŃ DOBRY - nie przyjmuje argumentów (podano %d)", cls, argc);
+    return o;
+}
+
 /* Pole obiektu w metodzie (nazwa znana z deklaracji klasy) */
 static FerdekValue field_get(FerdekMap* self, const char* name) {
     int i = map_find(self, name);

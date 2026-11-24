@@ -363,7 +363,23 @@ let rec compile_expr cx : expr -> code = function
               | None -> raise (RuntimeError (Printf.sprintf "Obiekt nie ma pola: %s" field_name)))
          | _ -> raise (RuntimeError "To nie jest tablica, szafka, tekst ani obiekt"))
   | FunctionCall (name, args) -> compile_call cx name args
-  | NewObject (class_name, _) -> fun env -> eval_new_object env class_name
+  | NewObject (class_name, args) ->
+      (* najpierw argumenty, potem nowy obiekt (pola), na końcu metoda startowa NA DZIEŃ DOBRY *)
+      let cargs = List.map (compile_expr cx) args in
+      fun env ->
+        let values = List.map (fun c -> c env) cargs in
+        let obj = eval_new_object env class_name in
+        (match obj with
+         | VObject fields ->
+             (match Vars.find_opt fields Dots.start_method with
+              | Some (VFunction (fdecl, closure_env)) ->
+                  ignore (apply_function Dots.start_method fdecl closure_env values)
+              | _ when values <> [] ->
+                  raise (RuntimeError (Printf.sprintf "Klasa %s nie ma metody %s - nie przyjmuje argumentów (podano %d)"
+                                         class_name Dots.start_method (List.length values)))
+              | _ -> ())
+         | _ -> ());
+        obj
   | NewStruct struct_name -> fun env -> eval_new_struct env struct_name
   | NewUnion union_name -> fun env -> eval_new_union env union_name
   | Reference (Identifier name) ->

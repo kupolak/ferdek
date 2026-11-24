@@ -189,7 +189,7 @@ class Gen:
                 [f"{ind}O KURDE MAM POMYSŁA kasa0.stan A PROSZĘ BARDZO {self.expr('int', 1)} NO I GITARA",
                  f"{ind}PANIE SENSACJA REWELACJA W MORDĘ JEŻA kasa0.ile()"]
                 if self.has_class else [f"{ind}PANIE SENSACJA REWELACJA m0.piwo"],
-                [f"{ind}O KURDE MAM POMYSŁA kasa0 A PROSZĘ BARDZO DZIAD ZDZIADZIAŁY JEDEN klasa0 NO I GITARA",
+                [f"{ind}O KURDE MAM POMYSŁA kasa0 A PROSZĘ BARDZO DZIAD ZDZIADZIAŁY JEDEN {self.pick(['klasa0', 'Kasa'])}{self.pick(['', '(' + self.expr('int', 1) + ')'])} NO I GITARA",
                  f"{ind}PANIE SENSACJA REWELACJA [klasa0, kasa0.stan]"]
                 if self.has_class else [f"{ind}PANIE SENSACJA REWELACJA m0.nie_ma"],
             ])
@@ -294,6 +294,11 @@ class Gen:
             method = self.expr("int", 1)
             self.vars["int"].remove("stan")
             lines += ["ALE JAJA Kasa", "    CYCU PRZYNIEŚ NO stan", f"    TO NIE SĄ TANIE RZECZY {self.r.randint(-9, 9)}",
+                      # metoda startowa: argument z DZIAD ZDZIADZIAŁY JEDEN Kasa(...) albo wartość domyślna
+                      "    ALE WIE PAN JA ZASADNICZO NA DZIEŃ DOBRY",
+                      "    NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO na_start TO NIE SĄ TANIE RZECZY 4",
+                      "        O KURDE MAM POMYSŁA stan A PROSZĘ BARDZO stan BABKA DAWAJ RENTĘ na_start NO I GITARA",
+                      "    DO WIDZENIA PANU",
                       "    ALE WIE PAN JA ZASADNICZO ile", "    NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ",
                       f"        I JA INFORMUJĘ ŻE WYCHODZĘ {method}", "    DO WIDZENIA PANU", "DO WIDZENIA PANU",
                       "CYCU PRZYNIEŚ NO kasa0", "TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Kasa",
