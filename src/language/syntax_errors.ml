@@ -122,7 +122,7 @@ let is_noise = function
 
 let starts_expression = function
   | Parser.IDENTIFIER _ | INTEGER _ | FLOAT _ | STRING _ | INTERP_HEAD _ | TRUE | FALSE | NULL | LPAREN | LBRACKET | NOT
-  | BIT_NOT | TO_FIXED | FROM_FIXED | ARRAY_INDEX | NEW | NEW_STRUCT | NEW_UNION
+  | BIT_NOT | TO_FIXED | FROM_FIXED | ARRAY_INDEX | NEW | NEW_STRUCT | NEW_UNION | LAMBDA
   | POINTER_REF | POINTER_DEREF | POINTER_ADDR -> true
   | _ -> false
 
