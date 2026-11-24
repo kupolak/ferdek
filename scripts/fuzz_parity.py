@@ -51,7 +51,10 @@ class Gen:
             f"W MORDĘ JEŻA ZRÓB DŁUGI({self.expr('float', d)})",
             *[f"W MORDĘ JEŻA {n}({self.expr('int', d)})" for n, rt in self.funcs if rt == "int"],
             *[f"W MORDĘ JEŻA {n}({self.expr('float', d)})" for n, rt in self.funcs if rt == "int" and self.r.random() < 0.1],
-            *(["W MORDĘ JEŻA ile0()"] if self.has_class else []),
+            *(["W MORDĘ JEŻA ile0()", "W MORDĘ JEŻA kasa0.ile()", "kasa0.stan"] if self.has_class else []),
+            # indeksy: ujemny liczy od końca, za daleko to ten sam błąd; szafka po kluczu
+            f"WYPIERDZIELAJ PAN NA POZYCJĘ t0[{self.r.randint(-4, 3)}]",
+            'WYPIERDZIELAJ PAN NA POZYCJĘ m0["piwo"]',
             f'W MORDĘ JEŻA ILE W SZAFCE(W MORDĘ JEŻA OTWÓRZ SZAFKĘ("a", {self.expr("int", d)}, "b", 2))',
             f"W MORDĘ JEŻA GDZIE LEŻY NA WERSALCE({self.expr('arr', d)}, {self.expr('int', d)})",
             f"W MORDĘ JEŻA ZSUMUJ WERSALKĘ({self.expr('arr', d)})",
@@ -90,6 +93,10 @@ class Gen:
             f"W MORDĘ JEŻA POWTÓRZ NA KANAPIE({a}, {self.r.randint(0, 3)})",
             f'W MORDĘ JEŻA DZIEŃ TYGODNIA(W MORDĘ JEŻA DODAJ DNI("1999-03-16", {self.expr("int", d)}))',
             *[f"W MORDĘ JEŻA {n}({self.expr('int', d)})" for n, rt in self.funcs if rt == "mixed"],
+            # tekst z wstawkami: wyrażenia (także z cudzysłowami i lambdami) w środku tekstu
+            f'POWIEM PANU TAK "{self.pick(WORDS)}{{{self.expr(self.pick(["int", "float", "str", "arr", "bool"]), d)}}}'
+            f' \\{{ {{{self.expr("int", d)}}}{self.pick(WORDS)}"',
+            *(['("" BABKA DAWAJ RENTĘ klasa0)', "W MORDĘ JEŻA CO TO ZA TYP(Kasa)"] if self.has_class else []),
         ])
 
     def e_bool(self, leaf, d):
@@ -159,6 +166,17 @@ class Gen:
                  f"{ind}A ROBIĆ NI MA KOMU"],
                 [f"{ind}O KURDE MAM POMYSŁA kasa0[\"stan\"] A PROSZĘ BARDZO {self.expr('int', 1)} NO I GITARA"]
                 if self.has_class else [f"{ind}PANIE SENSACJA REWELACJA m0"],
+                # nawiasy kwadratowe na szafce (null, gdy klucza nie ma) i ujemny indeks w przypisaniu
+                [f"{ind}O KURDE MAM POMYSŁA m0[{self.expr('str', 1)}] A PROSZĘ BARDZO {self.expr('int', 1)} NO I GITARA",
+                 f"{ind}PANIE SENSACJA REWELACJA WYPIERDZIELAJ PAN NA POZYCJĘ m0[{self.expr('str', 1)}]"],
+                [f"{ind}O KURDE MAM POMYSŁA t0[{self.r.randint(-3, 2)}] A PROSZĘ BARDZO {self.expr('int', 1)} NO I GITARA"],
+                # kropka: pole i metoda; obiekt z klasy trzymanej w zmiennej
+                [f"{ind}O KURDE MAM POMYSŁA kasa0.stan A PROSZĘ BARDZO {self.expr('int', 1)} NO I GITARA",
+                 f"{ind}PANIE SENSACJA REWELACJA W MORDĘ JEŻA kasa0.ile()"]
+                if self.has_class else [f"{ind}PANIE SENSACJA REWELACJA m0.piwo"],
+                [f"{ind}O KURDE MAM POMYSŁA kasa0 A PROSZĘ BARDZO DZIAD ZDZIADZIAŁY JEDEN klasa0 NO I GITARA",
+                 f"{ind}PANIE SENSACJA REWELACJA [klasa0, kasa0.stan]"]
+                if self.has_class else [f"{ind}PANIE SENSACJA REWELACJA m0.nie_ma"],
             ])
         if k == "switch":
             out = [f"{ind}CO TO JE {self.expr('int', 1)}"]
@@ -264,7 +282,8 @@ class Gen:
                       "    ALE WIE PAN JA ZASADNICZO ile", "    NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ",
                       f"        I JA INFORMUJĘ ŻE WYCHODZĘ {method}", "    DO WIDZENIA PANU", "DO WIDZENIA PANU",
                       "CYCU PRZYNIEŚ NO kasa0", "TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Kasa",
-                      "CYCU PRZYNIEŚ NO ile0", 'TO NIE SĄ TANIE RZECZY WYPIERDZIELAJ PAN NA POZYCJĘ kasa0["ile"]']
+                      "CYCU PRZYNIEŚ NO ile0", 'TO NIE SĄ TANIE RZECZY WYPIERDZIELAJ PAN NA POZYCJĘ kasa0["ile"]',
+                      "CYCU PRZYNIEŚ NO klasa0", "TO NIE SĄ TANIE RZECZY Kasa"]
             self.has_class = True
         lines += self.stmts(self.r.randint(8, 16), 0, "")
         return "\n".join(lines + ["MOJA NOGA JUŻ TUTAJ NIE POSTANIE", ""])
