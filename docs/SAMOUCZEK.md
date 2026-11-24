@@ -304,6 +304,34 @@ Wynik:
 [tanio, drogo, tanio, drogo]
 ```
 
+Lambda łapie zmienne lokalne jako kopie, więc przypisanie do takiej zmiennej nie przetrwa do następnego
+wywołania. Gdy lambda ma coś pamiętać, złap szafkę (albo tablicę) i zmieniaj to, co w niej leży:
+
+```ferdek
+CO JEST KURDE
+ALE WIE PAN JA ZASADNICZO licznik
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+    AFERA JEST stan W MORDĘ JEŻA OTWÓRZ SZAFKĘ("n", 0)
+    I JA INFORMUJĘ ŻE WYCHODZĘ JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ() NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+        O KURDE MAM POMYSŁA stan["n"] A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ stan["n"] BABKA DAWAJ RENTĘ 1 NO I GITARA
+        I JA INFORMUJĘ ŻE WYCHODZĘ WYPIERDZIELAJ PAN NA POZYCJĘ stan["n"]
+    DO WIDZENIA PANU
+DO WIDZENIA PANU
+
+AFERA JEST piwa W MORDĘ JEŻA licznik()
+AFERA JEST flaszki W MORDĘ JEŻA licznik()
+W MORDĘ JEŻA piwa()
+W MORDĘ JEŻA piwa()
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "Piwo numer {W MORDĘ JEŻA piwa()}, flaszka numer {W MORDĘ JEŻA flaszki()}"
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
+```
+
+Wynik:
+
+```
+Piwo numer 3, flaszka numer 1
+```
+
 ## 8. Teksty i daty
 
 Teksty to KANAPA: długość, wycinanie, szukanie, wielkie litery - wszystko liczy polskie znaki jak należy.

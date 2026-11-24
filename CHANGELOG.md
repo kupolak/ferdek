@@ -75,6 +75,8 @@
   `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ` ... `DO WIDZENIA PANU`.
   Local variables (and object fields in methods) are captured as copies when the function is
   created, and every call starts from those copies; globals are shared, like in named functions.
+  A captured map or array is the same map or array in every call, so a lambda that has to remember
+  something keeps it there (`stan["n"]`); a test and the tutorial now show it.
 - Import your own files (relative to the importing file); every module runs once.
 - New builtins: random numbers (`KARTA LUBI DYM`), time (`TRZEBA SPAĆ`, `JEST TRZECIA W NOCY`),
   math (`PIERWIASTEK/SINUS/COSINUS ZE SKRZYNKI`, real PI and rounding in SKRZYNKA), lists
