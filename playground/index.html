@@ -237,6 +237,21 @@
     box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.55);
     min-height: 180px;
   }
+  /* Okno OKNO_OTWORZ: każdy piksel programu powiększony, bez rozmywania */
+  #gfx {
+    display: block;
+    width: 100%;
+    /* wysokie okno kurczy się (z zachowaniem proporcji), zamiast wypychać tekst z telewizora */
+    flex: 0 1 auto;
+    min-height: 0;
+    object-fit: contain;
+    margin-bottom: 10px;
+    background: #000;
+    border-radius: 10px;
+    image-rendering: pixelated;
+  }
+  #gfx[hidden] { display: none; }
+  #gfx:not([hidden]) + #screen { min-height: 80px; }
   #screen .err { color: var(--screen-err); }
   #screen .sys { color: var(--screen-dim); }
   #input { height: 76px; font-size: 13px; }
@@ -286,6 +301,7 @@
     <section class="pane">
       <div class="tv">
         <div class="tv-top"><span>Telewizor</span><span id="lamp" class="lamp">wyłączony</span></div>
+        <canvas id="gfx" hidden aria-label="Okno graficzne programu"></canvas>
         <pre id="screen" aria-live="polite"><span class="sys">Wciśnij „Odpalamy”, a Ferdek puści program na ekran.</span></pre>
       </div>
       <div class="label"><span>Wejście</span><span>dla CO TAM U PANA SŁYCHAĆ, linia po linii</span></div>
@@ -294,7 +310,7 @@
   </main>
 
   <footer>
-    Interpreter Ferdka skompilowany do JavaScriptu. Działa wszystko poza grafiką X11, siecią i plikami.
+    Interpreter Ferdka skompilowany do JavaScriptu. Działa wszystko poza siecią i plikami; okno graficzne rysuje się w telewizorze (bez klawiatury i myszy).
     Moduły ze stdlib importujesz jak zwykle: <code>O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/SKRZYNKA JAKO s</code>.
     Kod: <a href="https://github.com/kupolak/ferdek">github.com/kupolak/ferdek</a>
   </footer>
@@ -306,7 +322,7 @@
   const LIMIT_MS = 20000;   // potem ubijamy - pewnie pętla bez końca
   const SHARE_BASE = "";    // adres do linków "Udostępnij"; pusty = adres tej strony
   const $ = id => document.getElementById(id);
-  const code = $("code"), screen = $("screen"), lamp = $("lamp"), input = $("input");
+  const code = $("code"), screen = $("screen"), lamp = $("lamp"), input = $("input"), gfx = $("gfx");
   const runBtn = $("run"), stopBtn = $("stop"), fmtBtn = $("fmt"), examples = $("examples");
   const hl = $("hl"), shareBtn = $("shareBtn"), share = $("share"), shareLink = $("shareLink"), shareNote = $("shareNote");
   let worker = null, timer = null, samples = {};
@@ -342,12 +358,15 @@
   function run() {
     stop();
     screen.textContent = "";
+    gfx.hidden = true;
     setLamp("nadaje", "on");
     runBtn.disabled = true; stopBtn.disabled = false;
     const started = performance.now();
     worker = spawn(m => {
       if (m.kind === "out") write(m.text);
       else if (m.kind === "err") write(m.text, "err");
+      else if (m.kind === "window") { gfx.width = m.w; gfx.height = m.h; gfx.title = m.title; gfx.hidden = false; }
+      else if (m.kind === "frame") gfx.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(m.data), m.w, m.h), 0, 0);
       else if (m.kind === "done") {
         const ms = Math.round(performance.now() - started);
         write(`\n— koniec, kod ${m.code}, ${ms} ms\n`, "sys");

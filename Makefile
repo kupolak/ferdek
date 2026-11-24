@@ -210,6 +210,10 @@ playground:
 	{ printf '<!doctype html>\n<html lang="pl">\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'; cat playground/index.html; } > _build/playground/index.html
 	@echo "--- plac zabaw: _build/playground (np. python3 -m http.server -d _build/playground)"
 
+# Grafika i usypianie w placu zabaw, bez przeglądarki (potrzebny node i js_of_ocaml)
+test-playground: playground
+	node scripts/test_playground.js
+
 test-network: build
 	$(call run_ferdek,tests/integration/stdlib/test_klatka)
 
@@ -238,4 +242,4 @@ reinstall:
 	@echo ""
 	@echo "=== Reinstalacja zakończona! ==="
 
-.PHONY: playground all build clean distclean test test-args test-input test-patterns test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall
+.PHONY: playground test-playground all build clean distclean test test-args test-input test-patterns test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime docs test-compiled test-fuzz bench test-network update-expected test-stdlib test-features test-examples test-all link install r reinstall

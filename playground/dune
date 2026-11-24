@@ -14,6 +14,7 @@
    (run python3 embed.py %{project_root}
     playground/przyklady/witaj.ferdek playground/przyklady/lodowka.ferdek
     playground/przyklady/kalendarz.ferdek playground/przyklady/bledy.ferdek
+    playground/przyklady/telewizor.ferdek
     examples/hello.ferdek examples/fizzbuzz.ferdek examples/bubble_sort.ferdek
     examples/classes.ferdek examples/enums.ferdek examples/structs.ferdek
     examples/function_pointers.ferdek examples/variadic.ferdek examples/bitwise.ferdek))))
@@ -24,4 +25,6 @@
  (modes js)
  (modules ferdek_web embedded)
  (libraries ferdek_lib js_of_ocaml)
- (js_of_ocaml (flags (:standard --opt 3))))
+ (js_of_ocaml
+  (flags (:standard --opt 3))
+  (javascript_files runtime.js)))

@@ -140,6 +140,11 @@
 - Browser playground (`make playground`): the interpreter as JavaScript in a Web Worker, with
   examples, stdlib, program input and a formatter button, syntax highlighting (by the real lexer)
   and share links (the program, compressed, after `#`).
+- Playground: graphics. `OKNO_OTWORZ`, `PALETA_USTAW`, `PIKSEL_MALUJ`, `EKRAN_CZYSC`, `EKRAN_ODSWIEZ` and
+  `BUFOR_RAMKI_POBIERZ` work in the browser - every `EKRAN_ODSWIEZ` shows a frame on a canvas above the
+  program output, so loops animate (example `telewizor.ferdek`). `ZDARZENIE_CZEKAJ` always answers "no
+  event": there is no keyboard or mouse there yet. `TRZEBA SPAĆ` works in the playground too (it used to
+  stop the program with an error). `make test-playground` runs the check with node.
 - `ferdek --check` (unknown names, wrong argument counts), `ferdek test` (runs `*_test.ferdek`),
   `ferdek --fmt` (indentation).
 - Errors report file and line; syntax errors say what was expected; all messages in Polish.
