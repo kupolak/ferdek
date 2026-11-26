@@ -22,6 +22,8 @@
 - `PIWO I TELEWIZOR` and `ALBO JUTRO U ADWOKATA` evaluate the right side only when the left one does not
   decide (`ILE NA WERSALCE(t) GRUBA ŚWINIA 0 PIWO I TELEWIZOR t[0] ...` is safe on an empty array). Before,
   both sides were always evaluated, so a call on the right side always ran.
+- The empty stdlib modules `KLAMOTY/KANAPA`, `KIBEL`, `SZAFKA`, `WERSALKA`, `LODÓWKA` and `SKRZYNKA_TEST` are gone:
+  they held only comments (their functions are built in, or never existed), so importing them did nothing.
 - `ferdecc` is gone - use `ferdek -c`. `ferdek -c x -o app` builds an executable, `-o x.c` writes C.
 
 ### Language

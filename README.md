@@ -197,20 +197,35 @@ is never freed, which is fine for short programs.
 ```ferdek
 CO JEST KURDE
 
-RYM CYM CYM Declare a variable
-CYCU PRZYNIEŚ NO piwa
-TO NIE SĄ TANIE RZECZY 6
+ALE JAJA Lodowka
+    CYCU PRZYNIEŚ NO piwa
+    TO NIE SĄ TANIE RZECZY 0
 
-RYM CYM CYM Add 2 more
-O KURDE MAM POMYSŁA piwa
-A PROSZĘ BARDZO piwa
-BABKA DAWAJ RENTĘ 2
-NO I GITARA
+    RYM CYM CYM Constructor: gets the arguments of DZIAD ZDZIADZIAŁY JEDEN Lodowka(...)
+    ALE WIE PAN JA ZASADNICZO NA DZIEŃ DOBRY
+    NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO ile
+        O KURDE MAM POMYSŁA piwa A PROSZĘ BARDZO ile NO I GITARA
+    DO WIDZENIA PANU
 
-PANIE SENSACJA REWELACJA piwa
+    ALE WIE PAN JA ZASADNICZO wypij
+        ULEJ 1 Z piwa
+    DO WIDZENIA PANU
+DO WIDZENIA PANU
+
+CYCU PRZYNIEŚ NO lodowka
+TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Lodowka(3)
+
+CHLUŚNIEM BO UŚNIEM lodowka.piwa GRUBA ŚWINIA 0
+    W MORDĘ JEŻA lodowka.wypij()
+    PANIE SENSACJA REWELACJA POWIEM PANU TAK "Chlup! Zostało {lodowka.piwa}"
+A ROBIĆ NI MA KOMU
+
+PANIE SENSACJA REWELACJA NO JAK NIE JAK TAK lodowka.piwa GRUBA ŚWINIA 0 A PROSZĘ BARDZO "Jeszcze jest" A DUPA TAM "Helena, piwo się skończyło!"
 
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ```
+
+A longer one, with maps, loops, lambdas and exceptions: [examples/lodowka.ferdek](examples/lodowka.ferdek).
 
 ## Contributing
 

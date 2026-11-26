@@ -1,88 +1,29 @@
-# KLAMOTY - Standardowa Biblioteka Ferdeka
+# KLAMOTY - biblioteka standardowa Ferdka
 
-**KLAMOTY** to standardowa biblioteka języka Ferdek - zestaw modułów i funkcji, które ułatwiają programowanie.
+Większość biblioteki jest wbudowana i działa bez importu: tekst (KANAPA), tablice (WERSALKA),
+mapy i JSON (SZAFKA), pliki (KIBEL), daty, matematyka, wzorce, pamięć, framebuffer.
+Pełna lista słów z opisami: [docs/JEZYK.md](../docs/JEZYK.md) (generowana, `make test` pilnuje aktualności).
 
-## Status Implementacji
+## Moduły do zaimportowania
 
-### ✅ ZAIMPLEMENTOWANE
+| Moduł | Import | Co daje |
+|---|---|---|
+| SKRZYNKA | `O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/SKRZYNKA` | matematyka: `DODAJ`, `MNOZ`, potęga, min/max, PI... |
+| KLATKA | `O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/KLATKA` | HTTP GET/POST przez curl, ping, publiczny IP |
+| TELEWIZOR | `O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/TELEWIZOR` | `PRZEŁĄCZ_KANAŁ(wiadomość)` - wypisywanie jako funkcja |
+| BABKA | `O KOGO MOJE PIĘKNE OCZY WIDZĄ BABKA` | asercje do testów (`ferdek test`), opis w [KLAMOTY/BABKA/README.md](KLAMOTY/BABKA/README.md) |
 
-#### Moduł SKRZYNKA (matematyka)
-Operacje matematyczne dostępne przez import `KLAMOTY/SKRZYNKA`:
-- `DODAJ(a, b)` - dodawanie
-- `MNOZ(a, b)` - mnożenie
-
-Przykład:
-```ferdek
-O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/SKRZYNKA
-
-AFERA JEST suma W MORDĘ JEŻA DODAJ(5, 3)
-PANIE SENSACJA REWELACJA suma  RYM CYM CYM 8
-```
-
-#### Moduł KANAPA (stringi, wbudowane)
-Dostępne globalnie bez importu:
-- `USIĄDŹ NA KANAPIE(str1, str2, ...)` - łączenie stringów
-- `ILE MIEJSCA NA KANAPIE(str)` - długość stringa
-- `POTNIJ KANAPĘ(str, start, koniec)` - podciąg
-- `ROZCIĄGNIJ KANAPĘ(str, dlugosc)` - dopełnienie do długości
-- `PRZESUŃ NA KANAPIE(str, sep)` - split
-- `POSKŁADAJ KANAPĘ(tablica, sep)` - join
-- `WYTRZEP KANAPĘ(str)` - usuwanie białych znaków
-- `ZAMIEŃ NA KANAPIE(str, stary, nowy)` - zamiana tekstu
-
-Przykład:
-```ferdek
-AFERA JEST tekst W MORDĘ JEŻA USIĄDŹ NA KANAPIE("Ferdek ", "ma ", "piwo")
-PANIE SENSACJA REWELACJA tekst  RYM CYM CYM "Ferdek ma piwo"
-```
-
-#### Pozostałe moduły (wbudowane)
-KIBEL (pliki), WERSALKA (listy), SZAFKA (mapy), KLATKA (sieć) - pełna lista
-nazw w `src/ferdek_stdlib.ml`.
-
-### 📝 PLANOWANE (TODO)
-
-Moduły, które są opisane w dokumentacji ale jeszcze nie zaimplementowane:
-- LODÓWKA - zmienne, stałe
-- TELEWIZOR - dodatkowe operacje I/O
-
-## Jak używać
-
-### Import modułu
+Z `JAKO` nazwy modułu dostają przedrostek:
 
 ```ferdek
-O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/SKRZYNKA
+O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/SKRZYNKA JAKO s
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA s.DODAJ(5, 3)
 ```
 
-### Uruchomienie przykładów
+## Nowy moduł
 
-```bash
-# Test modułu matematycznego
-.build/ferdek examples/test_stdlib.ferdek
+1. Plik `stdlib/KLAMOTY/NAZWA.ferdek` (albo `KLAMOTY/NAZWA/NAZWA.ferdek`) z funkcjami w Ferdku.
+2. Test w `tests/integration/stdlib/` i oczekiwane wyjście (`make update-expected`).
 
-# Test funkcji stringowych
-.build/ferdek examples/test_strings.ferdek
-
-# Pełny test stdlib
-.build/ferdek examples/test_stdlib_full.ferdek
-```
-
-## Architektura
-
-- `stdlib/KLAMOTY/` - katalog z modułami stdlib
-- Każdy moduł to plik `.ferdek` z funkcjami
-- Moduły są ładowane dynamicznie przez interpreter
-- Niektóre funkcje (jak stringowe) są wbudowane w interpreter dla wydajności
-
-## Rozwój
-
-Aby dodać nowy moduł:
-1. Utwórz plik `stdlib/KLAMOTY/NAZWA.ferdek`
-2. Zdefiniuj funkcje w języku Ferdek
-3. Dokumentuj w `docs/KLAMOTY.md`
-4. Dodaj testy w `examples/`
-
-Aby dodać wbudowane funkcje (jak stringowe):
-1. Zmodyfikuj `src/interpreter.ml` - funkcja `eval_function_call`
-2. Dodaj obsługę nowej funkcji w pattern matching
-3. Przebuduj projekt: `make clean && make`
+Wbudowane funkcje żyją w `src/interpreter/builtins/` i `src/compiler/runtime/` - muszą dawać to samo
+w obu trybach (`make test`, `make test-fuzz`).
