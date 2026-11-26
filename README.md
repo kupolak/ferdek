@@ -45,6 +45,7 @@ Some examples:
   that belong to the lambda and keep what it assigns between calls - a counter is `DOLEJ 1 DO n`; to share
   state between lambdas capture a map or an array and change what is inside: `stan["n"]`);
   with statements: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ` ... `DO WIDZENIA PANU`
+- `t[0]`, `s["piwo"]`, `kot.rzeczy[i]` - square brackets work on their own; `WYPIERDZIELAJ PAN NA POZYCJĘ` in front is optional
 - `WYPIERDZIELAJ PAN NA POZYCJĘ t[-1]` - last array element; `s["piwo"]` reads a map (null when the key is missing),
   `O KURDE MAM POMYSŁA s["piwo"] A PROSZĘ BARDZO 6 NO I GITARA` writes it; they nest: `dane["kto"]["piwa"][0]`;
   `tekst[0]` is a character; a call result can be indexed too: `WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA f()[0]`

@@ -242,16 +242,16 @@ Zmienna piwa: TO JE LICZBA SYNEK, a jest tekst
 
 ## 6. Tablice i szafki
 
-Tablica to `[1, 2, 3]`, element to `WYPIERDZIELAJ PAN NA POZYCJĘ t[0]` (numerowane od zera; `t[-1]` to ostatni).
+Tablica to `[1, 2, 3]`, element to `t[0]` (numerowane od zera; `t[-1]` to ostatni; z fasonem: `WYPIERDZIELAJ PAN NA POZYCJĘ t[0]`).
 Szafka to mapa: `OTWÓRZ SZAFKĘ("klucz", wartość, ...)`, `WYJMIJ Z SZAFKI`, `WŁÓŻ DO SZAFKI`,
-albo krócej w nawiasach: `WYPIERDZIELAJ PAN NA POZYCJĘ s["klucz"]` i `O KURDE MAM POMYSŁA s["klucz"] A PROSZĘ BARDZO 5 NO I GITARA`.
+albo krócej w nawiasach: `s["klucz"]` i `O KURDE MAM POMYSŁA s["klucz"] A PROSZĘ BARDZO 5 NO I GITARA`.
 Do tablic jest cała WERSALKA funkcji: suma, najmniejszy, sortowanie, wycinanie...
 
 ```ferdek
 CO JEST KURDE
 CYCU PRZYNIEŚ NO rachunki
 TO NIE SĄ TANIE RZECZY [120, 45, 300, 45, 80]
-PANIE SENSACJA REWELACJA "Pierwszy: " BABKA DAWAJ RENTĘ WYPIERDZIELAJ PAN NA POZYCJĘ rachunki[0]
+PANIE SENSACJA REWELACJA "Pierwszy: " BABKA DAWAJ RENTĘ rachunki[0]
 PANIE SENSACJA REWELACJA "Razem: " BABKA DAWAJ RENTĘ W MORDĘ JEŻA ZSUMUJ WERSALKĘ(rachunki)
 PANIE SENSACJA REWELACJA "Najdroższy: " BABKA DAWAJ RENTĘ W MORDĘ JEŻA NAJWIĘKSZY NA WERSALCE(rachunki)
 PANIE SENSACJA REWELACJA W MORDĘ JEŻA POSKŁADAJ WERSALKĘ(W MORDĘ JEŻA BEZ POWTÓREK(rachunki))

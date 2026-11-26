@@ -76,6 +76,8 @@
   usual index error, extra ones are left alone.
 - Loop over pairs: `KRĘCI CEMENT BETONIARA k, w Z kolekcja` gives the key and value of a map (keys sorted) or the
   index and element of an array or text. `WSZYSTKIE SZUFLADKI` on an array or text returns its indexes.
+- Square brackets on their own: `t[0]`, `s["piwo"]`, `kot.rzeczy[i]`, `W MORDĘ JEŻA f()[0]` are expressions without
+  `WYPIERDZIELAJ PAN NA POZYCJĘ` in front (it still works and means the same).
 - Short updates: `DOLEJ 2 DO x` is `x = x + 2` (text is appended), `ULEJ 1 Z x` is `x = x - 1`. The target
   can be a variable, `t[0]`, `s["klucz"]` or `kot.wiek`; types and constants are checked as for any
   assignment. `DOLEJ` and `ULEJ` are now keywords.

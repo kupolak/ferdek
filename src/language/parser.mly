@@ -529,6 +529,9 @@ factor:
   | id=IDENTIFIER { Identifier id }
   | ARRAY_INDEX arr=array_access_expr
     { arr }
+  (* samo t[0], s["klucz"], kot.rzeczy[i], W MORDĘ JEŻA f()[0] - WYPIERDZIELAJ PAN NA POZYCJĘ jest opcjonalne *)
+  | arr=array_access_expr
+    { arr }
   | FUNC_CALL id=IDENTIFIER LPAREN args=separated_list(COMMA, expression) RPAREN
     { FunctionCall (id, args) }
   | FUNC_CALL id=IDENTIFIER

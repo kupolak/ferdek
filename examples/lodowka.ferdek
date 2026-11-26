@@ -55,11 +55,11 @@ W MORDĘ JEŻA lodowka.wloz("jogurt", 3)
 
 PANIE SENSACJA REWELACJA POWIEM PANU TAK "Lodówka pana {lodowka.czyja}:"
 KRĘCI CEMENT BETONIARA co Z lodowka.polki
-    PANIE SENSACJA REWELACJA POWIEM PANU TAK "  {co}: {WYPIERDZIELAJ PAN NA POZYCJĘ lodowka.polki[co]} - {W MORDĘ JEŻA ocena(co)}"
+    PANIE SENSACJA REWELACJA POWIEM PANU TAK "  {co}: {lodowka.polki[co]} - {W MORDĘ JEŻA ocena(co)}"
 A ROBIĆ NI MA KOMU
 
 RYM CYM CYM Lambda i biblioteka tablic: ile sztuk razem
-AFERA JEST ile W MORDĘ JEŻA PRZERABIAJ WERSALKĘ(W MORDĘ JEŻA WSZYSTKIE SZUFLADKI(lodowka.polki), JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(k) WYPIERDZIELAJ PAN NA POZYCJĘ lodowka.polki[k])
+AFERA JEST ile W MORDĘ JEŻA PRZERABIAJ WERSALKĘ(W MORDĘ JEŻA WSZYSTKIE SZUFLADKI(lodowka.polki), JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(k) lodowka.polki[k])
 PANIE SENSACJA REWELACJA POWIEM PANU TAK "Razem sztuk: {W MORDĘ JEŻA ZSUMUJ WERSALKĘ(ile)}"
 
 RYM CYM CYM Pijemy, aż się skończy - błąd z metody łapie HELENA

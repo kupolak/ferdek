@@ -113,7 +113,7 @@ SECTIONS = [
         "POWIEM PANU TAK": "Tekst z wstawkami: POWIEM PANU TAK \"Piwa: {piwa}, jutro {piwa BABKA DAWAJ RENTĘ 2}\" - w {} dowolne wyrażenie; zwykły nawias klamrowy to \\{",
         "NO TO ENTER": "Zakończ linię",
         "CO TAM U PANA SŁYCHAĆ": "Wczytaj linię z wejścia do zmiennej",
-        "WYPIERDZIELAJ PAN NA POZYCJĘ": "Element tablicy, szafki albo znak tekstu: WYPIERDZIELAJ PAN NA POZYCJĘ t[0], t[-1] (ostatni), s[\"klucz\"] (null, gdy klucza nie ma), tekst[0]; także na wyniku wywołania i nawiasie: WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA f()[0], (a BABKA DAWAJ RENTĘ b)[0]",
+        "WYPIERDZIELAJ PAN NA POZYCJĘ": "Element tablicy, szafki albo znak tekstu (słowo opcjonalne - samo t[0] znaczy to samo): WYPIERDZIELAJ PAN NA POZYCJĘ t[0], t[-1] (ostatni), s[\"klucz\"] (null, gdy klucza nie ma), tekst[0]; także na wyniku wywołania i nawiasie: WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA f()[0], (a BABKA DAWAJ RENTĘ b)[0]",
     }),
     ("Sterowanie", {
         "NO JAK NIE JAK TAK": "if; jako wyrażenie - jedno albo drugie: NO JAK NIE JAK TAK piwa GRUBA ŚWINIA 0 A PROSZĘ BARDZO \"jest\" A DUPA TAM \"nie ma\" (liczona tylko wybrana gałąź; w środku działania w nawiasach)",
