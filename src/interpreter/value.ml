@@ -458,6 +458,9 @@ let is_thing = function
   | VClass _ | VStruct _ | VUnion _ | VEnum _ -> true
   | _ -> false
 
+let compare_depth = ref 0
+let compare_depth_max = 200
+
 let rec compare_values ?(equality = false) v1 v2 =
   match v1, v2 with
   | _ when equality && (is_thing v1 || is_thing v2) -> if same_thing v1 v2 then 0 else 1
@@ -472,13 +475,21 @@ let rec compare_values ?(equality = false) v1 v2 =
    obiekt, wskaźnik i klasa - gdy to ta sama rzecz. Wszystko inne jest różne, także tablica i null.
    ponytail: funkcje zawsze różne - "ta sama funkcja" znaczy co innego w interpreterze i w C
    (lambda bez złapanych zmiennych); tożsamość do dodania, gdy oba tryby dostaną wspólny znacznik.
-   ponytail: tablica zawierająca samą siebie zapętli porównanie. *)
+   Ta sama tablica albo szafka jest równa sobie bez zaglądania do środka; dwie różne, które
+   zawierają same siebie, kończą błędem po compare_depth_max poziomach zamiast przepełnić stos. *)
 and same_thing v1 v2 =
-  let equal a b = compare_values ~equality:true a b = 0 in
+  let equal a b =
+    if !compare_depth >= compare_depth_max then begin
+      compare_depth := 0;
+      raise (RuntimeError "Porównanie: za głęboko (tablica albo szafka zawiera samą siebie?)")
+    end;
+    incr compare_depth;
+    let r = compare_values ~equality:true a b = 0 in
+    decr compare_depth; r in
   match v1, v2 with
-  | VArray a, VArray b -> Array.length a = Array.length b && Array.for_all2 equal a b
+  | VArray a, VArray b -> a == b || (Array.length a = Array.length b && Array.for_all2 equal a b)
   | VHashMap a, VHashMap b ->
-      Hashtbl.length a = Hashtbl.length b
+      a == b || Hashtbl.length a = Hashtbl.length b
       && Hashtbl.fold (fun k v ok -> ok && (match Hashtbl.find_opt b k with Some w -> equal v w | None -> false)) a true
   | VObject a, VObject b -> a == b
   | VPointer a, VPointer b -> a == b

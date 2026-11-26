@@ -617,19 +617,34 @@ static int compare3(FerdekValue a, FerdekValue b, bool equality) {
 /* Porównanie od razu jako bool - w warunkach if/while bez make_bool/to_bool */
 /* Tablice i szafki: równa zawartość; obiekt, wskaźnik, klasa: ta sama rzecz; reszta różna
    (funkcje też - patrz same_thing w interpreterze) */
+static int compare_depth = 0;
+/* Element w elemencie: po 200 poziomach błąd zamiast przepełnienia stosu (tablica w samej sobie) */
+static bool equal_inside(FerdekValue a, FerdekValue b) {
+    if (compare_depth >= 200) {
+        compare_depth = 0;
+        ferdek_die("Porównanie: za głęboko (tablica albo szafka zawiera samą siebie?)");
+    }
+    compare_depth++;
+    bool r = compare3(a, b, true) == 0;
+    compare_depth--;
+    return r;
+}
+
 static bool same_thing(FerdekValue a, FerdekValue b) {
     if (a.type != b.type) return false;
     switch (a.type) {
         case TYPE_ARRAY:
+            if (a.value.array_val == b.value.array_val) return true;
             if (a.value.array_val->length != b.value.array_val->length) return false;
             for (int i = 0; i < a.value.array_val->length; i++)
-                if (compare3(a.value.array_val->data[i], b.value.array_val->data[i], true) != 0) return false;
+                if (!equal_inside(a.value.array_val->data[i], b.value.array_val->data[i])) return false;
             return true;
         case TYPE_MAP:
+            if (a.value.map_val == b.value.map_val) return true;
             if (a.value.map_val->len != b.value.map_val->len) return false;
             for (int i = 0; i < a.value.map_val->len; i++) {
                 int j = map_find(b.value.map_val, a.value.map_val->keys[i]);
-                if (j < 0 || compare3(a.value.map_val->vals[i], b.value.map_val->vals[j], true) != 0) return false;
+                if (j < 0 || !equal_inside(a.value.map_val->vals[i], b.value.map_val->vals[j])) return false;
             }
             return true;
         case TYPE_OBJECT: return a.value.map_val == b.value.map_val;

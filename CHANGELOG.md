@@ -118,6 +118,9 @@
   math (`PIERWIASTEK/SINUS/COSINUS ZE SKRZYNKI`, real PI and rounding in SKRZYNKA), lists
   (`POSKŁADAJ/ODWRÓĆ/PRZERABIAJ/PRZEFILTRUJ WERSALKĘ`), text (`ZNAK Z KANAPY`,
   `KANAPA DO GÓRY/W DÓŁ`), shell quoting (`OPAKUJ W GAZETĘ`).
+- An array or map compared with itself is equal without looking inside; two different ones that contain
+  themselves end with an error (`Porównanie: za głęboko`) that `HELENA MAM ZAWAŁ` can catch. Before, the
+  program crashed with a stack overflow.
 
 ### Compiler to C
 - Handles the whole language, including classes, structs, unions, pointers, exceptions, files,

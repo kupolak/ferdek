@@ -27,4 +27,6 @@ true
 false
 true
 złapane: Tego nie da się zamienić na liczbę
+true
+złapane: Porównanie: za głęboko (tablica albo szafka zawiera samą siebie?)
 Program zakończony pomyślnie. Piwo dla Pana!
