@@ -41,8 +41,9 @@ Some examples:
   as a value (the cases can go on separate lines; without `A JAK NIC Z TEGO` the value is null when nothing fits)
 - `DOLEJ 2 DO piwa` / `ULEJ 1 Z piwa` - add to / take from a variable, an array element, a map key or a field
 - `POWIEM PANU TAK "Piwa: {piwa}, jutro {piwa BABKA DAWAJ RENTĘ 2}"` - text with values put in (any expression in `{}`)
-- `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2` - anonymous function (local variables captured as copies;
-  to keep state between calls capture a map or an array and change what is inside: `stan["n"]`);
+- `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2` - anonymous function (local variables captured as copies
+  that belong to the lambda and keep what it assigns between calls - a counter is `DOLEJ 1 DO n`; to share
+  state between lambdas capture a map or an array and change what is inside: `stan["n"]`);
   with statements: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ` ... `DO WIDZENIA PANU`
 - `WYPIERDZIELAJ PAN NA POZYCJĘ t[-1]` - last array element; `s["piwo"]` reads a map (null when the key is missing),
   `O KURDE MAM POMYSŁA s["piwo"] A PROSZĘ BARDZO 6 NO I GITARA` writes it; they nest: `dane["kto"]["piwa"][0]`;

@@ -24,6 +24,8 @@
   both sides were always evaluated, so a call on the right side always ran.
 - The empty stdlib modules `KLAMOTY/KANAPA`, `KIBEL`, `SZAFKA`, `WERSALKA`, `LODÓWKA` and `SKRZYNKA_TEST` are gone:
   they held only comments (their functions are built in, or never existed), so importing them did nothing.
+- A lambda remembers what it assigns to a captured variable. Before, every call started again from the
+  value captured when the lambda was created, so such an assignment was lost after the call.
 - `ferdecc` is gone - use `ferdek -c`. `ferdek -c x -o app` builds an executable, `-o x.c` writes C.
 
 ### Language
@@ -120,9 +122,10 @@
 - Anonymous functions: `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2`, or with statements:
   `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ` ... `DO WIDZENIA PANU`.
   Local variables (and object fields in methods) are captured as copies when the function is
-  created, and every call starts from those copies; globals are shared, like in named functions.
-  A captured map or array is the same map or array in every call, so a lambda that has to remember
-  something keeps it there (`stan["n"]`); a test and the tutorial now show it.
+  created. The copies belong to that lambda and live as long as it does: an assignment inside the
+  lambda (`DOLEJ 1 DO n`) is seen by its next call, so a counter needs no map. Each lambda has its own
+  copies - the function that made it and other lambdas do not see the change; for shared state capture
+  a map or an array (`stan["n"]`). Globals are shared, like in named functions.
 - Import your own files (relative to the importing file); every module runs once.
 - New builtins: random numbers (`KARTA LUBI DYM`), time (`TRZEBA SPAĆ`, `JEST TRZECIA W NOCY`),
   math (`PIERWIASTEK/SINUS/COSINUS ZE SKRZYNKI`, real PI and rounding in SKRZYNKA), lists

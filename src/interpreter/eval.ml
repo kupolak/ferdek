@@ -142,11 +142,12 @@ let new_slots = function
 (* Wywołanie funkcji użytkownika z gotowymi wartościami argumentów; cf - jej skompilowana postać *)
 let apply_compiled name (fdecl : function_decl) cf closure_env arg_values =
   let slots = new_slots cf.nslots in
-  (* Lambda: złapane zmienne kopiujemy do środowiska wywołania, a jego rodzicem jest globalne -
-     każde wywołanie zaczyna od tych samych kopii, przypisanie do globalnej działa jak w funkcji *)
+  (* Lambda: złapane zmienne (kopie z chwili utworzenia) należą do lambdy i żyją tak długo jak ona -
+     wywołanie pisze prosto do nich, więc następne widzi zmianę. Zmienne samego wywołania siedzą
+     w slotach. Rodzicem jest globalne - przypisanie do globalnej działa jak w funkcji *)
   let func_env = match closure_env.parent with
     | Some global when Vars.mem closure_env.vars lambda_marker ->
-        { vars = Vars.copy closure_env.vars; parent = Some global; slots; layout = cf.layout }
+        { vars = closure_env.vars; parent = Some global; slots; layout = cf.layout }
     | _ -> { vars = no_vars; parent = Some closure_env; slots; layout = cf.layout } in
   let num_params = Array.length cf.param_slots in
   let num_args = List.length arg_values in
@@ -442,7 +443,7 @@ let rec compile_expr cx : expr -> code = function
       fun env -> check_type (c env) t what
   | Lambda (params, body) as lam ->
       (* Zmienne lokalne (spoza środowiska globalnego) kopiujemy w chwili utworzenia - tak samo
-         robi kompilator do C; globalne lambda widzi na żywo. Deklaracja jedna na miejsce w kodzie
+         robi kompilator do C; kopie są własnością tej lambdy (patrz apply_compiled). Globalne lambda widzi na żywo. Deklaracja jedna na miejsce w kodzie
          (skompilowane ciało jest pamiętane po niej). *)
       let fdecl = { name = "anonimowa"; params; is_variadic = false; has_return = true; body; defaults = [] } in
       let names = List.map (fun n -> (n, Vars.hash n)) (expr_names lam) in

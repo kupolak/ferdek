@@ -310,18 +310,20 @@ Wynik:
 [tanio, drogo, tanio, drogo]
 ```
 
-Lambda łapie zmienne lokalne jako kopie, więc przypisanie do takiej zmiennej nie przetrwa do następnego
-wywołania. Gdy lambda ma coś pamiętać, złap szafkę (albo tablicę) i zmieniaj to, co w niej leży
-(`DOLEJ 1 DO x` to krótszy zapis `x = x + 1`, `ULEJ 1 Z x` odejmuje):
+Lambda łapie zmienne lokalne jako kopie i te kopie są już jej: co do nich przypisze, to pamięta
+do następnego wywołania (`DOLEJ 1 DO x` to krótszy zapis `x = x + 1`, `ULEJ 1 Z x` odejmuje).
+Każda lambda ma własne kopie - gdy kilka lambd ma widzieć ten sam stan, złap szafkę (albo tablicę)
+i zmieniaj to, co w niej leży.
 
 ```ferdek
 CO JEST KURDE
 ALE WIE PAN JA ZASADNICZO licznik
 NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
-    AFERA JEST stan W MORDĘ JEŻA OTWÓRZ SZAFKĘ("n", 0)
+    CYCU PRZYNIEŚ NO n
+    TO NIE SĄ TANIE RZECZY 0
     I JA INFORMUJĘ ŻE WYCHODZĘ JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ() NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
-        DOLEJ 1 DO stan["n"]
-        I JA INFORMUJĘ ŻE WYCHODZĘ WYPIERDZIELAJ PAN NA POZYCJĘ stan["n"]
+        DOLEJ 1 DO n
+        I JA INFORMUJĘ ŻE WYCHODZĘ n
     DO WIDZENIA PANU
 DO WIDZENIA PANU
 

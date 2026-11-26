@@ -71,7 +71,7 @@ let entries = [
   "JA JESTEM PONAD TO", "JA JESTEM PONAD TO", ">=", false;
   "JA TU RZĄDZĘ", "JA TU RZĄDZĘ(wynik)", "BABKA: asercja wyniku operacji", true;
   "JAK JE", "JAK JE", "Przypadek w CO TO JE - jedna albo kilka wartości po przecinku", false;
-  "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ", "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ", "Funkcja bez nazwy (lambda): JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2, albo z instrukcjami: (x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ ... DO WIDZENIA PANU. Zmienne lokalne łapie jako kopie z chwili utworzenia (każde wywołanie zaczyna od nich), globalne są wspólne. Stan między wywołaniami: złap szafkę albo tablicę i zmieniaj jej zawartość (stan[\"n\"])", false;
+  "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ", "JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ", "Funkcja bez nazwy (lambda): JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2, albo z instrukcjami: (x) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ ... DO WIDZENIA PANU. Zmienne lokalne łapie jako kopie z chwili utworzenia; kopie należą do tej lambdy i pamiętają przypisania między wywołaniami (licznik: DOLEJ 1 DO n). Globalne są wspólne. Stan wspólny dla kilku lambd albo widoczny na zewnątrz: złap szafkę albo tablicę (stan[\"n\"])", false;
   "JAKI DZIŚ DZIEŃ", "JAKI DZIŚ DZIEŃ()", "Dzisiejsza data jako tekst RRRR-MM-DD", true;
   "JAKO", "JAKO", "Import z przestrzenią nazw: O KOGO MOJE PIĘKNE OCZY WIDZĄ matma JAKO m, potem m.dodaj(1, 2), m.PI", false;
   "JEDZIEM Z TYM ŚLEDZIEM", "JEDZIEM Z TYM ŚLEDZIEM", "Wypisz wartość bez końca linii", false;

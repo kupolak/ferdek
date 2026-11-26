@@ -41,4 +41,78 @@ TO NIE SĄ TANIE RZECZY JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ() WYPIERDZIELAJ PAN N
 W MORDĘ JEŻA wplac(50)
 PANIE SENSACJA REWELACJA W MORDĘ JEŻA ile_jest()
 
+RYM CYM CYM Zwykła zmienna też wystarczy: złapana kopia należy do lambdy i pamięta przypisania
+ALE WIE PAN JA ZASADNICZO od
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO n
+    I JA INFORMUJĘ ŻE WYCHODZĘ JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ() NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+        DOLEJ 1 DO n
+        I JA INFORMUJĘ ŻE WYCHODZĘ n
+    DO WIDZENIA PANU
+DO WIDZENIA PANU
+AFERA JEST od_zera W MORDĘ JEŻA od(0)
+AFERA JEST od_stu W MORDĘ JEŻA od(100)
+W MORDĘ JEŻA od_zera()
+W MORDĘ JEŻA od_zera()
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "{W MORDĘ JEŻA od_zera()} {W MORDĘ JEŻA od_stu()}"
+
+RYM CYM CYM Każda lambda ma własną kopię: druga lambda i funkcja, która je zrobiła, zmiany nie widzą
+ALE WIE PAN JA ZASADNICZO dwie
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+    CYCU PRZYNIEŚ NO x
+    TO NIE SĄ TANIE RZECZY 1
+    CYCU PRZYNIEŚ NO podbij
+    TO NIE SĄ TANIE RZECZY JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ() NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+        DOLEJ 10 DO x
+        I JA INFORMUJĘ ŻE WYCHODZĘ x
+    DO WIDZENIA PANU
+    CYCU PRZYNIEŚ NO pokaz
+    TO NIE SĄ TANIE RZECZY JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ() x
+    W MORDĘ JEŻA podbij()
+    I JA INFORMUJĘ ŻE WYCHODZĘ [W MORDĘ JEŻA podbij(), W MORDĘ JEŻA pokaz(), x]
+DO WIDZENIA PANU
+PANIE SENSACJA REWELACJA W MORDĘ JEŻA dwie()
+
+RYM CYM CYM Lambda zrobiona w lambdzie dostaje kopię jej stanu; stan przetrwa błąd złapany w środku
+ALE WIE PAN JA ZASADNICZO fabryka
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+    CYCU PRZYNIEŚ NO ile
+    TO NIE SĄ TANIE RZECZY 0
+    I JA INFORMUJĘ ŻE WYCHODZĘ JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ() NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+        HELENA MUSZĘ CI COŚ POWIEDZIEĆ
+            DOLEJ 1 DO ile
+            O KARWASZ TWARZ "bęc"
+        HELENA MAM ZAWAŁ e
+            DOLEJ 1 DO ile
+        DO CHAŁUPY ALE JUŻ
+        I JA INFORMUJĘ ŻE WYCHODZĘ JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ() NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+            DOLEJ 100 DO ile
+            I JA INFORMUJĘ ŻE WYCHODZĘ ile
+        DO WIDZENIA PANU
+    DO WIDZENIA PANU
+DO WIDZENIA PANU
+AFERA JEST zrob W MORDĘ JEŻA fabryka()
+AFERA JEST pierwsza W MORDĘ JEŻA zrob()
+AFERA JEST druga W MORDĘ JEŻA zrob()
+W MORDĘ JEŻA pierwsza()
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "{W MORDĘ JEŻA pierwsza()} {W MORDĘ JEŻA druga()}"
+
+RYM CYM CYM W metodzie: złapane pole to też kopia lambdy, pole obiektu zostaje
+ALE JAJA Skarbonka
+    CYCU PRZYNIEŚ NO grosze
+    TO NIE SĄ TANIE RZECZY 5
+    ALE WIE PAN JA ZASADNICZO wrzutka
+    NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+        I JA INFORMUJĘ ŻE WYCHODZĘ JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(ile) NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+            DOLEJ ile DO grosze
+            I JA INFORMUJĘ ŻE WYCHODZĘ grosze
+        DO WIDZENIA PANU
+    DO WIDZENIA PANU
+DO WIDZENIA PANU
+CYCU PRZYNIEŚ NO skarbonka
+TO NIE SĄ TANIE RZECZY DZIAD ZDZIADZIAŁY JEDEN Skarbonka
+AFERA JEST wrzuc W MORDĘ JEŻA skarbonka.wrzutka()
+W MORDĘ JEŻA wrzuc(1)
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "{W MORDĘ JEŻA wrzuc(2)} {skarbonka.grosze}"
+
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE

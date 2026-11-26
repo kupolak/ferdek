@@ -412,7 +412,7 @@ let rec compile_expr ctx expr =
   | FunctionRef name -> error (Printf.sprintf "Nieznana funkcja: %s" name)
   | Lambda (params, body) ->
       (* Osobna funkcja C; złapane zmienne lokalne i pola obiektu (kopie wartości z chwili
-         utworzenia) siedzą w self; każde wywołanie zaczyna od tych kopii *)
+         utworzenia) siedzą w self i należą do tej lambdy - wywołanie czyta je i zmienia na miejscu *)
       let caps = expr_names (Lambda (params, body))
                  |> List.filter (fun n -> List.mem n ctx.locals || is_member ctx n)
                  |> List.sort_uniq compare in
@@ -756,7 +756,7 @@ let fun_proto ctx (f : function_decl) =
     (if params = [] then "void" else String.concat ", " params)
 
 (* Ciało funkcji albo metody. members <> [] = metoda: nazwy pól i metod obiektu (self) *)
-let compile_body ?(own_ints = []) ?(own_floats = []) ?(ret_int = false) ?display ctx ~proto ~members (f : function_decl) =
+let compile_body ?(own_ints = []) ?(own_floats = []) ?(ret_int = false) ?(caps = []) ?display ctx ~proto ~members (f : function_decl) =
   let decl, assigned = targets_block ([], []) f.body in
   (* Funkcja: przypisanie do istniejącej globalnej zmienia globalną (set_var w interpreterze).
      Metoda: przypisanie do czegoś, co nie jest polem, tworzy lokalną - set_var sprawdza
@@ -764,9 +764,10 @@ let compile_body ?(own_ints = []) ?(own_floats = []) ?(ret_int = false) ?display
   let assigned_locals =
     if members <> [] then List.filter (fun n -> not (List.mem n members)) assigned
     else List.filter (fun n -> not (Hashtbl.mem ctx.globals n)) assigned in
+  (* caps: zmienne złapane przez lambdę - widoczne jak lokalne, ale leżą w self (makra w compile_lambda) *)
   let locals = dedup (decl @ assigned_locals)
-               |> List.filter (fun n -> not (List.mem n (all_params f))) in
-  ctx.locals <- all_params f @ locals;
+               |> List.filter (fun n -> not (List.mem n (all_params f) || List.mem n caps)) in
+  ctx.locals <- all_params f @ caps @ locals;
   ctx.members <- members;
   ctx.in_function <- true;
   (* long long: własne zmienne funkcji i globalne, których nic tu nie przesłania *)
@@ -808,21 +809,24 @@ let compile_function ctx (f : function_decl) =
     ~own_floats:(Option.value (Hashtbl.find_opt ctx.float_locals f.name) ~default:[])
     ~ret_int:(match Hashtbl.find_opt ctx.sigs f.name with Some (_, r) -> r | None -> false)
 
-(* Lambda: ciało jak funkcja, której złapane zmienne są dodatkowymi parametrami (każde wywołanie
-   dostaje świeże kopie z self), do tego wrapper (self, argc, argv) dla call_value *)
+(* Lambda: ciało jak funkcja z dodatkowym parametrem ferdek_caps - tablicą złapanych zmiennych z self.
+   Na czas ciała nazwa złapanej zmiennej jest makrem na jej miejsce w tej tablicy, więc odczyt
+   i przypisanie idą prosto do stanu lambdy (pamięć na stercie - volatile przy try niepotrzebne).
+   Do tego wrapper (self, argc, argv) dla call_value *)
 let () = compile_lambda := fun ctx name params caps body ->
-  let f = { name; params = params @ caps; is_variadic = false; has_return = true; body; defaults = [] } in
+  let f = { name; params; is_variadic = false; has_return = true; body; defaults = [] } in
   let proto = Printf.sprintf "static FerdekValue %s_body(%s)" name
-      (if f.params = [] then "void"
-       else String.concat ", " (List.map (fun p -> volatile_if_try f ^ "FerdekValue " ^ var_c p) f.params)) in
-  let code = compile_body ~display:"anonimowa" ctx ~proto ~members:[] f in
-  String.concat "\n" [
-    code;
-    Printf.sprintf "static FerdekValue %s(void* self, int argc, FerdekValue* argv) {" name;
-    Printf.sprintf "    return %s_body(%s);" name
-      (String.concat ", " (List.init (List.length params) (Printf.sprintf "argv[%d]")
-                           @ List.init (List.length caps) (Printf.sprintf "((FerdekValue*)self)[%d]")));
-    "}"]
+      (String.concat ", " ("FerdekValue* ferdek_caps"
+                           :: List.map (fun p -> volatile_if_try f ^ "FerdekValue " ^ var_c p) f.params)) in
+  let code = compile_body ~display:"anonimowa" ~caps ctx ~proto ~members:[] f in
+  String.concat "\n" (
+    List.mapi (fun i n -> Printf.sprintf "#define %s (ferdek_caps[%d])" (var_c n) i) caps
+    @ [code]
+    @ List.map (fun n -> "#undef " ^ var_c n) caps
+    @ [Printf.sprintf "static FerdekValue %s(void* self, int argc, FerdekValue* argv) {" name;
+       Printf.sprintf "    return %s_body(%s);" name
+         (String.concat ", " ("(FerdekValue*)self" :: List.init (List.length params) (Printf.sprintf "argv[%d]")));
+       "}"])
 
 (* Metoda: jak funkcja, z obiektem (self) jako pierwszym parametrem *)
 let method_proto cls (m : function_decl) =
