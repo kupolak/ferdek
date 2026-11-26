@@ -118,7 +118,8 @@ wtorek: zupa z torebki
 ## 4. Pętle
 
 `KRĘCI CEMENT BETONIARA i OD 1 DO 5` liczy (z `CO krok` - co tyle), `KRĘCI CEMENT BETONIARA x Z kolekcja`
-idzie po elementach tablicy, kluczach szafki albo znakach tekstu, a `CHLUŚNIEM BO UŚNIEM warunek`
+idzie po elementach tablicy, kluczach szafki albo znakach tekstu (`k, w Z kolekcja` - parami: klucz
+i wartość szafki, numer i element tablicy), a `CHLUŚNIEM BO UŚNIEM warunek`
 kręci, dopóki warunek jest prawdziwy. Każdą kończy `A ROBIĆ NI MA KOMU`.
 `A POCAŁUJCIE MNIE WSZYSCY W DUPĘ` przerywa pętlę, `AKUKARACZA` przechodzi do następnego obrotu.
 `JEDZIEM Z TYM ŚLEDZIEM` wypisuje bez przechodzenia do nowej linii, `NO TO ENTER` kończy linię.
@@ -258,8 +259,8 @@ PANIE SENSACJA REWELACJA W MORDĘ JEŻA WYTNIJ Z WERSALKI(rachunki, 1, 3)
 
 AFERA JEST lodowka W MORDĘ JEŻA OTWÓRZ SZAFKĘ("piwo", 6, "kiełbasa", 2)
 W MORDĘ JEŻA WŁÓŻ DO SZAFKI(lodowka, "ogórki", 1)
-KRĘCI CEMENT BETONIARA co Z lodowka
-    PANIE SENSACJA REWELACJA co BABKA DAWAJ RENTĘ ": " BABKA DAWAJ RENTĘ W MORDĘ JEŻA WYJMIJ Z SZAFKI(lodowka, co)
+KRĘCI CEMENT BETONIARA co, ile Z lodowka
+    PANIE SENSACJA REWELACJA co BABKA DAWAJ RENTĘ ": " BABKA DAWAJ RENTĘ ile
 A ROBIĆ NI MA KOMU
 MOJA NOGA JUŻ TUTAJ NIE POSTANIE
 ```

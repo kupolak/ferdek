@@ -32,7 +32,7 @@ let entries = [
   "COKOLWIEK MOŻE BYĆ", "COKOLWIEK MOŻE BYĆ", "| (bitowe)", false;
   "COSINUS ZE SKRZYNKI", "COSINUS ZE SKRZYNKI(x)", "Cosinus kąta w radianach (wbudowana)", true;
   "CYCU PRZYNIEŚ", "CYCU PRZYNIEŚ", "Import, krótsza forma: CYCU PRZYNIEŚ BABKA", false;
-  "CYCU PRZYNIEŚ NO", "CYCU PRZYNIEŚ NO", "Deklaracja zmiennej: CYCU PRZYNIEŚ NO x / TO NIE SĄ TANIE RZECZY 5", false;
+  "CYCU PRZYNIEŚ NO", "CYCU PRZYNIEŚ NO", "Deklaracja zmiennej: CYCU PRZYNIEŚ NO x / TO NIE SĄ TANIE RZECZY 5; kilka naraz z tablicy: CYCU PRZYNIEŚ NO a, b / TO NIE SĄ TANIE RZECZY [1, 2]", false;
   "CZY KANAPA PASUJE", "CZY KANAPA PASUJE(tekst, wzór)", "Czy wzór występuje w tekście (wzory: . [a-z] [^a] \\d \\w \\s * + ? ^ $)", true;
   "CZY KIBEL ZAJĘTY", "CZY KIBEL ZAJĘTY(ścieżka)", "Czy plik istnieje", true;
   "CZY LEŻY NA WERSALCE", "CZY LEŻY NA WERSALCE(tablica, element)", "Czy tablica zawiera element", true;
@@ -194,7 +194,7 @@ let entries = [
   "WPISZ DO TABELI", "WPISZ DO TABELI(tabela, indeks, wartość)", "Zapisz w tablicy wyszukiwania", true;
   "WSZYSCY OBLANI", "WSZYSCY OBLANI(wiadomość)", "BABKA: oblej test", true;
   "WSZYSTKIE RZECZY", "WSZYSTKIE RZECZY(mapa)", "Wartości, w kolejności posortowanych kluczy", true;
-  "WSZYSTKIE SZUFLADKI", "WSZYSTKIE SZUFLADKI(mapa)", "Posortowana tablica kluczy", true;
+  "WSZYSTKIE SZUFLADKI", "WSZYSTKIE SZUFLADKI(mapa)", "Posortowana tablica kluczy; dla tablicy i tekstu numery pozycji", true;
   "WSZYSTKO MUSI BYĆ", "WSZYSTKO MUSI BYĆ", "& (bitowe)", false;
   "WYGRAŁAM", "WYGRAŁAM()", "BABKA: zalicz test", true;
   "WYJDŹ NA KLATKĘ", "WYJDŹ NA KLATKĘ(url)", "KLATKA: HTTP GET", true;
@@ -212,7 +212,7 @@ let entries = [
   "WYŁĄCZ TELEWIZOR", "WYŁĄCZ TELEWIZOR(ekran)", "Usuń framebuffer", true;
   "WŁÓŻ DO SZAFKI", "WŁÓŻ DO SZAFKI(mapa, klucz, wartość)", "Zapisz wartość pod kluczem", true;
   "WŁĄCZ TELEWIZOR", "WŁĄCZ TELEWIZOR(szerokość, wysokość)", "Utwórz framebuffer", true;
-  "Z", "Z", "Pętla po elementach: KRĘCI CEMENT BETONIARA x Z kolekcja - tablica (elementy), szafka (klucze, posortowane) albo tekst (znaki)", false;
+  "Z", "Z", "Pętla po elementach: KRĘCI CEMENT BETONIARA x Z kolekcja - tablica (elementy), szafka (klucze, posortowane) albo tekst (znaki); parami: KRĘCI CEMENT BETONIARA k, w Z kolekcja - klucz i wartość szafki, numer i element tablicy albo tekstu", false;
   "ZACZYNA SIĘ OD", "ZACZYNA SIĘ OD(tekst, początek)", "Czy tekst zaczyna się od podanego początku", true;
   "ZAMIEŃ NA FIXED", "ZAMIEŃ NA FIXED", "Liczba na fixed-point 16.16", false;
   "ZAMIEŃ NA KANAPIE", "ZAMIEŃ NA KANAPIE(tekst, stary, nowy)", "Zamień wszystkie wystąpienia", true;

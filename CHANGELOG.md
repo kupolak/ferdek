@@ -69,6 +69,11 @@
   evaluated once and only the result of the first matching case; without `A JAK NIC Z TEGO` it is null when
   nothing fits. Like with the if expression, a bare `I JA INFORMUJĘ ŻE WYCHODZĘ` directly followed by `CO TO JE`
   no longer parses.
+- Several variables at once: `CYCU PRZYNIEŚ NO a, b` / `TO NIE SĄ TANIE RZECZY [1, 2]` takes them from an array
+  (a function can return two things; `[b, a]` swaps). The value is evaluated once; too few elements is the
+  usual index error, extra ones are left alone.
+- Loop over pairs: `KRĘCI CEMENT BETONIARA k, w Z kolekcja` gives the key and value of a map (keys sorted) or the
+  index and element of an array or text. `WSZYSTKIE SZUFLADKI` on an array or text returns its indexes.
 - Short updates: `DOLEJ 2 DO x` is `x = x + 2` (text is appended), `ULEJ 1 Z x` is `x = x - 1`. The target
   can be a variable, `t[0]`, `s["klucz"]` or `kot.wiek`; types and constants are checked as for any
   assignment. `DOLEJ` and `ULEJ` are now keywords.

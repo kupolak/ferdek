@@ -159,6 +159,14 @@ statement_kind:
 var_decl:
   | VAR_DECL id=IDENTIFIER t=option(TYPE) VAR_INIT e=expression
     { VarDecl (id, typed ("Zmienna " ^ id) t e) }
+  (* CYCU PRZYNIEŚ NO a, b / TO NIE SĄ TANIE RZECZY tablica: wartość raz do zmiennej pomocniczej,
+     potem a = tablica[0], b = tablica[1]. Za mało elementów to zwykły błąd indeksu, nadmiar zostaje.
+     ponytail: zmienna pomocnicza nazwana od numeru linii, jak przy CO TO JE *)
+  | VAR_DECL first=IDENTIFIER COMMA rest=separated_nonempty_list(COMMA, IDENTIFIER) VAR_INIT e=expression
+    { let tmp = Printf.sprintf "(rozpakowane %d)" $startpos.Lexing.pos_lnum in
+      If (BoolLiteral true,
+          VarDecl (tmp, e) :: List.mapi (fun i id -> VarDecl (id, ArrayAccess (Identifier tmp, IntLiteral i))) (first :: rest),
+          None) }
   | CONST id=IDENTIFIER t=option(TYPE) VAR_INIT e=expression
     { ConstDecl (id, typed ("Stała " ^ id) t e) }
   ;
@@ -260,6 +268,16 @@ while_stmt:
     { For (var, a, b, Some k, body) }
   | FOR var=IDENTIFIER FOR_IN coll=expression body=list(statement) END_WHILE
     { ForEach (var, coll, body) }
+  (* KRĘCI CEMENT BETONIARA k, w Z kolekcja: szafka - klucz i wartość, tablica i tekst - numer i element.
+     Kolekcja liczona raz; pętla idzie po kluczach z chwili startu, wartość czytana w każdym obrocie.
+     ponytail: nie-kolekcja zgłasza błąd słowami WSZYSTKIE SZUFLADKI, nie pętli *)
+  | FOR k=IDENTIFIER COMMA w=IDENTIFIER FOR_IN coll=expression body=list(statement) END_WHILE
+    { let tmp = Printf.sprintf "(para %d)" $startpos.Lexing.pos_lnum in
+      If (BoolLiteral true,
+          [VarDecl (tmp, coll);
+           ForEach (k, FunctionCall ("WSZYSTKIE SZUFLADKI", [Identifier tmp]),
+                    VarDecl (w, ArrayAccess (Identifier tmp, Identifier k)) :: body)],
+          None) }
   ;
 
 func_call_stmt:

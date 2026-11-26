@@ -30,7 +30,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 
 | Słowo | Znaczenie |
 |---|---|
-| `CYCU PRZYNIEŚ NO` | Deklaracja zmiennej: CYCU PRZYNIEŚ NO x / TO NIE SĄ TANIE RZECZY 5 |
+| `CYCU PRZYNIEŚ NO` | Deklaracja zmiennej: CYCU PRZYNIEŚ NO x / TO NIE SĄ TANIE RZECZY 5; kilka naraz z tablicy: CYCU PRZYNIEŚ NO a, b / TO NIE SĄ TANIE RZECZY [1, 2] |
 | `TO NIE SĄ TANIE RZECZY` | Wartość początkowa w deklaracji; w liście parametrów - wartość domyślna (ile TO NIE SĄ TANIE RZECZY 1) |
 | `PANIE TO JEST PRYWATNA PUBLICZNA TABLICA` | Deklaracja tablicy |
 | `O KURDE MAM POMYSŁA` | Przypisanie: O KURDE MAM POMYSŁA x A PROSZĘ BARDZO 5 NO I GITARA |
@@ -71,7 +71,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `JAK JE` | Przypadek w CO TO JE - jedna albo kilka wartości po przecinku |
 | `A JAK NIC Z TEGO` | Gdy żaden przypadek CO TO JE nie pasuje |
 | `KONIEC GADANIA` | Koniec CO TO JE |
-| `Z` | Pętla po elementach: KRĘCI CEMENT BETONIARA x Z kolekcja - tablica (elementy), szafka (klucze, posortowane) albo tekst (znaki) |
+| `Z` | Pętla po elementach: KRĘCI CEMENT BETONIARA x Z kolekcja - tablica (elementy), szafka (klucze, posortowane) albo tekst (znaki); parami: KRĘCI CEMENT BETONIARA k, w Z kolekcja - klucz i wartość szafki, numer i element tablicy albo tekstu |
 | `A ROBIĆ NI MA KOMU` | Koniec pętli |
 | `A POCAŁUJCIE MNIE WSZYSCY W DUPĘ` | break |
 | `AKUKARACZA` | continue |
@@ -215,7 +215,7 @@ Przykładowe programy: katalog [`examples/`](../examples).
 | `WYJMIJ Z SZAFKI(mapa, klucz)` | Wartość spod klucza (null, gdy brak) |
 | `WYRZUĆ ZE SZAFKI(mapa, klucz)` | Usuń klucz |
 | `CZY W SZAFCE(mapa, klucz)` | Czy klucz istnieje |
-| `WSZYSTKIE SZUFLADKI(mapa)` | Posortowana tablica kluczy |
+| `WSZYSTKIE SZUFLADKI(mapa)` | Posortowana tablica kluczy; dla tablicy i tekstu numery pozycji |
 | `ILE W SZAFCE(mapa)` | Liczba kluczy |
 | `ZAPAKUJ DO SŁOIKA(wartość)` | JSON: szafki, tablice, liczby, teksty, prawda/fałsz jako tekst JSON (klucze posortowane) |
 | `WYJMIJ ZE SŁOIKA(tekst)` | JSON z tekstu: obiekty jako szafki, tablice jako wersalki |

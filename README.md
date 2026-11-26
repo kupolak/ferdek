@@ -27,6 +27,8 @@ Some examples:
 - `AAA TO ZMIENIA POSTAĆ RZECZY` - else if
 - `KRĘCI CEMENT BETONIARA i OD 1 DO 10 CO 2` ... `A ROBIĆ NI MA KOMU` - for loop
 - `KRĘCI CEMENT BETONIARA piwo Z lodowka` ... `A ROBIĆ NI MA KOMU` - loop over array elements, map keys or characters
+- `KRĘCI CEMENT BETONIARA co, ile Z lodowka` - loop over pairs: key and value of a map, index and element of an array or text
+- `CYCU PRZYNIEŚ NO a, b` / `TO NIE SĄ TANIE RZECZY [1, 2]` - several variables at once from an array (`[b, a]` swaps)
 - `KARTA LUBI DYM(1, 6)` - random number (`KARTA LUBI DYM(seed)` sets the seed)
 - `O KOGO MOJE PIĘKNE OCZY WIDZĄ moj_plik` - import `moj_plik.ferdek` next to your file (or a stdlib module);
   `... WIDZĄ matma JAKO m` keeps the module's names apart: `m.dodaj(1, 2)`, `m.PI`

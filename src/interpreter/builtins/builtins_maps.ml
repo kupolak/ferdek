@@ -79,7 +79,10 @@ let register () = add [
             | VHashMap tbl ->
                 let keys = Map_utils.szafka_wszystkie_szufladki tbl in
                 VArray (Array.of_list (List.map (fun k -> VString k) keys))
-            | _ -> raise (RuntimeError "WSZYSTKIE SZUFLADKI: argument musi być szafką (mapą)"))
+            (* tablica i tekst: numery pozycji - dla pętli KRĘCI CEMENT BETONIARA k, w Z kolekcja *)
+            | VArray a -> VArray (Array.init (Array.length a) (fun i -> VInt i))
+            | VString s -> VArray (Array.init (Text_utils.utf8_length s) (fun i -> VInt i))
+            | _ -> raise (RuntimeError "WSZYSTKIE SZUFLADKI: argument musi być szafką (mapą), tablicą albo tekstem"))
        | _ -> raise (RuntimeError "WSZYSTKIE SZUFLADKI oczekuje 1 argumentu")));
 
   (* ILE W SZAFCE(dict) - returns number of elements *)

@@ -1,0 +1,77 @@
+CO JEST KURDE
+
+RYM CYM CYM Kilka zmiennych naraz z tablicy
+CYCU PRZYNIEŚ NO imie, wiek
+TO NIE SĄ TANIE RZECZY ["Ferdek", 50]
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "{imie}, lat {wiek}"
+
+RYM CYM CYM Z wyniku funkcji (liczonego raz), nadmiar zostaje
+CYCU PRZYNIEŚ NO wolane
+TO NIE SĄ TANIE RZECZY 0
+ALE WIE PAN JA ZASADNICZO podziel
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO a, b
+    DOLEJ 1 DO wolane
+    CYCU PRZYNIEŚ NO ile, reszta
+    TO NIE SĄ TANIE RZECZY [a MUSZĘ DO SRACZA b, a PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ b, "nadmiar"]
+    I JA INFORMUJĘ ŻE WYCHODZĘ [ile, reszta]
+DO WIDZENIA PANU
+CYCU PRZYNIEŚ NO q, r
+TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA podziel(17, 5)
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "{q} reszty {r}, wołane {wolane} raz"
+
+RYM CYM CYM Zamiana miejscami
+CYCU PRZYNIEŚ NO q, r
+TO NIE SĄ TANIE RZECZY [r, q]
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "{q} {r}"
+
+RYM CYM CYM Za mało elementów to błąd
+HELENA MUSZĘ CI COŚ POWIEDZIEĆ
+    CYCU PRZYNIEŚ NO x, y, z
+    TO NIE SĄ TANIE RZECZY [1, 2]
+HELENA MAM ZAWAŁ e
+    PANIE SENSACJA REWELACJA "złapane: " BABKA DAWAJ RENTĘ e
+DO CHAŁUPY ALE JUŻ
+
+RYM CYM CYM Pętla po parach: szafka - klucz i wartość (klucze posortowane)
+AFERA JEST lodowka W MORDĘ JEŻA OTWÓRZ SZAFKĘ("wódka", 1, "piwo", 6, "kiełbasa", 2)
+KRĘCI CEMENT BETONIARA co, ile Z lodowka
+    PANIE SENSACJA REWELACJA POWIEM PANU TAK "{co}: {ile}"
+A ROBIĆ NI MA KOMU
+
+RYM CYM CYM Tablica i tekst: numer i element; break i continue działają
+KRĘCI CEMENT BETONIARA i, kto Z ["Ferdek", "Halina", "Waldek", "Mariola"]
+    NO JAK NIE JAK TAK i TO PANU SIĘ CHCE WTEDY KIEDY MNIE 1
+        AKUKARACZA
+    DO CHAŁUPY ALE JUŻ
+    NO JAK NIE JAK TAK i TO PANU SIĘ CHCE WTEDY KIEDY MNIE 3
+        A POCAŁUJCIE MNIE WSZYSCY W DUPĘ
+    DO CHAŁUPY ALE JUŻ
+    PANIE SENSACJA REWELACJA POWIEM PANU TAK "{i}. {kto}"
+A ROBIĆ NI MA KOMU
+KRĘCI CEMENT BETONIARA i, znak Z "żółw"
+    JEDZIEM Z TYM ŚLEDZIEM POWIEM PANU TAK "{i}{znak} "
+A ROBIĆ NI MA KOMU
+NO TO ENTER
+
+RYM CYM CYM W funkcji, zagnieżdżone, kolekcja liczona raz
+ALE WIE PAN JA ZASADNICZO tabelka
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO dane
+    KRĘCI CEMENT BETONIARA kto, rzeczy Z dane
+        KRĘCI CEMENT BETONIARA nr, rzecz Z rzeczy
+            PANIE SENSACJA REWELACJA POWIEM PANU TAK "{kto} {nr}: {rzecz}"
+        A ROBIĆ NI MA KOMU
+    A ROBIĆ NI MA KOMU
+DO WIDZENIA PANU
+W MORDĘ JEŻA tabelka(W MORDĘ JEŻA OTWÓRZ SZAFKĘ("Ferdek", ["piwo", "pilot"], "Boczek", ["kiełbasa"]))
+
+RYM CYM CYM Po liczbie nie da się przejść
+HELENA MUSZĘ CI COŚ POWIEDZIEĆ
+    KRĘCI CEMENT BETONIARA a, b Z 5
+        PANIE SENSACJA REWELACJA a
+    A ROBIĆ NI MA KOMU
+HELENA MAM ZAWAŁ e
+    PANIE SENSACJA REWELACJA "złapane: " BABKA DAWAJ RENTĘ e
+DO CHAŁUPY ALE JUŻ
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

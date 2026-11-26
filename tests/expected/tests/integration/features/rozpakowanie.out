@@ -1,0 +1,15 @@
+Ferdek, lat 50
+3 reszty 2, wołane 1 raz
+2 3
+złapane: Indeks tablicy poza zakresem
+kiełbasa: 2
+piwo: 6
+wódka: 1
+0. Ferdek
+2. Waldek
+0ż 1ó 2ł 3w 
+Boczek 0: kiełbasa
+Ferdek 0: piwo
+Ferdek 1: pilot
+złapane: WSZYSTKIE SZUFLADKI: argument musi być szafką (mapą), tablicą albo tekstem
+Program zakończony pomyślnie. Piwo dla Pana!

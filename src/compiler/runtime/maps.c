@@ -53,9 +53,17 @@ static FerdekValue b_szafka_czy_w(int argc, FerdekValue* argv) {
 }
 
 static FerdekValue b_szafka_szufladki(int argc, FerdekValue* argv) {
-    FerdekMap* m = map_arg(argv[0], "WSZYSTKIE SZUFLADKI: argument musi być szafką (mapą)");
-    char** keys = map_sorted_keys(m);
     FerdekValue out = make_array(NULL, 0);
+    /* tablica i tekst: numery pozycji - dla pętli KRĘCI CEMENT BETONIARA k, w Z kolekcja */
+    if (argv[0].type == TYPE_ARRAY || argv[0].type == TYPE_STRING) {
+        long long n = argv[0].type == TYPE_ARRAY ? argv[0].value.array_val->length : utf8_index(argv[0].value.string_val, NULL);
+        out.value.array_val->data = fx_malloc(sizeof(FerdekValue) * (n > 0 ? n : 1));
+        for (long long i = 0; i < n; i++) out.value.array_val->data[i] = make_int(i);
+        out.value.array_val->length = n;
+        return out;
+    }
+    FerdekMap* m = map_arg(argv[0], "WSZYSTKIE SZUFLADKI: argument musi być szafką (mapą), tablicą albo tekstem");
+    char** keys = map_sorted_keys(m);
     out.value.array_val->data = fx_malloc(sizeof(FerdekValue) * (m->len > 0 ? m->len : 1));
     for (int i = 0; i < m->len; i++) out.value.array_val->data[i] = make_string(keys[i]);
     out.value.array_val->length = m->len;
