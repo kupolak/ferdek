@@ -26,7 +26,7 @@ let entries = [
   "CO PAN PRZYNIÓSŁ", "CO PAN PRZYNIÓSŁ()", "Argumenty programu (ferdek program.ferdek a b) jako tablica tekstów", true;
   "CO TAM JEST", "CO TAM JEST", "Wartość spod wskaźnika", false;
   "CO TAM U PANA SŁYCHAĆ", "CO TAM U PANA SŁYCHAĆ", "Wczytaj linię z wejścia do zmiennej", false;
-  "CO TO JE", "CO TO JE", "Wybór wariantu: CO TO JE x / JAK JE 1, 2 / A JAK NIC Z TEGO / KONIEC GADANIA", false;
+  "CO TO JE", "CO TO JE", "Wybór wariantu: CO TO JE x / JAK JE 1, 2 / A JAK NIC Z TEGO / KONIEC GADANIA; jako wartość: CO TO JE x / JAK JE 1, 2 A PROSZĘ BARDZO a / A JAK NIC Z TEGO b / KONIEC GADANIA (bez A JAK NIC Z TEGO - null)", false;
   "CO TO ZA TYP", "CO TO ZA TYP(x)", "Nazwa typu wartości", true;
   "CO W KIBLU", "CO W KIBLU(ścieżka)", "Pliki w katalogu", true;
   "COKOLWIEK MOŻE BYĆ", "COKOLWIEK MOŻE BYĆ", "| (bitowe)", false;

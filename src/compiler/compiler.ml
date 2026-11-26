@@ -370,6 +370,14 @@ let rec compile_expr ctx expr =
   | Parenthesized e -> Printf.sprintf "(%s)" (compile_expr ctx e)
   | Conditional (c, a, b) ->
       Printf.sprintf "(%s ? %s : %s)" (compile_cond ctx c) (compile_expr ctx a) (compile_expr ctx b)
+  | Switch (e, cases, d) ->
+      (* wartość raz do zmiennej, potem łańcuch ?: - liczony tylko wynik pierwszego pasującego przypadku *)
+      let tmp = fresh ctx "sw_" in
+      let case (vs, r) =
+        Printf.sprintf "(%s) ? %s : " (String.concat " || " (List.map (fun v ->
+          Printf.sprintf "compare_bool(%s, %s, CMP_EQ)" tmp (compile_expr ctx v)) vs)) (compile_expr ctx r) in
+      Printf.sprintf "({ FerdekValue %s = %s; %s%s; })" tmp (compile_expr ctx e)
+        (String.concat "" (List.map case cases)) (compile_expr ctx d)
   | Checked (e, t, what) ->
       Printf.sprintf "check_type(%s, %s, %s)" (compile_expr ctx e) (type_tag t) (c_string_literal what)
   (* Zmienna, w której leży klasa (CYCU PRZYNIEŚ NO k / TO NIE SĄ TANIE RZECZY Osoba): typ sprawdzamy

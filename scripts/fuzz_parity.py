@@ -55,6 +55,8 @@ class Gen:
             f"W MORDĘ JEŻA na_koncu({self.expr('int', d)})",   # zdefiniowana niżej, na końcu programu
             # jedno albo drugie; gałąź z dzieleniem przez i2 (bywa zerem) liczona tylko, gdy wybrana
             f"(NO JAK NIE JAK TAK {self.expr('bool', d)} A PROSZĘ BARDZO {self.expr('int', d)} A DUPA TAM {self.expr('int', d)})",
+            # wybór jako wartość; wartość liczona raz, wynik tylko wybrany
+            f"(CO TO JE {self.expr('int', d)} JAK JE 0, 1 A PROSZĘ BARDZO {self.expr('int', d)} JAK JE {self.expr('int', d)} A PROSZĘ BARDZO 7 A JAK NIC Z TEGO {self.expr('int', d)} KONIEC GADANIA)",
             f"(NO JAK NIE JAK TAK (i2 TO PANU SIĘ CHCE WTEDY KIEDY MNIE 0) A PROSZĘ BARDZO {self.expr('int', d)} A DUPA TAM (100 MUSZĘ DO SRACZA i2))",
             # indeksy: ujemny liczy od końca, za daleko to ten sam błąd; szafka po kluczu
             f"WYPIERDZIELAJ PAN NA POZYCJĘ t0[{self.r.randint(-2, 1)}]",

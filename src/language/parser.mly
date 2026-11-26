@@ -95,7 +95,7 @@ let typed_body name types ret body =
 /* Start symbol */
 (* "RETURN W MORDĘ JEŻA f()" = zwróć f(), a nie pusty return + wywołanie *)
 %nonassoc RETURN_BARE
-%nonassoc FUNC_CALL IF
+%nonassoc FUNC_CALL IF SWITCH
 
 %start <Ast.program> program
 
@@ -241,6 +241,10 @@ switch_stmt:
 switch_case:
   | CASE vals=separated_nonempty_list(COMMA, expression) body=list(statement)
     { (vals, body, $startpos.Lexing.pos_lnum) }
+  ;
+
+switch_value:
+  | CASE vals=separated_nonempty_list(COMMA, expression) ASSIGN_OP r=expression { (vals, r) }
   ;
 
 switch_default:
@@ -412,6 +416,10 @@ expression:
      Gałąź "inaczej" sięga tak daleko, jak się da (jak ciało lambdy); w środku działania - w nawiasach *)
   | IF c=logical_expr ASSIGN_OP a=expression ELSE b=expression
     { Conditional (c, a, b) }
+  (* Wybór jako wartość: CO TO JE x / JAK JE 1, 2 A PROSZĘ BARDZO a / A JAK NIC Z TEGO b / KONIEC GADANIA.
+     Bez A JAK NIC Z TEGO wynikiem jest null, gdy nic nie pasuje *)
+  | SWITCH e=expression cases=list(switch_value) d=option(preceded(DEFAULT, expression)) END_SWITCH
+    { Switch (e, cases, Option.value d ~default:NullLiteral) }
   (* Ciało lambdy sięga tak daleko, jak się da - jak fun w OCamlu *)
   | LAMBDA LPAREN ps=separated_list(COMMA, IDENTIFIER) RPAREN body=expression
     { Lambda (ps, [Return (Some body)]) }

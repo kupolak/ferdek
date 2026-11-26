@@ -65,6 +65,7 @@ type expr =
   | FromFixed of expr
   | Parenthesized of expr
   | Conditional of expr * expr * expr   (* warunek, wartość gdy prawda, wartość gdy fałsz *)
+  | Switch of expr * (expr list * expr) list * expr   (* wartość, przypadki (wartości, wynik), wynik gdy nic nie pasuje *)
   | Lambda of string list * stmt list   (* ciało z wyrażeniem = [Return (Some e)] *)
   | Checked of expr * typ * string     (* wartość musi mieć typ; napis mówi, czego dotyczy *)
 

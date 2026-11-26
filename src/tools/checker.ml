@@ -89,6 +89,7 @@ let check ?(load_module = fun _ -> None) (prog : program) : string list =
     | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
     | Parenthesized e -> expr sc e
     | Conditional (c, a, b) -> expr sc c; expr sc a; expr sc b
+    | Switch _ as sw -> List.iter (expr sc) (subexprs sw)
     | Checked (e, t, what) ->
         expr sc e;
         let known = match e with

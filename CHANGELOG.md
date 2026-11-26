@@ -64,6 +64,11 @@
   after a print, in an assignment, as a function result or a lambda body; inside a larger expression it
   goes in parentheses. Only the chosen side is evaluated. A side effect: a bare
   `I JA INFORMUJĘ ŻE WYCHODZĘ` directly followed by an if block (code that could never run) no longer parses.
+- A choice as a value: `CO TO JE x` / `JAK JE 1, 2 A PROSZĘ BARDZO a` / `A JAK NIC Z TEGO b` / `KONIEC GADANIA` is an
+  expression - in the same places as the if expression (in parentheses inside a larger expression). The value is
+  evaluated once and only the result of the first matching case; without `A JAK NIC Z TEGO` it is null when
+  nothing fits. Like with the if expression, a bare `I JA INFORMUJĘ ŻE WYCHODZĘ` directly followed by `CO TO JE`
+  no longer parses.
 - Short updates: `DOLEJ 2 DO x` is `x = x + 2` (text is appended), `ULEJ 1 Z x` is `x = x - 1`. The target
   can be a variable, `t[0]`, `s["klucz"]` or `kot.wiek`; types and constants are checked as for any
   assignment. `DOLEJ` and `ULEJ` are now keywords.

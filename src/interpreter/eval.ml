@@ -429,6 +429,14 @@ let rec compile_expr cx : expr -> code = function
       (* liczona jest tylko wybrana gałąź *)
       let cc = compile_expr cx c and ca = compile_expr cx a and cb = compile_expr cx b in
       fun env -> if to_bool (cc env) then ca env else cb env
+  | Switch (e, cases, d) ->
+      (* wartość liczona raz; przypadki po kolei, liczony tylko wynik pierwszego pasującego *)
+      let ce = compile_expr cx e and cd = compile_expr cx d in
+      let ccases = List.map (fun (vs, r) -> (List.map (compile_expr cx) vs, compile_expr cx r)) cases in
+      fun env ->
+        let v = ce env in
+        let hit (vs, _) = List.exists (fun cv -> to_bool (eval_comparison_op Equal v (cv env))) vs in
+        (match List.find_opt hit ccases with Some (_, r) -> r env | None -> cd env)
   | Checked (e, t, what) ->
       let c = compile_expr cx e in
       fun env -> check_type (c env) t what

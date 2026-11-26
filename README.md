@@ -35,6 +35,8 @@ Some examples:
 - `"Piwa: " BABKA DAWAJ RENTĘ 6` - `+` with text concatenates; arithmetic on non-numeric text is an error
 - `NO JAK NIE JAK TAK piwa GRUBA ŚWINIA 0 A PROSZĘ BARDZO "jest" A DUPA TAM "nie ma"` - one value or the other
   (an if as an expression; only the chosen side is evaluated)
+- `CO TO JE dzien JAK JE "sobota", "niedziela" A PROSZĘ BARDZO "schabowy" A JAK NIC Z TEGO "zupa" KONIEC GADANIA` - a choice
+  as a value (the cases can go on separate lines; without `A JAK NIC Z TEGO` the value is null when nothing fits)
 - `DOLEJ 2 DO piwa` / `ULEJ 1 Z piwa` - add to / take from a variable, an array element, a map key or a field
 - `POWIEM PANU TAK "Piwa: {piwa}, jutro {piwa BABKA DAWAJ RENTĘ 2}"` - text with values put in (any expression in `{}`)
 - `JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x ROZDUPCĘ BANK 2` - anonymous function (local variables captured as copies;

@@ -134,7 +134,7 @@ SECTIONS = [
         "TO JE FUNKCJA": "Typ: funkcja",
         "I TAK TRZEBA POSPRZĄTAĆ": "Ostatnia część bloku HELENA: wykonywana zawsze - także po błędzie, return i break",
         "TO JE NA AMEN": "Stała: TO JE NA AMEN x / TO NIE SĄ TANIE RZECZY 5 - później nie wolno przypisać",
-        "CO TO JE": "Wybór wariantu: CO TO JE x / JAK JE 1, 2 / A JAK NIC Z TEGO / KONIEC GADANIA",
+        "CO TO JE": "Wybór wariantu: CO TO JE x / JAK JE 1, 2 / A JAK NIC Z TEGO / KONIEC GADANIA; jako wartość: CO TO JE x / JAK JE 1, 2 A PROSZĘ BARDZO a / A JAK NIC Z TEGO b / KONIEC GADANIA (bez A JAK NIC Z TEGO - null)",
         "JAK JE": "Przypadek w CO TO JE - jedna albo kilka wartości po przecinku",
         "A JAK NIC Z TEGO": "Gdy żaden przypadek CO TO JE nie pasuje",
         "KONIEC GADANIA": "Koniec CO TO JE",

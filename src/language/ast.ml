@@ -65,6 +65,7 @@ type expr =
   | FromFixed of expr                                    (* Convert from fixed-point 16.16 (WYJMIJ Z FIXED) *)
   | Parenthesized of expr                                (* Parenthesized expression *)
   | Conditional of expr * expr * expr                    (* NO JAK NIE JAK TAK w A PROSZĘ BARDZO a A DUPA TAM b - jedno albo drugie jako wartość *)
+  | Switch of expr * (expr list * expr) list * expr      (* CO TO JE x / JAK JE 1, 2 A PROSZĘ BARDZO a / A JAK NIC Z TEGO b / KONIEC GADANIA - wybór jako wartość *)
   | Lambda of string list * stmt list                    (* JAK ROBIĆ ŻEBY SIĘ NIE NAROBIĆ(x) x + 1  albo  (x) NO DOBRZE ... DO WIDZENIA PANU *)
   | Checked of expr * typ * string                       (* wartość musi mieć typ; napis: czego dotyczy (do błędu) *)
 
@@ -252,6 +253,11 @@ let rec string_of_expr = function
       "(" ^ string_of_expr e ^ ")"
   | Conditional (c, a, b) ->
       "(" ^ string_of_expr c ^ " ? " ^ string_of_expr a ^ " : " ^ string_of_expr b ^ ")"
+  | Switch (e, cases, d) ->
+      "switch(" ^ string_of_expr e ^ ") {"
+      ^ String.concat "" (List.map (fun (vs, r) ->
+          String.concat ", " (List.map string_of_expr vs) ^ " -> " ^ string_of_expr r ^ "; ") cases)
+      ^ "_ -> " ^ string_of_expr d ^ "}"
   | Checked (e, t, what) -> "(" ^ string_of_expr e ^ " : " ^ string_of_typ t ^ " [" ^ what ^ "])"
   | Lambda (params, body) ->
       "fun(" ^ String.concat ", " params ^ ") {\n"
@@ -316,6 +322,9 @@ and string_of_stmt indent = function
       string_of_stmt indent s
 
 (* Convert function declaration to string *)
+(* Wszystkie wyrażenia wyboru jako wartość: wartość, przypadki, wyniki, wynik domyślny *)
+let switch_exprs e cases d = e :: List.concat_map (fun (vs, r) -> vs @ [r]) cases @ [d]
+
 (* Nazwy, do których sięgają wyrażenia i instrukcje (zmienne, funkcje, cele przypisań),
    bez parametrów i zmiennych zadeklarowanych wewnątrz zagnieżdżonych lambd *)
 let rec expr_names = function
@@ -327,6 +336,7 @@ let rec expr_names = function
   | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
   | Parenthesized e | Checked (e, _, _) -> expr_names e
   | Conditional (c, a, b) -> expr_names c @ expr_names a @ expr_names b
+  | Switch (e, cases, d) -> List.concat_map expr_names (switch_exprs e cases d)
   | Lambda (params, body) ->
       let own = params @ block_decls body in
       List.filter (fun n -> not (List.mem n own)) (List.concat_map stmt_names body)
@@ -384,6 +394,7 @@ let subexprs = function
   | BitwiseNot e | LogicalNot e | ToFixed e | FromFixed e | Reference e | Dereference e
   | Parenthesized e | Checked (e, _, _) -> [e]
   | Conditional (c, a, b) -> [c; a; b]
+  | Switch (e, cases, d) -> switch_exprs e cases d
   | _ -> []
 
 (* Wyrażenia instrukcji razem z zagnieżdżonymi instrukcjami *)
@@ -420,6 +431,7 @@ let map_subexprs f = function
   | Dereference e -> Dereference (f e)
   | Parenthesized e -> Parenthesized (f e)
   | Conditional (c, a, b) -> Conditional (f c, f a, f b)
+  | Switch (e, cases, d) -> Switch (f e, List.map (fun (vs, r) -> (List.map f vs, f r)) cases, f d)
   | Checked (e, t, w) -> Checked (f e, t, w)
   | e -> e
 

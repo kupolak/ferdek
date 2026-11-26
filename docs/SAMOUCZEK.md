@@ -112,6 +112,9 @@ sobota: schabowy
 wtorek: zupa z torebki
 ```
 
+`CO TO JE` może też dać wartość - wtedy po `JAK JE` stoi `A PROSZĘ BARDZO` i wynik:
+`CO TO JE dzien JAK JE "piątek" A PROSZĘ BARDZO "ryba" A JAK NIC Z TEGO "zupa" KONIEC GADANIA`.
+
 ## 4. Pętle
 
 `KRĘCI CEMENT BETONIARA i OD 1 DO 5` liczy (z `CO krok` - co tyle), `KRĘCI CEMENT BETONIARA x Z kolekcja`

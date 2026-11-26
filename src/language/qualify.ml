@@ -47,6 +47,7 @@ let qualify alias (prog : program) =
     | Dereference a -> Dereference (e a)
     | Parenthesized a -> Parenthesized (e a)
     | Conditional (c, a, b) -> Conditional (e c, e a, e b)
+    | Switch (v, cases, d) -> Switch (e v, List.map (fun (vs, r) -> (List.map e vs, e r)) cases, e d)
     | Checked (a, t, w) -> Checked (e a, t, w)
     | Lambda (ps, body) -> let sh = ps @ block_decls body @ sh in Lambda (ps, List.map (s sh) body)
     | IntLiteral _ | FloatLiteral _ | StringLiteral _ | BoolLiteral _ | NullLiteral -> x
