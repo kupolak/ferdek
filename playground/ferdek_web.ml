@@ -56,7 +56,11 @@ let () =
   Worker.set_onmessage (fun (msg : Js.Unsafe.any) ->
     let get k = Js.to_string (Js.Unsafe.get msg (Js.string k)) in
     match get "cmd" with
-    | "run" -> run (get "code") (get "input")
+    | "run" ->
+        (* adres, pod którym runtime.js pyta o klawisze i mysz (ZDARZENIE_CZEKAJ); może go nie być *)
+        Js.Unsafe.set Js.Unsafe.global (Js.string "ferdek_events_url")
+          (Js.Optdef.get (Js.Unsafe.get msg (Js.string "events")) (fun () -> Js.Unsafe.inject (Js.string "")));
+        run (get "code") (get "input")
     | "highlight" -> post ["kind", str "highlight"; "spans", highlight (get "code"); "seq", Js.Unsafe.get msg (Js.string "seq")]
     | "fmt" -> post ["kind", str "fmt"; "text", str (Formatter.format (get "code"))]
     | "examples" ->

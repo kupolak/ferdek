@@ -30,4 +30,45 @@ assert.ok(first.some((v, i) => v !== last[i]), "klatki się różnią");
 const i = Number(/kolor (\d+)/.exec(text("out"))[1]);
 const o = (50 * 160 + 80) * 4;
 assert.deepStrictEqual(Array.from(last.slice(o, o + 4)), [i, Math.floor(i * i / 255), 96 - Math.floor(i / 3), 255]);
-console.log("--- plac zabaw: grafika i usypianie OK");
+
+// Klawiatura i mysz: ZDARZENIE_CZEKAJ pyta synchronicznie pod adres z wiadomości "run";
+// tu odpowiada udawany XMLHttpRequest (w przeglądarce - service worker playground/sw.js)
+const pending = [[[1, 65361, 0, 0], [3, 1, 12, 34]], [[2, 65361, 0, 0]]];
+const asked = [];
+globalThis.XMLHttpRequest = class {
+  open(method, url, async) { asked.push([method, url, async]); }
+  send() { this.status = 200; this.responseText = JSON.stringify(pending.shift() || []); }
+};
+const poll = `CO JEST KURDE
+KRĘCI CEMENT BETONIARA i OD 1 DO 5
+    PANIE SENSACJA REWELACJA W MORDĘ JEŻA ZDARZENIE_CZEKAJ()
+    W MORDĘ JEŻA TRZEBA SPAĆ(10)
+A ROBIĆ NI MA KOMU
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE
+`;
+msgs.length = 0;
+globalThis.onmessage({ data: { cmd: "run", code: poll, input: "\n", events: "http://plac/__ferdek_zdarzenia?s=abc" } });
+assert.strictEqual(text("err"), "");
+assert.strictEqual(text("out").split("\n").slice(0, 5).join("|"),
+  "[1, 65361, 0, 0]|[3, 1, 12, 34]|[2, 65361, 0, 0]|[0, 0, 0, 0]|[0, 0, 0, 0]");
+assert.ok(asked.length >= 3 && asked.every(a => a[0] === "GET" && a[1].endsWith("?s=abc") && a[2] === false));
+// bez adresu (brak service workera) program działa, tylko zdarzeń nie ma i nikt nie pyta
+msgs.length = 0; asked.length = 0;
+globalThis.onmessage({ data: { cmd: "run", code: poll, input: "\n" } });
+assert.strictEqual(text("err"), "");
+assert.ok(text("out").startsWith("[0, 0, 0, 0]\n[0, 0, 0, 0]"));
+assert.strictEqual(asked.length, 0);
+// service worker: kolejka na sesję, odpowiedź opróżnia kolejkę, obce adresy idą normalnie
+const handlers = {};
+const sandbox = { self: { addEventListener: (n, f) => { handlers[n] = f; }, skipWaiting() {}, clients: { claim() {} } },
+                  URL, Map, JSON, Number, Array, Response: class { constructor(body) { this.body = body; } } };
+require("vm").runInNewContext(fs.readFileSync(path.join(root, "playground/sw.js"), "utf8"), sandbox);
+const ask = url => { let r = null; handlers.fetch({ request: { url }, respondWith: x => { r = x; } }); return r && r.body; };
+handlers.message({ data: { s: "a", ev: [1, 97, 0, 0] } });
+handlers.message({ data: { s: "b", ev: [3, 1, 5, 6] } });
+handlers.message({ data: { s: "a", ev: ["zle"] } });
+assert.strictEqual(ask("http://plac/__ferdek_zdarzenia?s=a"), "[[1,97,0,0]]");
+assert.strictEqual(ask("http://plac/__ferdek_zdarzenia?s=a"), "[]");
+assert.strictEqual(ask("http://plac/__ferdek_zdarzenia?s=b"), "[[3,1,5,6]]");
+assert.strictEqual(ask("http://plac/index.html"), null);
+console.log("--- plac zabaw: grafika, usypianie, klawiatura i mysz OK");

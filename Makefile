@@ -207,6 +207,7 @@ playground:
 	dune build --profile release ./playground/ferdek_web.bc.js
 	rm -rf _build/playground && mkdir -p _build/playground
 	cp _build/default/playground/ferdek_web.bc.js _build/playground/ferdek_web.js
+	cp playground/sw.js _build/playground/sw.js
 	{ printf '<!doctype html>\n<html lang="pl">\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n'; cat playground/index.html; } > _build/playground/index.html
 	@echo "--- plac zabaw: _build/playground (np. python3 -m http.server -d _build/playground)"
 

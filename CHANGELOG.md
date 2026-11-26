@@ -194,10 +194,14 @@
 - Browser playground (`make playground`): the interpreter as JavaScript in a Web Worker, with
   examples, stdlib, program input and a formatter button, syntax highlighting (by the real lexer)
   and share links (the program, compressed, after `#`).
+- Playground: keyboard and mouse. Click the canvas and `ZDARZENIE_CZEKAJ()` returns key presses, key releases
+  and mouse clicks, with the same numbers as in an X11 window. The interpreter runs without a break in its
+  worker, so it asks a service worker (`sw.js`, a new file to deploy next to the page) for the events the page
+  collected; no special server headers are needed. A program with a window is no longer stopped after 20 s.
+  New example: `piwo.ferdek` (catch the beer with the arrow keys).
 - Playground: graphics. `OKNO_OTWORZ`, `PALETA_USTAW`, `PIKSEL_MALUJ`, `EKRAN_CZYSC`, `EKRAN_ODSWIEZ` and
   `BUFOR_RAMKI_POBIERZ` work in the browser - every `EKRAN_ODSWIEZ` shows a frame on a canvas above the
-  program output, so loops animate (example `telewizor.ferdek`). `ZDARZENIE_CZEKAJ` always answers "no
-  event": there is no keyboard or mouse there yet. `TRZEBA SPAĆ` works in the playground too (it used to
+  program output, so loops animate (example `telewizor.ferdek`). `TRZEBA SPAĆ` works in the playground too (it used to
   stop the program with an error). `make test-playground` runs the check with node.
 - `ferdek --check` (unknown names, wrong argument counts), `ferdek test` (runs `*_test.ferdek`),
   `ferdek --fmt` (indentation).

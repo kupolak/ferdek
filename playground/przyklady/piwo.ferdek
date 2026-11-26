@@ -1,0 +1,86 @@
+CO JEST KURDE
+
+RYM CYM CYM Łap piwo! Kliknij okno, potem strzałki w lewo i w prawo (albo kliknięcie myszą) ruszają skrzynką.
+RYM CYM CYM Esc kończy. ZDARZENIE_CZEKAJ() daje [rodzaj, klawisz, x, y]: rodzaj 0 - nic się nie stało,
+RYM CYM CYM 1 - klawisz wciśnięty, 2 - puszczony, 3 - przycisk myszy (x, y to piksel okna).
+TO JE NA AMEN SZER
+TO NIE SĄ TANIE RZECZY 160
+TO JE NA AMEN WYS
+TO NIE SĄ TANIE RZECZY 100
+TO JE NA AMEN LEWO
+TO NIE SĄ TANIE RZECZY 65361
+TO JE NA AMEN PRAWO
+TO NIE SĄ TANIE RZECZY 65363
+TO JE NA AMEN ESC
+TO NIE SĄ TANIE RZECZY 65307
+
+RYM CYM CYM Prostokąt w kolorze z palety (bez PALETA_USTAW to odcienie szarości 0-255)
+ALE WIE PAN JA ZASADNICZO prostokat
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO x0, y0, szer, wys, kolor
+    KRĘCI CEMENT BETONIARA y OD y0 DO y0 BABKA DAWAJ RENTĘ wys PASZOŁ WON 1
+        KRĘCI CEMENT BETONIARA x OD x0 DO x0 BABKA DAWAJ RENTĘ szer PASZOŁ WON 1
+            W MORDĘ JEŻA PIKSEL_MALUJ(x, y, kolor)
+        A ROBIĆ NI MA KOMU
+    A ROBIĆ NI MA KOMU
+DO WIDZENIA PANU
+
+W MORDĘ JEŻA OKNO_OTWORZ(SZER, WYS, "Łap piwo")
+CYCU PRZYNIEŚ NO skrzynka
+TO NIE SĄ TANIE RZECZY 70
+CYCU PRZYNIEŚ NO ruch
+TO NIE SĄ TANIE RZECZY 0
+CYCU PRZYNIEŚ NO piwo_x, piwo_y
+TO NIE SĄ TANIE RZECZY [W MORDĘ JEŻA KARTA LUBI DYM(0, SZER PASZOŁ WON 6), 0]
+CYCU PRZYNIEŚ NO zlapane, rozlane
+TO NIE SĄ TANIE RZECZY [0, 0]
+CYCU PRZYNIEŚ NO gramy
+TO NIE SĄ TANIE RZECZY A ŻEBYŚ PAN WIEDZIAŁ
+
+RYM CYM CYM Najwyżej 1500 klatek (pół minuty), żeby program sam się skończył
+KRĘCI CEMENT BETONIARA klatka OD 1 DO 1500
+    RYM CYM CYM Wszystkie zdarzenia, które przyszły od poprzedniej klatki
+    AFERA JEST z W MORDĘ JEŻA ZDARZENIE_CZEKAJ()
+    CHLUŚNIEM BO UŚNIEM z[0] GRUBA ŚWINIA 0
+        CO TO JE z[0]
+            JAK JE 1
+                O KURDE MAM POMYSŁA ruch A PROSZĘ BARDZO CO TO JE z[1] JAK JE LEWO A PROSZĘ BARDZO -3 JAK JE PRAWO A PROSZĘ BARDZO 3 A JAK NIC Z TEGO ruch KONIEC GADANIA NO I GITARA
+                O KURDE MAM POMYSŁA gramy A PROSZĘ BARDZO TAK BYĆ NIE BĘDZIE (z[1] TO PANU SIĘ CHCE WTEDY KIEDY MNIE ESC) NO I GITARA
+            JAK JE 2
+                O KURDE MAM POMYSŁA ruch A PROSZĘ BARDZO 0 NO I GITARA
+            JAK JE 3
+                O KURDE MAM POMYSŁA skrzynka A PROSZĘ BARDZO z[2] PASZOŁ WON 10 NO I GITARA
+        KONIEC GADANIA
+        AFERA JEST z W MORDĘ JEŻA ZDARZENIE_CZEKAJ()
+    A ROBIĆ NI MA KOMU
+    NO JAK NIE JAK TAK TAK BYĆ NIE BĘDZIE gramy
+        A POCAŁUJCIE MNIE WSZYSCY W DUPĘ
+    DO CHAŁUPY ALE JUŻ
+
+    RYM CYM CYM Skrzynka zostaje w oknie, piwo spada coraz szybciej
+    DOLEJ ruch DO skrzynka
+    NO JAK NIE JAK TAK skrzynka ŁYSA PAŁA 0
+        O KURDE MAM POMYSŁA skrzynka A PROSZĘ BARDZO 0 NO I GITARA
+    AAA TO ZMIENIA POSTAĆ RZECZY skrzynka GRUBA ŚWINIA SZER PASZOŁ WON 20
+        O KURDE MAM POMYSŁA skrzynka A PROSZĘ BARDZO SZER PASZOŁ WON 20 NO I GITARA
+    DO CHAŁUPY ALE JUŻ
+    DOLEJ 1 BABKA DAWAJ RENTĘ zlapane MUSZĘ DO SRACZA 3 DO piwo_y
+    NO JAK NIE JAK TAK piwo_y JA JESTEM PONAD TO WYS PASZOŁ WON 12
+        NO JAK NIE JAK TAK piwo_x BABKA DAWAJ RENTĘ 6 JA JESTEM PONAD TO skrzynka PIWO I TELEWIZOR skrzynka BABKA DAWAJ RENTĘ 20 JA JESTEM PONAD TO piwo_x
+            DOLEJ 1 DO zlapane
+        A DUPA TAM
+            DOLEJ 1 DO rozlane
+        DO CHAŁUPY ALE JUŻ
+        CYCU PRZYNIEŚ NO piwo_x, piwo_y
+        TO NIE SĄ TANIE RZECZY [W MORDĘ JEŻA KARTA LUBI DYM(0, SZER PASZOŁ WON 6), 0]
+    DO CHAŁUPY ALE JUŻ
+
+    W MORDĘ JEŻA EKRAN_CZYSC(20)
+    W MORDĘ JEŻA prostokat(piwo_x, piwo_y, 6, 8, 230)
+    W MORDĘ JEŻA prostokat(skrzynka, WYS PASZOŁ WON 6, 20, 4, 140)
+    W MORDĘ JEŻA EKRAN_ODSWIEZ()
+    W MORDĘ JEŻA TRZEBA SPAĆ(20)
+A ROBIĆ NI MA KOMU
+
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "Złapane: {zlapane}, rozlane: {rozlane}"
+W MORDĘ JEŻA OKNO_ZAMKNIJ()
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

@@ -251,6 +251,7 @@
     image-rendering: pixelated;
   }
   #gfx[hidden] { display: none; }
+  #gfx:focus { outline: 2px solid var(--screen-dim); outline-offset: 2px; }
   #gfx:not([hidden]) + #screen { min-height: 80px; }
   #screen .err { color: var(--screen-err); }
   #screen .sys { color: var(--screen-dim); }
@@ -301,7 +302,7 @@
     <section class="pane">
       <div class="tv">
         <div class="tv-top"><span>Telewizor</span><span id="lamp" class="lamp">wyłączony</span></div>
-        <canvas id="gfx" hidden aria-label="Okno graficzne programu"></canvas>
+        <canvas id="gfx" hidden tabindex="0" aria-label="Okno graficzne programu - kliknij, żeby łapało klawisze"></canvas>
         <pre id="screen" aria-live="polite"><span class="sys">Wciśnij „Odpalamy”, a Ferdek puści program na ekran.</span></pre>
       </div>
       <div class="label"><span>Wejście</span><span>dla CO TAM U PANA SŁYCHAĆ, linia po linii</span></div>
@@ -310,7 +311,7 @@
   </main>
 
   <footer>
-    Interpreter Ferdka skompilowany do JavaScriptu. Działa wszystko poza siecią i plikami; okno graficzne rysuje się w telewizorze (bez klawiatury i myszy).
+    Interpreter Ferdka skompilowany do JavaScriptu. Działa wszystko poza siecią i plikami; okno graficzne rysuje się w telewizorze - kliknij je, żeby program dostawał klawisze i mysz (<code>ZDARZENIE_CZEKAJ</code>).
     Moduły ze stdlib importujesz jak zwykle: <code>O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/SKRZYNKA JAKO s</code>.
     Kod: <a href="https://github.com/kupolak/ferdek">github.com/kupolak/ferdek</a>
   </footer>
@@ -341,7 +342,46 @@
     screen.scrollTop = screen.scrollHeight;
   }
 
+  // Klawiatura i mysz: zdarzenia idą do service workera (sw.js), skąd interpreter odbiera je
+  // przez ZDARZENIE_CZEKAJ - [rodzaj, klawisz, x, y] jak w oknie X11: 1 klawisz wciśnięty,
+  // 2 puszczony (klawisz to keysym: litera małą, strzałki 65361-65364, Enter 65293, Esc 65307),
+  // 3 przycisk myszy (klawisz = 1 lewy, 2 środkowy, 3 prawy; x, y w pikselach programu).
+  const sw = navigator.serviceWorker;
+  if (sw) sw.register("sw.js").catch(() => { /* bez service workera program po prostu nie dostaje zdarzeń */ });
+  const KEYSYMS = { ArrowLeft: 65361, ArrowUp: 65362, ArrowRight: 65363, ArrowDown: 65364, Enter: 65293,
+                    Escape: 65307, Backspace: 65288, Tab: 65289, Shift: 65505, Control: 65507, Alt: 65513 };
+  let session = "";
+  function keysym(e) {
+    if (KEYSYMS[e.key]) return KEYSYMS[e.key];
+    return [...e.key].length === 1 ? e.key.toLowerCase().codePointAt(0) : 0;
+  }
+  function sendEvent(ev) {
+    if (worker && session && sw && sw.controller) sw.controller.postMessage({ s: session, ev });
+  }
+  function onKey(type) {
+    return e => {
+      const k = keysym(e);
+      if (!k || e.metaKey || (type === 1 && e.repeat)) return;
+      if (e.key !== "Tab") e.preventDefault();   // strzałki i spacja nie przewijają strony; Tab dalej wychodzi z okna
+      sendEvent([type, k, 0, 0]);
+    };
+  }
+  gfx.addEventListener("keydown", onKey(1));
+  gfx.addEventListener("keyup", onKey(2));
+  gfx.addEventListener("contextmenu", e => e.preventDefault());
+  gfx.addEventListener("mousedown", e => {
+    gfx.focus();
+    // object-fit: contain - obraz może być węższy albo niższy niż element
+    const r = gfx.getBoundingClientRect();
+    const scale = Math.min(r.width / gfx.width, r.height / gfx.height);
+    const x = Math.floor((e.clientX - r.left - (r.width - gfx.width * scale) / 2) / scale);
+    const y = Math.floor((e.clientY - r.top - (r.height - gfx.height * scale) / 2) / scale);
+    if (x >= 0 && y >= 0 && x < gfx.width && y < gfx.height) sendEvent([3, e.button + 1, x, y]);
+  });
+
   function stop(reason) {
+    if (session && sw && sw.controller) sw.controller.postMessage({ s: session, end: true });
+    session = "";
     if (worker) { worker.terminate(); worker = null; }
     clearTimeout(timer);
     runBtn.disabled = false; stopBtn.disabled = true;
@@ -365,7 +405,12 @@
     worker = spawn(m => {
       if (m.kind === "out") write(m.text);
       else if (m.kind === "err") write(m.text, "err");
-      else if (m.kind === "window") { gfx.width = m.w; gfx.height = m.h; gfx.title = m.title; gfx.hidden = false; }
+      else if (m.kind === "window") {
+        gfx.width = m.w; gfx.height = m.h; gfx.title = m.title; gfx.hidden = false;
+        // program z oknem może chodzić, dopóki ktoś gra - kończy go "Stop" albo on sam
+        clearTimeout(timer);
+        if (!code.contains(document.activeElement)) gfx.focus();
+      }
       else if (m.kind === "frame") gfx.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(m.data), m.w, m.h), 0, 0);
       else if (m.kind === "done") {
         const ms = Math.round(performance.now() - started);
@@ -374,7 +419,10 @@
         stop();
       }
     });
-    worker.postMessage({ cmd: "run", code: code.value, input: input.value.endsWith("\n") ? input.value : input.value + "\n" });
+    // sesja: po niej service worker rozdziela zdarzenia między karty; bez niego adres pusty
+    session = sw && sw.controller ? Math.random().toString(36).slice(2) + Date.now().toString(36) : "";
+    const events = session ? new URL("__ferdek_zdarzenia?s=" + session, location.href).href : "";
+    worker.postMessage({ cmd: "run", events, code: code.value, input: input.value.endsWith("\n") ? input.value : input.value + "\n" });
     timer = setTimeout(() => stop(`Stop po ${LIMIT_MS / 1000} s - pewnie pętla bez końca.`), LIMIT_MS);
   }
 

@@ -100,8 +100,12 @@ Ferdek in the browser: the interpreter compiled to JavaScript (js_of_ocaml), run
 with examples and the stdlib built in. Build it with `make playground` (needs
 `opam install js_of_ocaml js_of_ocaml-compiler`) and serve `_build/playground/` with any static
 file server. Everything works except networking and files. Graphics programs (`OKNO_OTWORZ`,
-`PIKSEL_MALUJ`, `EKRAN_ODSWIEZ`...) draw on a canvas on the page - without keyboard and mouse events,
-see the `telewizor.ferdek` example. `make test-playground` checks it with node.
+`PIKSEL_MALUJ`, `EKRAN_ODSWIEZ`...) draw on a canvas on the page (the `telewizor.ferdek` example). Click the
+canvas and the program gets the keyboard and mouse through `ZDARZENIE_CZEKAJ()` - `[kind, key, x, y]`, the same
+as in an X11 window: 1 key pressed, 2 key released (key is a keysym: a lowercase letter, arrows 65361-65364,
+Esc 65307), 3 mouse button (x, y in the program's pixels); see the `piwo.ferdek` example. The events go through
+a service worker (`sw.js`, served next to the page), so the page needs https or localhost; without it programs
+run but get no events. `make test-playground` checks it with node.
 
 ## Installation
 

@@ -85,9 +85,31 @@ function caml_ferdek_screen_refresh(unit) {
   return 0;
 }
 
+// Klawiatura i mysz (ZDARZENIE_CZEKAJ): strona wysyła zdarzenia do service workera (sw.js),
+// a my odbieramy je stąd synchronicznym zapytaniem - worker liczy program bez przerwy, więc
+// zwykłych wiadomości nie usłyszy. Adres z numerem sesji ustawia ferdek_web.ml przy starcie
+// programu (globalThis.ferdek_events_url); pusty = brak service workera, zdarzeń nie ma.
+
+//Provides: ferdek_events
+var ferdek_events = { queue: [], last: 0 };
+
 //Provides: caml_ferdek_event_poll
+//Requires: ferdek_events
 function caml_ferdek_event_poll(unit) {
-  // ponytail: zawsze "brak zdarzenia" - worker liczy program bez przerwy, więc klawiszy ze strony
-  // nie usłyszy. Klawiatura/mysz: SharedArrayBuffer (strona musi mieć nagłówki COOP/COEP).
-  return [0, 0, 0, 0, 0];
+  var e = ferdek_events, url = globalThis.ferdek_events_url;
+  // ponytail: pytamy najwyżej co 5 ms - program w ciasnej pętli nie zasypie przeglądarki zapytaniami
+  if (e.queue.length === 0 && url && Date.now() - e.last >= 5) {
+    e.last = Date.now();
+    try {
+      var x = new XMLHttpRequest();
+      x.open("GET", url, false);
+      x.send();
+      var got = x.status === 200 ? JSON.parse(x.responseText) : null;
+      if (Array.isArray(got)) e.queue = got;
+      else globalThis.ferdek_events_url = "";   // to nie nasz service worker - nie pytamy więcej
+    } catch (err) { globalThis.ferdek_events_url = ""; }
+  }
+  var ev = e.queue.shift();
+  // rodzaj: 0 brak, 1 klawisz wciśnięty, 2 puszczony, 3 przycisk myszy (jak w graphics_x11.c)
+  return ev ? [0, ev[0] | 0, ev[1] | 0, ev[2] | 0, ev[3] | 0] : [0, 0, 0, 0, 0];
 }
