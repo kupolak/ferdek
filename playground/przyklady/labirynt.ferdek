@@ -1,0 +1,153 @@
+CO JEST KURDE
+
+RYM CYM CYM Labirynt w piwnicy Kiepskich: widok z oczu, jak w grach z lat 90. (raycasting).
+RYM CYM CYM Kliknij okno. Strzałki albo W/S/A/D: chodzenie i obracanie, Esc: koniec.
+RYM CYM CYM Dla każdej kolumny okna leci promień; im dalej trafi w ścianę, tym niższy i ciemniejszy pasek.
+TO JE NA AMEN SZER
+TO NIE SĄ TANIE RZECZY 120
+TO JE NA AMEN WYS
+TO NIE SĄ TANIE RZECZY 80
+
+RYM CYM CYM # to ściana, kropka to podłoga
+TO JE NA AMEN MAPA
+TO NIE SĄ TANIE RZECZY ["############", "#..........#", "#.##.####..#", "#.#....#...#", "#.#.##.#.#.#", "#...#..#.#.#", "###.#.##.#.#", "#...#....#.#", "#.####.###.#", "#......#...#", "#.##.#...#.#", "############"]
+
+RYM CYM CYM Paleta: 0 - sufit i podłoga, 1-127 - ściana od północy/południa, 128-255 - od wschodu/zachodu
+CYCU PRZYNIEŚ NO paleta
+TO NIE SĄ TANIE RZECZY [14, 14, 28]
+KRĘCI CEMENT BETONIARA i OD 1 DO 127
+    AFERA JEST paleta W MORDĘ JEŻA ZESTAW WERSALKI(paleta, [i ROZDUPCĘ BANK 2, (i ROZDUPCĘ BANK 6) MUSZĘ DO SRACZA 5, i MUSZĘ DO SRACZA 2])
+A ROBIĆ NI MA KOMU
+KRĘCI CEMENT BETONIARA i OD 0 DO 127
+    AFERA JEST paleta W MORDĘ JEŻA ZESTAW WERSALKI(paleta, [i, (i ROZDUPCĘ BANK 3) MUSZĘ DO SRACZA 2, i ROZDUPCĘ BANK 2])
+A ROBIĆ NI MA KOMU
+
+RYM CYM CYM Jedna klatka: promień dla każdej kolumny idzie po kratkach mapy, aż trafi w ścianę
+ALE WIE PAN JA ZASADNICZO rysuj
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO px, py, kat
+    W MORDĘ JEŻA EKRAN_CZYSC(0)
+    KRĘCI CEMENT BETONIARA kol OD 0 DO SZER PASZOŁ WON 1
+        CYCU PRZYNIEŚ NO ka
+        TO NIE SĄ TANIE RZECZY kat BABKA DAWAJ RENTĘ (kol MUSZĘ DO SRACZA 120.0 PASZOŁ WON 0.5)
+        CYCU PRZYNIEŚ NO dx, dy
+        TO NIE SĄ TANIE RZECZY [W MORDĘ JEŻA COSINUS ZE SKRZYNKI(ka), W MORDĘ JEŻA SINUS ZE SKRZYNKI(ka)]
+        NO JAK NIE JAK TAK dx TO PANU SIĘ CHCE WTEDY KIEDY MNIE 0
+            O KURDE MAM POMYSŁA dx A PROSZĘ BARDZO 0.00001 NO I GITARA
+        DO CHAŁUPY ALE JUŻ
+        NO JAK NIE JAK TAK dy TO PANU SIĘ CHCE WTEDY KIEDY MNIE 0
+            O KURDE MAM POMYSŁA dy A PROSZĘ BARDZO 0.00001 NO I GITARA
+        DO CHAŁUPY ALE JUŻ
+        RYM CYM CYM mx, my - kratka; kx, ky - w którą stronę idziemy; ile promienia na jedną kratkę w poziomie i pionie
+        CYCU PRZYNIEŚ NO mx, my
+        TO NIE SĄ TANIE RZECZY [W MORDĘ JEŻA ZRÓB DŁUGI(px), W MORDĘ JEŻA ZRÓB DŁUGI(py)]
+        CYCU PRZYNIEŚ NO kx
+        TO NIE SĄ TANIE RZECZY NO JAK NIE JAK TAK dx ŁYSA PAŁA 0 A PROSZĘ BARDZO -1 A DUPA TAM 1
+        CYCU PRZYNIEŚ NO ky
+        TO NIE SĄ TANIE RZECZY NO JAK NIE JAK TAK dy ŁYSA PAŁA 0 A PROSZĘ BARDZO -1 A DUPA TAM 1
+        CYCU PRZYNIEŚ NO skok_x
+        TO NIE SĄ TANIE RZECZY kx MUSZĘ DO SRACZA dx
+        CYCU PRZYNIEŚ NO skok_y
+        TO NIE SĄ TANIE RZECZY ky MUSZĘ DO SRACZA dy
+        RYM CYM CYM droga promienia do najbliższej pionowej i poziomej linii kratek
+        CYCU PRZYNIEŚ NO do_x
+        TO NIE SĄ TANIE RZECZY NO JAK NIE JAK TAK dx ŁYSA PAŁA 0 A PROSZĘ BARDZO (px PASZOŁ WON mx) ROZDUPCĘ BANK skok_x A DUPA TAM (mx BABKA DAWAJ RENTĘ 1 PASZOŁ WON px) ROZDUPCĘ BANK skok_x
+        CYCU PRZYNIEŚ NO do_y
+        TO NIE SĄ TANIE RZECZY NO JAK NIE JAK TAK dy ŁYSA PAŁA 0 A PROSZĘ BARDZO (py PASZOŁ WON my) ROZDUPCĘ BANK skok_y A DUPA TAM (my BABKA DAWAJ RENTĘ 1 PASZOŁ WON py) ROZDUPCĘ BANK skok_y
+        CYCU PRZYNIEŚ NO bok
+        TO NIE SĄ TANIE RZECZY 0
+        CYCU PRZYNIEŚ NO droga
+        TO NIE SĄ TANIE RZECZY 0.0
+        CHLUŚNIEM BO UŚNIEM MAPA[my][mx] PAN TU NIE MIESZKASZ "#"
+            NO JAK NIE JAK TAK do_x ŁYSA PAŁA do_y
+                O KURDE MAM POMYSŁA droga A PROSZĘ BARDZO do_x NO I GITARA
+                DOLEJ skok_x DO do_x
+                DOLEJ kx DO mx
+                O KURDE MAM POMYSŁA bok A PROSZĘ BARDZO 0 NO I GITARA
+            A DUPA TAM
+                O KURDE MAM POMYSŁA droga A PROSZĘ BARDZO do_y NO I GITARA
+                DOLEJ skok_y DO do_y
+                DOLEJ ky DO my
+                O KURDE MAM POMYSŁA bok A PROSZĘ BARDZO 1 NO I GITARA
+            DO CHAŁUPY ALE JUŻ
+        A ROBIĆ NI MA KOMU
+        RYM CYM CYM odległość na wprost (bez "rybiego oka"), z niej wysokość paska i jasność
+        CYCU PRZYNIEŚ NO d
+        TO NIE SĄ TANIE RZECZY droga ROZDUPCĘ BANK W MORDĘ JEŻA COSINUS ZE SKRZYNKI(ka PASZOŁ WON kat) BABKA DAWAJ RENTĘ 0.05
+        CYCU PRZYNIEŚ NO h
+        TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA ZRÓB DŁUGI(WYS MUSZĘ DO SRACZA d)
+        NO JAK NIE JAK TAK h GRUBA ŚWINIA WYS
+            O KURDE MAM POMYSŁA h A PROSZĘ BARDZO WYS NO I GITARA
+        DO CHAŁUPY ALE JUŻ
+        CYCU PRZYNIEŚ NO kolor
+        TO NIE SĄ TANIE RZECZY bok ROZDUPCĘ BANK 128 BABKA DAWAJ RENTĘ 8 BABKA DAWAJ RENTĘ W MORDĘ JEŻA ZRÓB DŁUGI(119 MUSZĘ DO SRACZA (1 BABKA DAWAJ RENTĘ d ROZDUPCĘ BANK 0.6))
+        CYCU PRZYNIEŚ NO gora
+        TO NIE SĄ TANIE RZECZY (WYS PASZOŁ WON h) MUSZĘ DO SRACZA 2
+        KRĘCI CEMENT BETONIARA y OD gora DO gora BABKA DAWAJ RENTĘ h PASZOŁ WON 1
+            W MORDĘ JEŻA PIKSEL_MALUJ(kol, y, kolor)
+        A ROBIĆ NI MA KOMU
+    A ROBIĆ NI MA KOMU
+    W MORDĘ JEŻA EKRAN_ODSWIEZ()
+DO WIDZENIA PANU
+
+ALE WIE PAN JA ZASADNICZO wolne
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO x, y
+    I JA INFORMUJĘ ŻE WYCHODZĘ MAPA[W MORDĘ JEŻA ZRÓB DŁUGI(y)][W MORDĘ JEŻA ZRÓB DŁUGI(x)] PAN TU NIE MIESZKASZ "#"
+DO WIDZENIA PANU
+
+W MORDĘ JEŻA OKNO_OTWORZ(SZER, WYS, "Labirynt")
+W MORDĘ JEŻA PALETA_USTAW(paleta)
+CYCU PRZYNIEŚ NO px, py, kat
+TO NIE SĄ TANIE RZECZY [1.5, 1.5, 0.1]
+CYCU PRZYNIEŚ NO krok, obrot
+TO NIE SĄ TANIE RZECZY [0, 0]
+CYCU PRZYNIEŚ NO gramy
+TO NIE SĄ TANIE RZECZY A ŻEBYŚ PAN WIEDZIAŁ
+
+RYM CYM CYM Najwyżej 3000 klatek, żeby program sam się kiedyś skończył
+KRĘCI CEMENT BETONIARA klatka OD 1 DO 3000
+    AFERA JEST z W MORDĘ JEŻA ZDARZENIE_CZEKAJ()
+    CHLUŚNIEM BO UŚNIEM z[0] GRUBA ŚWINIA 0
+        RYM CYM CYM klawisz wciśnięty (1) włącza ruch, puszczony (2) wyłącza
+        CYCU PRZYNIEŚ NO ile
+        TO NIE SĄ TANIE RZECZY NO JAK NIE JAK TAK z[0] TO PANU SIĘ CHCE WTEDY KIEDY MNIE 1 A PROSZĘ BARDZO 1 A DUPA TAM 0
+        NO JAK NIE JAK TAK z[0] ŁYSA PAŁA 3
+            CO TO JE z[1]
+                JAK JE 65362, 119
+                    O KURDE MAM POMYSŁA krok A PROSZĘ BARDZO ile NO I GITARA
+                JAK JE 65364, 115
+                    O KURDE MAM POMYSŁA krok A PROSZĘ BARDZO 0 PASZOŁ WON ile NO I GITARA
+                JAK JE 65361, 97
+                    O KURDE MAM POMYSŁA obrot A PROSZĘ BARDZO 0 PASZOŁ WON ile NO I GITARA
+                JAK JE 65363, 100
+                    O KURDE MAM POMYSŁA obrot A PROSZĘ BARDZO ile NO I GITARA
+                JAK JE 65307
+                    O KURDE MAM POMYSŁA gramy A PROSZĘ BARDZO GÓWNO PRAWDA NO I GITARA
+            KONIEC GADANIA
+        DO CHAŁUPY ALE JUŻ
+        AFERA JEST z W MORDĘ JEŻA ZDARZENIE_CZEKAJ()
+    A ROBIĆ NI MA KOMU
+    NO JAK NIE JAK TAK TAK BYĆ NIE BĘDZIE gramy
+        A POCAŁUJCIE MNIE WSZYSCY W DUPĘ
+    DO CHAŁUPY ALE JUŻ
+
+    RYM CYM CYM Ruch osobno w poziomie i w pionie - przy ścianie można się po niej ślizgać
+    DOLEJ obrot ROZDUPCĘ BANK 0.07 DO kat
+    CYCU PRZYNIEŚ NO nx
+    TO NIE SĄ TANIE RZECZY px BABKA DAWAJ RENTĘ W MORDĘ JEŻA COSINUS ZE SKRZYNKI(kat) ROZDUPCĘ BANK 0.09 ROZDUPCĘ BANK krok
+    CYCU PRZYNIEŚ NO ny
+    TO NIE SĄ TANIE RZECZY py BABKA DAWAJ RENTĘ W MORDĘ JEŻA SINUS ZE SKRZYNKI(kat) ROZDUPCĘ BANK 0.09 ROZDUPCĘ BANK krok
+    NO JAK NIE JAK TAK W MORDĘ JEŻA wolne(nx, py)
+        O KURDE MAM POMYSŁA px A PROSZĘ BARDZO nx NO I GITARA
+    DO CHAŁUPY ALE JUŻ
+    NO JAK NIE JAK TAK W MORDĘ JEŻA wolne(px, ny)
+        O KURDE MAM POMYSŁA py A PROSZĘ BARDZO ny NO I GITARA
+    DO CHAŁUPY ALE JUŻ
+
+    W MORDĘ JEŻA rysuj(px, py, kat)
+    W MORDĘ JEŻA TRZEBA SPAĆ(15)
+A ROBIĆ NI MA KOMU
+
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "Koniec spaceru na kratce {W MORDĘ JEŻA ZRÓB DŁUGI(px)}, {W MORDĘ JEŻA ZRÓB DŁUGI(py)}"
+W MORDĘ JEŻA OKNO_ZAMKNIJ()
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

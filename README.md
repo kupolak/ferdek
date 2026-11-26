@@ -103,7 +103,8 @@ file server. Everything works except networking and files. Graphics programs (`O
 `PIKSEL_MALUJ`, `EKRAN_ODSWIEZ`...) draw on a canvas on the page (the `telewizor.ferdek` example). Click the
 canvas and the program gets the keyboard and mouse through `ZDARZENIE_CZEKAJ()` - `[kind, key, x, y]`, the same
 as in an X11 window: 1 key pressed, 2 key released (key is a keysym: a lowercase letter, arrows 65361-65364,
-Esc 65307), 3 mouse button (x, y in the program's pixels); see the `piwo.ferdek` example. The events go through
+Esc 65307), 3 mouse button (x, y in the program's pixels); see the `piwo.ferdek` example and `labirynt.ferdek`,
+a first-person maze (raycasting) you walk through with the arrow keys. The events go through
 a service worker (`sw.js`, served next to the page), so the page needs https or localhost; without it programs
 run but get no events. `make test-playground` checks it with node.
 
