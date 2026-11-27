@@ -7,14 +7,47 @@
 #include <string.h>
 #include <stdio.h>
 
-#ifdef __APPLE__
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/keysym.h>
-#else
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/keysym.h>
+
+/* FERDEK_X11_DLOPEN (tak budowana jest komenda ferdek): libX11 jest szukana dopiero przy
+   otwarciu okna, więc ferdek działa też tam, gdzie X11 nie ma. Skompilowane programy
+   z grafiką linkują -lX11 zwyczajnie. Nowa funkcja X11 w tym pliku = dopisać ją do obu list. */
+#ifdef FERDEK_X11_DLOPEN
+#include <dlfcn.h>
+#define FERDEK_X11_FUNCS(F) F(XOpenDisplay) F(XCloseDisplay) F(XCreateWindow) F(XDestroyWindow) F(XStoreName) F(XCreateGC) F(XFreeGC) F(XCreateImage) F(XMapWindow) F(XFlush) F(XSetForeground) F(XFillRectangle) F(XPending) F(XNextEvent) F(XLookupKeysym)
+#define F(n) static __typeof__(n)* p_##n;
+FERDEK_X11_FUNCS(F)
+#undef F
+static int ferdek_x11_load(void) {
+    static int loaded = 0;
+    if (loaded) return 1;
+    const char* names[] = {"libX11.so.6", "libX11.6.dylib", "/opt/X11/lib/libX11.6.dylib",
+                           "/opt/homebrew/lib/libX11.6.dylib", "/usr/local/lib/libX11.6.dylib", NULL};
+    void* h = NULL;
+    for (int i = 0; names[i] && !h; i++) h = dlopen(names[i], RTLD_NOW | RTLD_GLOBAL);
+    if (!h) return 0;
+#define F(n) if (!(p_##n = (__typeof__(n)*)dlsym(h, #n))) return 0;
+    FERDEK_X11_FUNCS(F)
+#undef F
+    return loaded = 1;
+}
+#define XOpenDisplay p_XOpenDisplay
+#define XCloseDisplay p_XCloseDisplay
+#define XCreateWindow p_XCreateWindow
+#define XDestroyWindow p_XDestroyWindow
+#define XStoreName p_XStoreName
+#define XCreateGC p_XCreateGC
+#define XFreeGC p_XFreeGC
+#define XCreateImage p_XCreateImage
+#define XMapWindow p_XMapWindow
+#define XFlush p_XFlush
+#define XSetForeground p_XSetForeground
+#define XFillRectangle p_XFillRectangle
+#define XPending p_XPending
+#define XNextEvent p_XNextEvent
+#define XLookupKeysym p_XLookupKeysym
 #endif
 
 /* Key event structure */
@@ -49,6 +82,12 @@ static void init_default_palette(void) {
  * OKNO_OTWORZ - Open X11 window
  */
 int ferdek_window_open(int width, int height, const char* title) {
+#ifdef FERDEK_X11_DLOPEN
+    if (!ferdek_x11_load()) {
+        fprintf(stderr, "Nie ma biblioteki X11 (libX11). macOS: zainstaluj XQuartz, Linux: pakiet libx11-6\n");
+        return 0;
+    }
+#endif
     /* Open display */
     display = XOpenDisplay(NULL);
     if (!display) {

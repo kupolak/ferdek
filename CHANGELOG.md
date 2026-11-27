@@ -182,6 +182,11 @@
   messages are unchanged (checked against the previous interpreter on all tests and fuzzed programs).
 
 ### Tools
+- The `ferdek` binary no longer links `libX11`: it is looked up only when a program opens a window, so
+  `ferdek` runs on machines without X11. Compiled programs with graphics still link `-lX11`.
+- Ready binaries: a workflow rebuilds the `latest` release (Linux x86_64, macOS arm64) from `main`, and
+  `scripts/install-full.sh` downloads it instead of building, so installing no longer needs OCaml.
+  Other systems, or `FERDEK_ZE_ZRODEL=1`, build from source as before.
 - `ferdek nowy nazwa`: a new project - program, a module, a BABKA test and a README.
 - `ferdek --dap`: the debugger for editors (Debug Adapter Protocol) - breakpoints, stepping, call
   stack, variables and hover evaluation in VS Code; program output shows in the debug console.

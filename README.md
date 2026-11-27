@@ -116,6 +116,13 @@ run but get no events. `make test-playground` checks it with node.
 curl -fsSL https://raw.githubusercontent.com/kupolak/ferdek/main/scripts/install-full.sh | bash
 ```
 
+On Linux x86_64 and macOS arm64 this downloads a ready binary (the `latest` release, rebuilt from `main`),
+so OCaml is not needed. Elsewhere, or with `FERDEK_ZE_ZRODEL=1`, it builds from source.
+
+The binary does not depend on X11: `libX11` is looked up only when a program opens a window
+(XQuartz on macOS, `libx11-6` on Linux). `ferdek -c` needs a C compiler (`cc`), and for programs
+with graphics also the X11 headers.
+
 ### Build from source
 
 You'll need:

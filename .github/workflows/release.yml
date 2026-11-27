@@ -1,0 +1,64 @@
+name: Binarki
+
+# Gotowe binarki dla instalatora (scripts/install-full.sh): po każdym pushu na main, który
+# przeszedł budowanie, wydanie "latest" dostaje świeże paczki. Wersja języka zostaje 1.0,
+# więc nie ma tagów z numerami - jest jedno wydanie, które się przesuwa.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 22.04, nie latest: binarka wymaga glibc co najmniej z systemu, na którym powstała
+          - os: ubuntu-22.04
+            name: linux-x86_64
+          - os: macos-latest
+            name: macos-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Nagłówki X11 są potrzebne tylko do budowania; binarka szuka libX11 dopiero przy otwarciu okna
+      - name: X11 (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev
+      - name: X11 (macOS)
+        if: runner.os == 'macOS'
+        run: brew install libx11
+
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.2
+
+      - name: Zależności OCaml
+        run: opam install -y dune menhir menhirLib yojson
+
+      - name: Budowanie
+        run: opam exec -- dune build src/ferdek.exe
+
+      # Paczka: ferdek + stdlib/KLAMOTY. Zanim trafi do wydania, musi uruchomić program z importem.
+      - name: Paczka
+        run: |
+          mkdir -p paczka/stdlib
+          cp _build/default/src/ferdek.exe paczka/ferdek
+          chmod +x paczka/ferdek
+          cp -r stdlib/KLAMOTY paczka/stdlib/
+          (cd paczka && ./ferdek ../stdlib/KLAMOTY/BABKA/przyklad_testow.ferdek)
+          tar -czf ferdek-${{ matrix.name }}.tar.gz -C paczka ferdek stdlib
+
+      - name: Wydanie latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view latest >/dev/null 2>&1 || gh release create latest --prerelease \
+            --title "Ferdek 1.0 (bieżące binarki)" \
+            --notes "Budowane automatycznie z gałęzi main. Instalacja: scripts/install-full.sh"
+          gh release upload latest ferdek-${{ matrix.name }}.tar.gz --clobber
