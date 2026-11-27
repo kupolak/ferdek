@@ -175,6 +175,8 @@
   read and half removed in 0.02 s instead of 1.2 s.
 
 ### Interpreter
+- `+`, `-`, `*` and comparisons of two whole numbers are computed in place (recursion about 9% faster,
+  loops over arrays about 2%).
 - About 3-5x faster (`make bench`: loops 1.24 s -> 0.24 s, fib 0.40 s -> 0.09 s, objects 0.30 s ->
   0.06 s, text 0.24 s -> 0.07 s): the program is compiled once to OCaml closures, a function's
   variables live in slots, variables and object fields are read through a cached table cell, the

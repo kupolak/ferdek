@@ -294,10 +294,21 @@ let rec compile_expr cx : expr -> code = function
   | Identifier name -> reader cx name
   | BinaryOp (e1, op, e2) ->
       let a = compile_expr cx e1 and b = compile_expr cx e2 in
-      fun env -> let v1 = a env in let v2 = b env in eval_arith_op op v1 v2
+      (* operator znany z góry: dwie liczby całkowite liczone na miejscu, reszta jak zawsze.
+         Lewa strona liczona pierwsza (krotka w OCamlu liczyłaby od prawej) *)
+      (match op with
+       | Plus -> fun env -> let v1 = a env in (match v1, b env with VInt x, VInt y -> VInt (x + y) | _, v2 -> eval_arith_op op v1 v2)
+       | Minus -> fun env -> let v1 = a env in (match v1, b env with VInt x, VInt y -> VInt (x - y) | _, v2 -> eval_arith_op op v1 v2)
+       | Multiply -> fun env -> let v1 = a env in (match v1, b env with VInt x, VInt y -> VInt (x * y) | _, v2 -> eval_arith_op op v1 v2)
+       | _ -> fun env -> let v1 = a env in let v2 = b env in eval_arith_op op v1 v2)
   | ComparisonOp (e1, op, e2) ->
       let a = compile_expr cx e1 and b = compile_expr cx e2 in
-      fun env -> let v1 = a env in let v2 = b env in eval_comparison_op op v1 v2
+      (match op with
+       | Equal -> fun env -> let v1 = a env in (match v1, b env with VInt x, VInt y -> VBool (x = y) | _, v2 -> eval_comparison_op op v1 v2)
+       | NotEqual -> fun env -> let v1 = a env in (match v1, b env with VInt x, VInt y -> VBool (x <> y) | _, v2 -> eval_comparison_op op v1 v2)
+       | Greater -> fun env -> let v1 = a env in (match v1, b env with VInt x, VInt y -> VBool (x > y) | _, v2 -> eval_comparison_op op v1 v2)
+       | Less -> fun env -> let v1 = a env in (match v1, b env with VInt x, VInt y -> VBool (x < y) | _, v2 -> eval_comparison_op op v1 v2)
+       | GreaterEqual -> fun env -> let v1 = a env in (match v1, b env with VInt x, VInt y -> VBool (x >= y) | _, v2 -> eval_comparison_op op v1 v2))
   | LogicalOp (e1, op, e2) ->
       (* prawa strona tylko wtedy, gdy lewa nie rozstrzyga: fałsz PIWO I TELEWIZOR ... to fałsz,
          prawda ALBO JUTRO U ADWOKATA ... to prawda *)
