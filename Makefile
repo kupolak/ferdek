@@ -39,14 +39,14 @@ FERDEK = _build/default/src/ferdek.exe
 # ponytail: test_klatka pominięty - wymaga internetu (make test-network)
 STDLIB_TESTS = $(filter-out %test_klatka,$(basename $(wildcard tests/integration/stdlib/*.ferdek))) stdlib/KLAMOTY/BABKA/przyklad_testow
 FEATURE_TESTS = $(basename $(wildcard tests/integration/features/*.ferdek))
-# Pominięte: graphics_* (X11), udp_* (porty sieciowe)
+# Pominięte: graphics_* (X11), udp_* (porty sieciowe) - te sprawdza tylko test-check (składnia i nazwy)
 EXAMPLE_TESTS = $(addprefix examples/,advanced_features arrays2d bitwise bubble_sort classes enums \
 	fizzbuzz framebuffer function_pointers hello io lodowka macros_demo makra_ferdek memory operations pointers \
 	selection_sort simple_compile structs types unions variadic variadic_simple)
 ALL_TESTS = $(STDLIB_TESTS) $(FEATURE_TESTS) $(EXAMPLE_TESTS)
 
 # Testy, które kompilator do C musi przejść z identycznym wyjściem
-COMPILED_TESTS = $(addprefix examples/,advanced_features arrays2d bitwise bubble_sort classes enums fizzbuzz framebuffer function_pointers hello io lodowka memory operations pointers selection_sort simple_compile structs types unions variadic variadic_simple) \
+COMPILED_TESTS = $(addprefix examples/,advanced_features arrays2d bitwise bubble_sort classes enums fizzbuzz framebuffer function_pointers hello io lodowka macros_demo makra_ferdek memory operations pointers selection_sort simple_compile structs types unions variadic variadic_simple) \
 	$(FEATURE_TESTS) \
 	$(addprefix tests/integration/stdlib/,test_bez_ogonkow test_dodaj_inline test_kanapa test_kanapa_brzegi test_kanapa_litery test_kanapa_utf8 test_kibel test_klatka_bezpieczna test_losowanie test_simple_skrzynka test_skrzynka test_skrzynka_matma test_stdlib test_szafka test_szafka_pelna test_wersalka test_wersalka_funkcje) \
 	stdlib/KLAMOTY/BABKA/przyklad_testow
@@ -221,7 +221,7 @@ test-network: build
 # Nadpisuje oczekiwane wyjścia bieżącymi - przejrzyj git diff przed commitem!
 # ponytail: macros_demo/makra_ferdek bez .out - wyjście zależy od platformy
 update-expected: build
-	@for t in $(filter-out %macros_demo %makra_ferdek,$(ALL_TESTS)); do \
+	@for t in $(ALL_TESTS); do \
 	  mkdir -p tests/expected/$$(dirname $$t); \
 	  $(FERDEK) $$t.ferdek > tests/expected/$$t.out 2>&1 < /dev/null; \
 	done

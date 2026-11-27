@@ -1,0 +1,12 @@
+=== Ferdek Preprocessor ===
+
+Fixed-point constants defined
+fracbits and fracunit loaded from macros
+
+Conditional: Symbol is defined
+Conditional: Symbol is NOT defined
+Platform: Unix
+Platform: macOS
+
+=== Preprocessor works! ===
+Program zakończony pomyślnie. Piwo dla Pana!
