@@ -16,7 +16,7 @@
    z grafiką linkują -lX11 zwyczajnie. Nowa funkcja X11 w tym pliku = dopisać ją do obu list. */
 #ifdef FERDEK_X11_DLOPEN
 #include <dlfcn.h>
-#define FERDEK_X11_FUNCS(F) F(XOpenDisplay) F(XCloseDisplay) F(XCreateWindow) F(XDestroyWindow) F(XStoreName) F(XCreateGC) F(XFreeGC) F(XCreateImage) F(XMapWindow) F(XFlush) F(XSetForeground) F(XFillRectangle) F(XPending) F(XNextEvent) F(XLookupKeysym)
+#define FERDEK_X11_FUNCS(F) F(XOpenDisplay) F(XCloseDisplay) F(XCreateWindow) F(XDestroyWindow) F(XStoreName) F(XCreateGC) F(XFreeGC) F(XCreateImage) F(XMapWindow) F(XFlush) F(XPutImage) F(XPending) F(XNextEvent) F(XLookupKeysym)
 #define F(n) static __typeof__(n)* p_##n;
 FERDEK_X11_FUNCS(F)
 #undef F
@@ -43,8 +43,7 @@ static int ferdek_x11_load(void) {
 #define XCreateImage p_XCreateImage
 #define XMapWindow p_XMapWindow
 #define XFlush p_XFlush
-#define XSetForeground p_XSetForeground
-#define XFillRectangle p_XFillRectangle
+#define XPutImage p_XPutImage
 #define XPending p_XPending
 #define XNextEvent p_XNextEvent
 #define XLookupKeysym p_XLookupKeysym
@@ -56,6 +55,8 @@ typedef struct {
     int key;      /* keycode or mouse button */
     int x, y;     /* mouse position */
 } ferdek_event_t;
+
+#define SCALE 4   /* piksel programu = kwadrat SCALE x SCALE na ekranie */
 
 /* Global X11 state */
 static Display* display = NULL;
@@ -106,7 +107,7 @@ int ferdek_window_open(int width, int height, const char* title) {
 
     window = XCreateWindow(
         display, root,
-        0, 0, width * 4, height * 4,  /* Scale 4x for visibility */
+        0, 0, width * SCALE, height * SCALE,
         0,
         CopyFromParent,
         InputOutput,
@@ -141,11 +142,12 @@ int ferdek_window_open(int width, int height, const char* title) {
     int depth = DefaultDepth(display, screen);
     Visual* visual = DefaultVisual(display, screen);
 
+    /* Obraz od razu w skali okna (4x): jedna wysyłka na klatkę zamiast prostokąta na piksel */
     ximage = XCreateImage(
         display, visual, depth,
         ZPixmap, 0,
-        (char*)malloc(width * height * 4),
-        width, height,
+        (char*)malloc((size_t)width * SCALE * height * SCALE * 4),
+        width * SCALE, height * SCALE,
         32, 0
     );
 
@@ -199,20 +201,18 @@ void ferdek_pixel_draw(int x, int y, unsigned char color) {
 void ferdek_screen_refresh(void) {
     if (!display || !window || !framebuffer || !ximage) return;
 
-    /* Convert 8-bit framebuffer to 32-bit X11 image */
-    unsigned int* img_data = (unsigned int*)ximage->data;
-    for (int i = 0; i < fb_width * fb_height; i++) {
-        img_data[i] = palette[framebuffer[i]];
-    }
-
-    /* Draw scaled image (4x scale for visibility) */
-    for (int sy = 0; sy < fb_height; sy++) {
-        for (int sx = 0; sx < fb_width; sx++) {
-            unsigned long color = palette[framebuffer[sy * fb_width + sx]];
-            XSetForeground(display, gc, color);
-            XFillRectangle(display, window, gc, sx * 4, sy * 4, 4, 4);
+    /* Paleta -> 32-bitowy obraz, każdy piksel jako kwadrat SCALE x SCALE */
+    unsigned int* img = (unsigned int*)ximage->data;
+    int iw = fb_width * SCALE;
+    for (int y = 0; y < fb_height; y++) {
+        unsigned int* row = img + (size_t)y * SCALE * iw;
+        for (int x = 0; x < fb_width; x++) {
+            unsigned int c = (unsigned int)palette[framebuffer[y * fb_width + x]];
+            for (int k = 0; k < SCALE; k++) row[x * SCALE + k] = c;
         }
+        for (int k = 1; k < SCALE; k++) memcpy(row + (size_t)k * iw, row, (size_t)iw * 4);
     }
+    XPutImage(display, window, gc, ximage, 0, 0, 0, 0, iw, fb_height * SCALE);
 
     XFlush(display);
 }
@@ -243,8 +243,8 @@ ferdek_event_t ferdek_event_poll(void) {
             case ButtonPress:
                 ev.type = 3;
                 ev.key = xev.xbutton.button;
-                ev.x = xev.xbutton.x / 4;  /* Unscale */
-                ev.y = xev.xbutton.y / 4;
+                ev.x = xev.xbutton.x / SCALE;
+                ev.y = xev.xbutton.y / SCALE;
                 return ev;
 
             case ClientMessage:

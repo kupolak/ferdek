@@ -184,6 +184,9 @@
   messages are unchanged (checked against the previous interpreter on all tests and fuzzed programs).
 
 ### Tools
+- X11 window: a frame is sent as one image (`XPutImage`) instead of one rectangle per pixel
+  (9600 requests per frame for a 120x80 screen). `make test-graphics` checks the image and mouse
+  coordinates against fake Xlib functions, without an X server.
 - The playground is deployed to GitHub Pages (<https://kupolak.github.io/ferdek/>) by a workflow on every
   push to `main`, after `make test-playground` passes.
 - The `ferdek` binary no longer links `libX11`: it is looked up only when a program opens a window, so

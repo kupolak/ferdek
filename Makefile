@@ -89,7 +89,7 @@ test-examples: build
 	$(call run_ferdek,$(EXAMPLE_TESTS))
 
 # Wszystkie testy
-test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime test-args test-input test-patterns
+test: test-unit test-repl test-errors test-check test-docs test-runner test-fmt test-lsp test-tutorial test-debug test-dap test-runtime test-graphics test-args test-input test-patterns
 	$(call run_ferdek,$(ALL_TESTS))
 	$(call run_compiled,$(COMPILED_TESTS))
 
@@ -162,6 +162,11 @@ test-runtime:
 	@cc -std=c99 -fsyntax-only -Wall -Wextra -Wno-unused-parameter -Werror _build/runtime_check.c && echo "--- runtime.c: bez ostrzeżeń"
 
 # Debugger dla edytorów (DAP): punkt zatrzymania, stos, zmienne, krok, wyjście programu
+# Okno X11 bez serwera X: atrapy Xlib, sprawdzany obraz wysyłany na ekran i pozycja myszy
+test-graphics:
+	@mkdir -p _build && cc -std=c99 -w -I/opt/X11/include -I/opt/homebrew/include -I/usr/local/include tests/test_graphics.c -o _build/test_graphics \
+	  && _build/test_graphics > _build/test_graphics.log 2>&1 && echo "--- grafika X11 (atrapa): OK" || { cat _build/test_graphics.log; echo "--- grafika X11: FAIL"; exit 1; }
+
 test-dap: build
 	python3 scripts/test_dap.py $(FERDEK)
 
