@@ -55,6 +55,8 @@ Some examples:
 - `OTWÓRZ SZAFKĘ("piwo", 3, "wódka", 1)` - map with initial key/value pairs; `PO PIERWSZE PRIMO(3.14159, 2)` - `"3.14"`
 - Library for arrays (`ZSUMUJ WERSALKĘ`, `WYTNIJ Z WERSALKI`, `ZWIŃ WERSALKĘ`...), text (`CZY SIEDZI NA KANAPIE`,
   `ODWRÓĆ KANAPĘ`...), maps, dates (`JAKI DZIŚ DZIEŃ`, `DODAJ DNI`, `DZIEŃ TYGODNIA`) and JSON (`ZAPAKUJ DO SŁOIKA`, `WYJMIJ ZE SŁOIKA`) - see `docs/JEZYK.md`
+- Binary files as bytes (`OTWORZ`, `CZYTAJ(plik, n)`, `SKOCZ`, `KANAPA Z BAJTÓW`) and a WAD reader for DOOM files
+  (`O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/PIWNICA`: directory, palette, pictures)
 - `ZNAK Z KANAPY(s, i)`, `KANAPA DO GÓRY(s)`, `KANAPA W DÓŁ(s)` - character at position, upper/lower case (Polish letters too)
 
 Start a project: `ferdek nowy moj_projekt` (program, module, test and README).
@@ -100,7 +102,8 @@ Ferdek in the browser: the interpreter compiled to JavaScript (js_of_ocaml), run
 with examples and the stdlib built in. Online at <https://kupolak.github.io/ferdek/> (a workflow deploys
 it from `main`). Locally: build it with `make playground` (needs
 `opam install js_of_ocaml js_of_ocaml-compiler`) and serve `_build/playground/` with any static
-file server. Everything works except networking and files. Graphics programs (`OKNO_OTWORZ`,
+file server. Everything works except networking; files live in memory and are gone when the program ends
+(the `piwnica.ferdek` example writes a WAD file and reads it back). Graphics programs (`OKNO_OTWORZ`,
 `PIKSEL_MALUJ`, `EKRAN_ODSWIEZ`...) draw on a canvas on the page (the `telewizor.ferdek` example). Click the
 canvas and the program gets the keyboard and mouse through `ZDARZENIE_CZEKAJ()` - `[kind, key, x, y]`, the same
 as in an X11 window: 1 key pressed, 2 key released (key is a keysym: a lowercase letter, arrows 65361-65364,

@@ -34,6 +34,14 @@
   and a plain assignment in a function still changes the global.
 
 ### Language
+- Bytes and text: `KANAPA Z BAJTÓW(tablica)` makes text from bytes (up to the first 0 byte, the way names
+  are padded in binary files) and `BAJTY Z KANAPY(tekst)` gives the UTF-8 bytes of a text.
+- New stdlib module `KLAMOTY/PIWNICA` reads WAD files (DOOM): directory, lumps as bytes, the palette and
+  pictures (`OBRAZEK_Z_PIWNICY`, `NAMALUJ_OBRAZEK`). Checked against Freedoom's `TITLEPIC`, a sprite and a
+  wall patch. `playground/przyklady/piwnica.ferdek` writes a small WAD and shows a picture from it; with
+  arguments (`ferdek piwnica.ferdek DOOM1.WAD TITLEPIC`) it shows a lump from a real file.
+- `docs/JEZYK.md` now lists the binary file functions (`OTWORZ`, `CZYTAJ`, `PISZ`, `SKOCZ`, `POZYCJA`,
+  `ZAMKNIJ`) and the window functions (`OKNO_OTWORZ`, `PIKSEL_MALUJ`, `ZDARZENIE_CZEKAJ`...).
 - Print without a newline (`JEDZIEM Z TYM ŚLEDZIEM`, `NO TO ENTER`), logical not
   (`TAK BYĆ NIE BĘDZIE`), `>=` (`JA JESTEM PONAD TO`), else if (`AAA TO ZMIENIA POSTAĆ RZECZY`),
   for loops (`KRĘCI CEMENT BETONIARA i OD 1 DO 10 CO 2`).
@@ -247,6 +255,8 @@
 - Full keyword reference in [docs/JEZYK.md](docs/JEZYK.md), generated from the lexer.
 
 ### Fixes
+- `CZYTAJ(plik, n)` in the interpreter returned at most 64 KB at a time; it now reads all `n` bytes like
+  the compiled program. A negative `n` is an error in both modes.
 - A function, class, struct, union or enum can be used above its declaration in the interpreter too.
   Compiled programs and `--check` already allowed it, the interpreter stopped with "Nieznana funkcja";
   compiled programs gave 0 for an enum value used above its `PANIE LISTA`.

@@ -228,6 +228,8 @@ SECTIONS = [
         "ZACZYNA SIĘ OD(tekst, początek)": "Czy tekst zaczyna się od podanego początku",
         "KOŃCZY SIĘ NA(tekst, koniec)": "Czy tekst kończy się podanym końcem",
         "ODWRÓĆ KANAPĘ(tekst)": "Tekst od tyłu (polskie znaki zostają całe)",
+        "KANAPA Z BAJTÓW(tablica)": "Tekst z tablicy bajtów, do pierwszego bajtu 0 (nazwy w plikach binarnych)",
+        "BAJTY Z KANAPY(tekst)": "Tablica bajtów tekstu (UTF-8: polska litera to dwa bajty)",
         "ROZCIĄGNIJ Z LEWEJ(tekst, długość)": "Dopełnia spacjami z lewej do podanej długości - do wyrównywania liczb",
     }),
     ("WERSALKA - tablice", {
@@ -314,6 +316,24 @@ SECTIONS = [
         "WYKOP WSZYSTKIE KIBLE(ścieżka)": "Usuń katalog z zawartością",
     "OPAKUJ W GAZETĘ(tekst)": "Zacytuj tekst jako jeden argument powłoki - używaj przy sklejaniu poleceń dla SYSTEM",
     }),
+    ("Pliki binarne", {
+        "OTWORZ(ścieżka, tryb)": "Otwórz plik: \"rb\" do czytania, \"wb\" do zapisu, \"ab\" do dopisywania",
+        "CZYTAJ(plik, n)": "Tablica n kolejnych bajtów (krótsza na końcu pliku); CZYTAJ(plik) to jeden bajt albo -1",
+        "PISZ(plik, dane)": "Zapisz bajt, tablicę bajtów albo tekst",
+        "SKOCZ(plik, pozycja)": "Ustaw pozycję w pliku (od początku)",
+        "POZYCJA(plik)": "Aktualna pozycja w pliku",
+        "ZAMKNIJ(plik)": "Zamknij plik",
+    }),
+    ("Okno - grafika, klawiatura i mysz", {
+        "OKNO_OTWORZ(szerokość, wysokość, tytuł)": "Otwórz okno (X11 albo płótno w placu zabaw); piksel programu to kwadrat 4x4 na ekranie",
+        "OKNO_ZAMKNIJ()": "Zamknij okno",
+        "PALETA_USTAW(tablica)": "Paleta: 768 bajtów, czyli 256 kolorów po 3 (czerwony, zielony, niebieski); bez niej odcienie szarości",
+        "PIKSEL_MALUJ(x, y, kolor)": "Ustaw piksel na kolor 0-255 z palety (poza ekranem: nic)",
+        "EKRAN_CZYSC(kolor)": "Zamaluj cały ekran jednym kolorem",
+        "EKRAN_ODSWIEZ()": "Pokaż narysowaną klatkę",
+        "BUFOR_RAMKI_POBIERZ(x, y)": "Kolor piksela",
+        "ZDARZENIE_CZEKAJ()": "Następne zdarzenie jako [rodzaj, klawisz, x, y]; rodzaj 0 - nic, 1 - klawisz wciśnięty, 2 - puszczony, 3 - przycisk myszy",
+    }),
     ("Pamięć (alokator strefowy w stylu DOOM)", {
         "DAJ MI HAJS(rozmiar, tag)": "Zaalokuj blok pamięci",
         "ODDAJ WSZYSTKO(blok)": "Zwolnij blok",
@@ -351,6 +371,17 @@ SECTIONS = [
         "ZAPUKAJ DO SĄSIADA(url, dane)": "KLATKA: HTTP POST",
         "KTO NA KLATCE()": "KLATKA: twój publiczny adres IP",
         "CZY SĄSIAD W DOMU(host)": "KLATKA: ping",
+    }),
+    ("PIWNICA - pliki WAD (import KLAMOTY/PIWNICA)", {
+        "OTWÓRZ_PIWNICĘ(ścieżka)": "PIWNICA: otwórz plik WAD; wynik to szafka z polami rodzaj (IWAD/PWAD), wpisy ({nazwa, pozycja, rozmiar}) i spis (nazwa -> numer)",
+        "ZAMKNIJ_PIWNICĘ(wad)": "PIWNICA: zamknij plik",
+        "CZY_W_PIWNICY(wad, nazwa)": "PIWNICA: czy jest wpis o tej nazwie",
+        "WYNIEŚ_Z_PIWNICY(wad, nazwa)": "PIWNICA: zawartość wpisu jako tablica bajtów (przy powtórzonej nazwie ostatni wpis)",
+        "PALETA_Z_PIWNICY(wad, numer)": "PIWNICA: paleta z wpisu PLAYPAL (768 bajtów dla PALETA_USTAW); numer domyślnie 0",
+        "OBRAZEK_Z_PIWNICY(wad, nazwa)": "PIWNICA: obrazek jako szafka {szerokosc, wysokosc, lewo, gora, piksele}; piksele[y][x] to kolor albo -1 (przezroczyste)",
+        "NAMALUJ_OBRAZEK(obrazek, x, y)": "PIWNICA: namaluj obrazek w oknie, lewy górny róg w (x, y)",
+        "LICZBA_Z_BAJTÓW(bajty, od, ile)": "PIWNICA: liczba bez znaku z ile bajtów od pozycji od (najmłodszy bajt pierwszy)",
+        "LICZBA_ZE_ZNAKIEM(bajty, od, ile)": "PIWNICA: to samo ze znakiem (bajty 255, 255 to -1)",
     }),
     ("BABKA - testy (import BABKA)", {
         "TAK JEST I KROPKA(warunek)": "BABKA: asercja prawdy",
@@ -430,7 +461,7 @@ def check_snippets(path):
 
 
 def docs():
-    """docs/JEZYK.md: słownik pogrupowany w sekcje, tylko słowa, które zna lekser."""
+    """docs/JEZYK.md: słownik pogrupowany w sekcje; słowa wielowyrazowe tylko te, które zna lekser."""
     known = {d["word"] for d in keyword_docs()}
     lines = [
         "# Ferdek - słownik języka",
@@ -438,7 +469,7 @@ def docs():
         "> Wygenerowane przez `scripts/gen_keywords.py` z leksera - nie edytuj ręcznie.",
         "",
         "Każde słowo z polskimi znakami można też napisać bez nich (np. `ZROB DLUGI` = `ZRÓB DŁUGI`).",
-        "Funkcje z sekcji SKRZYNKA, KLATKA i BABKA wymagają importu modułu, reszta jest wbudowana.",
+        "Funkcje z sekcji SKRZYNKA, KLATKA, PIWNICA i BABKA wymagają importu modułu, reszta jest wbudowana.",
         "Przykładowe programy: katalog [`examples/`](../examples).",
         "",
         "## Wartości i liczby",
@@ -453,7 +484,8 @@ def docs():
         "",
     ]
     for title, entries in SECTIONS:
-        rows = [(k, v) for k, v in entries.items() if k.split("(")[0] in known]
+        # jednowyrazowych funkcji (OTWORZ, CZYTAJ...) lekser nie zna - to zwykłe nazwy, pokazujemy je zawsze
+        rows = [(k, v) for k, v in entries.items() if k.split("(")[0] in known or " " not in k.split("(")[0]]
         if not rows:
             continue
         lines += [f"## {title}", "", "| Słowo | Znaczenie |", "|---|---|"]

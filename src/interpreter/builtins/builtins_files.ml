@@ -191,9 +191,14 @@ let register () = add [
            let size = to_int (eval_expr env size_arg) in
            (match handle with
             | VFileHandle (InputHandle ch) ->
+                if size < 0 then raise (RuntimeError "CZYTAJ: liczba bajtów nie może być ujemna");
                 (try
                    let buffer = Bytes.create size in
-                   let bytes_read = input ch buffer 0 size in
+                   (* input oddaje najwyżej to, co ma w buforze kanału (64 KB) - czytamy do skutku albo do końca pliku *)
+                   let rec fill got =
+                     if got >= size then got
+                     else match input ch buffer got (size - got) with 0 -> got | n -> fill (got + n) in
+                   let bytes_read = fill 0 in
                    (* Return array of bytes *)
                    let byte_array = Array.init bytes_read (fun i -> VByte (Char.code (Bytes.get buffer i))) in
                    VArray byte_array

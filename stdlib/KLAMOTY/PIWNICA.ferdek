@@ -1,0 +1,200 @@
+CO JEST KURDE
+
+RYM CYM CYM ============================================
+RYM CYM CYM PIWNICA - pliki WAD (DOOM): katalog, paleta, obrazki
+RYM CYM CYM
+RYM CYM CYM   AFERA JEST wad W MORDĘ JEŻA OTWÓRZ_PIWNICĘ("DOOM1.WAD")
+RYM CYM CYM   W MORDĘ JEŻA PALETA_USTAW(W MORDĘ JEŻA PALETA_Z_PIWNICY(wad, 0))
+RYM CYM CYM   W MORDĘ JEŻA NAMALUJ_OBRAZEK(W MORDĘ JEŻA OBRAZEK_Z_PIWNICY(wad, "TITLEPIC"), 0, 0)
+RYM CYM CYM   W MORDĘ JEŻA ZAMKNIJ_PIWNICĘ(wad)
+RYM CYM CYM
+RYM CYM CYM Dane z pliku czytane są dopiero przy wynoszeniu, więc duży WAD nie siedzi w pamięci.
+RYM CYM CYM
+RYM CYM CYM W module zmienne są deklarowane przez CYCU PRZYNIEŚ NO, a nie AFERA JEST: AFERA JEST w funkcji
+RYM CYM CYM zapisałoby zmienną globalną programu, gdyby miał taką o tej samej nazwie.
+RYM CYM CYM ============================================
+
+RYM CYM CYM Liczba bez znaku z ile bajtów tablicy b od pozycji od (najmłodszy bajt pierwszy)
+ALE WIE PAN JA ZASADNICZO LICZBA_Z_BAJTÓW
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO b, od, ile
+    CYCU PRZYNIEŚ NO wynik
+    TO NIE SĄ TANIE RZECZY 0
+    KRĘCI CEMENT BETONIARA i OD 1 DO ile
+        O KURDE MAM POMYSŁA wynik A PROSZĘ BARDZO wynik ROZDUPCĘ BANK 256 BABKA DAWAJ RENTĘ b[od BABKA DAWAJ RENTĘ ile PASZOŁ WON i] NO I GITARA
+    A ROBIĆ NI MA KOMU
+    I JA INFORMUJĘ ŻE WYCHODZĘ wynik
+DO WIDZENIA PANU
+
+RYM CYM CYM To samo ze znakiem (uzupełnienie do dwóch): bajty 255, 255 to -1
+ALE WIE PAN JA ZASADNICZO LICZBA_ZE_ZNAKIEM
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO b, od, ile
+    CYCU PRZYNIEŚ NO n
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA LICZBA_Z_BAJTÓW(b, od, ile)
+    CYCU PRZYNIEŚ NO zakres
+    TO NIE SĄ TANIE RZECZY 1
+    KRĘCI CEMENT BETONIARA i OD 1 DO ile
+        O KURDE MAM POMYSŁA zakres A PROSZĘ BARDZO zakres ROZDUPCĘ BANK 256 NO I GITARA
+    A ROBIĆ NI MA KOMU
+    NO JAK NIE JAK TAK n ROZDUPCĘ BANK 2 JA JESTEM PONAD TO zakres
+        I JA INFORMUJĘ ŻE WYCHODZĘ n PASZOŁ WON zakres
+    DO CHAŁUPY ALE JUŻ
+    I JA INFORMUJĘ ŻE WYCHODZĘ n
+DO WIDZENIA PANU
+
+RYM CYM CYM Otwiera plik WAD i czyta jego katalog. Wynik to szafka:
+RYM CYM CYM   rodzaj - "IWAD" albo "PWAD"
+RYM CYM CYM   wpisy  - tablica szafek {nazwa, pozycja, rozmiar} w kolejności z pliku
+RYM CYM CYM   spis   - nazwa -> numer wpisu (przy powtórzonej nazwie ostatni, jak w DOOM-ie)
+ALE WIE PAN JA ZASADNICZO OTWÓRZ_PIWNICĘ
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO sciezka
+    CYCU PRZYNIEŚ NO plik
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA OTWORZ(sciezka, "rb")
+    CYCU PRZYNIEŚ NO naglowek
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA CZYTAJ(plik, 12)
+    CYCU PRZYNIEŚ NO rodzaj
+    TO NIE SĄ TANIE RZECZY ""
+    NO JAK NIE JAK TAK W MORDĘ JEŻA ILE NA WERSALCE(naglowek) TO PANU SIĘ CHCE WTEDY KIEDY MNIE 12
+        O KURDE MAM POMYSŁA rodzaj A PROSZĘ BARDZO W MORDĘ JEŻA KANAPA Z BAJTÓW(W MORDĘ JEŻA WYTNIJ Z WERSALKI(naglowek, 0, 4)) NO I GITARA
+    DO CHAŁUPY ALE JUŻ
+    NO JAK NIE JAK TAK rodzaj PAN TU NIE MIESZKASZ "IWAD" PIWO I TELEWIZOR rodzaj PAN TU NIE MIESZKASZ "PWAD"
+        W MORDĘ JEŻA ZAMKNIJ(plik)
+        O KARWASZ TWARZ "PIWNICA: to nie jest plik WAD: " BABKA DAWAJ RENTĘ sciezka
+    DO CHAŁUPY ALE JUŻ
+    CYCU PRZYNIEŚ NO ile
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA LICZBA_Z_BAJTÓW(naglowek, 4, 4)
+    W MORDĘ JEŻA SKOCZ(plik, W MORDĘ JEŻA LICZBA_Z_BAJTÓW(naglowek, 8, 4))
+    CYCU PRZYNIEŚ NO katalog
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA CZYTAJ(plik, ile ROZDUPCĘ BANK 16)
+    NO JAK NIE JAK TAK W MORDĘ JEŻA ILE NA WERSALCE(katalog) ŁYSA PAŁA ile ROZDUPCĘ BANK 16
+        W MORDĘ JEŻA ZAMKNIJ(plik)
+        O KARWASZ TWARZ "PIWNICA: ucięty katalog w pliku: " BABKA DAWAJ RENTĘ sciezka
+    DO CHAŁUPY ALE JUŻ
+    CYCU PRZYNIEŚ NO wpisy
+    TO NIE SĄ TANIE RZECZY []
+    NO JAK NIE JAK TAK ile GRUBA ŚWINIA 0
+        O KURDE MAM POMYSŁA wpisy A PROSZĘ BARDZO WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA TABLICA 2D(1, ile)[0] NO I GITARA
+    DO CHAŁUPY ALE JUŻ
+    CYCU PRZYNIEŚ NO spis
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA OTWÓRZ SZAFKĘ()
+    KRĘCI CEMENT BETONIARA i OD 0 DO ile PASZOŁ WON 1
+        CYCU PRZYNIEŚ NO p
+        TO NIE SĄ TANIE RZECZY i ROZDUPCĘ BANK 16
+        CYCU PRZYNIEŚ NO nazwa
+        TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA KANAPA Z BAJTÓW(W MORDĘ JEŻA WYTNIJ Z WERSALKI(katalog, p BABKA DAWAJ RENTĘ 8, p BABKA DAWAJ RENTĘ 16))
+        O KURDE MAM POMYSŁA wpisy[i] A PROSZĘ BARDZO W MORDĘ JEŻA OTWÓRZ SZAFKĘ("nazwa", nazwa, "pozycja", W MORDĘ JEŻA LICZBA_Z_BAJTÓW(katalog, p, 4), "rozmiar", W MORDĘ JEŻA LICZBA_Z_BAJTÓW(katalog, p BABKA DAWAJ RENTĘ 4, 4)) NO I GITARA
+        O KURDE MAM POMYSŁA spis[nazwa] A PROSZĘ BARDZO i NO I GITARA
+    A ROBIĆ NI MA KOMU
+    I JA INFORMUJĘ ŻE WYCHODZĘ W MORDĘ JEŻA OTWÓRZ SZAFKĘ("plik", plik, "rodzaj", rodzaj, "wpisy", wpisy, "spis", spis)
+DO WIDZENIA PANU
+
+ALE WIE PAN JA ZASADNICZO ZAMKNIJ_PIWNICĘ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wad
+    W MORDĘ JEŻA ZAMKNIJ(wad.plik)
+DO WIDZENIA PANU
+
+RYM CYM CYM Czy w pliku jest wpis o tej nazwie (wielkość liter bez znaczenia)
+ALE WIE PAN JA ZASADNICZO CZY_W_PIWNICY
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wad, nazwa
+    I JA INFORMUJĘ ŻE WYCHODZĘ W MORDĘ JEŻA CZY W SZAFCE(wad.spis, W MORDĘ JEŻA KANAPA DO GÓRY(nazwa))
+DO WIDZENIA PANU
+
+RYM CYM CYM Zawartość wpisu jako tablica bajtów
+ALE WIE PAN JA ZASADNICZO WYNIEŚ_Z_PIWNICY
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wad, nazwa
+    CYCU PRZYNIEŚ NO duza
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA KANAPA DO GÓRY(nazwa)
+    NO JAK NIE JAK TAK TAK BYĆ NIE BĘDZIE W MORDĘ JEŻA CZY W SZAFCE(wad.spis, duza)
+        O KARWASZ TWARZ "PIWNICA: nie ma wpisu " BABKA DAWAJ RENTĘ duza
+    DO CHAŁUPY ALE JUŻ
+    CYCU PRZYNIEŚ NO wpis
+    TO NIE SĄ TANIE RZECZY wad.wpisy[wad.spis[duza]]
+    W MORDĘ JEŻA SKOCZ(wad.plik, wpis.pozycja)
+    CYCU PRZYNIEŚ NO dane
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA CZYTAJ(wad.plik, wpis.rozmiar)
+    NO JAK NIE JAK TAK W MORDĘ JEŻA ILE NA WERSALCE(dane) ŁYSA PAŁA wpis.rozmiar
+        O KARWASZ TWARZ "PIWNICA: ucięty wpis " BABKA DAWAJ RENTĘ duza
+    DO CHAŁUPY ALE JUŻ
+    I JA INFORMUJĘ ŻE WYCHODZĘ dane
+DO WIDZENIA PANU
+
+RYM CYM CYM Paleta numer n z wpisu PLAYPAL: 768 bajtów gotowych dla PALETA_USTAW
+ALE WIE PAN JA ZASADNICZO PALETA_Z_PIWNICY
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wad, n TO NIE SĄ TANIE RZECZY 0
+    CYCU PRZYNIEŚ NO dane
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA WYNIEŚ_Z_PIWNICY(wad, "PLAYPAL")
+    NO JAK NIE JAK TAK n ŁYSA PAŁA 0 ALBO JUTRO U ADWOKATA W MORDĘ JEŻA ILE NA WERSALCE(dane) ŁYSA PAŁA n ROZDUPCĘ BANK 768 BABKA DAWAJ RENTĘ 768
+        O KARWASZ TWARZ POWIEM PANU TAK "PIWNICA: w PLAYPAL nie ma palety numer {n}"
+    DO CHAŁUPY ALE JUŻ
+    I JA INFORMUJĘ ŻE WYCHODZĘ W MORDĘ JEŻA WYTNIJ Z WERSALKI(dane, n ROZDUPCĘ BANK 768, n ROZDUPCĘ BANK 768 BABKA DAWAJ RENTĘ 768)
+DO WIDZENIA PANU
+
+RYM CYM CYM Obrazek (format "patch": ściany, potwory, ekran tytułowy) jako szafka:
+RYM CYM CYM   szerokosc, wysokosc, lewo, gora (przesunięcia z nagłówka)
+RYM CYM CYM   piksele[y][x] - kolor 0-255 albo -1 tam, gdzie obrazek jest przezroczysty
+ALE WIE PAN JA ZASADNICZO OBRAZEK_Z_PIWNICY
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wad, nazwa
+    CYCU PRZYNIEŚ NO b
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA WYNIEŚ_Z_PIWNICY(wad, nazwa)
+    CYCU PRZYNIEŚ NO dlugosc
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA ILE NA WERSALCE(b)
+    CYCU PRZYNIEŚ NO szer
+    TO NIE SĄ TANIE RZECZY 0
+    CYCU PRZYNIEŚ NO wys
+    TO NIE SĄ TANIE RZECZY 0
+    NO JAK NIE JAK TAK dlugosc JA JESTEM PONAD TO 8
+        O KURDE MAM POMYSŁA szer A PROSZĘ BARDZO W MORDĘ JEŻA LICZBA_Z_BAJTÓW(b, 0, 2) NO I GITARA
+        O KURDE MAM POMYSŁA wys A PROSZĘ BARDZO W MORDĘ JEŻA LICZBA_Z_BAJTÓW(b, 2, 2) NO I GITARA
+    DO CHAŁUPY ALE JUŻ
+    RYM CYM CYM Inne wpisy (dźwięk, mapa) też są bajtami - poznajemy je po bezsensownych wymiarach
+    NO JAK NIE JAK TAK szer ŁYSA PAŁA 1 ALBO JUTRO U ADWOKATA szer GRUBA ŚWINIA 4096 ALBO JUTRO U ADWOKATA wys ŁYSA PAŁA 1 ALBO JUTRO U ADWOKATA wys GRUBA ŚWINIA 4096 ALBO JUTRO U ADWOKATA dlugosc ŁYSA PAŁA 8 BABKA DAWAJ RENTĘ szer ROZDUPCĘ BANK 4
+        O KARWASZ TWARZ "PIWNICA: to nie jest obrazek: " BABKA DAWAJ RENTĘ nazwa
+    DO CHAŁUPY ALE JUŻ
+    CYCU PRZYNIEŚ NO piksele
+    TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA TABLICA 2D(wys, szer)
+    KRĘCI CEMENT BETONIARA y OD 0 DO wys PASZOŁ WON 1
+        KRĘCI CEMENT BETONIARA x OD 0 DO szer PASZOŁ WON 1
+            O KURDE MAM POMYSŁA piksele[y][x] A PROSZĘ BARDZO -1 NO I GITARA
+        A ROBIĆ NI MA KOMU
+    A ROBIĆ NI MA KOMU
+    RYM CYM CYM Każda kolumna to lista słupków: [od którego wiersza, ile, zapas, piksele..., zapas], koniec to 255
+    KRĘCI CEMENT BETONIARA x OD 0 DO szer PASZOŁ WON 1
+        CYCU PRZYNIEŚ NO p
+        TO NIE SĄ TANIE RZECZY W MORDĘ JEŻA LICZBA_Z_BAJTÓW(b, 8 BABKA DAWAJ RENTĘ x ROZDUPCĘ BANK 4, 4)
+        CHLUŚNIEM BO UŚNIEM p ŁYSA PAŁA dlugosc PIWO I TELEWIZOR b[p] PAN TU NIE MIESZKASZ 255
+            CYCU PRZYNIEŚ NO start
+            TO NIE SĄ TANIE RZECZY b[p] BABKA DAWAJ RENTĘ 0
+            CYCU PRZYNIEŚ NO ile
+            TO NIE SĄ TANIE RZECZY b[p BABKA DAWAJ RENTĘ 1] BABKA DAWAJ RENTĘ 0
+            KRĘCI CEMENT BETONIARA k OD 0 DO ile PASZOŁ WON 1
+                NO JAK NIE JAK TAK start BABKA DAWAJ RENTĘ k ŁYSA PAŁA wys
+                    O KURDE MAM POMYSŁA piksele[start BABKA DAWAJ RENTĘ k][x] A PROSZĘ BARDZO b[p BABKA DAWAJ RENTĘ 3 BABKA DAWAJ RENTĘ k] BABKA DAWAJ RENTĘ 0 NO I GITARA
+                DO CHAŁUPY ALE JUŻ
+            A ROBIĆ NI MA KOMU
+            DOLEJ ile BABKA DAWAJ RENTĘ 4 DO p
+        A ROBIĆ NI MA KOMU
+    A ROBIĆ NI MA KOMU
+    I JA INFORMUJĘ ŻE WYCHODZĘ W MORDĘ JEŻA OTWÓRZ SZAFKĘ("szerokosc", szer, "wysokosc", wys, "lewo", W MORDĘ JEŻA LICZBA_ZE_ZNAKIEM(b, 4, 2), "gora", W MORDĘ JEŻA LICZBA_ZE_ZNAKIEM(b, 6, 2), "piksele", piksele)
+DO WIDZENIA PANU
+
+RYM CYM CYM Maluje obrazek w otwartym oknie, lewy górny róg w (x0, y0); przezroczyste piksele zostają
+ALE WIE PAN JA ZASADNICZO NAMALUJ_OBRAZEK
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO obrazek, x0, y0
+    KRĘCI CEMENT BETONIARA y OD 0 DO obrazek.wysokosc PASZOŁ WON 1
+        CYCU PRZYNIEŚ NO wiersz
+        TO NIE SĄ TANIE RZECZY obrazek.piksele[y]
+        KRĘCI CEMENT BETONIARA x OD 0 DO obrazek.szerokosc PASZOŁ WON 1
+            NO JAK NIE JAK TAK wiersz[x] JA JESTEM PONAD TO 0
+                W MORDĘ JEŻA PIKSEL_MALUJ(x0 BABKA DAWAJ RENTĘ x, y0 BABKA DAWAJ RENTĘ y, wiersz[x])
+            DO CHAŁUPY ALE JUŻ
+        A ROBIĆ NI MA KOMU
+    A ROBIĆ NI MA KOMU
+DO WIDZENIA PANU
+
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

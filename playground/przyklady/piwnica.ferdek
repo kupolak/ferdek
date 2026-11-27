@@ -1,0 +1,190 @@
+CO JEST KURDE
+
+RYM CYM CYM Piwnica: plik WAD (format DOOM-a) od środka. Program sam zapisuje mały WAD z paletą
+RYM CYM CYM i obrazkiem, a potem czyta go modułem PIWNICA i maluje w oknie. Esc albo kliknięcie kończy.
+RYM CYM CYM Z prawdziwym plikiem:  ferdek piwnica.ferdek DOOM1.WAD TITLEPIC
+O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/PIWNICA
+
+TO JE NA AMEN ESC
+TO NIE SĄ TANIE RZECZY 65307
+
+RYM CYM CYM ---- Zapisywanie: liczby jako bajty, najmłodszy pierwszy ----
+ALE WIE PAN JA ZASADNICZO bajty16
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO n
+    I JA INFORMUJĘ ŻE WYCHODZĘ [n PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ 256, n MUSZĘ DO SRACZA 256]
+DO WIDZENIA PANU
+
+ALE WIE PAN JA ZASADNICZO bajty32
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO n
+    I JA INFORMUJĘ ŻE WYCHODZĘ W MORDĘ JEŻA ZESTAW WERSALKI(W MORDĘ JEŻA bajty16(n PROSZĘ MNIE NATYCHMIAST OPUŚCIĆ 65536), W MORDĘ JEŻA bajty16(n MUSZĘ DO SRACZA 65536))
+DO WIDZENIA PANU
+
+RYM CYM CYM Nazwa wpisu: 8 bajtów, krótsza dopełniona zerami
+ALE WIE PAN JA ZASADNICZO nazwa8
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO t
+    I JA INFORMUJĘ ŻE WYCHODZĘ W MORDĘ JEŻA WYTNIJ Z WERSALKI(W MORDĘ JEŻA ZESTAW WERSALKI(W MORDĘ JEŻA BAJTY Z KANAPY(t), [0, 0, 0, 0, 0, 0, 0, 0]), 0, 8)
+DO WIDZENIA PANU
+
+RYM CYM CYM Obrazek z wierszy tekstu: kropka to przezroczyste, inne znaki to kolory z szafki.
+RYM CYM CYM Format DOOM-a trzyma obrazek kolumnami, a w kolumnie same nieprzezroczyste kawałki (słupki):
+RYM CYM CYM [od którego wiersza, ile pikseli, zapas, piksele..., zapas], na końcu kolumny 255.
+ALE WIE PAN JA ZASADNICZO obrazek_z_tekstu
+NO DOBRZE ALE CO JA Z TEGO BĘDĘ MIAŁ
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO wiersze, kolory
+    AFERA JEST wys W MORDĘ JEŻA ILE NA WERSALCE(wiersze)
+    AFERA JEST szer W MORDĘ JEŻA ILE MIEJSCA NA KANAPIE(wiersze[0])
+    CYCU PRZYNIEŚ NO kolumny
+    TO NIE SĄ TANIE RZECZY []
+    CYCU PRZYNIEŚ NO pozycje
+    TO NIE SĄ TANIE RZECZY []
+    KRĘCI CEMENT BETONIARA x OD 0 DO szer PASZOŁ WON 1
+        O KURDE MAM POMYSŁA pozycje A PROSZĘ BARDZO W MORDĘ JEŻA ZESTAW WERSALKI(pozycje, W MORDĘ JEŻA bajty32(8 BABKA DAWAJ RENTĘ szer ROZDUPCĘ BANK 4 BABKA DAWAJ RENTĘ W MORDĘ JEŻA ILE NA WERSALCE(kolumny))) NO I GITARA
+        CYCU PRZYNIEŚ NO y
+        TO NIE SĄ TANIE RZECZY 0
+        CHLUŚNIEM BO UŚNIEM y ŁYSA PAŁA wys
+            NO JAK NIE JAK TAK W MORDĘ JEŻA ZNAK Z KANAPY(wiersze[y], x) TO PANU SIĘ CHCE WTEDY KIEDY MNIE "."
+                DOLEJ 1 DO y
+            A DUPA TAM
+                CYCU PRZYNIEŚ NO start
+                TO NIE SĄ TANIE RZECZY y
+                CYCU PRZYNIEŚ NO slupek
+                TO NIE SĄ TANIE RZECZY []
+                CHLUŚNIEM BO UŚNIEM y ŁYSA PAŁA wys PIWO I TELEWIZOR W MORDĘ JEŻA ZNAK Z KANAPY(wiersze[y], x) PAN TU NIE MIESZKASZ "."
+                    O KURDE MAM POMYSŁA slupek A PROSZĘ BARDZO W MORDĘ JEŻA POŁÓŻ NA WERSALCE(slupek, kolory[W MORDĘ JEŻA ZNAK Z KANAPY(wiersze[y], x)]) NO I GITARA
+                    DOLEJ 1 DO y
+                A ROBIĆ NI MA KOMU
+                O KURDE MAM POMYSŁA kolumny A PROSZĘ BARDZO W MORDĘ JEŻA ZESTAW WERSALKI(kolumny, W MORDĘ JEŻA ZESTAW WERSALKI([start, W MORDĘ JEŻA ILE NA WERSALCE(slupek), 0], W MORDĘ JEŻA POŁÓŻ NA WERSALCE(slupek, 0))) NO I GITARA
+            DO CHAŁUPY ALE JUŻ
+        A ROBIĆ NI MA KOMU
+        O KURDE MAM POMYSŁA kolumny A PROSZĘ BARDZO W MORDĘ JEŻA POŁÓŻ NA WERSALCE(kolumny, 255) NO I GITARA
+    A ROBIĆ NI MA KOMU
+    AFERA JEST naglowek W MORDĘ JEŻA ZESTAW WERSALKI(W MORDĘ JEŻA ZESTAW WERSALKI(W MORDĘ JEŻA bajty16(szer), W MORDĘ JEŻA bajty16(wys)), [0, 0, 0, 0])
+    I JA INFORMUJĘ ŻE WYCHODZĘ W MORDĘ JEŻA ZESTAW WERSALKI(naglowek, W MORDĘ JEŻA ZESTAW WERSALKI(pozycje, kolumny))
+DO WIDZENIA PANU
+
+RYM CYM CYM Plik WAD: nagłówek (rodzaj, liczba wpisów, gdzie katalog), dane wpisów, na końcu katalog
+ALE WIE PAN JA ZASADNICZO zapisz_wad
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO sciezka, wpisy
+    CYCU PRZYNIEŚ NO razem
+    TO NIE SĄ TANIE RZECZY 0
+    KRĘCI CEMENT BETONIARA w Z wpisy
+        DOLEJ W MORDĘ JEŻA ILE NA WERSALCE(w[1]) DO razem
+    A ROBIĆ NI MA KOMU
+    AFERA JEST plik W MORDĘ JEŻA OTWORZ(sciezka, "wb")
+    W MORDĘ JEŻA PISZ(plik, "PWAD")
+    W MORDĘ JEŻA PISZ(plik, W MORDĘ JEŻA bajty32(W MORDĘ JEŻA ILE NA WERSALCE(wpisy)))
+    W MORDĘ JEŻA PISZ(plik, W MORDĘ JEŻA bajty32(12 BABKA DAWAJ RENTĘ razem))
+    KRĘCI CEMENT BETONIARA w Z wpisy
+        W MORDĘ JEŻA PISZ(plik, w[1])
+    A ROBIĆ NI MA KOMU
+    CYCU PRZYNIEŚ NO pozycja
+    TO NIE SĄ TANIE RZECZY 12
+    KRĘCI CEMENT BETONIARA w Z wpisy
+        W MORDĘ JEŻA PISZ(plik, W MORDĘ JEŻA bajty32(pozycja))
+        W MORDĘ JEŻA PISZ(plik, W MORDĘ JEŻA bajty32(W MORDĘ JEŻA ILE NA WERSALCE(w[1])))
+        W MORDĘ JEŻA PISZ(plik, W MORDĘ JEŻA nazwa8(w[0]))
+        DOLEJ W MORDĘ JEŻA ILE NA WERSALCE(w[1]) DO pozycja
+    A ROBIĆ NI MA KOMU
+    W MORDĘ JEŻA ZAMKNIJ(plik)
+DO WIDZENIA PANU
+
+RYM CYM CYM Mały WAD: paleta (5 kolorów, reszta czarna) i kufel piwa
+ALE WIE PAN JA ZASADNICZO zrob_piwnice
+NA TAKIE TEMATY NIE ROZMAWIAM NA SUCHO sciezka
+    CYCU PRZYNIEŚ NO paleta
+    TO NIE SĄ TANIE RZECZY WYPIERDZIELAJ PAN NA POZYCJĘ W MORDĘ JEŻA TABLICA 2D(1, 768)[0]
+    CYCU PRZYNIEŚ NO barwy
+    TO NIE SĄ TANIE RZECZY [[20, 30, 60], [250, 250, 240], [240, 170, 30], [190, 110, 10], [200, 220, 230]]
+    KRĘCI CEMENT BETONIARA nr, barwa Z barwy
+        KRĘCI CEMENT BETONIARA k OD 0 DO 2
+            O KURDE MAM POMYSŁA paleta[nr ROZDUPCĘ BANK 3 BABKA DAWAJ RENTĘ k] A PROSZĘ BARDZO barwa[k] NO I GITARA
+        A ROBIĆ NI MA KOMU
+    A ROBIĆ NI MA KOMU
+    CYCU PRZYNIEŚ NO kufel
+    TO NIE SĄ TANIE RZECZY [
+        "..pppppppp......",
+        ".pppppppppp.....",
+        ".pppppppppp.....",
+        ".sppppppppsss...",
+        ".sbbbbbbbbs..s..",
+        ".sbbcbbbbbs...s.",
+        ".sbbcbbbbbs...s.",
+        ".sbbcbbbbbs...s.",
+        ".sbbcbbbbbs...s.",
+        ".sbbcbbbbbs..s..",
+        ".sbbbbbbbbsss...",
+        ".sbbbbbbbbs.....",
+        ".ssssssssss....."]
+    AFERA JEST obrazek W MORDĘ JEŻA obrazek_z_tekstu(kufel, W MORDĘ JEŻA OTWÓRZ SZAFKĘ("p", 1, "b", 2, "c", 3, "s", 4))
+    W MORDĘ JEŻA zapisz_wad(sciezka, [["PLAYPAL", paleta], ["KUFEL", obrazek]])
+DO WIDZENIA PANU
+
+RYM CYM CYM ---- Program ----
+AFERA JEST argumenty W MORDĘ JEŻA CO PAN PRZYNIÓSŁ()
+CYCU PRZYNIEŚ NO sciezka, nazwa
+TO NIE SĄ TANIE RZECZY ["piwnica.wad", "KUFEL"]
+NO JAK NIE JAK TAK W MORDĘ JEŻA ILE NA WERSALCE(argumenty) GRUBA ŚWINIA 0
+    O KURDE MAM POMYSŁA sciezka A PROSZĘ BARDZO argumenty[0] NO I GITARA
+    O KURDE MAM POMYSŁA nazwa A PROSZĘ BARDZO NO JAK NIE JAK TAK W MORDĘ JEŻA ILE NA WERSALCE(argumenty) GRUBA ŚWINIA 1 A PROSZĘ BARDZO argumenty[1] A DUPA TAM "TITLEPIC" NO I GITARA
+A DUPA TAM
+    W MORDĘ JEŻA zrob_piwnice(sciezka)
+DO CHAŁUPY ALE JUŻ
+
+AFERA JEST wad W MORDĘ JEŻA OTWÓRZ_PIWNICĘ(sciezka)
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "{sciezka}: {wad.rodzaj}, wpisów: {W MORDĘ JEŻA ILE NA WERSALCE(wad.wpisy)}"
+KRĘCI CEMENT BETONIARA nr, wpis Z wad.wpisy
+    NO JAK NIE JAK TAK nr ŁYSA PAŁA 8
+        PANIE SENSACJA REWELACJA POWIEM PANU TAK "  {wpis.nazwa}: {wpis.rozmiar} bajtów od pozycji {wpis.pozycja}"
+    DO CHAŁUPY ALE JUŻ
+A ROBIĆ NI MA KOMU
+
+AFERA JEST obrazek W MORDĘ JEŻA OBRAZEK_Z_PIWNICY(wad, nazwa)
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "{nazwa}: {obrazek.szerokosc} x {obrazek.wysokosc} pikseli"
+
+RYM CYM CYM Mały obrazek powiększamy tak, żeby wypełnił okno 160 x 100; duży (ekran tytułowy 320 x 200) dostaje okno na wymiar
+CYCU PRZYNIEŚ NO skala
+TO NIE SĄ TANIE RZECZY 1
+CYCU PRZYNIEŚ NO szer, wys
+TO NIE SĄ TANIE RZECZY [obrazek.szerokosc, obrazek.wysokosc]
+NO JAK NIE JAK TAK szer ŁYSA PAŁA 80 PIWO I TELEWIZOR wys ŁYSA PAŁA 50
+    O KURDE MAM POMYSŁA skala A PROSZĘ BARDZO W MORDĘ JEŻA NAJMNIEJSZY NA WERSALCE([160 MUSZĘ DO SRACZA szer, 100 MUSZĘ DO SRACZA wys]) NO I GITARA
+    O KURDE MAM POMYSŁA szer A PROSZĘ BARDZO 160 NO I GITARA
+    O KURDE MAM POMYSŁA wys A PROSZĘ BARDZO 100 NO I GITARA
+DO CHAŁUPY ALE JUŻ
+
+W MORDĘ JEŻA OKNO_OTWORZ(szer, wys, nazwa)
+W MORDĘ JEŻA PALETA_USTAW(W MORDĘ JEŻA PALETA_Z_PIWNICY(wad))
+W MORDĘ JEŻA ZAMKNIJ_PIWNICĘ(wad)
+W MORDĘ JEŻA EKRAN_CZYSC(0)
+NO JAK NIE JAK TAK skala TO PANU SIĘ CHCE WTEDY KIEDY MNIE 1
+    W MORDĘ JEŻA NAMALUJ_OBRAZEK(obrazek, 0, 0)
+A DUPA TAM
+    RYM CYM CYM Każdy piksel obrazka jako kwadrat skala x skala, obrazek na środku okna
+    CYCU PRZYNIEŚ NO x0, y0
+    TO NIE SĄ TANIE RZECZY [(szer PASZOŁ WON obrazek.szerokosc ROZDUPCĘ BANK skala) MUSZĘ DO SRACZA 2, (wys PASZOŁ WON obrazek.wysokosc ROZDUPCĘ BANK skala) MUSZĘ DO SRACZA 2]
+    KRĘCI CEMENT BETONIARA y OD 0 DO obrazek.wysokosc ROZDUPCĘ BANK skala PASZOŁ WON 1
+        KRĘCI CEMENT BETONIARA x OD 0 DO obrazek.szerokosc ROZDUPCĘ BANK skala PASZOŁ WON 1
+            CYCU PRZYNIEŚ NO kolor
+            TO NIE SĄ TANIE RZECZY obrazek.piksele[y MUSZĘ DO SRACZA skala][x MUSZĘ DO SRACZA skala]
+            NO JAK NIE JAK TAK kolor JA JESTEM PONAD TO 0
+                W MORDĘ JEŻA PIKSEL_MALUJ(x0 BABKA DAWAJ RENTĘ x, y0 BABKA DAWAJ RENTĘ y, kolor)
+            DO CHAŁUPY ALE JUŻ
+        A ROBIĆ NI MA KOMU
+    A ROBIĆ NI MA KOMU
+DO CHAŁUPY ALE JUŻ
+W MORDĘ JEŻA EKRAN_ODSWIEZ()
+PANIE SENSACJA REWELACJA POWIEM PANU TAK "Środek okna ma kolor {W MORDĘ JEŻA BUFOR_RAMKI_POBIERZ(szer MUSZĘ DO SRACZA 2, wys MUSZĘ DO SRACZA 2)}"
+
+RYM CYM CYM Obrazek zostaje na ekranie do Esc albo kliknięcia, najwyżej 20 sekund
+KRĘCI CEMENT BETONIARA klatka OD 1 DO 400
+    AFERA JEST z W MORDĘ JEŻA ZDARZENIE_CZEKAJ()
+    NO JAK NIE JAK TAK z[0] TO PANU SIĘ CHCE WTEDY KIEDY MNIE 3 ALBO JUTRO U ADWOKATA (z[0] TO PANU SIĘ CHCE WTEDY KIEDY MNIE 1 PIWO I TELEWIZOR z[1] TO PANU SIĘ CHCE WTEDY KIEDY MNIE ESC)
+        A POCAŁUJCIE MNIE WSZYSCY W DUPĘ
+    DO CHAŁUPY ALE JUŻ
+    W MORDĘ JEŻA TRZEBA SPAĆ(50)
+A ROBIĆ NI MA KOMU
+W MORDĘ JEŻA OKNO_ZAMKNIJ()
+MOJA NOGA JUŻ TUTAJ NIE POSTANIE

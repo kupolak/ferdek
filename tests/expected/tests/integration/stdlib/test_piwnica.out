@@ -1,0 +1,27 @@
+PWAD, wpisów: 4
+  PLAYPAL: pozycja 12, rozmiar 768
+  PIWO: pozycja 780, rozmiar 3
+  KUFEL: pozycja 783, rozmiar 39
+  PIWO: pozycja 822, rozmiar 4
+true
+false
+[9, 8, 7, 6]
+768
+[200, 55, 144, 201, 54, 146]
+3x4, lewo -1, góra 2
+[10, -1, -1]
+[11, -1, 20]
+[-1, -1, -1]
+[-1, -1, 30]
+67305985
+65535
+-1
+32767
+-2147483648
+PIWNICA: nie ma wpisu WODA
+PIWNICA: to nie jest obrazek: PIWO
+PIWNICA: to nie jest obrazek: PLAYPAL
+PIWNICA: w PLAYPAL nie ma palety numer 1
+PIWNICA: to nie jest plik WAD: _build/test_piwnica.txt
+PIWNICA: to nie jest plik WAD: _build/test_piwnica.txt
+Program zakończony pomyślnie. Piwo dla Pana!

@@ -48,7 +48,7 @@ ALL_TESTS = $(STDLIB_TESTS) $(FEATURE_TESTS) $(EXAMPLE_TESTS)
 # Testy, które kompilator do C musi przejść z identycznym wyjściem
 COMPILED_TESTS = $(addprefix examples/,advanced_features arrays2d bitwise bubble_sort classes enums fizzbuzz framebuffer function_pointers hello io lodowka macros_demo makra_ferdek memory operations pointers selection_sort simple_compile structs types unions variadic variadic_simple) \
 	$(FEATURE_TESTS) \
-	$(addprefix tests/integration/stdlib/,test_bez_ogonkow test_dodaj_inline test_kanapa test_kanapa_brzegi test_kanapa_litery test_kanapa_utf8 test_kibel test_klatka_bezpieczna test_losowanie test_simple_skrzynka test_skrzynka test_skrzynka_matma test_stdlib test_szafka test_szafka_pelna test_wersalka test_wersalka_funkcje) \
+	$(addprefix tests/integration/stdlib/,test_bez_ogonkow test_dodaj_inline test_kanapa test_kanapa_brzegi test_kanapa_litery test_kanapa_utf8 test_kibel test_klatka_bezpieczna test_losowanie test_piwnica test_simple_skrzynka test_skrzynka test_skrzynka_matma test_stdlib test_szafka test_szafka_pelna test_wersalka test_wersalka_funkcje) \
 	stdlib/KLAMOTY/BABKA/przyklad_testow
 
 # Oczekiwane wyjście: tests/expected/<ścieżka>.out (brak pliku = sprawdzamy tylko kod wyjścia)
@@ -130,7 +130,7 @@ docs: build
 # ferdek --check: poprawne programy przechodzą (pilnuje też rejestru builtinów),
 # a tests/check/*.ferdek zgłaszają dokładnie oczekiwane problemy
 test-check: build
-	@fail=0; for t in $(ALL_TESTS) $(basename $(wildcard examples/*.ferdek)); do \
+	@fail=0; for t in $(ALL_TESTS) $(basename $(wildcard examples/*.ferdek playground/przyklady/*.ferdek)); do \
 	  $(FERDEK) --check $$t.ferdek > _build/ferdek_chk.out 2>&1 || { echo "--- check $$t: FAIL"; cat _build/ferdek_chk.out; fail=$$((fail+1)); }; \
 	done; \
 	for t in $(basename $(wildcard tests/check/*.ferdek)); do \

@@ -26,6 +26,7 @@ static FerdekValue b_czytaj(int argc, FerdekValue* argv) {
         long long size = to_int(argv[1]);
         if (argv[0].type != TYPE_FILE || !argv[0].value.file_val.input)
             ferdek_die("CZYTAJ GAZETĘ: pierwszy argument musi być uchwytem pliku do odczytu");
+        if (size < 0) ferdek_die("CZYTAJ: liczba bajtów nie może być ujemna");
         unsigned char* buf = fx_malloc(size > 0 ? size : 1);
         size_t n = fread(buf, 1, size, argv[0].value.file_val.f);
         FerdekValue out = make_array(NULL, 0);

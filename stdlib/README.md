@@ -11,6 +11,7 @@ Pełna lista słów z opisami: [docs/JEZYK.md](../docs/JEZYK.md) (generowana, `m
 | SKRZYNKA | `O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/SKRZYNKA` | matematyka: `DODAJ`, `MNOZ`, potęga, min/max, PI... |
 | KLATKA | `O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/KLATKA` | HTTP GET/POST przez curl, ping, publiczny IP |
 | TELEWIZOR | `O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/TELEWIZOR` | `PRZEŁĄCZ_KANAŁ(wiadomość)` - wypisywanie jako funkcja |
+| PIWNICA | `O KOGO MOJE PIĘKNE OCZY WIDZĄ KLAMOTY/PIWNICA` | pliki WAD (DOOM): katalog, wpisy jako bajty, paleta, obrazki; przykład: `playground/przyklady/piwnica.ferdek` |
 | BABKA | `O KOGO MOJE PIĘKNE OCZY WIDZĄ BABKA` | asercje do testów (`ferdek test`), opis w [KLAMOTY/BABKA/README.md](KLAMOTY/BABKA/README.md) |
 
 Z `JAKO` nazwy modułu dostają przedrostek:

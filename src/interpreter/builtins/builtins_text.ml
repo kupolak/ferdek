@@ -137,6 +137,26 @@ let register () = add [
           VString (String.concat "" (List.rev (Array.to_list c)))
       | _ -> VNull);
 
+  (* Bajty <-> tekst. Tekst kończy się na pierwszym bajcie 0: tak są dopełniane nazwy w plikach
+     binarnych, a skompilowany program i tak trzyma tekst jako napis C *)
+  ["KANAPA Z BAJTÓW"], Some 1, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [VArray a] ->
+          let b = Buffer.create (Array.length a) in
+          (try Array.iter (fun v ->
+             let n = to_int v in
+             if n < 0 || n > 255 then raise (RuntimeError "KANAPA Z BAJTÓW: bajt musi być od 0 do 255");
+             if n = 0 then raise Exit;
+             Buffer.add_char b (Char.chr n)) a
+           with Exit -> ());
+          VString (Buffer.contents b)
+      | _ -> raise (RuntimeError "KANAPA Z BAJTÓW: argument musi być tablicą"));
+
+  ["BAJTY Z KANAPY"], Some 1, (fun env args ->
+      match List.map (eval_expr env) args with
+      | [t] -> let s = to_string t in VArray (Array.init (String.length s) (fun i -> VByte (Char.code s.[i])))
+      | _ -> VNull);
+
   ["ROZCIĄGNIJ Z LEWEJ"], Some 2, (fun env args ->
       match List.map (eval_expr env) args with
       | [t; n] ->

@@ -16,6 +16,7 @@ let entries = [
   "ALE WIE PAN JA ZASADNICZO", "ALE WIE PAN JA ZASADNICZO", "Definicja funkcji", false;
   "BABKA DAWAJ RENTĘ", "BABKA DAWAJ RENTĘ", "+ (z tekstem skleja)", false;
   "BABKA PODSUMUJ", "BABKA PODSUMUJ()", "BABKA: raport; błąd, jeśli coś oblano", true;
+  "BAJTY Z KANAPY", "BAJTY Z KANAPY(tekst)", "Tablica bajtów tekstu (UTF-8: polska litera to dwa bajty)", true;
   "BEZ POWTÓREK", "BEZ POWTÓREK(tablica)", "Tablica bez powtórzonych elementów, w kolejności pierwszego wystąpienia", true;
   "CAŁE WEJŚCIE", "CAŁE WEJŚCIE()", "Reszta wejścia jako jeden tekst (każda linia zakończona nową linią)", true;
   "CHLUŚNIEM BO UŚNIEM", "CHLUŚNIEM BO UŚNIEM", "Pętla while", false;
@@ -78,6 +79,7 @@ let entries = [
   "JEST TRZECIA W NOCY", "JEST TRZECIA W NOCY()", "Milisekundy od startu programu (do mierzenia czasu)", true;
   "KANAPA DO GÓRY", "KANAPA DO GÓRY(tekst)", "Wielkie litery (także polskie)", true;
   "KANAPA W DÓŁ", "KANAPA W DÓŁ(tekst)", "Małe litery (także polskie)", true;
+  "KANAPA Z BAJTÓW", "KANAPA Z BAJTÓW(tablica)", "Tekst z tablicy bajtów, do pierwszego bajtu 0 (nazwy w plikach binarnych)", true;
   "KARTA LUBI DYM", "KARTA LUBI DYM(min, max)", "Losowa liczba z zakresu; KARTA LUBI DYM(ziarno) ustawia ziarno", true;
   "KOMORNICZY WINDYKACJA", "KOMORNICZY WINDYKACJA(tag_od, tag_do)", "Zwolnij bloki o tagach z zakresu", true;
   "KONIEC GADANIA", "KONIEC GADANIA", "Koniec CO TO JE", false;

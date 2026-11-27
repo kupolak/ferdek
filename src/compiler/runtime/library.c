@@ -142,6 +142,34 @@ static FerdekValue b_konczy(int argc, FerdekValue* argv) {
     return make_bool(r);
 }
 
+/* Bajty <-> tekst; tekst kończy się na pierwszym bajcie 0 (jak w interpreterze) */
+static FerdekValue b_kanapa_z_bajtow(int argc, FerdekValue* argv) {
+    FerdekArray* a = list_arg(argv[0], "KANAPA Z BAJTÓW: argument musi być tablicą");
+    char* s = fx_malloc(a->length + 1);
+    int w = 0;
+    for (int i = 0; i < a->length; i++) {
+        long long n = to_int(a->data[i]);
+        if (n < 0 || n > 255) ferdek_die("KANAPA Z BAJTÓW: bajt musi być od 0 do 255");
+        if (n == 0) break;
+        s[w++] = (char)n;
+    }
+    s[w] = 0;
+    FerdekValue r = make_string(s);
+    fx_free(s);
+    return r;
+}
+
+static FerdekValue b_bajty_z_kanapy(int argc, FerdekValue* argv) {
+    char* t = to_str(argv[0]);
+    size_t n = strlen(t);
+    FerdekValue out = make_array(NULL, 0);
+    out.value.array_val->data = fx_malloc(sizeof(FerdekValue) * (n > 0 ? n : 1));
+    for (size_t i = 0; i < n; i++) out.value.array_val->data[i] = make_typed(TYPE_BYTE, (unsigned char)t[i]);
+    out.value.array_val->length = (int)n;
+    fx_free(t);
+    return out;
+}
+
 static FerdekValue b_odwroc_kanape(int argc, FerdekValue* argv) {
     char* t = to_str(argv[0]);
     long long* off;
