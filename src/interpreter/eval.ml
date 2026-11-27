@@ -283,6 +283,21 @@ let eval_new_union env union_name =
   with RuntimeError _ ->
     raise (RuntimeError (Printf.sprintf "Nieznana unia: %s" union_name))
 
+(* Zmienna pętli: w funkcji lokalna, nawet gdy jest globalna o tej nazwie. Wyjątki: pole obiektu
+   (w metodzie) i zmienna złapana przez lambdę - te pętla zapisuje tam, gdzie są. *)
+let loop_definer cx name : environment -> value -> unit =
+  let h = Vars.hash name in
+  match slot_of cx name h with
+  | None -> definer cx name
+  | Some i ->
+      let w = writer cx name in
+      fun env v ->
+        if env.slots.(i) != unset then env.slots.(i) <- v
+        else if Vars.find_cell_h env.vars name h <> None then w env v
+        else match env.parent with
+          | Some ({ parent = Some _; _ } as p) when Vars.find_cell_h p.vars name h <> None -> w env v
+          | _ -> env.slots.(i) <- v
+
 (* ============ WYRAŻENIA ============ *)
 
 let rec compile_expr cx : expr -> code = function
@@ -574,7 +589,7 @@ and compile_stmt cx : stmt -> scode = function
       (* Granice liczone raz; zakres włącznie; continue też robi krok *)
       let cf = compile_expr cx from_e and ct = compile_expr cx to_e
       and cs = Option.map (compile_expr cx) step_e and b = compile_block cx body
-      and r = reader cx var and w = writer cx var in
+      and r = reader cx var and w = loop_definer cx var in
       fun env ->
         let start = to_int (cf env) in
         let stop = to_int (ct env) in
@@ -595,7 +610,7 @@ and compile_stmt cx : stmt -> scode = function
   | ForEach (var, coll, body) ->
       (* Kolekcja liczona raz, pętla idzie po kopii: tablica - elementy, szafka - klucze
          (posortowane), tekst - znaki *)
-      let cc = compile_expr cx coll and b = compile_block cx body and w = writer cx var in
+      let cc = compile_expr cx coll and b = compile_block cx body and w = loop_definer cx var in
       fun env ->
         let items = match cc env with
           | VArray a -> Array.to_list a

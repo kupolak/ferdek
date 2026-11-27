@@ -87,6 +87,8 @@ let builtins = [
   ["ZACZYNA SIĘ OD"], ("b_zaczyna", Some 2);
   ["KOŃCZY SIĘ NA"], ("b_konczy", Some 2);
   ["ODWRÓĆ KANAPĘ"], ("b_odwroc_kanape", Some 1);
+  ["KANAPA Z BAJTÓW"], ("b_kanapa_z_bajtow", Some 1);
+  ["BAJTY Z KANAPY"], ("b_bajty_z_kanapy", Some 1);
   ["ROZCIĄGNIJ Z LEWEJ"], ("b_rozciagnij_lewo", Some 2);
   ["WSZYSTKIE RZECZY"], ("b_wszystkie_rzeczy", Some 1);
   ["DOŁÓŻ SZAFKĘ"], ("b_doloz_szafke", Some 2);
@@ -763,7 +765,9 @@ let compile_body ?(own_ints = []) ?(own_floats = []) ?(ret_int = false) ?(caps =
      tylko obiekt (jeden poziom wyżej), do globalnych nie sięga. *)
   let assigned_locals =
     if members <> [] then List.filter (fun n -> not (List.mem n members)) assigned
-    else List.filter (fun n -> not (Hashtbl.mem ctx.globals n)) assigned in
+    (* zmienna pętli jest lokalna także wtedy, gdy istnieje globalna o tej nazwie (Ast.loop_vars) *)
+    else (let loops = loop_vars f.body in
+          List.filter (fun n -> List.mem n loops || not (Hashtbl.mem ctx.globals n)) assigned) in
   (* caps: zmienne złapane przez lambdę - widoczne jak lokalne, ale leżą w self (makra w compile_lambda) *)
   let locals = dedup (decl @ assigned_locals)
                |> List.filter (fun n -> not (List.mem n (all_params f) || List.mem n caps)) in

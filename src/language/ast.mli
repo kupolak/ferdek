@@ -182,6 +182,7 @@ val stmt_names : stmt -> string list
 
 (* Zmienne deklarowane w bloku: CYCU PRZYNIEŚ NO, tablice, zmienna z HELENA MAM ZAWAŁ *)
 val block_decls : stmt list -> string list
+val loop_vars : stmt list -> string list
 
 (* Przekształcenia: bezpośrednie podwyrażenia; wszystkie wyrażenia instrukcji (z zagnieżdżonymi) *)
 (* Podwyrażenia (bez wnętrza lambd) i wyrażenia instrukcji z zagnieżdżonymi instrukcjami *)

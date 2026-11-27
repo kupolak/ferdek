@@ -28,6 +28,11 @@
   value captured when the lambda was created, so such an assignment was lost after the call.
 - `ferdecc` is gone - use `ferdek -c`. `ferdek -c x -o app` builds an executable, `-o x.c` writes C.
 
+- A loop variable (`KRĘCI CEMENT BETONIARA i ...`) inside a function is local, even when the program has a
+  global with the same name. Before, the loop overwrote the global, so a library function with a loop over
+  `i` broke a caller that used `i` too. In a method a loop variable named like a field is still the field,
+  and a plain assignment in a function still changes the global.
+
 ### Language
 - Print without a newline (`JEDZIEM Z TYM ŚLEDZIEM`, `NO TO ENTER`), logical not
   (`TAK BYĆ NIE BĘDZIE`), `>=` (`JA JESTEM PONAD TO`), else if (`AAA TO ZMIENIA POSTAĆ RZECZY`),

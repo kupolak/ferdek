@@ -386,6 +386,17 @@ let rec targets_stmt (decl, assigned) = function
   | _ -> (decl, assigned)
 and targets_block acc stmts = List.fold_left targets_stmt acc stmts
 
+(* Zmienne pętli (KRĘCI CEMENT BETONIARA i ...) w bloku. W funkcji są lokalne, nawet gdy istnieje
+   globalna o tej nazwie - inaczej funkcja z biblioteki psułaby zmienne programu, który ją woła.
+   W metodzie zmienna pętli o nazwie pola dalej jest polem. *)
+let rec loop_vars stmts = List.concat_map (function
+  | For (v, _, _, _, b) | ForEach (v, _, b) -> v :: loop_vars b
+  | While (_, b) -> loop_vars b
+  | If (_, a, b) -> loop_vars (a @ Option.value b ~default:[])
+  | Try (a, _, b, f) -> loop_vars (a @ b @ f)
+  | Located (_, _, s) -> loop_vars [s]
+  | _ -> []) stmts
+
 (* Podwyrażenia (bez wnętrza lambd - to osobne funkcje) *)
 let subexprs = function
   | FunctionCall (_, es) | NewObject (_, es) | ArrayLiteral es -> es

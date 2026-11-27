@@ -87,7 +87,8 @@ let all_params (f : function_decl) = f.params @ (if f.is_variadic then ["varargs
 (* Zmienne funkcji tak jak w compile_body: parametry, zadeklarowane i przypisane nie-globalne *)
 let function_scope globals (f : function_decl) =
   let decl, assigned = targets_block ([], []) f.body in
-  all_params f @ decl @ List.filter (fun n -> not (Hashtbl.mem globals n)) assigned
+  let loops = loop_vars f.body in
+  all_params f @ decl @ List.filter (fun n -> List.mem n loops || not (Hashtbl.mem globals n)) assigned
 
 (* Punkt stały po całym programie: zaczynamy od "wszystko jest liczbą" i odrzucamy, co się nie zgadza.
    Wejście: globals, classes, records, is_builtin; wynik trafia do sigs, int_* i float_* *)
