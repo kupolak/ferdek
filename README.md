@@ -97,7 +97,8 @@ vim.lsp.start({ name = "ferdek", cmd = { "ferdek", "--lsp" } })
 ## Playground
 
 Ferdek in the browser: the interpreter compiled to JavaScript (js_of_ocaml), running in a Web Worker,
-with examples and the stdlib built in. Build it with `make playground` (needs
+with examples and the stdlib built in. Online at <https://kupolak.github.io/ferdek/> (a workflow deploys
+it from `main`). Locally: build it with `make playground` (needs
 `opam install js_of_ocaml js_of_ocaml-compiler`) and serve `_build/playground/` with any static
 file server. Everything works except networking and files. Graphics programs (`OKNO_OTWORZ`,
 `PIKSEL_MALUJ`, `EKRAN_ODSWIEZ`...) draw on a canvas on the page (the `telewizor.ferdek` example). Click the

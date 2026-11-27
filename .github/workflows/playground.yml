@@ -1,0 +1,47 @@
+name: Plac zabaw
+
+# Buduje plac zabaw (interpreter w przeglądarce) i wystawia go na GitHub Pages:
+# https://kupolak.github.io/ferdek/. W ustawieniach repo: Pages -> Source -> "GitHub Actions".
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: X11 (nagłówki do budowania)
+        run: sudo apt-get update && sudo apt-get install -y libx11-dev
+
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: 5.2
+
+      - name: Zależności OCaml
+        run: opam install -y dune menhir menhirLib yojson js_of_ocaml js_of_ocaml-compiler
+
+      # Buduje _build/playground i sprawdza w node grafikę, usypianie i zdarzenia
+      - name: make test-playground
+        run: opam exec -- make test-playground
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _build/playground
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

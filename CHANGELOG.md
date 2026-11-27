@@ -182,6 +182,8 @@
   messages are unchanged (checked against the previous interpreter on all tests and fuzzed programs).
 
 ### Tools
+- The playground is deployed to GitHub Pages (<https://kupolak.github.io/ferdek/>) by a workflow on every
+  push to `main`, after `make test-playground` passes.
 - The `ferdek` binary no longer links `libX11`: it is looked up only when a program opens a window, so
   `ferdek` runs on machines without X11. Compiled programs with graphics still link `-lX11`.
 - Ready binaries: a workflow rebuilds the `latest` release (Linux x86_64, macOS arm64) from `main`, and
